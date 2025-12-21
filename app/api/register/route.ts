@@ -10,28 +10,29 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = registerSchema.parse(body);
 
-    // Check if username already exists
-    const existingUsername = await prisma.user.findFirst({
-      where: { username: validatedData.username },
+    // Check if username or email already exists
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: validatedData.username },
+          { email: validatedData.email },
+        ],
+      },
     });
 
-    if (existingUsername) {
-      return NextResponse.json(
-        { error: "Username already taken" },
-        { status: 400 }
-      );
-    }
-
-    // Check if email already exists
-    const existingEmail = await prisma.user.findFirst({
-      where: { email: validatedData.email },
-    });
-
-    if (existingEmail) {
-      return NextResponse.json(
-        { error: "Email already registered" },
-        { status: 400 }
-      );
+    if (existingUser) {
+      if (existingUser.username === validatedData.username) {
+        return NextResponse.json(
+          { error: "Username already taken" },
+          { status: 400 }
+        );
+      }
+      if (existingUser.email === validatedData.email) {
+        return NextResponse.json(
+          { error: "Email already registered" },
+          { status: 400 }
+        );
+      }
     }
 
     // Hash password
@@ -64,6 +65,34 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    console.error("Registration error:", error);
+
+    // Handle Prisma errors
+    if (error && typeof error === "object" && "code" in error) {
+      const prismaError = error as any;
+
+      // P2002: Unique constraint failed
+      if (prismaError.code === "P2002") {
+        const field = prismaError.meta?.target?.[0];
+        if (field === "username") {
+          return NextResponse.json(
+            { error: "Username already taken" },
+            { status: 400 }
+          );
+        }
+        if (field === "email") {
+          return NextResponse.json(
+            { error: "Email already registered" },
+            { status: 400 }
+          );
+        }
+        return NextResponse.json(
+          { error: "This account information is already registered" },
+          { status: 400 }
+        );
+      }
+    }
+
     if (error instanceof Error) {
       // Zod validation error
       if (error.message.includes("validation")) {
@@ -72,6 +101,7 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+
       return NextResponse.json(
         { error: error.message },
         { status: 500 }
