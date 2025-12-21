@@ -29,14 +29,18 @@ function LoginForm() {
         redirect: false,
       });
 
-      if (!result?.ok) {
-        setError(result?.error || "Invalid credentials");
+      console.log("signIn result:", result);
+
+      // Auth.js v5 bug: ok can be true even with errors
+      if (result?.error || !result?.ok) {
+        setError("Invalid credentials");
         setIsLoading(false);
         return;
       }
 
       router.push(callbackUrl);
     } catch (err) {
+      console.error("signIn error:", err);
       setError("An error occurred. Please try again.");
       setIsLoading(false);
     }
