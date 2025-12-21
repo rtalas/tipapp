@@ -49,9 +49,6 @@ function RegisterForm() {
         return;
       }
 
-      // Show success message briefly
-      setSuccess(true);
-
       // Auto-login user
       const signInResult = await signIn("credentials", {
         username: formData.username,
@@ -60,14 +57,16 @@ function RegisterForm() {
       });
 
       if (!signInResult?.ok) {
-        // Registration succeeded but auto-login failed, redirect to login
+        // Registration succeeded but auto-login failed, show error and redirect to login
+        setError("Account created but login failed. Please sign in manually.");
         setTimeout(() => {
           router.push("/login");
         }, 2000);
         return;
       }
 
-      // Registration and login succeeded, redirect to dashboard
+      // Registration and login succeeded, show success and redirect
+      setSuccess(true);
       setTimeout(() => {
         router.push("/");
       }, 1500);

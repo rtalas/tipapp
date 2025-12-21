@@ -6,11 +6,9 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log("Registration attempt with body:", { ...body, password: "[REDACTED]" });
 
     // Validate input
     const validatedData = registerSchema.parse(body);
-    console.log("Validation passed for:", validatedData.username, validatedData.email);
 
     // Check if username or email already exists
     const existingUser = await prisma.user.findFirst({
@@ -23,11 +21,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUser) {
-      console.log("Found existing user:", {
-        id: existingUser.id,
-        username: existingUser.username,
-        email: existingUser.email,
-      });
       if (existingUser.username === validatedData.username) {
         return NextResponse.json(
           { error: "Username already taken" },
@@ -44,11 +37,6 @@ export async function POST(request: NextRequest) {
 
     // Hash password
     const hashedPassword = await hash(validatedData.password, 12);
-    console.log("Creating user:", {
-      username: validatedData.username,
-      email: validatedData.email,
-      firstName: validatedData.firstName,
-    });
 
     // Create user
     const user = await prisma.user.create({
@@ -65,8 +53,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log("User created successfully:", { id: user.id, username: user.username });
-
     return NextResponse.json(
       {
         success: true,
@@ -79,8 +65,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Registration error:", error);
-
     // Handle Prisma errors
     if (error && typeof error === "object" && "code" in error) {
       const prismaError = error as any;
