@@ -18,38 +18,43 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const validatedCredentials = signInSchema.parse(credentials);
+        try {
+          const validatedCredentials = signInSchema.parse(credentials);
 
-        // Find user by username or email
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { username: validatedCredentials.username },
-              { email: validatedCredentials.username },
-            ],
-          },
-        });
+          // Find user by username or email
+          const user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { username: validatedCredentials.username },
+                { email: validatedCredentials.username },
+              ],
+            },
+          });
 
-        if (!user) {
-          throw new Error("Invalid credentials");
+          if (!user) {
+            return null;
+          }
+
+          // Compare passwords using bcryptjs
+          const isPasswordValid = await compare(
+            validatedCredentials.password,
+            user.password
+          );
+
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user.id.toString(),
+            username: user.username,
+            email: user.email,
+            isSuperadmin: user.isSuperadmin,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
         }
-
-        // Compare passwords using bcryptjs
-        const isPasswordValid = await compare(
-          validatedCredentials.password,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          throw new Error("Invalid credentials");
-        }
-
-        return {
-          id: user.id.toString(),
-          username: user.username,
-          email: user.email,
-          isSuperadmin: user.isSuperadmin,
-        };
       },
     }),
   ],
