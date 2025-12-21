@@ -12,6 +12,15 @@ export default auth((req) => {
     url.pathname = "/login";
     return Response.redirect(url);
   }
+
+  // Protect admin routes - only superadmins can access /admin/*
+  if (req.auth && pathname.startsWith('/admin')) {
+    if (!req.auth.user?.isSuperadmin) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/";
+      return Response.redirect(url);
+    }
+  }
 });
 
 export const config = {
