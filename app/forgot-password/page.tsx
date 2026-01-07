@@ -52,7 +52,7 @@ function ForgotPasswordForm() {
         setError(result.error || 'Failed to send reset email. Please try again.');
       }
     } catch (err) {
-      console.error('forgot password error:', err);
+      console.error('Error in forgot password submission:', err);
       setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);

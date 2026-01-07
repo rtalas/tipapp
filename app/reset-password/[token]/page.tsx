@@ -23,9 +23,7 @@ export default function ResetPasswordPage() {
 
   // Validate token format on mount (allow both uppercase and lowercase hex)
   useEffect(() => {
-
     if (!token || !/^[a-f0-9A-F0-9]{64}$/.test(token)) {
-      console.error('Invalid token format');
       setError('Invalid reset link. Please request a new password reset.');
     } else {
       // Clear error if token format is valid (it will be set again on server error)
@@ -87,7 +85,7 @@ export default function ResetPasswordPage() {
         setError(result.error || 'Failed to reset password. Please try again.');
       }
     } catch (err) {
-      console.error('reset password error:', err);
+      console.error('Error in reset password submission:', err);
       setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
