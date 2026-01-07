@@ -292,22 +292,37 @@ model Team {
 }
 
 model User {
-  id           Int           @id @default(autoincrement())
-  firstName    String        @db.VarChar(255)
-  lastName     String        @db.VarChar(255)
-  username     String        @db.VarChar(255)
-  email        String?       @db.VarChar(255)
-  mobileNumber String?       @db.VarChar(255)
-  password     String        @db.VarChar(255)
-  salt         String?       @db.VarChar(255)
-  pushId       String?       @db.VarChar(255)
-  isSuperadmin Boolean       @default(false)
-  createdAt    DateTime      @db.Timestamptz(6)
-  updatedAt    DateTime      @db.Timestamptz(6)
-  deletedAt    DateTime?     @db.Timestamptz(6)
-  notifyHours  Int           @default(2)
-  LeagueUser   LeagueUser[]
-  UserRequest  UserRequest[]
+  id                  Int                   @id @default(autoincrement())
+  firstName           String                @db.VarChar(255)
+  lastName            String                @db.VarChar(255)
+  username            String                @db.VarChar(255)
+  email               String                @unique @db.VarChar(255)
+  mobileNumber        String?               @db.VarChar(255)
+  password            String                @db.VarChar(255)
+  salt                String?               @db.VarChar(255)
+  pushId              String?               @db.VarChar(255)
+  isSuperadmin        Boolean               @default(false)
+  createdAt           DateTime              @db.Timestamptz(6)
+  updatedAt           DateTime              @db.Timestamptz(6)
+  deletedAt           DateTime?             @db.Timestamptz(6)
+  notifyHours         Int                   @default(2)
+  LeagueUser          LeagueUser[]
+  UserRequest         UserRequest[]
+  PasswordResetToken  PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  token     String    @unique @db.VarChar(255)
+  expiresAt DateTime  @db.Timestamptz(6)
+  createdAt DateTime  @db.Timestamptz(6)
+  usedAt    DateTime? @db.Timestamptz(6)
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId, expiresAt])
 }
 
 model UserBet {

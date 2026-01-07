@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 
 // Routes that don't require authentication
-const publicRoutes = ["/login", "/register", "/api/auth", "/api/register"];
+const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/api/auth", "/api/register"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;

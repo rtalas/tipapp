@@ -10,6 +10,10 @@ import {
   createPlayerSchema,
   updatePlayerSchema,
 } from './validation/admin'
+import {
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from './validation'
 
 /**
  * Validates team edit form data
@@ -70,4 +74,18 @@ export function getFieldErrors(validationResult: ReturnType<typeof validateTeamE
     errors[field] = issue.message
   }
   return errors
+}
+
+/**
+ * Validates forgot password form data
+ */
+export function validateForgotPassword(data: unknown) {
+  return forgotPasswordSchema.safeParse(data)
+}
+
+/**
+ * Validates reset password form data
+ */
+export function validateResetPassword(data: unknown) {
+  return resetPasswordSchema.safeParse(data)
 }

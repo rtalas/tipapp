@@ -37,6 +37,7 @@
     "prisma": "^6.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "resend": "^6.6.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.2.1"
@@ -46,7 +47,6 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
     "@testing-library/user-event": "^14.6.1",
-    "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20.19.27",
     "@types/react": "^19",
     "@types/react-dom": "^19",
