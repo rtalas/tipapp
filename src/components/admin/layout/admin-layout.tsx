@@ -1,0 +1,61 @@
+'use client'
+
+import * as React from 'react'
+import { Sidebar } from './sidebar'
+import { Topbar } from './topbar'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { cn } from '@/lib/utils'
+
+interface AdminLayoutProps {
+  children: React.ReactNode
+  user?: {
+    username: string
+    isSuperadmin: boolean
+  }
+}
+
+export function AdminLayout({ children, user }: AdminLayoutProps) {
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+
+  return (
+    <div className="flex min-h-screen w-full bg-background">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+      </div>
+
+      {/* Mobile Sidebar (Sheet) */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="w-64 p-0">
+          <Sidebar
+            collapsed={false}
+            onToggle={() => setMobileMenuOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
+
+      {/* Main content area */}
+      <div
+        className={cn(
+          'flex flex-1 flex-col transition-all duration-300',
+          sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'
+        )}
+      >
+        <Topbar
+          sidebarCollapsed={sidebarCollapsed}
+          onMenuClick={() => setMobileMenuOpen(true)}
+          user={user}
+        />
+
+        {/* Main content */}
+        <main className="flex-1 overflow-auto p-6 pt-22">
+          <div className="mx-auto max-w-7xl">{children}</div>
+        </main>
+      </div>
+    </div>
+  )
+}

@@ -49,7 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             id: user.id.toString(),
             username: user.username,
             email: user.email,
-            isSuperadmin: user.isSuperadmin,
+            isSuperadmin: Boolean(user.isSuperadmin),
           };
         } catch (error) {
           console.error("Auth error:", error);

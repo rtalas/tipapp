@@ -1,9 +1,10 @@
 import { auth } from "@/auth";
+import Link from "next/link";
 import SignOutButton from "@/components/SignOutButton";
 
 export default async function Home() {
   const session = await auth();
-
+console.log("Session in page.tsx:", session?.user);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <main className="max-w-md w-full space-y-8 text-center">
@@ -17,9 +18,12 @@ export default async function Home() {
                 Signed in as <span className="font-semibold">{session.user.username || session.user.email}</span>
               </p>
               {session.user.isSuperadmin && (
-                <span className="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                  Admin
-                </span>
+                <Link
+                  href="/admin"
+                  className="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full hover:bg-blue-200 transition-colors"
+                >
+                  Admin Dashboard →
+                </Link>
               )}
             </>
           )}
