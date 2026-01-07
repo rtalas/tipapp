@@ -103,15 +103,6 @@ function LoginForm() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end">
-            <Link
-              href="/forgot-password"
-              className="text-sm font-medium text-blue-600 hover:text-blue-500"
-            >
-              Forgot your password?
-            </Link>
-          </div>
-
           <button
             type="submit"
             disabled={isLoading}
@@ -119,6 +110,15 @@ function LoginForm() {
           >
             {isLoading ? "Signing in..." : "Sign in"}
           </button>
+
+          <div className="flex items-center justify-center">
+            <Link
+              href="/forgot-password"
+              className="text-sm font-medium text-blue-600 hover:text-blue-500"
+            >
+              Forgot your password?
+            </Link>
+          </div>
         </form>
       </div>
     </div>
