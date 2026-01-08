@@ -4,8 +4,7 @@ import * as React from 'react'
 import { format } from 'date-fns'
 import { Plus, Edit, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { deleteMatch } from '@/actions/matches'
-import { getMatchStatus } from '@/lib/match-utils'
+import { deleteSpecialBet } from '@/actions/special-bets'
 import { getErrorMessage } from '@/lib/error-handler'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,67 +33,66 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { AddMatchDialog } from './add-match-dialog'
+import { AddSpecialBetDialog } from './add-special-bet-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
 
-interface Team {
-  id: number
-  name: string
-  shortcut: string
-}
+type League = Awaited<ReturnType<typeof import('@/actions/special-bets').getLeaguesWithTeamsAndPlayers>>[number]
+type SpecialBet = Awaited<ReturnType<typeof import('@/actions/special-bets').getSpecialBets>>[number]
+type SpecialBetType = { id: number; name: string }
 
-interface LeagueTeam {
-  id: number
-  Team: Team
-}
-
-interface League {
-  id: number
-  name: string
-  LeagueTeam: LeagueTeam[]
-}
-
-interface Match {
-  id: number
-  dateTime: Date
-  isEvaluated: boolean
-  isPlayoffGame: boolean
-  homeRegularScore: number | null
-  awayRegularScore: number | null
-  homeFinalScore: number | null
-  awayFinalScore: number | null
-  isOvertime: boolean | null
-  isShootout: boolean | null
-  LeagueTeam_Match_homeTeamIdToLeagueTeam: LeagueTeam
-  LeagueTeam_Match_awayTeamIdToLeagueTeam: LeagueTeam
-}
-
-interface LeagueMatch {
-  id: number
-  leagueId: number
-  isDoubled: boolean | null
-  League: { name: string }
-  Match: Match
-}
-
-interface MatchesContentProps {
-  matches: LeagueMatch[]
+interface SpecialBetsContentProps {
+  specialBets: SpecialBet[]
   leagues: League[]
+  specialBetTypes: SpecialBetType[]
 }
 
-export function MatchesContent({ matches, leagues }: MatchesContentProps) {
+function getSpecialBetStatus(specialBet: SpecialBet): 'scheduled' | 'finished' | 'evaluated' {
+  if (specialBet.isEvaluated) return 'evaluated'
+  const hasResult = specialBet.specialBetTeamResultId !== null ||
+                   specialBet.specialBetPlayerResultId !== null ||
+                   specialBet.specialBetValue !== null
+  if (hasResult) return 'finished'
+  return 'scheduled'
+}
+
+function getResultTypeAndDisplay(specialBet: SpecialBet): { type: string; display: string } {
+  if (specialBet.specialBetTeamResultId) {
+    return {
+      type: 'team',
+      display: specialBet.LeagueTeam?.Team.name || 'Unknown',
+    }
+  }
+  if (specialBet.specialBetPlayerResultId) {
+    const player = specialBet.LeaguePlayer
+    return {
+      type: 'player',
+      display: player ? `${player.Player.firstName} ${player.Player.lastName}` : 'Unknown',
+    }
+  }
+  if (specialBet.specialBetValue !== null) {
+    return {
+      type: 'value',
+      display: specialBet.specialBetValue.toString(),
+    }
+  }
+  return { type: 'none', display: '-' }
+}
+
+export function SpecialBetsContent({ specialBets, leagues, specialBetTypes }: SpecialBetsContentProps) {
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
+  const [typeFilter, setTypeFilter] = React.useState<string>('all')
   const [addDialogOpen, setAddDialogOpen] = React.useState(false)
-  const [selectedMatch, setSelectedMatch] = React.useState<LeagueMatch | null>(null)
+  const [selectedSpecialBet, setSelectedSpecialBet] = React.useState<SpecialBet | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
-  const [matchToDelete, setMatchToDelete] = React.useState<LeagueMatch | null>(null)
+  const [specialBetToDelete, setSpecialBetToDelete] = React.useState<SpecialBet | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
 
-  // Filter matches with optimized string search
-  const filteredMatches = matches.filter((lm) => {
-    const status = getMatchStatus(lm.Match)
+  // Filter special bets
+  const filteredSpecialBets = specialBets.filter((sb) => {
+    const status = getSpecialBetStatus(sb)
+    const resultInfo = getResultTypeAndDisplay(sb)
 
     // Status filter
     if (statusFilter !== 'all' && status !== statusFilter) {
@@ -102,32 +100,35 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
     }
 
     // League filter
-    if (leagueFilter !== 'all' && lm.leagueId !== parseInt(leagueFilter, 10)) {
+    if (leagueFilter !== 'all' && sb.leagueId !== parseInt(leagueFilter, 10)) {
       return false
     }
 
-    // Search filter - optimized: combine team names
+    // Type filter
+    if (typeFilter !== 'all' && resultInfo.type !== typeFilter) {
+      return false
+    }
+
+    // Search filter (by special bet type name)
     if (search) {
       const searchLower = search.toLowerCase()
-      const homeTeam = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name.toLowerCase()
-      const awayTeam = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name.toLowerCase()
-      const searchableText = `${homeTeam} ${awayTeam}`.toLowerCase()
-      return searchableText.includes(searchLower)
+      const specialBetName = sb.SpecialBetSingle.name.toLowerCase()
+      return specialBetName.includes(searchLower)
     }
 
     return true
   })
 
   const handleDelete = async () => {
-    if (!matchToDelete) return
+    if (!specialBetToDelete) return
     setIsDeleting(true)
     try {
-      await deleteMatch(matchToDelete.Match.id)
-      toast.success('Match deleted successfully')
+      await deleteSpecialBet(specialBetToDelete.id)
+      toast.success('Special bet deleted successfully')
       setDeleteDialogOpen(false)
-      setMatchToDelete(null)
+      setSpecialBetToDelete(null)
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to delete match')
+      const message = getErrorMessage(error, 'Failed to delete special bet')
       toast.error(message)
       console.error(error)
     } finally {
@@ -139,9 +140,9 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
     <>
       {/* Filters */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-1 gap-4">
+        <div className="flex flex-1 gap-4 flex-wrap">
           <Input
-            placeholder="Search by team name..."
+            placeholder="Search by special bet type..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
@@ -153,7 +154,6 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="scheduled">Scheduled</SelectItem>
-              <SelectItem value="live">Live</SelectItem>
               <SelectItem value="finished">Finished</SelectItem>
               <SelectItem value="evaluated">Evaluated</SelectItem>
             </SelectContent>
@@ -171,28 +171,39 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
               ))}
             </SelectContent>
           </Select>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="team">Team</SelectItem>
+              <SelectItem value="player">Player</SelectItem>
+              <SelectItem value="value">Value</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <Button onClick={() => setAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Create Match
+          Create Special Bet
         </Button>
       </div>
 
-      {/* Matches table */}
+      {/* Special Bets table */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>All Matches</CardTitle>
+          <CardTitle>All Special Bets</CardTitle>
           <CardDescription>
-            {filteredMatches.length} matches found
+            {filteredSpecialBets.length} special bet{filteredSpecialBets.length !== 1 ? 's' : ''} found
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {filteredMatches.length === 0 ? (
+          {filteredSpecialBets.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground mb-4">No matches found</p>
+              <p className="text-muted-foreground mb-4">No special bets found</p>
               <Button onClick={() => setAddDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create your first match
+                Create your first special bet
               </Button>
             </div>
           ) : (
@@ -201,75 +212,55 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead>Date & Time</TableHead>
+                    <TableHead>Date</TableHead>
                     <TableHead>League</TableHead>
-                    <TableHead>Matchup</TableHead>
-                    <TableHead className="text-center">Score</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Result</TableHead>
+                    <TableHead>Points</TableHead>
+                    <TableHead>Bets</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMatches.map((lm) => {
-                    const status = getMatchStatus(lm.Match)
-                    const homeTeam = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team
-                    const awayTeam = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team
+                  {filteredSpecialBets.map((sb) => {
+                    const status = getSpecialBetStatus(sb)
+                    const resultInfo = getResultTypeAndDisplay(sb)
 
                     return (
                       <TableRow
-                        key={lm.id}
+                        key={sb.id}
                         className="table-row-hover cursor-pointer"
-                        onClick={() => setSelectedMatch(lm)}
+                        onClick={() => setSelectedSpecialBet(sb)}
                       >
                         <TableCell className="font-mono text-muted-foreground">
-                          #{lm.Match.id}
+                          #{sb.id}
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {format(new Date(lm.Match.dateTime), 'MMM d, yyyy')}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              {format(new Date(lm.Match.dateTime), 'HH:mm')}
-                            </span>
-                          </div>
+                          {format(new Date(sb.dateTime), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell>{sb.League.name}</TableCell>
+                        <TableCell>
+                          <span className="text-sm">{sb.SpecialBetSingle.name}</span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            {lm.League.name}
-                            {lm.Match.isPlayoffGame && (
-                              <Badge variant="warning" className="text-xs">
-                                Playoff
+                          {resultInfo.type !== 'none' && (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {resultInfo.type}
                               </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{homeTeam.name}</span>
-                            <span className="text-muted-foreground">vs</span>
-                            <span className="font-medium">{awayTeam.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {lm.Match.homeRegularScore !== null ? (
-                            <div className="flex items-center justify-center gap-1">
-                              <span className="font-mono font-bold text-lg">
-                                {lm.Match.homeRegularScore}
-                              </span>
-                              <span className="text-muted-foreground">:</span>
-                              <span className="font-mono font-bold text-lg">
-                                {lm.Match.awayRegularScore}
-                              </span>
-                              {(lm.Match.isOvertime || lm.Match.isShootout) && (
-                                <span className="ml-2 text-xs text-muted-foreground">
-                                  {lm.Match.isShootout ? '(SO)' : '(OT)'}
-                                </span>
-                              )}
+                              <span className="text-sm">{resultInfo.display}</span>
                             </div>
-                          ) : (
+                          )}
+                          {resultInfo.type === 'none' && (
                             <span className="text-muted-foreground">-</span>
                           )}
+                        </TableCell>
+                        <TableCell>{sb.points} pts</TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {sb._count.UserSpecialBetSingle} bet{sb._count.UserSpecialBetSingle !== 1 ? 's' : ''}
+                          </span>
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -278,8 +269,6 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
                                 ? 'evaluated'
                                 : status === 'finished'
                                 ? 'finished'
-                                : status === 'live'
-                                ? 'live'
                                 : 'scheduled'
                             }
                           >
@@ -296,9 +285,9 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                setSelectedMatch(lm)
+                                setSelectedSpecialBet(sb)
                               }}
-                              aria-label={`Edit match: ${homeTeam.name} vs ${awayTeam.name}`}
+                              aria-label={`Edit special bet: ${sb.SpecialBetSingle.name}`}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -307,10 +296,10 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                setMatchToDelete(lm)
+                                setSpecialBetToDelete(sb)
                                 setDeleteDialogOpen(true)
                               }}
-                              aria-label={`Delete match: ${homeTeam.name} vs ${awayTeam.name}`}
+                              aria-label={`Delete special bet: ${sb.SpecialBetSingle.name}`}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -326,19 +315,21 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
         </CardContent>
       </Card>
 
-      {/* Add Match Dialog */}
-      <AddMatchDialog
+      {/* Add Special Bet Dialog */}
+      <AddSpecialBetDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
         leagues={leagues}
+        specialBetTypes={specialBetTypes}
       />
 
       {/* Result Entry Dialog */}
-      {selectedMatch && (
+      {selectedSpecialBet && (
         <ResultEntryDialog
-          match={selectedMatch}
-          open={!!selectedMatch}
-          onOpenChange={(open) => !open && setSelectedMatch(null)}
+          specialBet={selectedSpecialBet}
+          leagues={leagues}
+          open={!!selectedSpecialBet}
+          onOpenChange={(open) => !open && setSelectedSpecialBet(null)}
         />
       )}
 
@@ -346,9 +337,9 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Match</DialogTitle>
+            <DialogTitle>Delete Special Bet</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this match? This action cannot be undone.
+              Are you sure you want to delete this special bet? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

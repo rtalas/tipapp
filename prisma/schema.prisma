@@ -282,6 +282,7 @@ model Team {
   nickname   String?      @db.VarChar(255)
   shortcut   String       @db.VarChar(255)
   flagIcon   String?      @db.VarChar(255)
+  flagType   String?      @db.VarChar(50)
   sportId    Int
   externalId Int?
   createdAt  DateTime     @db.Timestamptz(6)

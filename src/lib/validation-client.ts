@@ -9,6 +9,16 @@ import {
   updateTeamSchema,
   createPlayerSchema,
   updatePlayerSchema,
+  createUserBetSchema,
+  updateUserBetSchema,
+  createSeriesSchema,
+  updateSeriesResultSchema,
+  createUserSeriesBetSchema,
+  updateUserSeriesBetSchema,
+  createSpecialBetSchema,
+  updateSpecialBetResultSchema,
+  createUserSpecialBetSchema,
+  updateUserSpecialBetSchema,
 } from './validation/admin'
 import {
   forgotPasswordSchema,
@@ -88,4 +98,74 @@ export function validateForgotPassword(data: unknown) {
  */
 export function validateResetPassword(data: unknown) {
   return resetPasswordSchema.safeParse(data)
+}
+
+/**
+ * Validates user bet creation form data
+ */
+export function validateUserBetCreate(data: unknown) {
+  return createUserBetSchema.safeParse(data)
+}
+
+/**
+ * Validates user bet edit form data
+ */
+export function validateUserBetEdit(data: unknown) {
+  return updateUserBetSchema.safeParse(data)
+}
+
+/**
+ * Validates series creation form data
+ */
+export function validateSeriesCreate(data: unknown) {
+  return createSeriesSchema.safeParse(data)
+}
+
+/**
+ * Validates series result entry form data
+ */
+export function validateSeriesEdit(data: unknown) {
+  return updateSeriesResultSchema.safeParse(data)
+}
+
+/**
+ * Validates user series bet creation form data
+ */
+export function validateUserSeriesBetCreate(data: unknown) {
+  return createUserSeriesBetSchema.safeParse(data)
+}
+
+/**
+ * Validates user series bet edit form data
+ */
+export function validateUserSeriesBetEdit(data: unknown) {
+  return updateUserSeriesBetSchema.safeParse(data)
+}
+
+/**
+ * Validates special bet creation form data
+ */
+export function validateSpecialBetCreate(data: unknown) {
+  return createSpecialBetSchema.safeParse(data)
+}
+
+/**
+ * Validates special bet result entry form data
+ */
+export function validateSpecialBetEdit(data: unknown) {
+  return updateSpecialBetResultSchema.safeParse(data)
+}
+
+/**
+ * Validates user special bet creation form data
+ */
+export function validateUserSpecialBetCreate(data: unknown) {
+  return createUserSpecialBetSchema.safeParse(data)
+}
+
+/**
+ * Validates user special bet edit form data
+ */
+export function validateUserSpecialBetEdit(data: unknown) {
+  return updateUserSpecialBetSchema.safeParse(data)
 }

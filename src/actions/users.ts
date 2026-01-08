@@ -78,6 +78,7 @@ export async function approveRequest(requestId: number) {
   })
 
   revalidatePath('/admin/users')
+  revalidatePath(`/admin/leagues/${request.leagueId}/users`)
   return { success: true }
 }
 
@@ -107,6 +108,7 @@ export async function rejectRequest(requestId: number) {
   })
 
   revalidatePath('/admin/users')
+  revalidatePath(`/admin/leagues/${request.leagueId}/users`)
   return { success: true }
 }
 
@@ -128,7 +130,7 @@ export async function getLeagueUsers(filters?: { leagueId?: number }) {
 export async function updateLeagueUserAdmin(leagueUserId: number, isAdmin: boolean) {
   await requireAdmin()
 
-  await prisma.leagueUser.update({
+  const leagueUser = await prisma.leagueUser.update({
     where: { id: leagueUserId },
     data: {
       admin: isAdmin,
@@ -137,6 +139,7 @@ export async function updateLeagueUserAdmin(leagueUserId: number, isAdmin: boole
   })
 
   revalidatePath('/admin/users')
+  revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
   return { success: true }
 }
 
@@ -144,7 +147,7 @@ export async function updateLeagueUserAdmin(leagueUserId: number, isAdmin: boole
 export async function updateLeagueUserActive(leagueUserId: number, isActive: boolean) {
   await requireAdmin()
 
-  await prisma.leagueUser.update({
+  const leagueUser = await prisma.leagueUser.update({
     where: { id: leagueUserId },
     data: {
       active: isActive,
@@ -153,6 +156,7 @@ export async function updateLeagueUserActive(leagueUserId: number, isActive: boo
   })
 
   revalidatePath('/admin/users')
+  revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
   return { success: true }
 }
 
@@ -160,7 +164,7 @@ export async function updateLeagueUserActive(leagueUserId: number, isActive: boo
 export async function updateLeagueUserPaid(leagueUserId: number, isPaid: boolean) {
   await requireAdmin()
 
-  await prisma.leagueUser.update({
+  const leagueUser = await prisma.leagueUser.update({
     where: { id: leagueUserId },
     data: {
       paid: isPaid,
@@ -169,6 +173,7 @@ export async function updateLeagueUserPaid(leagueUserId: number, isPaid: boolean
   })
 
   revalidatePath('/admin/users')
+  revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
   return { success: true }
 }
 
@@ -177,7 +182,7 @@ export async function removeLeagueUser(leagueUserId: number) {
   await requireAdmin()
 
   // Soft delete
-  await prisma.leagueUser.update({
+  const leagueUser = await prisma.leagueUser.update({
     where: { id: leagueUserId },
     data: {
       deletedAt: new Date(),
@@ -185,5 +190,6 @@ export async function removeLeagueUser(leagueUserId: number) {
   })
 
   revalidatePath('/admin/users')
+  revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
   return { success: true }
 }

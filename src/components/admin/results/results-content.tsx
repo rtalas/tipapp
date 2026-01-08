@@ -33,7 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ResultEntrySheet } from '../matches/result-entry-sheet'
+import { ResultEntryDialog } from '../matches/result-entry-dialog'
 
 interface Team {
   id: number
@@ -352,9 +352,9 @@ export function ResultsContent({ pendingMatches, evaluatedMatches, leagues }: Re
         </CardContent>
       </Card>
 
-      {/* Result Entry Sheet */}
+      {/* Result Entry Dialog */}
       {selectedMatch && (
-        <ResultEntrySheet
+        <ResultEntryDialog
           match={selectedMatch}
           open={!!selectedMatch}
           onOpenChange={(open) => !open && setSelectedMatch(null)}

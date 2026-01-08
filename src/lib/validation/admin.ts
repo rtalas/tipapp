@@ -125,6 +125,7 @@ export const createTeamSchema = z.object({
   nickname: z.string().max(255).optional(),
   shortcut: z.string().min(1, 'Shortcut is required').max(255),
   flagIcon: z.string().max(255).optional(),
+  flagType: z.enum(['icon', 'path']).optional(),
   sportId: z.number().int().positive('Sport is required'),
   externalId: z.number().int().optional(),
 })
@@ -158,3 +159,146 @@ export const updatePlayerSchema = createPlayerSchema.partial().extend({
 })
 
 export type UpdatePlayerInput = z.infer<typeof updatePlayerSchema>
+
+// UserBet validation schemas
+export const createUserBetSchema = z.object({
+  leagueMatchId: z.number().int().positive('League Match ID is required'),
+  leagueUserId: z.number().int().positive('League User ID is required'),
+  homeScore: z.number().int().min(0, 'Home score must be non-negative'),
+  awayScore: z.number().int().min(0, 'Away score must be non-negative'),
+  scorerId: z.number().int().positive().optional(),
+  overtime: z.boolean().default(false),
+  homeAdvanced: z.boolean().optional(), // true = home, false = away, undefined = null
+})
+
+export type CreateUserBetInput = z.infer<typeof createUserBetSchema>
+
+export const updateUserBetSchema = createUserBetSchema.partial().extend({
+  id: z.number().int().positive('Bet ID is required'),
+})
+
+export type UpdateUserBetInput = z.infer<typeof updateUserBetSchema>
+
+// Series validation schemas
+export const createSeriesSchema = z.object({
+  leagueId: z.number().int().positive('League ID is required'),
+  specialBetSerieId: z.number().int().positive('Series type ID is required'),
+  homeTeamId: z.number().int().positive('Home team ID is required'),
+  awayTeamId: z.number().int().positive('Away team ID is required'),
+  dateTime: z
+    .date()
+    .refine((date) => date > new Date(), {
+      message: 'Series date must be in the future',
+    }),
+}).refine((data) => data.homeTeamId !== data.awayTeamId, {
+  message: 'Home and away teams must be different',
+  path: ['awayTeamId'],
+})
+
+export type CreateSeriesInput = z.infer<typeof createSeriesSchema>
+
+export const updateSeriesResultSchema = z.object({
+  seriesId: z.number().int().positive('Series ID is required'),
+  homeTeamScore: z.number().int().min(0).max(7, 'Score must be between 0 and 7'),
+  awayTeamScore: z.number().int().min(0).max(7, 'Score must be between 0 and 7'),
+}).refine((data) => data.homeTeamScore >= 4 || data.awayTeamScore >= 4, {
+  message: 'At least one team must have 4 wins',
+  path: ['homeTeamScore'],
+})
+
+export type UpdateSeriesResultInput = z.infer<typeof updateSeriesResultSchema>
+
+// User Series Bet validation schemas
+export const createUserSeriesBetSchema = z.object({
+  leagueSpecialBetSerieId: z.number().int().positive('Series ID is required'),
+  leagueUserId: z.number().int().positive('League User ID is required'),
+  homeTeamScore: z.number().int().min(0).max(7, 'Score must be between 0 and 7'),
+  awayTeamScore: z.number().int().min(0).max(7, 'Score must be between 0 and 7'),
+}).refine((data) => data.homeTeamScore >= 4 || data.awayTeamScore >= 4, {
+  message: 'At least one team must have 4 wins',
+  path: ['homeTeamScore'],
+})
+
+export type CreateUserSeriesBetInput = z.infer<typeof createUserSeriesBetSchema>
+
+export const updateUserSeriesBetSchema = createUserSeriesBetSchema.partial().extend({
+  id: z.number().int().positive('Bet ID is required'),
+})
+
+export type UpdateUserSeriesBetInput = z.infer<typeof updateUserSeriesBetSchema>
+
+// Special Bet validation schemas
+export const createSpecialBetSchema = z.object({
+  leagueId: z.number().int().positive('League ID is required'),
+  specialBetSingleId: z.number().int().positive('Special Bet Type ID is required'),
+  points: z.number().int().min(0, 'Points must be non-negative').default(0),
+  dateTime: z
+    .date()
+    .refine((date) => date > new Date(), {
+      message: 'Special bet date must be in the future',
+    }),
+})
+
+export type CreateSpecialBetInput = z.infer<typeof createSpecialBetSchema>
+
+export const updateSpecialBetResultSchema = z.object({
+  specialBetId: z.number().int().positive('Special Bet ID is required'),
+  specialBetTeamResultId: z.number().int().positive().optional(),
+  specialBetPlayerResultId: z.number().int().positive().optional(),
+  specialBetValue: z.number().int().optional(),
+}).refine((data) => {
+  const fieldsSet = [
+    data.specialBetTeamResultId !== undefined,
+    data.specialBetPlayerResultId !== undefined,
+    data.specialBetValue !== undefined,
+  ].filter(Boolean).length
+
+  return fieldsSet === 1
+}, {
+  message: 'Exactly one result field must be set (team OR player OR value)',
+  path: ['specialBetTeamResultId'],
+})
+
+export type UpdateSpecialBetResultInput = z.infer<typeof updateSpecialBetResultSchema>
+
+// User Special Bet validation schemas
+export const createUserSpecialBetSchema = z.object({
+  leagueSpecialBetSingleId: z.number().int().positive('Special Bet ID is required'),
+  leagueUserId: z.number().int().positive('League User ID is required'),
+  teamResultId: z.number().int().positive().optional(),
+  playerResultId: z.number().int().positive().optional(),
+  value: z.number().int().optional(),
+}).refine((data) => {
+  const fieldsSet = [
+    data.teamResultId !== undefined,
+    data.playerResultId !== undefined,
+    data.value !== undefined,
+  ].filter(Boolean).length
+
+  return fieldsSet === 1
+}, {
+  message: 'Exactly one prediction field must be set (team OR player OR value)',
+  path: ['teamResultId'],
+})
+
+export type CreateUserSpecialBetInput = z.infer<typeof createUserSpecialBetSchema>
+
+export const updateUserSpecialBetSchema = z.object({
+  id: z.number().int().positive('Bet ID is required'),
+  teamResultId: z.number().int().positive().optional(),
+  playerResultId: z.number().int().positive().optional(),
+  value: z.number().int().optional(),
+}).refine((data) => {
+  const fieldsSet = [
+    data.teamResultId !== undefined,
+    data.playerResultId !== undefined,
+    data.value !== undefined,
+  ].filter(Boolean).length
+
+  return fieldsSet === 1
+}, {
+  message: 'Exactly one prediction field must be set (team OR player OR value)',
+  path: ['teamResultId'],
+})
+
+export type UpdateUserSpecialBetInput = z.infer<typeof updateUserSpecialBetSchema>

@@ -52,6 +52,7 @@ interface Team {
   nickname: string | null
   shortcut: string
   flagIcon: string | null
+  flagType: string | null
   sportId: number
   externalId: number | null
   createdAt: Date
@@ -73,6 +74,8 @@ interface EditFormData {
   nickname: string
   shortcut: string
   sportId: string
+  flagIcon: string
+  flagType: string
 }
 
 interface CreateFormData {
@@ -81,6 +84,7 @@ interface CreateFormData {
   nickname: string
   shortcut: string
   flagIcon: string
+  flagType: string
   externalId: string
 }
 
@@ -96,6 +100,7 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
     nickname: '',
     shortcut: '',
     flagIcon: '',
+    flagType: 'none',
     externalId: '',
   })
 
@@ -122,6 +127,8 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
       nickname: team.nickname || '',
       shortcut: team.shortcut,
       sportId: team.sportId.toString(),
+      flagIcon: team.flagIcon || '',
+      flagType: team.flagType || 'none',
     })
   }
 
@@ -132,6 +139,9 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
   const handleSaveEdit = async (teamId: number) => {
     if (!inlineEdit.form) return
 
+    // Convert "none" to undefined for flagType
+    const flagType = inlineEdit.form.flagType === 'none' ? undefined : inlineEdit.form.flagType
+
     // Validate form data
     const validation = validateTeamEdit({
       id: teamId,
@@ -139,6 +149,8 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
       nickname: inlineEdit.form.nickname,
       shortcut: inlineEdit.form.shortcut,
       sportId: parseInt(inlineEdit.form.sportId, 10),
+      flagIcon: inlineEdit.form.flagIcon,
+      flagType: flagType || undefined,
     })
 
     if (!validation.success) {
@@ -155,6 +167,8 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
         nickname: inlineEdit.form.nickname || undefined,
         shortcut: inlineEdit.form.shortcut,
         sportId: parseInt(inlineEdit.form.sportId, 10),
+        flagIcon: inlineEdit.form.flagIcon || undefined,
+        flagType: (flagType as 'icon' | 'path') || undefined,
       })
       toast.success('Team updated')
       inlineEdit.finishEdit()
@@ -168,6 +182,9 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
   }
 
   const handleCreateTeam = async () => {
+    // Convert "none" to undefined for flagType
+    const flagType = createDialog.form.flagType === 'none' ? undefined : createDialog.form.flagType
+
     // Validate form data
     const validation = validateTeamCreate({
       sportId: parseInt(createDialog.form.sportId, 10) || undefined,
@@ -175,6 +192,7 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
       nickname: createDialog.form.nickname,
       shortcut: createDialog.form.shortcut,
       flagIcon: createDialog.form.flagIcon,
+      flagType: flagType || undefined,
       externalId: createDialog.form.externalId ? parseInt(createDialog.form.externalId, 10) : undefined,
     })
 
@@ -192,6 +210,7 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
         nickname: createDialog.form.nickname || undefined,
         shortcut: createDialog.form.shortcut,
         flagIcon: createDialog.form.flagIcon || undefined,
+        flagType: (flagType as 'icon' | 'path') || undefined,
         externalId: createDialog.form.externalId ? parseInt(createDialog.form.externalId, 10) : undefined,
       })
       toast.success('Team created')
@@ -331,6 +350,32 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
                                   ))}
                                 </SelectContent>
                               </Select>
+                              <Select
+                                value={inlineEdit.form.flagType}
+                                onValueChange={(value) =>
+                                  inlineEdit.updateForm({ flagType: value })
+                                }
+                              >
+                                <SelectTrigger className="h-8" aria-label="Flag type">
+                                  <SelectValue placeholder="Select flag type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">None</SelectItem>
+                                  <SelectItem value="icon">Icon (CSS class)</SelectItem>
+                                  <SelectItem value="path">Path (file path)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                type="text"
+                                value={inlineEdit.form.flagIcon}
+                                onChange={(e) =>
+                                  inlineEdit.updateForm({ flagIcon: e.target.value })
+                                }
+                                placeholder={inlineEdit.form.flagType === 'path' ? '/logos/team.png' : 'fi fi-cz'}
+                                className="h-8"
+                                disabled={inlineEdit.isSaving}
+                                aria-label="Flag icon or path"
+                              />
                             </div>
                             <div className="flex items-center gap-2 mt-8">
                               <Button
@@ -494,15 +539,42 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Flag Icon</label>
+              <label className="text-sm font-medium">Flag Type</label>
+              <Select
+                value={createDialog.form.flagType}
+                onValueChange={(value) =>
+                  createDialog.updateForm({ flagType: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select flag type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="icon">Icon (CSS class for national flags)</SelectItem>
+                  <SelectItem value="path">Path (file path to team logo)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Choose how the flag/logo will be displayed
+              </p>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Flag Icon / Path</label>
               <Input
-                placeholder="e.g., 🏴󐁧󐁢󐁥󐁮󐁧󐁿"
+                placeholder={createDialog.form.flagType === 'path' ? 'e.g., /logos/team.png' : 'e.g., fi fi-cz'}
                 value={createDialog.form.flagIcon}
                 onChange={(e) =>
                   createDialog.updateForm({ flagIcon: e.target.value })
                 }
-                aria-label="Flag icon"
+                aria-label="Flag icon or path"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                {createDialog.form.flagType === 'path'
+                  ? 'Enter the path to the team logo in /public folder'
+                  : 'Enter the CSS class name for the flag icon'}
+              </p>
             </div>
 
             <div>

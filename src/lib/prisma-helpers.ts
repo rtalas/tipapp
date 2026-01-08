@@ -107,3 +107,123 @@ export const playerWithCountsInclude = {
     select: { LeaguePlayer: true },
   },
 } as const
+
+/**
+ * Include pattern for LeagueSpecialBetSerie with all related data
+ * Prevents N+1 queries when fetching multiple series
+ */
+export const seriesInclude = {
+  League: true,
+  SpecialBetSerie: true,
+  LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam: {
+    include: {
+      Team: true,
+    },
+  },
+  LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam: {
+    include: {
+      Team: true,
+    },
+  },
+  _count: {
+    select: { UserSpecialBetSerie: true },
+  },
+} as const
+
+/**
+ * Include pattern for Series with user bets
+ * Used in series-picks page to show all predictions
+ */
+export const seriesWithBetsInclude = {
+  League: true,
+  SpecialBetSerie: true,
+  LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam: {
+    include: {
+      Team: true,
+    },
+  },
+  LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam: {
+    include: {
+      Team: true,
+    },
+  },
+  UserSpecialBetSerie: {
+    where: { deletedAt: null },
+    include: {
+      LeagueUser: {
+        include: {
+          User: true,
+        },
+      },
+    },
+  },
+} as const
+
+/**
+ * Include pattern for LeagueSpecialBetSingle with all related data
+ * Prevents N+1 queries when fetching multiple special bets
+ */
+export const specialBetInclude = {
+  League: true,
+  SpecialBetSingle: {
+    include: {
+      SpecialBetSingleType: true,
+    },
+  },
+  LeagueTeam: {
+    include: {
+      Team: true,
+    },
+  },
+  LeaguePlayer: {
+    include: {
+      Player: true,
+    },
+  },
+  _count: {
+    select: { UserSpecialBetSingle: true },
+  },
+} as const
+
+/**
+ * Include pattern for Special Bets with user bets
+ * Used in special-bet-picks page to show all predictions
+ */
+export const specialBetWithBetsInclude = {
+  League: true,
+  SpecialBetSingle: {
+    include: {
+      SpecialBetSingleType: true,
+    },
+  },
+  LeagueTeam: {
+    include: {
+      Team: true,
+    },
+  },
+  LeaguePlayer: {
+    include: {
+      Player: true,
+    },
+  },
+  UserSpecialBetSingle: {
+    where: { deletedAt: null },
+    include: {
+      LeagueUser: {
+        include: {
+          User: true,
+        },
+      },
+      LeagueTeam: {
+        include: {
+          Team: true,
+        },
+      },
+      LeaguePlayer: {
+        include: {
+          Player: true,
+        },
+      },
+    },
+  },
+} as const
