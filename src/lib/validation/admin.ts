@@ -64,7 +64,11 @@ export const createMatchSchema = z.object({
   leagueId: z.number().int().positive(),
   homeTeamId: z.number().int().positive(),
   awayTeamId: z.number().int().positive(),
-  dateTime: z.date(),
+  dateTime: z
+    .date()
+    .refine((date) => date > new Date(), {
+      message: 'Match date must be in the future',
+    }),
   isPlayoffGame: z.boolean().default(false),
   isDoubled: z.boolean().default(false),
 }).refine((data) => data.homeTeamId !== data.awayTeamId, {

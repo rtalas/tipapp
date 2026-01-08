@@ -202,11 +202,10 @@ export async function resetPassword(
           usedAt: new Date(),
         },
       }),
-      // Delete all other reset tokens for this user (cleanup)
+      // Delete all reset tokens for this user (cleanup after successful reset)
       prisma.passwordResetToken.deleteMany({
         where: {
           userId: resetToken.userId,
-          token: { not: hashedToken },
         },
       }),
     ]);
