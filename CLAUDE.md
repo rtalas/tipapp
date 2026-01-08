@@ -182,5 +182,110 @@
 - ✅ **Routes Generated:** 16/16
 - ✅ **Ready for Deployment:** Yes
 
+---
+
+## 🔒 Security Audit & Fixes (Phase 3 - Completed)
+
+### Comprehensive Code Audit (8. Jan 2026)
+Performed full codebase security and quality audit identifying 24 issues across:
+- **Bezpečnost:** 6 issues (2 HIGH, 2 MEDIUM, 2 LOW)
+- **Výkon:** 4 issues (2 MEDIUM, 2 LOW)
+- **Kvalita kódu:** 5 issues (1 HIGH, 2 MEDIUM, 2 LOW)
+- **Typová bezpečnost:** 3 issues
+- **Ostatní:** 6 issues
+
+### ✅ Critical Security Fixes (4 issues - COMPLETED)
+
+**1. CSRF Protection in proxy.ts** ✅
+- Added origin header validation for state-changing requests (POST/PUT/DELETE)
+- Added referer header validation as additional CSRF protection
+- Support for configurable ALLOWED_ORIGINS environment variable
+- Prevents cross-site request forgery attacks
+
+**2. Email Injection Prevention** ✅
+- Added `escapeHtml()` function for HTML email templates
+- Added `escapeText()` function for plain text emails
+- All user inputs (username, resetUrl, APP_NAME) now escaped
+- Prevents XSS attacks via malicious usernames in password reset emails
+
+**3. Production Error Logging** ✅
+- Changed `logError()` to log to console.error() in production
+- Added environment context to error logs
+- Enables visibility into production errors and security incidents
+- Prepared TODO for Sentry/LogRocket integration
+
+**4. Security Headers** ✅
+- Added comprehensive security headers in next.config.ts:
+  - X-Content-Type-Options: nosniff (prevents MIME sniffing)
+  - X-Frame-Options: DENY (prevents clickjacking)
+  - X-XSS-Protection: 1; mode=block (XSS filter)
+  - Referrer-Policy: strict-origin-when-cross-origin
+  - Permissions-Policy: disable geolocation, microphone, camera
+  - Content-Security-Policy: restrict script/style sources
+
+### ✅ Medium Priority Fixes (5 issues - COMPLETED)
+
+**1. Email Unique Constraint** ✅
+- Verified: prisma/schema.prisma has @unique constraint on User.email
+- Database-level enforcement prevents duplicate emails
+- Complements app-level validation in registration
+
+**2. Deduplicate signInSchema** ✅
+- Removed local schema from src/auth.ts
+- Now centralized import from src/lib/validation.ts
+- Single source of truth for login validation
+
+**3. Match Future Date Validation** ✅
+- Added .refine() to createMatchSchema to validate dateTime > now()
+- Prevents creation of past matches
+- Improves user experience in betting UI
+
+**4. Password Reset Token Cleanup** ✅
+- Changed deleteMany() to remove ALL tokens for user after reset
+- Prevents token table accumulation
+- Cleaner database state after successful password reset
+
+**5. Removed Dead Code** ✅
+- Deleted unused getLogs() function from client-logger.ts
+- Deleted unused clearLogs() function
+- Deleted unused sendLogsToServer() function
+- Kept active logger.debug/info/warn/error methods
+
+### ✅ Refactoring (1 issue - COMPLETED)
+
+**6. Deduplicate Server Action Patterns** ✅
+- Created src/lib/server-action-utils.ts with executeServerAction() wrapper
+- Centralized error handling, validation, authorization, revalidation
+- Refactored src/actions/teams.ts (3 functions: createTeam, updateTeam, deleteTeam)
+- Refactored src/actions/players.ts (3 functions: createPlayer, updatePlayer, deletePlayer)
+- Added deleteByIdSchema for reusable delete validation
+- Removed 89 lines of duplicate try-catch and error handling code
+
+### Audit Fix Metrics
+| Category | Issues | Fixed | Remaining |
+|----------|--------|-------|-----------|
+| **CRÍTICO** | 4 | 4 | 0 |
+| **STŘEDNÍ** | 9 | 5 | 4 |
+| **NÍZKÉ** | 11 | 1 | 10 |
+| **TOTAL** | 24 | 10 | 14 |
+
+### Git Commits (Audit Phase)
+1. **d71e48a** - 🔒 Security: Fix critical vulnerabilities (4 fixes)
+2. **41a5d36** - 🔧 Fix 5 medium-priority issues from code audit
+3. **e4a14e2** - ♻️ Refactor: Deduplicate server action patterns
+
+### Remaining Issues (Backlog)
+**HIGH PRIORITY (this week):**
+- Login rate limiting (brute force protection)
+- Registrace rate limiting (spam prevention)
+- Hardcoded email configuration
+
+**MEDIUM PRIORITY (next month):**
+- CORS configuration
+- Audit logging for admin actions
+- Token blacklist on logout
+- Email retry queue
+- And 10+ low-priority items
+
 ## MCP Information
 Use Context7 MCP for documentation, code generation, or setup steps without explicit requests.
