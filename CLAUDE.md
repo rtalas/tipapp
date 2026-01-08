@@ -62,6 +62,7 @@
 │   ├── auth.ts             # Auth.js v5 configuration
 │   ├── components/         # UI Components (Mobile-first)
 │   ├── lib/
+│   │   ├── evaluators/     # Bet evaluation functions (13 types)
 │   │   ├── prisma.ts       # Prisma client singleton
 │   │   └── validation.ts   # Zod validation schemas
 │   └── types/              # Extended session types
@@ -74,6 +75,56 @@
 - **Session Fields:** `user.id`, `user.username`, `user.isSuperadmin`.
 - **Identity:** Credential login supports either `username` OR `email`.
 
+## Evaluation Functions (src/lib/evaluators/)
+
+Modular evaluation system for bet scoring. Each evaluator type has its own file for maintainability.
+
+### Match Bet Evaluators
+1. **exact-score** - Awards points if predicted score matches actual score exactly after regulation time
+2. **score-difference** - Awards points if predicted goal difference matches (excludes exact score)
+3. **winner** - Awards points if predicted winner matches after total time (includes OT/SO)
+4. **scorer** - Awards points if predicted scorer is among actual scorers
+5. **draw** - Awards points if match ends in draw and prediction was also draw (soccer only, excludes exact score)
+6. **soccer-playoff-advance** - Awards points if predicted team advances in playoff scenario
+
+### Series Bet Evaluators
+7. **series-exact** - Awards points if series result matches exactly
+8. **series-winner** - Awards points if predicted series winner is correct (excludes exact)
+
+### Special Bet Evaluators
+9. **exact-player** - Awards points if predicted player matches actual (e.g., best tournament scorer)
+10. **exact-team** - Awards points if predicted team matches actual (e.g., tournament winner)
+11. **exact-value** - Awards points if predicted numeric value matches exactly (e.g., corners, fouls)
+12. **closest-value** - Awards points if user's prediction was closest among all users (excludes exact)
+13. **question** - Awards points for correctly answering specific questions
+
+### Key Design Principles
+- **No Double Points:** Lower-priority evaluators return false when higher-priority ones match
+- **Regulation vs Final:** Score-based evaluators use regular time; winner uses final time
+- **Type Safety:** Strict TypeScript interfaces for all evaluation contexts
+- **Test Coverage:** 57 tests across 13 evaluator files (100% pass rate)
+
+### Usage Example
+```typescript
+import { evaluateExactScore, type MatchBetContext } from '@/lib/evaluators';
+
+const context: MatchBetContext = {
+  prediction: { homeScore: 3, awayScore: 2 },
+  actual: {
+    homeRegularScore: 3,
+    awayRegularScore: 2,
+    homeFinalScore: 3,
+    awayFinalScore: 2,
+    scorerIds: [42, 43],
+    isOvertime: false,
+    isShootout: false,
+    isPlayoffGame: false,
+  },
+};
+
+const isCorrect = evaluateExactScore(context); // true
+```
+
 ## Development Roadmap
 - **Phase 1 (Infrastructure): COMPLETED** (Next.js, Prisma setup, Auth.js v5, Auth middleware).
 - **Phase 2 (Admin Management): COMPLETED** (League creation, Team/Player association, Match management, Code Quality).
@@ -82,8 +133,12 @@
   - ✅ Teams inline editing (including shortcut and sport fields)
   - ✅ UI conversion from dropdown menus to direct action buttons (all 8 admin pages)
   - ✅ Code Quality Refactoring (centralized auth, error handling, validation, accessibility, custom hooks)
+  - ✅ Security Audit & Fixes (CSRF protection, email injection prevention, security headers)
 - **Phase 3 (User Betting): NEXT** (Match feed UI, score/scorer submission logic).
-- **Phase 4 (Evaluation & Leaderboard): PLANNED** (Point calculation engine, rankings view).
+- **Phase 4 (Evaluation & Leaderboard): IN PROGRESS** (Point calculation engine, rankings view).
+  - ✅ Evaluation Functions (13 evaluator types with 57 comprehensive tests)
+  - 🔄 Point calculation engine integration (NEXT)
+  - 🔄 Leaderboard and rankings view
 
 ## Key Implementation Details (Phase 2)
 
@@ -179,7 +234,8 @@
 ### Build Status
 - ✅ **Production Build:** Successful (0 errors, 0 warnings)
 - ✅ **TypeScript Compilation:** Clean
-- ✅ **Routes Generated:** 16/16
+- ✅ **Routes Generated:** 17/17
+- ✅ **Test Suite:** 57/57 evaluator tests passing
 - ✅ **Ready for Deployment:** Yes
 
 ---
