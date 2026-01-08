@@ -102,7 +102,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               pathname === item.href ||
               (item.href !== '/admin' && pathname.startsWith(item.href))
 
-            const NavLink = (
+            const link = (
               <Link
                 key={item.href}
                 href={item.href}
@@ -122,7 +122,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             if (collapsed) {
               return (
                 <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>{NavLink}</TooltipTrigger>
+                  <TooltipTrigger asChild>{link}</TooltipTrigger>
                   <TooltipContent side="right" sideOffset={10}>
                     {item.label}
                   </TooltipContent>
@@ -130,7 +130,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               )
             }
 
-            return NavLink
+            return link
           })}
         </nav>
 

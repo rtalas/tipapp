@@ -1,8 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth-utils'
 import {
   createLeagueSchema,
   updateLeagueSchema,
@@ -23,14 +23,6 @@ const DEFAULT_EVALUATOR_POINTS: Record<string, number> = {
   'goal_difference': 3,
   'total_goals': 1,
   'scorer': 2,
-}
-
-async function requireAdmin() {
-  const session = await auth()
-  if (!session?.user?.isSuperadmin) {
-    throw new Error('Unauthorized: Admin access required')
-  }
-  return session
 }
 
 export async function createLeague(input: CreateLeagueInput) {

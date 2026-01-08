@@ -1,22 +1,16 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth-utils'
+import { buildLeagueMatchWhere, buildPendingMatchWhere } from '@/lib/query-builders'
+import { leagueMatchInclude, matchWithEvaluatorsInclude } from '@/lib/prisma-helpers'
 import {
   createMatchSchema,
   updateMatchResultSchema,
   type CreateMatchInput,
   type UpdateMatchResultInput,
 } from '@/lib/validation/admin'
-
-async function requireAdmin() {
-  const session = await auth()
-  if (!session?.user?.isSuperadmin) {
-    throw new Error('Unauthorized: Admin access required')
-  }
-  return session
-}
 
 export async function createMatch(input: CreateMatchInput) {
   await requireAdmin()
@@ -143,60 +137,11 @@ export async function getMatches(filters?: {
   leagueId?: number
   status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
 }) {
-  const now = new Date()
-
-  // Build where conditions dynamically
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const whereConditions: any = {
-    deletedAt: null,
-    Match: { deletedAt: null },
-  }
-
-  if (filters?.leagueId) {
-    whereConditions.leagueId = filters.leagueId
-  }
-
-  if (filters?.status === 'scheduled') {
-    whereConditions.Match = {
-      ...whereConditions.Match,
-      dateTime: { gt: now },
-      isEvaluated: false,
-    }
-  } else if (filters?.status === 'finished') {
-    whereConditions.Match = {
-      ...whereConditions.Match,
-      dateTime: { lt: now },
-      isEvaluated: false,
-    }
-  } else if (filters?.status === 'evaluated') {
-    whereConditions.Match = {
-      ...whereConditions.Match,
-      isEvaluated: true,
-    }
-  }
+  const whereConditions = buildLeagueMatchWhere(filters)
 
   return prisma.leagueMatch.findMany({
     where: whereConditions,
-    include: {
-      League: true,
-      Match: {
-        include: {
-          LeagueTeam_Match_homeTeamIdToLeagueTeam: {
-            include: { Team: true },
-          },
-          LeagueTeam_Match_awayTeamIdToLeagueTeam: {
-            include: { Team: true },
-          },
-          MatchScorer: {
-            include: {
-              LeaguePlayer: {
-                include: { Player: true },
-              },
-            },
-          },
-        },
-      },
-    },
+    include: leagueMatchInclude,
     orderBy: { Match: { dateTime: 'desc' } },
   })
 }
@@ -256,46 +201,12 @@ export async function getLeaguesWithTeams() {
 
 // Get pending matches (finished but not evaluated)
 export async function getPendingMatches(filters?: { leagueId?: number }) {
-  const now = new Date()
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const whereConditions: any = {
-    deletedAt: null,
-    Match: {
-      deletedAt: null,
-      dateTime: { lt: now },
-      isEvaluated: false,
-      // Must have scores entered
-      homeRegularScore: { not: null },
-      awayRegularScore: { not: null },
-    },
-  }
-
-  if (filters?.leagueId) {
-    whereConditions.leagueId = filters.leagueId
-  }
+  const whereConditions = buildPendingMatchWhere(filters)
 
   return prisma.leagueMatch.findMany({
     where: whereConditions,
     include: {
-      League: true,
-      Match: {
-        include: {
-          LeagueTeam_Match_homeTeamIdToLeagueTeam: {
-            include: { Team: true },
-          },
-          LeagueTeam_Match_awayTeamIdToLeagueTeam: {
-            include: { Team: true },
-          },
-          MatchScorer: {
-            include: {
-              LeaguePlayer: {
-                include: { Player: true },
-              },
-            },
-          },
-        },
-      },
+      ...leagueMatchInclude,
       _count: {
         select: { UserBet: true },
       },
@@ -312,71 +223,75 @@ function getWinner(homeScore: number, awayScore: number): number {
 }
 
 // Evaluate a single match and calculate points for all bets
+// Uses atomic transaction to prevent race conditions (double evaluation)
 export async function evaluateMatch(matchId: number) {
   await requireAdmin()
 
   const now = new Date()
 
-  // Get match with all necessary data
-  const match = await prisma.match.findUnique({
-    where: { id: matchId, deletedAt: null },
-    include: {
-      LeagueMatch: {
-        include: {
-          League: {
-            include: {
-              Evaluator: {
-                where: { deletedAt: null },
-                include: { EvaluatorType: true },
+  // Wrapped in transaction with optimistic locking
+  // Prevents concurrent evaluations of the same match
+  const result = await prisma.$transaction(async (tx) => {
+    // Lock: Get match with exclusive lock within transaction
+    const match = await tx.match.findUnique({
+      where: { id: matchId, deletedAt: null },
+      include: {
+        LeagueMatch: {
+          include: {
+            League: {
+              include: {
+                Evaluator: {
+                  where: { deletedAt: null },
+                  include: { EvaluatorType: true },
+                },
               },
             },
-          },
-          UserBet: {
-            where: { deletedAt: null },
+            UserBet: {
+              where: { deletedAt: null },
+            },
           },
         },
+        MatchScorer: true,
       },
-      MatchScorer: true,
-    },
-  })
+    })
 
-  if (!match) {
-    throw new Error('Match not found')
-  }
+    if (!match) {
+      throw new Error('Match not found')
+    }
 
-  if (match.isEvaluated) {
-    throw new Error('Match is already evaluated')
-  }
+    // Race condition protection: Check if already evaluated
+    if (match.isEvaluated) {
+      throw new Error('Match is already evaluated')
+    }
 
-  if (match.homeRegularScore === null || match.awayRegularScore === null) {
-    throw new Error('Match scores must be entered before evaluation')
-  }
+    if (match.homeRegularScore === null || match.awayRegularScore === null) {
+      throw new Error('Match scores must be entered before evaluation')
+    }
 
-  const leagueMatch = match.LeagueMatch[0]
-  if (!leagueMatch) {
-    throw new Error('Match is not linked to a league')
-  }
+    const leagueMatch = match.LeagueMatch[0]
+    if (!leagueMatch) {
+      throw new Error('Match is not linked to a league')
+    }
 
-  const evaluators = leagueMatch.League.Evaluator
-  const isDoubled = leagueMatch.isDoubled ?? false
-  const multiplier = isDoubled ? 2 : 1
+    const evaluators = leagueMatch.League.Evaluator
+    const isDoubled = leagueMatch.isDoubled ?? false
+    const multiplier = isDoubled ? 2 : 1
 
-  // Build evaluator lookup by type name
-  const evaluatorByType: Record<string, number> = {}
-  for (const evaluator of evaluators) {
-    evaluatorByType[evaluator.EvaluatorType.name] = parseInt(evaluator.points, 10) || 0
-  }
+    // Build evaluator lookup by type name
+    const evaluatorByType: Record<string, number> = {}
+    for (const evaluator of evaluators) {
+      evaluatorByType[evaluator.EvaluatorType.name] = parseInt(evaluator.points, 10) || 0
+    }
 
-  // Actual match results
-  const actualHomeScore = match.homeRegularScore
-  const actualAwayScore = match.awayRegularScore
-  const actualWinner = getWinner(actualHomeScore, actualAwayScore)
-  const actualGoalDifference = actualHomeScore - actualAwayScore
-  const actualTotalGoals = actualHomeScore + actualAwayScore
-  const actualScorerIds = match.MatchScorer.map((s) => s.scorerId)
+    // Actual match results
+    const actualHomeScore = match.homeRegularScore
+    const actualAwayScore = match.awayRegularScore
+    const actualWinner = getWinner(actualHomeScore, actualAwayScore)
+    const actualGoalDifference = actualHomeScore - actualAwayScore
+    const actualTotalGoals = actualHomeScore + actualAwayScore
+    const actualScorerIds = match.MatchScorer.map((s) => s.scorerId)
 
-  // Process each bet
-  await prisma.$transaction(async (tx) => {
+    // Process each bet
     for (const bet of leagueMatch.UserBet) {
       let points = 0
 
@@ -421,7 +336,7 @@ export async function evaluateMatch(matchId: number) {
       })
     }
 
-    // Mark match as evaluated
+    // Mark match as evaluated - atomic update prevents double evaluation
     await tx.match.update({
       where: { id: matchId },
       data: {
@@ -429,11 +344,16 @@ export async function evaluateMatch(matchId: number) {
         updatedAt: now,
       },
     })
+
+    return { evaluatedBets: leagueMatch.UserBet.length }
+  }, {
+    // Prisma transaction isolation level for strong consistency
+    isolationLevel: 'Serializable',
   })
 
   revalidatePath('/admin/matches')
   revalidatePath('/admin/results')
-  return { success: true, evaluatedBets: leagueMatch.UserBet.length }
+  return { success: true, evaluatedBets: result.evaluatedBets }
 }
 
 // Get recently evaluated matches

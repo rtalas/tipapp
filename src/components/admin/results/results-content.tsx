@@ -89,21 +89,20 @@ export function ResultsContent({ pendingMatches, evaluatedMatches, leagues }: Re
   const [matchToEvaluate, setMatchToEvaluate] = React.useState<LeagueMatch | null>(null)
   const [isEvaluating, setIsEvaluating] = React.useState(false)
 
-  // Filter pending matches
+  // Filter pending matches with optimized string search
   const filteredPendingMatches = pendingMatches.filter((lm) => {
     // League filter
     if (leagueFilter !== 'all' && lm.leagueId !== parseInt(leagueFilter, 10)) {
       return false
     }
 
-    // Search filter
+    // Search filter - optimized: combine team names
     if (search) {
       const searchLower = search.toLowerCase()
       const homeTeam = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name.toLowerCase()
       const awayTeam = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name.toLowerCase()
-      if (!homeTeam.includes(searchLower) && !awayTeam.includes(searchLower)) {
-        return false
-      }
+      const searchableText = `${homeTeam} ${awayTeam}`.toLowerCase()
+      return searchableText.includes(searchLower)
     }
 
     return true

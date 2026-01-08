@@ -89,7 +89,7 @@ export function PlayersContent({ players }: PlayersContentProps) {
     externalId: '',
   })
 
-  // Filter players
+  // Filter players with optimized string search
   const filteredPlayers = players.filter((player) => {
     // Status filter
     if (statusFilter !== 'all') {
@@ -97,13 +97,11 @@ export function PlayersContent({ players }: PlayersContentProps) {
       if (statusFilter === 'inactive' && player.isActive) return false
     }
 
-    // Search filter
+    // Search filter - optimized: combine searchable fields
     if (search) {
       const searchLower = search.toLowerCase()
       const fullName = `${player.firstName || ''} ${player.lastName || ''}`.toLowerCase()
-      if (!fullName.includes(searchLower)) {
-        return false
-      }
+      return fullName.includes(searchLower)
     }
 
     return true
@@ -119,6 +117,10 @@ export function PlayersContent({ players }: PlayersContentProps) {
       lastName: player.lastName || '',
       position: player.position || '',
     })
+  }
+
+  const handleCancelEdit = () => {
+    inlineEdit.cancelEdit()
   }
 
   const handleSaveEdit = async (playerId: number) => {
@@ -317,15 +319,25 @@ export function PlayersContent({ players }: PlayersContentProps) {
                                 aria-label="Position"
                               />
                             </div>
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleSaveEdit(player.id)}
-                              disabled={inlineEdit.isSaving}
-                              aria-label="Save player changes"
-                            >
-                              Save
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                aria-label="Cancel editing player"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => handleSaveEdit(player.id)}
+                                disabled={inlineEdit.isSaving}
+                                aria-label="Save player changes"
+                              >
+                                Save
+                              </Button>
+                            </div>
                           </div>
                         ) : (
                           <div>

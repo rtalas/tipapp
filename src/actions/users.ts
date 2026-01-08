@@ -1,16 +1,9 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
-
-async function requireAdmin() {
-  const session = await auth()
-  if (!session?.user?.isSuperadmin) {
-    throw new Error('Unauthorized: Admin access required')
-  }
-  return session
-}
+import { requireAdmin } from '@/lib/auth-utils'
+import { buildLeagueUserWhere } from '@/lib/query-builders'
 
 // Get pending user requests
 export async function getPendingRequests() {
@@ -119,14 +112,7 @@ export async function rejectRequest(requestId: number) {
 
 // Get league users with filters
 export async function getLeagueUsers(filters?: { leagueId?: number }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const whereConditions: any = {
-    deletedAt: null,
-  }
-
-  if (filters?.leagueId) {
-    whereConditions.leagueId = filters.leagueId
-  }
+  const whereConditions = buildLeagueUserWhere(filters)
 
   return prisma.leagueUser.findMany({
     where: whereConditions,

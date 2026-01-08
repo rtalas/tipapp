@@ -1,6 +1,27 @@
 import { ZodError } from 'zod'
 
 /**
+ * Type guard for Prisma errors
+ */
+export interface PrismaError {
+  code: string
+  meta?: {
+    target?: string[]
+    [key: string]: unknown
+  }
+  [key: string]: unknown
+}
+
+export function isPrismaError(error: unknown): error is PrismaError {
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    'code' in error &&
+    typeof (error as Record<string, unknown>).code === 'string'
+  )
+}
+
+/**
  * Custom error class for application-level errors
  */
 export class AppError extends Error {
@@ -82,6 +103,39 @@ export function handleActionError(
 export function getErrorMessage(error: unknown, defaultMessage: string = 'An error occurred'): string {
   const errorResponse = handleActionError(error, defaultMessage)
   return errorResponse.message
+}
+
+/**
+ * Handles Prisma-specific errors with type safety
+ * Translates Prisma error codes to user-friendly messages
+ */
+export function handlePrismaError(error: PrismaError): ErrorResponse {
+  switch (error.code) {
+    case 'P2002': {
+      // Unique constraint violation
+      const field = error.meta?.target?.[0]
+      const fieldName = field ? `"${field}"` : 'This field'
+      return {
+        message: `${fieldName} already exists`,
+        code: 'UNIQUE_CONSTRAINT_VIOLATED',
+      }
+    }
+    case 'P2025':
+      return {
+        message: 'Record not found',
+        code: 'RECORD_NOT_FOUND',
+      }
+    case 'P2003':
+      return {
+        message: 'Referenced record not found',
+        code: 'FOREIGN_KEY_CONSTRAINT_FAILED',
+      }
+    default:
+      return {
+        message: `Database error: ${error.code}`,
+        code: error.code,
+      }
+  }
 }
 
 /**

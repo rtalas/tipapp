@@ -1,6 +1,7 @@
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validation";
+import { isPrismaError, handlePrismaError } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -65,30 +66,13 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    // Handle Prisma errors
-    if (error && typeof error === "object" && "code" in error) {
-      const prismaError = error as any;
-
-      // P2002: Unique constraint failed
-      if (prismaError.code === "P2002") {
-        const field = prismaError.meta?.target?.[0];
-        if (field === "username") {
-          return NextResponse.json(
-            { error: "Username already taken" },
-            { status: 400 }
-          );
-        }
-        if (field === "email") {
-          return NextResponse.json(
-            { error: "Email already registered" },
-            { status: 400 }
-          );
-        }
-        return NextResponse.json(
-          { error: "This account information is already registered" },
-          { status: 400 }
-        );
-      }
+    // Handle Prisma errors with type guards
+    if (isPrismaError(error)) {
+      const prismaErrorResponse = handlePrismaError(error);
+      return NextResponse.json(
+        { error: prismaErrorResponse.message },
+        { status: 400 }
+      );
     }
 
     if (error instanceof Error) {

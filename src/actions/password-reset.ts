@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { env } from '@/lib/env';
 import { forgotPasswordSchema, resetPasswordSchema } from '@/lib/validation';
 import { generateSecureToken, hashToken, isTokenExpired, getTokenExpirationTime } from '@/lib/token-utils';
 import { isPasswordResetRateLimited } from '@/lib/rate-limit';
@@ -8,7 +9,7 @@ import { sendPasswordResetEmail } from '@/lib/email';
 import { AppError, handleActionError, logError } from '@/lib/error-handler';
 import bcryptjs from 'bcryptjs';
 
-const APP_URL = process.env.APP_URL || 'https://www.tipapp.cz';
+const APP_URL = env.APP_URL;
 
 /**
  * Request a password reset by email

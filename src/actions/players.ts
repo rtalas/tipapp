@@ -27,25 +27,30 @@ export async function getPlayerById(id: number) {
 
 // Create new player
 export async function createPlayer(input: CreatePlayerInput) {
-  await requireAdmin()
+  try {
+    await requireAdmin()
 
-  // Validate input
-  const validated = createPlayerSchema.parse(input)
+    // Validate input
+    const validated = createPlayerSchema.parse(input)
 
-  const player = await prisma.player.create({
-    data: {
-      firstName: validated.firstName || null,
-      lastName: validated.lastName || null,
-      position: validated.position,
-      isActive: validated.isActive ?? true,
-      externalId: validated.externalId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  })
+    const player = await prisma.player.create({
+      data: {
+        firstName: validated.firstName || null,
+        lastName: validated.lastName || null,
+        position: validated.position,
+        isActive: validated.isActive ?? true,
+        externalId: validated.externalId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    })
 
-  revalidatePath('/admin/players')
-  return { success: true, playerId: player.id }
+    revalidatePath('/admin/players')
+    return { success: true, playerId: player.id }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to create player'
+    return { success: false, error: message }
+  }
 }
 
 // Update player

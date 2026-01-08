@@ -1,11 +1,12 @@
 import { Resend } from 'resend';
+import { env } from './env';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@tipapp.cz';
-const FROM_NAME = process.env.RESEND_FROM_NAME || 'TipApp';
-const APP_URL = process.env.APP_URL || 'https://www.tipapp.cz';
-const APP_NAME = process.env.APP_NAME || 'TipApp';
+const FROM_EMAIL = env.RESEND_FROM_EMAIL;
+const FROM_NAME = env.RESEND_FROM_NAME;
+const APP_URL = env.APP_URL;
+const APP_NAME = env.APP_NAME;
 
 interface SendPasswordResetEmailParams {
   email: string;

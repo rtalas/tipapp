@@ -1,16 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
-
-async function requireAdmin() {
-  const session = await auth()
-  if (!session?.user?.isSuperadmin) {
-    throw new Error('Unauthorized: Admin access required')
-  }
-  return session
-}
+import { requireAdmin } from '@/lib/auth-utils'
 
 // Get all evaluators
 export async function getAllEvaluators() {

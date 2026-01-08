@@ -92,7 +92,7 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
   const [matchToDelete, setMatchToDelete] = React.useState<LeagueMatch | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
 
-  // Filter matches
+  // Filter matches with optimized string search
   const filteredMatches = matches.filter((lm) => {
     const status = getMatchStatus(lm.Match)
 
@@ -106,14 +106,13 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
       return false
     }
 
-    // Search filter
+    // Search filter - optimized: combine team names
     if (search) {
       const searchLower = search.toLowerCase()
       const homeTeam = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name.toLowerCase()
       const awayTeam = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name.toLowerCase()
-      if (!homeTeam.includes(searchLower) && !awayTeam.includes(searchLower)) {
-        return false
-      }
+      const searchableText = `${homeTeam} ${awayTeam}`.toLowerCase()
+      return searchableText.includes(searchLower)
     }
 
     return true

@@ -88,26 +88,21 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues }: UsersCon
   const [userToRemove, setUserToRemove] = React.useState<LeagueUser | null>(null)
   const [isRemoving, setIsRemoving] = React.useState(false)
 
-  // Filter league users
+  // Filter league users with optimized string search
   const filteredLeagueUsers = leagueUsers.filter((lu) => {
     // League filter
     if (leagueFilter !== 'all' && lu.leagueId !== parseInt(leagueFilter, 10)) {
       return false
     }
 
-    // Search filter
+    // Search filter - optimized: combine searchable fields
     if (search) {
       const searchLower = search.toLowerCase()
       const fullName = `${lu.User.firstName} ${lu.User.lastName}`.toLowerCase()
       const email = lu.User.email?.toLowerCase() ?? ''
       const username = lu.User.username.toLowerCase()
-      if (
-        !fullName.includes(searchLower) &&
-        !email.includes(searchLower) &&
-        !username.includes(searchLower)
-      ) {
-        return false
-      }
+      const searchableText = `${fullName} ${email} ${username}`.toLowerCase()
+      return searchableText.includes(searchLower)
     }
 
     return true

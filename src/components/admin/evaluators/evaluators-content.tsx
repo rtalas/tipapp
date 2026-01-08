@@ -72,8 +72,7 @@ export function EvaluatorsContent({
 }: EvaluatorsContentProps) {
   const [search, setSearch] = React.useState('')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
-  const [editingPointsId, setEditingPointsId] = React.useState<number | null>(null)
-  const [editingNameId, setEditingNameId] = React.useState<number | null>(null)
+  const [editingId, setEditingId] = React.useState<number | null>(null)
   const [editPointsValue, setEditPointsValue] = React.useState<string>('')
   const [editNameValue, setEditNameValue] = React.useState<string>('')
   const [isSaving, setIsSaving] = React.useState(false)
@@ -89,31 +88,39 @@ export function EvaluatorsContent({
   })
   const [isCreating, setIsCreating] = React.useState(false)
 
-  // Filter evaluators
+  // Filter evaluators with optimized string search
   const filteredEvaluators = evaluators.filter((evaluator) => {
     // League filter
     if (leagueFilter !== 'all' && evaluator.leagueId !== parseInt(leagueFilter, 10)) {
       return false
     }
 
-    // Search filter
+    // Search filter - optimized: combine searchable fields
     if (search) {
       const searchLower = search.toLowerCase()
-      if (
-        !evaluator.name.toLowerCase().includes(searchLower) &&
-        !evaluator.League.name.toLowerCase().includes(searchLower) &&
-        !evaluator.EvaluatorType.name.toLowerCase().includes(searchLower)
-      ) {
-        return false
-      }
+      const searchableText = `${evaluator.name} ${evaluator.League.name} ${evaluator.EvaluatorType.name}`.toLowerCase()
+      return searchableText.includes(searchLower)
     }
 
     return true
   })
 
-  const handleEditPoints = (evaluator: Evaluator) => {
-    setEditingPointsId(evaluator.id)
+  const handleStartEdit = (evaluator: Evaluator) => {
+    setEditingId(evaluator.id)
+    setEditNameValue(evaluator.name)
     setEditPointsValue(evaluator.points)
+  }
+
+  const handleCancelEditName = () => {
+    setEditingId(null)
+    setEditNameValue('')
+    setEditPointsValue('')
+  }
+
+  const handleCancelEditPoints = () => {
+    setEditingId(null)
+    setEditNameValue('')
+    setEditPointsValue('')
   }
 
   const handleSavePoints = async (evaluatorId: number) => {
@@ -126,7 +133,7 @@ export function EvaluatorsContent({
     try {
       await updateEvaluatorPoints(evaluatorId, parseInt(editPointsValue, 10))
       toast.success('Points updated')
-      setEditingPointsId(null)
+      setEditingId(null)
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
@@ -139,11 +146,6 @@ export function EvaluatorsContent({
     }
   }
 
-  const handleEditName = (evaluator: Evaluator) => {
-    setEditingNameId(evaluator.id)
-    setEditNameValue(evaluator.name)
-  }
-
   const handleSaveName = async (evaluatorId: number) => {
     if (!editNameValue.trim()) {
       toast.error('Name cannot be empty')
@@ -154,7 +156,7 @@ export function EvaluatorsContent({
     try {
       await updateEvaluatorName(evaluatorId, editNameValue)
       toast.success('Name updated')
-      setEditingNameId(null)
+      setEditingId(null)
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
@@ -278,7 +280,7 @@ export function EvaluatorsContent({
                         <Badge variant="secondary">{evaluator.League.name}</Badge>
                       </TableCell>
                       <TableCell>
-                        {editingNameId === evaluator.id ? (
+                        {editingId === evaluator.id ? (
                           <div className="flex items-center gap-2">
                             <Input
                               type="text"
@@ -287,20 +289,30 @@ export function EvaluatorsContent({
                               className="flex-1 h-8"
                               disabled={isSaving}
                               autoFocus
+                              aria-label="Evaluator name"
                             />
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleSaveName(evaluator.id)}
-                              disabled={isSaving}
-                            >
-                              Save
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEditName}
+                                aria-label="Cancel editing name"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => handleSaveName(evaluator.id)}
+                                disabled={isSaving}
+                                aria-label="Save name"
+                              >
+                                Save
+                              </Button>
+                            </div>
                           </div>
                         ) : (
-                          <span className="font-medium cursor-pointer hover:text-primary">
-                            {evaluator.name}
-                          </span>
+                          <span className="font-medium">{evaluator.name}</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -309,7 +321,7 @@ export function EvaluatorsContent({
                         </span>
                       </TableCell>
                       <TableCell className="text-center">
-                        {editingPointsId === evaluator.id ? (
+                        {editingId === evaluator.id ? (
                           <div className="flex items-center justify-center gap-2">
                             <Input
                               type="number"
@@ -318,43 +330,46 @@ export function EvaluatorsContent({
                               onChange={(e) => setEditPointsValue(e.target.value)}
                               className="w-16 h-8 text-center"
                               disabled={isSaving}
+                              aria-label="Points value"
                             />
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleSavePoints(evaluator.id)}
-                              disabled={isSaving}
-                            >
-                              Save
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEditPoints}
+                                aria-label="Cancel editing points"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => handleSavePoints(evaluator.id)}
+                                disabled={isSaving}
+                                aria-label="Save points"
+                              >
+                                Save
+                              </Button>
+                            </div>
                           </div>
                         ) : (
-                          <button
-                            onClick={() => handleEditPoints(evaluator)}
-                            className="font-mono font-bold hover:underline cursor-pointer"
-                          >
-                            {evaluator.points}
-                          </button>
+                          <span className="font-mono font-bold">{evaluator.points}</span>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditName(evaluator)}
-                            aria-label={`Edit name: ${evaluator.name}`}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditPoints(evaluator)}
-                            aria-label={`Edit points: ${evaluator.name}`}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          {editingId === evaluator.id ? (
+                            <span className="text-sm text-muted-foreground">Editing...</span>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleStartEdit(evaluator)}
+                              aria-label={`Edit evaluator: ${evaluator.name}`}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"

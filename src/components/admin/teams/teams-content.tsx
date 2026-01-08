@@ -99,23 +99,18 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
     externalId: '',
   })
 
-  // Filter teams
+  // Filter teams with optimized string search
   const filteredTeams = teams.filter((team) => {
     // Sport filter
     if (sportFilter !== 'all' && team.sportId !== parseInt(sportFilter, 10)) {
       return false
     }
 
-    // Search filter
+    // Search filter - optimized: combine searchable fields into single string
     if (search) {
       const searchLower = search.toLowerCase()
-      if (
-        !team.name.toLowerCase().includes(searchLower) &&
-        !team.shortcut.toLowerCase().includes(searchLower) &&
-        !(team.nickname && team.nickname.toLowerCase().includes(searchLower))
-      ) {
-        return false
-      }
+      const searchableText = `${team.name} ${team.shortcut} ${team.nickname || ''}`.toLowerCase()
+      return searchableText.includes(searchLower)
     }
 
     return true
@@ -128,6 +123,10 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
       shortcut: team.shortcut,
       sportId: team.sportId.toString(),
     })
+  }
+
+  const handleCancelEdit = () => {
+    inlineEdit.cancelEdit()
   }
 
   const handleSaveEdit = async (teamId: number) => {
@@ -333,16 +332,25 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
                                 </SelectContent>
                               </Select>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleSaveEdit(team.id)}
-                              disabled={inlineEdit.isSaving}
-                              className="mt-8"
-                              aria-label="Save team changes"
-                            >
-                              Save
-                            </Button>
+                            <div className="flex items-center gap-2 mt-8">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                aria-label="Cancel editing team"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => handleSaveEdit(team.id)}
+                                disabled={inlineEdit.isSaving}
+                                aria-label="Save team changes"
+                              >
+                                Save
+                              </Button>
+                            </div>
                           </div>
                         ) : (
                           <div>
