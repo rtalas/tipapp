@@ -1,5 +1,12 @@
 import { z } from 'zod'
 
+// Delete by ID schema (used for delete operations)
+export const deleteByIdSchema = z.object({
+  id: z.number().int().positive('ID must be a positive integer'),
+})
+
+export type DeleteByIdInput = z.infer<typeof deleteByIdSchema>
+
 // Evaluator schemas (defined first for use in league schema)
 export const evaluatorRuleSchema = z.object({
   evaluatorTypeId: z.number().int().positive(),
