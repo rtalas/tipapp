@@ -140,15 +140,34 @@ export function handlePrismaError(error: PrismaError): ErrorResponse {
 
 /**
  * Logs error details for debugging/monitoring
- * Can be extended to send to external logging service
+ * In development: logs to console
+ * In production: logs to console (stdout) - integrate with Sentry/LogRocket for external service
  */
 export function logError(error: unknown, context?: Record<string, unknown>): void {
-  if (process.env.NODE_ENV !== 'production') {
-    console.error('[ERROR]', {
-      error,
-      context,
-      timestamp: new Date().toISOString(),
-    })
+  const timestamp = new Date().toISOString()
+  const errorData = {
+    error,
+    context,
+    timestamp,
+    environment: process.env.NODE_ENV,
   }
-  // TODO: In production, send to external logging service (Sentry, LogRocket, etc.)
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.error('[ERROR]', errorData)
+  } else {
+    // PRODUCTION: Always log errors to stdout/stderr
+    // This ensures visibility in production logs/monitoring systems
+    console.error('[PROD_ERROR]', errorData)
+
+    // TODO: Integrate with external logging service (Sentry, LogRocket, etc.)
+    // Example integration (when ready):
+    // try {
+    //   Sentry.captureException(error, {
+    //     contexts: { custom: context },
+    //     level: 'error',
+    //   })
+    // } catch (sentryError) {
+    //   console.error('[SENTRY_FAILURE]', sentryError)
+    // }
+  }
 }

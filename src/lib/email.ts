@@ -15,7 +15,42 @@ interface SendPasswordResetEmailParams {
 }
 
 /**
+ * Escape HTML special characters to prevent injection attacks
+ * @param text Text to escape
+ * @returns Escaped HTML-safe text
+ */
+function escapeHtml(text: string): string {
+  const htmlEscapeMap: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }
+  return text.replace(/[&<>"']/g, (char) => htmlEscapeMap[char])
+}
+
+/**
+ * Escape plain text to prevent injection attacks
+ * @param text Text to escape
+ * @returns Escaped text
+ */
+function escapeText(text: string): string {
+  return text.replace(/[&<>"']/g, (char) => {
+    const map: Record<string, string> = {
+      '&': '&',
+      '<': '<',
+      '>': '>',
+      '"': '"',
+      "'": "'",
+    }
+    return map[char]
+  })
+}
+
+/**
  * Generate the HTML template for password reset email
+ * All user inputs are escaped to prevent email injection attacks
  */
 function generateResetEmailTemplate(resetUrl: string, username: string): string {
   return `
@@ -101,21 +136,21 @@ function generateResetEmailTemplate(resetUrl: string, username: string): string 
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">${APP_NAME}</div>
+      <div class="logo">${escapeHtml(APP_NAME)}</div>
     </div>
 
     <h1>Reset Your Password</h1>
 
     <div class="content">
-      <p>Hello ${username},</p>
-      <p>We received a request to reset your password for your ${APP_NAME} account. Click the button below to set a new password:</p>
+      <p>Hello ${escapeHtml(username)},</p>
+      <p>We received a request to reset your password for your ${escapeHtml(APP_NAME)} account. Click the button below to set a new password:</p>
 
       <center>
-        <a href="${resetUrl}" class="cta-button">Reset Password</a>
+        <a href="${escapeHtml(resetUrl)}" class="cta-button">Reset Password</a>
       </center>
 
       <p style="margin-top: 30px;">If the button doesn't work, you can also copy and paste this link in your browser:</p>
-      <div class="reset-url">${resetUrl}</div>
+      <div class="reset-url">${escapeHtml(resetUrl)}</div>
 
       <div class="warning">
         <strong>Security Note:</strong> This password reset link is valid for 1 hour. After that, you'll need to request a new reset.
@@ -125,7 +160,7 @@ function generateResetEmailTemplate(resetUrl: string, username: string): string 
     </div>
 
     <div class="footer">
-      <p>© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
+      <p>© ${new Date().getFullYear()} ${escapeHtml(APP_NAME)}. All rights reserved.</p>
       <p>This is an automated email, please do not reply.</p>
     </div>
   </div>
@@ -136,23 +171,24 @@ function generateResetEmailTemplate(resetUrl: string, username: string): string 
 
 /**
  * Generate the plain text template for password reset email
+ * All user inputs are escaped to prevent email injection attacks
  */
 function generateResetEmailPlainText(resetUrl: string, username: string): string {
   return `
 Reset Your Password
 
-Hello ${username},
+Hello ${escapeText(username)},
 
-We received a request to reset your password for your ${APP_NAME} account. Visit the link below to set a new password:
+We received a request to reset your password for your ${escapeText(APP_NAME)} account. Visit the link below to set a new password:
 
-${resetUrl}
+${escapeText(resetUrl)}
 
 Security Note:
 This password reset link is valid for 1 hour. After that, you'll need to request a new reset.
 
 If you didn't request a password reset, you can ignore this email. Your account is still secure.
 
-© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.
+© ${new Date().getFullYear()} ${escapeText(APP_NAME)}. All rights reserved.
 This is an automated email, please do not reply.
   `.trim();
 }

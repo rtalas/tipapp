@@ -21,6 +21,48 @@ export default auth((req) => {
       return Response.redirect(url);
     }
   }
+
+  // ===== CSRF PROTECTION =====
+  // Verify origin for state-changing requests (POST, PUT, DELETE, PATCH)
+  if (
+    req.method === 'POST' ||
+    req.method === 'PUT' ||
+    req.method === 'DELETE' ||
+    req.method === 'PATCH'
+  ) {
+    const origin = req.headers.get('origin');
+    const referer = req.headers.get('referer');
+    const host = req.headers.get('host');
+
+    if (host) {
+      const allowedOrigins = [
+        `https://${host}`,
+        `http://${host}`,
+        ...(process.env.ALLOWED_ORIGINS?.split(',') || []),
+      ];
+
+      // Check origin header (sent by modern browsers)
+      if (origin && !allowedOrigins.some((allowed) => allowed === origin)) {
+        console.warn(`[CSRF] Blocked request from origin: ${origin}`);
+        return new Response('CSRF validation failed', { status: 403 });
+      }
+
+      // Check referer header as additional validation
+      if (referer) {
+        try {
+          const refererUrl = new URL(referer);
+          const refererOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
+          if (!allowedOrigins.some((allowed) => allowed === refererOrigin)) {
+            console.warn(`[CSRF] Blocked request from referer: ${referer}`);
+            return new Response('CSRF validation failed', { status: 403 });
+          }
+        } catch (e) {
+          console.warn(`[CSRF] Invalid referer header: ${referer}`);
+          return new Response('CSRF validation failed', { status: 403 });
+        }
+      }
+    }
+  }
 });
 
 export const config = {
