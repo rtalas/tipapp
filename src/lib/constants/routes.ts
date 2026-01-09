@@ -24,6 +24,7 @@ export const ADMIN_ROUTES = {
   leagueEvaluators: (leagueId: number) => `/admin/${leagueId}/evaluators`,
   leagueMatches: (leagueId: number) => `/admin/${leagueId}/matches`,
   leaguePlayers: (leagueId: number) => `/admin/${leagueId}/players`,
+  leagueQuestions: (leagueId: number) => `/admin/${leagueId}/questions`,
   leagueSeries: (leagueId: number) => `/admin/${leagueId}/series`,
   leagueSpecialBets: (leagueId: number) => `/admin/${leagueId}/special-bets`,
   leagueTeams: (leagueId: number) => `/admin/${leagueId}/teams`,

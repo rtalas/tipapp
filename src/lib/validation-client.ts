@@ -17,6 +17,9 @@ import {
   updateSpecialBetResultSchema,
   createUserSpecialBetSchema,
   updateUserSpecialBetSchema,
+  updateQuestionSchema,
+  createUserQuestionBetSchema,
+  updateUserQuestionBetSchema,
 } from './validation/admin'
 import {
   forgotPasswordSchema,
@@ -120,4 +123,25 @@ export function validateUserSpecialBetCreate(data: unknown) {
  */
 export function validateUserSpecialBetEdit(data: unknown) {
   return updateUserSpecialBetSchema.safeParse(data)
+}
+
+/**
+ * Validates question edit form data
+ */
+export function validateQuestionEdit(data: unknown) {
+  return updateQuestionSchema.safeParse(data)
+}
+
+/**
+ * Validates user question bet creation form data
+ */
+export function validateUserQuestionBetCreate(data: unknown) {
+  return createUserQuestionBetSchema.safeParse(data)
+}
+
+/**
+ * Validates user question bet edit form data
+ */
+export function validateUserQuestionBetEdit(data: unknown) {
+  return updateUserQuestionBetSchema.safeParse(data)
 }

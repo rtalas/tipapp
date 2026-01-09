@@ -14,6 +14,7 @@ import {
   User,
   ListChecks,
   Target,
+  MessageSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -47,6 +48,7 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
         { label: 'Matches', href: `/admin/${leagueId}/matches`, icon: Calendar },
         { label: 'Special Bets', href: `/admin/${leagueId}/special-bets`, icon: Target },
         { label: 'Series', href: `/admin/${leagueId}/series`, icon: ListChecks },
+        { label: 'Questions', href: `/admin/${leagueId}/questions`, icon: MessageSquare },
         { label: 'Teams', href: `/admin/${leagueId}/teams`, icon: Shield },
         { label: 'Players', href: `/admin/${leagueId}/players`, icon: User },
         { label: 'Users', href: `/admin/${leagueId}/users`, icon: Users },

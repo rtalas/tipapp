@@ -280,3 +280,30 @@ export const specialBetWithBetsInclude = {
     },
   },
 } as const
+
+/**
+ * Include object for LeagueSpecialBetQuestion queries (basic)
+ */
+export const questionInclude = {
+  League: true,
+  _count: {
+    select: { UserSpecialBetQuestion: true },
+  },
+} as const
+
+/**
+ * Include object for LeagueSpecialBetQuestion with user bets (full)
+ */
+export const questionWithBetsInclude = {
+  League: true,
+  UserSpecialBetQuestion: {
+    where: { deletedAt: null },
+    include: {
+      LeagueUser: {
+        include: {
+          User: true,
+        },
+      },
+    },
+  },
+} as const

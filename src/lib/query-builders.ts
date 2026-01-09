@@ -290,3 +290,77 @@ export function buildSpecialBetPicksWhere(filters?: {
 
   return where
 }
+
+/**
+ * Where conditions for LeagueSpecialBetQuestion filters
+ */
+export interface QuestionWhere {
+  deletedAt: null
+  leagueId?: number
+  dateTime?: { gt: Date } | { lt: Date }
+  isEvaluated?: boolean
+  result?: { not: null }
+}
+
+/**
+ * Build type-safe where conditions for Question queries
+ */
+export function buildQuestionWhere(filters?: {
+  leagueId?: number
+  status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
+}): QuestionWhere {
+  const now = new Date()
+  const where: QuestionWhere = {
+    deletedAt: null,
+  }
+
+  if (filters?.leagueId) {
+    where.leagueId = filters.leagueId
+  }
+
+  if (filters?.status === 'scheduled') {
+    where.dateTime = { gt: now }
+    where.isEvaluated = false
+  } else if (filters?.status === 'finished') {
+    where.dateTime = { lt: now }
+    where.isEvaluated = false
+    where.result = { not: null }
+  } else if (filters?.status === 'evaluated') {
+    where.isEvaluated = true
+  }
+
+  return where
+}
+
+/**
+ * Where conditions for Question Picks
+ */
+export interface QuestionPicksWhere {
+  deletedAt: null
+  leagueId?: number
+  isEvaluated?: boolean
+}
+
+/**
+ * Build type-safe where conditions for Question Picks queries
+ */
+export function buildQuestionPicksWhere(filters?: {
+  leagueId?: number
+  status?: 'evaluated' | 'unevaluated' | 'all'
+}): QuestionPicksWhere {
+  const where: QuestionPicksWhere = {
+    deletedAt: null,
+  }
+
+  if (filters?.leagueId) {
+    where.leagueId = filters.leagueId
+  }
+
+  if (filters?.status === 'evaluated') {
+    where.isEvaluated = true
+  } else if (filters?.status === 'unevaluated') {
+    where.isEvaluated = false
+  }
+
+  return where
+}

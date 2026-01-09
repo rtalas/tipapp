@@ -152,10 +152,12 @@ const isCorrect = evaluateExactScore(context); // true
   - ✅ Matches page with user bets (CRUD operations)
   - ✅ Series page with series bets (CRUD operations)
   - ✅ Special Bets page with special bet picks (CRUD operations)
+  - ✅ Questions page with question bets (CRUD operations, yes/no answers)
   - ✅ Deprecated picks pages removed (user-picks, series-picks, special-bet-picks)
-  - ✅ League-Scoped Architecture (dual-layer routing, league context, series types, special bet types)
+  - ✅ League-Scoped Architecture (dual-layer routing, league context, series types, special bet types, questions)
 - **Phase 4 (Evaluation & Leaderboard): IN PROGRESS** (Point calculation engine, rankings view).
-  - ✅ Evaluation Functions (13 evaluator types with 57 comprehensive tests)
+  - ✅ Evaluation Functions (13 evaluator types with 68 comprehensive tests)
+  - ✅ Question Evaluation System (atomic transactions, betting lock, comprehensive tests)
   - 🔄 Point calculation engine integration (NEXT)
   - 🔄 Leaderboard and rankings view
 
@@ -237,6 +239,7 @@ The admin interface now supports both global and league-specific management thro
 - `/admin/[leagueId]/matches` - Matches specific to selected league
 - `/admin/[leagueId]/series` - Series bets for selected league
 - `/admin/[leagueId]/special-bets` - Special bets for selected league
+- `/admin/[leagueId]/questions` - Question-based bets for selected league
 - `/admin/[leagueId]/teams` - Teams associated with selected league
 - `/admin/[leagueId]/players` - Players associated with selected league
 - `/admin/[leagueId]/users` - Users participating in selected league
@@ -269,7 +272,7 @@ The admin interface now supports both global and league-specific management thro
 
 **Sidebar Navigation:**
 - **Dynamic Menu:** Sidebar items change based on selected league context
-- **League-Specific Section:** Shows 7 items (Matches, Special Bets, Series, Teams, Players, Users, Evaluators) only when a league is selected
+- **League-Specific Section:** Shows 8 items (Matches, Special Bets, Series, Questions, Teams, Players, Users, Evaluators) only when a league is selected
 - **Global Admin Section:** Always visible, shows 6 items with "(Global)" suffix for clarity
 - **Visual Separation:** Uses separator to distinguish league-scoped from global items
 
@@ -300,6 +303,58 @@ The admin interface now supports both global and league-specific management thro
 - Soft delete pattern with `deletedAt` timestamp
 - Path revalidation for immediate UI updates
 - Admin authorization required for all mutations
+
+**3. Question-Based Special Bets (`/admin/[leagueId]/questions`)**
+- Manages `LeagueSpecialBetQuestion` and `UserSpecialBetQuestion` tables
+- Questions are league-specific (no global type table)
+- Users answer yes/no questions before deadline
+- **Scoring Logic:** Correct = +points, Wrong = -(points/2), No bet = 0 points
+- **Boolean Storage:** result and userBet stored as Boolean (true=yes, false=no, null=not answered)
+- **Deadline Enforcement:** Users cannot create/update bets after question.dateTime
+- **Empty Bets:** No UserSpecialBetQuestion row created if user doesn't bet
+
+**Database Tables:**
+```prisma
+LeagueSpecialBetQuestion {
+  id, leagueId, text, dateTime, result (Boolean?), isEvaluated
+}
+
+UserSpecialBetQuestion {
+  id, leagueSpecialBetQuestionId, leagueUserId, userBet (Boolean?), totalPoints
+}
+```
+
+**Server Actions:**
+- `src/actions/questions.ts` - Question CRUD (create, update, updateResult, delete, getQuestions)
+- `src/actions/question-bets.ts` - User bet CRUD (create, update, delete, getQuestionsWithUserBets)
+- `src/actions/evaluate-questions.ts` - Evaluation action (evaluateQuestionBets)
+
+**Evaluation System:**
+- `src/lib/evaluation/question-evaluator.ts` - Evaluation logic with atomic transactions
+- **Transaction Safety:** Uses proper transaction client pattern (no global mutation)
+- **Race Condition Prevention:** Duplicate check happens atomically within transaction
+- **Test Coverage:** 11 comprehensive tests covering all scoring scenarios
+- Evaluator Type: Uses 'question' evaluator from League.Evaluator table
+
+**Components:**
+- `src/components/admin/questions/questions-content.tsx` - Main content with expandable rows
+- `src/components/admin/questions/edit-question-dialog.tsx` - Consolidated edit dialog (question details + result entry)
+- `src/components/admin/questions/question-bet-row.tsx` - User bet inline editor
+- `src/components/admin/questions/add-question-dialog.tsx` - Create new question
+- `src/components/admin/questions/create-question-bet-dialog.tsx` - Add missing user bet
+
+**Key Features:**
+- Expandable rows showing all user bets inline
+- Search by question text, filter by status (scheduled/finished/evaluated) and user
+- Single Edit button opens consolidated dialog for both question editing and result entry
+- Inline bet editing with yes/no radio buttons
+- Betting deadline validation prevents late bets
+- Record existence checks before all updates/deletes
+- Evaluate button calculates and awards points based on correct answers
+
+**Page:** `app/admin/[leagueId]/questions/page.tsx`
+**Route:** `/admin/[leagueId]/questions`
+**Sidebar:** Questions link with MessageSquare icon (league-scoped section)
 
 **Architecture Benefits:**
 - **Separation of Concerns:** Global entity management vs. league-specific operations

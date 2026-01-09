@@ -364,3 +364,46 @@ export const updateSeriesTypeSchema = createSeriesTypeSchema.partial().extend({
 })
 
 export type UpdateSeriesTypeInput = z.infer<typeof updateSeriesTypeSchema>
+
+// Question validation schemas
+export const createQuestionSchema = z.object({
+  leagueId: z.number().int().positive('League ID is required'),
+  text: z.string().min(10, 'Question must be at least 10 characters').max(500, 'Question must not exceed 500 characters'),
+  dateTime: z
+    .date()
+    .refine((date) => date > new Date(), {
+      message: 'Question date must be in the future',
+    }),
+})
+
+export type CreateQuestionInput = z.infer<typeof createQuestionSchema>
+
+export const updateQuestionSchema = z.object({
+  id: z.number().int().positive('Question ID is required'),
+  text: z.string().min(10, 'Question must be at least 10 characters').max(500, 'Question must not exceed 500 characters').optional(),
+  dateTime: z.date().optional(),
+})
+
+export type UpdateQuestionInput = z.infer<typeof updateQuestionSchema>
+
+export const updateQuestionResultSchema = z.object({
+  questionId: z.number().int().positive('Question ID is required'),
+  result: z.boolean(),
+})
+
+export type UpdateQuestionResultInput = z.infer<typeof updateQuestionResultSchema>
+
+// User question bet schemas
+export const createUserQuestionBetSchema = z.object({
+  leagueSpecialBetQuestionId: z.number().int().positive('Question ID is required'),
+  leagueUserId: z.number().int().positive('League User ID is required'),
+  userBet: z.boolean(),
+})
+
+export type CreateUserQuestionBetInput = z.infer<typeof createUserQuestionBetSchema>
+
+export const updateUserQuestionBetSchema = createUserQuestionBetSchema.partial().extend({
+  id: z.number().int().positive('Bet ID is required'),
+})
+
+export type UpdateUserQuestionBetInput = z.infer<typeof updateUserQuestionBetSchema>
