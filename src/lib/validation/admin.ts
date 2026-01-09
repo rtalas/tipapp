@@ -99,6 +99,13 @@ export const assignPlayerSchema = z.object({
 
 export type AssignPlayerInput = z.infer<typeof assignPlayerSchema>
 
+export const updateTopScorerRankingSchema = z.object({
+  leaguePlayerId: z.number().int().positive('League Player ID is required'),
+  topScorerRanking: z.number().int().min(0).max(4).nullable(),
+})
+
+export type UpdateTopScorerRankingInput = z.infer<typeof updateTopScorerRankingSchema>
+
 // Match validation schemas
 export const createMatchSchema = z.object({
   leagueId: z.number().int().positive(),

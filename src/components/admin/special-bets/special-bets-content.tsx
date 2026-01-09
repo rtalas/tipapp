@@ -316,7 +316,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                             <div className="flex flex-col gap-1">
                               <span className="font-medium">{sb.SpecialBetSingle.name}</span>
                               <Badge variant="outline" className="w-fit text-xs">
-                                {resultInfo.type !== 'none' ? resultInfo.type : 'not set'}
+                                {sb.SpecialBetSingle.SpecialBetSingleType.name !== 'none' ? sb.SpecialBetSingle.SpecialBetSingleType.name : 'not set'}
                               </Badge>
                             </div>
                           </TableCell>

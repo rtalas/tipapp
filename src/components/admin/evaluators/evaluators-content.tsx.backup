@@ -83,19 +83,12 @@ export function EvaluatorsContent({
   const [isDeleting, setIsDeleting] = React.useState(false)
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false)
   const [createForm, setCreateForm] = React.useState({
-    leagueId: league?.id.toString() || '',
+    leagueId: '',
     evaluatorTypeId: '',
     name: '',
     points: '',
   })
   const [isCreating, setIsCreating] = React.useState(false)
-
-  // Update leagueId when league prop changes
-  React.useEffect(() => {
-    if (league) {
-      setCreateForm((prev) => ({ ...prev, leagueId: league.id.toString() }))
-    }
-  }, [league])
 
   // Filter evaluators with optimized string search
   const filteredEvaluators = evaluators.filter((evaluator) => {
@@ -199,12 +192,7 @@ export function EvaluatorsContent({
       })
       toast.success('Evaluator created')
       setCreateDialogOpen(false)
-      setCreateForm({
-        leagueId: league?.id.toString() || '',
-        evaluatorTypeId: '',
-        name: '',
-        points: ''
-      })
+      setCreateForm({ leagueId: '', evaluatorTypeId: '', name: '', points: '' })
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
@@ -239,7 +227,7 @@ export function EvaluatorsContent({
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-4 md:flex-row">
           <Input
-            placeholder={league ? "Search by name or type..." : "Search by name or league..."}
+            placeholder="Search by name or league..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
@@ -270,11 +258,7 @@ export function EvaluatorsContent({
       <Card className="card-shadow">
         <CardHeader>
           <CardTitle>Scoring Rules</CardTitle>
-          <CardDescription>
-            {league
-              ? `Manage evaluator points for ${league.name}`
-              : 'Manage evaluator points for all leagues'}
-          </CardDescription>
+          <CardDescription>Manage evaluator points for all leagues</CardDescription>
         </CardHeader>
         <CardContent>
           {filteredEvaluators.length === 0 ? (
@@ -286,7 +270,7 @@ export function EvaluatorsContent({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {!league && <TableHead>League</TableHead>}
+                    <TableHead>League</TableHead>
                     <TableHead>Rule Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead className="text-center">Points</TableHead>
@@ -296,11 +280,9 @@ export function EvaluatorsContent({
                 <TableBody>
                   {filteredEvaluators.map((evaluator) => (
                     <TableRow key={evaluator.id} className="table-row-hover">
-                      {!league && (
-                        <TableCell>
-                          <Badge variant="secondary">{evaluator.League.name}</Badge>
-                        </TableCell>
-                      )}
+                      <TableCell>
+                        <Badge variant="secondary">{evaluator.League.name}</Badge>
+                      </TableCell>
                       <TableCell>
                         {editingId === evaluator.id ? (
                           <div className="flex items-center gap-2">
@@ -420,8 +402,8 @@ export function EvaluatorsContent({
           <DialogHeader>
             <DialogTitle>Delete Evaluator</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{evaluatorToDelete?.name}"
-              {!league && ` from ${evaluatorToDelete?.League.name}`}? This action cannot be undone.
+              Are you sure you want to delete "{evaluatorToDelete?.name}" from{' '}
+              {evaluatorToDelete?.League.name}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -440,36 +422,30 @@ export function EvaluatorsContent({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Evaluator</DialogTitle>
-            <DialogDescription>
-              {league
-                ? `Create a new scoring rule for ${league.name}`
-                : 'Create a new scoring rule for a league'}
-            </DialogDescription>
+            <DialogDescription>Create a new scoring rule for a league</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            {!league && (
-              <div>
-                <label className="text-sm font-medium">League</label>
-                <Select
-                  value={createForm.leagueId}
-                  onValueChange={(value) =>
-                    setCreateForm({ ...createForm, leagueId: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select league" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {leagues.map((lg) => (
-                      <SelectItem key={lg.id} value={lg.id.toString()}>
-                        {lg.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div>
+              <label className="text-sm font-medium">League</label>
+              <Select
+                value={createForm.leagueId}
+                onValueChange={(value) =>
+                  setCreateForm({ ...createForm, leagueId: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select league" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leagues.map((league) => (
+                    <SelectItem key={league.id} value={league.id.toString()}>
+                      {league.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             <div>
               <label className="text-sm font-medium">Evaluator Type</label>
