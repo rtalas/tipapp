@@ -61,6 +61,10 @@ export async function getSeriesWithUserBets(filters?: {
   return series
 }
 
+// Export types for components
+export type SeriesWithUserBets = Awaited<ReturnType<typeof getSeriesWithUserBets>>[number]
+export type UserSeriesBet = SeriesWithUserBets['UserSpecialBetSerie'][number]
+
 /**
  * Creates a new user series bet
  * Validates that the series and leagueUser exist

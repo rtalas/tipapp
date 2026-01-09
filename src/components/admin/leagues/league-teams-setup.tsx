@@ -80,7 +80,7 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
 
   const handleRemoveTeam = async (leagueTeamId: number) => {
     try {
-      await removeTeamFromLeague(leagueTeamId)
+      await removeTeamFromLeague({ id: leagueTeamId })
       toast.success('Team removed from league')
     } catch (error) {
       toast.error('Failed to remove team')

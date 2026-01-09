@@ -7,16 +7,13 @@ import { Input } from '@/components/ui/input'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
-import { updateUserSpecialBet, deleteUserSpecialBet } from '@/actions/special-bet-bets'
+import { updateUserSpecialBet, deleteUserSpecialBet, type UserSpecialBet, type SpecialBetWithUserBets } from '@/actions/special-bet-bets'
 import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
 import { validateUserSpecialBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { getSpecialBetType } from '@/lib/special-bet-utils'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
-
-type UserSpecialBet = Awaited<ReturnType<typeof import('@/actions/special-bet-bets').getSpecialBetsWithUserBets>>[number]['UserSpecialBetSingle'][number]
-type SpecialBetWithBets = Awaited<ReturnType<typeof import('@/actions/special-bet-bets').getSpecialBetsWithUserBets>>[number]
 type LeagueWithTeams = Prisma.LeagueGetPayload<{
   include: {
     LeagueTeam: {
@@ -38,7 +35,7 @@ interface UserSpecialBetFormData {
 
 interface SpecialBetRowProps {
   bet: UserSpecialBet
-  specialBet: SpecialBetWithBets
+  specialBet: SpecialBetWithUserBets
   league?: LeagueWithTeams
   isEvaluated: boolean
   specialBetId: number

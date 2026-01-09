@@ -13,6 +13,39 @@ export const evaluatorRuleSchema = z.object({
   points: z.number().int().min(0).max(100),
 })
 
+// Individual Evaluator validation schemas
+export const createEvaluatorSchema = z.object({
+  leagueId: z.number().int().positive('League is required'),
+  evaluatorTypeId: z.number().int().positive('Evaluator type is required'),
+  name: z.string().min(1, 'Name is required').max(255),
+  points: z.number().int().min(0, 'Points cannot be negative').max(100),
+})
+
+export type CreateEvaluatorInput = z.infer<typeof createEvaluatorSchema>
+
+export const updateEvaluatorPointsSchema = z.object({
+  evaluatorId: z.number().int().positive('Evaluator ID is required'),
+  points: z.number().int().min(0, 'Points cannot be negative').max(100),
+})
+
+export type UpdateEvaluatorPointsInput = z.infer<typeof updateEvaluatorPointsSchema>
+
+export const updateEvaluatorNameSchema = z.object({
+  evaluatorId: z.number().int().positive('Evaluator ID is required'),
+  name: z.string().min(1, 'Name cannot be empty').max(255),
+})
+
+export type UpdateEvaluatorNameInput = z.infer<typeof updateEvaluatorNameSchema>
+
+// Team group update schema
+export const updateTeamGroupSchema = z.object({
+  leagueTeamId: z.number().int().positive('League Team ID is required'),
+  group: z.string().max(10).nullable(),
+})
+
+export type UpdateTeamGroupInput = z.infer<typeof updateTeamGroupSchema>
+
+
 // League validation schemas
 export const createLeagueSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),

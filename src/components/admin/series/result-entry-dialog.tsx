@@ -3,7 +3,8 @@
 import * as React from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import { updateSeriesResult, evaluateSeries } from '@/actions/series'
+import { updateSeriesResult } from '@/actions/series'
+import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -127,11 +128,14 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
     setIsEvaluating(true)
 
     try {
-      const result = await evaluateSeries(series.id)
+      const result = await evaluateSeriesBets({ seriesId: series.id })
 
       if (result.success) {
-        toast.success(`Series evaluated! ${result.evaluatedBets} bets scored.`)
+        const betsCount = result.data?.results.length ?? 0
+        toast.success(`Series evaluated! ${betsCount} bets scored.`)
         onOpenChange(false)
+      } else {
+        toast.error(result.error || 'Failed to evaluate series')
       }
     } catch (error) {
       if (error instanceof Error) {

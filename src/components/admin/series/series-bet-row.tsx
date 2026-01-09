@@ -5,14 +5,12 @@ import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
-import { updateUserSeriesBet, deleteUserSeriesBet } from '@/actions/series-bets'
+import { updateUserSeriesBet, deleteUserSeriesBet, type UserSeriesBet } from '@/actions/series-bets'
 import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { validateUserSeriesBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
-
-type UserSeriesBet = Awaited<ReturnType<typeof import('@/actions/series-bets').getSeriesWithUserBets>>[number]['UserSpecialBetSerie'][number]
 type Team = { id: number; name: string; shortcut: string }
 
 interface UserSeriesBetFormData {

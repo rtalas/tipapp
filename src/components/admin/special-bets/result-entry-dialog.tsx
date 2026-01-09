@@ -3,7 +3,8 @@
 import * as React from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import { updateSpecialBetResult, evaluateSpecialBet } from '@/actions/special-bets'
+import { updateSpecialBetResult } from '@/actions/special-bets'
+import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -115,11 +116,14 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
     setIsEvaluating(true)
 
     try {
-      const result = await evaluateSpecialBet(specialBet.id)
+      const result = await evaluateSpecialBetBets({ specialBetId: specialBet.id })
 
       if (result.success) {
-        toast.success(`Special bet evaluated! ${result.evaluatedBets} bets scored.`)
+        const betsCount = result.data?.results.length ?? 0
+        toast.success(`Special bet evaluated! ${betsCount} bets scored.`)
         onOpenChange(false)
+      } else {
+        toast.error(result.error || 'Failed to evaluate special bet')
       }
     } catch (error) {
       if (error instanceof Error) {

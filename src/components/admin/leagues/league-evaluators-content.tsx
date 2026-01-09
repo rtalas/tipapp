@@ -103,7 +103,7 @@ export function LeagueEvaluatorsContent({
 
     setIsSaving(true)
     try {
-      await updateEvaluatorPoints(evaluatorId, parseInt(editPointsValue, 10))
+      await updateEvaluatorPoints({ evaluatorId, points: parseInt(editPointsValue, 10) })
       toast.success('Points updated')
       setEditingId(null)
     } catch (error) {
@@ -126,7 +126,7 @@ export function LeagueEvaluatorsContent({
 
     setIsSaving(true)
     try {
-      await updateEvaluatorName(evaluatorId, editNameValue)
+      await updateEvaluatorName({ evaluatorId, name: editNameValue })
       toast.success('Name updated')
       setEditingId(null)
     } catch (error) {
@@ -179,7 +179,7 @@ export function LeagueEvaluatorsContent({
     if (!evaluatorToDelete) return
     setIsDeleting(true)
     try {
-      await deleteEvaluator(evaluatorToDelete.id)
+      await deleteEvaluator({ id: evaluatorToDelete.id })
       toast.success('Evaluator deleted')
       setDeleteDialogOpen(false)
       setEvaluatorToDelete(null)

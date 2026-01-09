@@ -1,8 +1,17 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-utils'
+import { executeServerAction } from '@/lib/server-action-utils'
+import {
+  createEvaluatorSchema,
+  updateEvaluatorPointsSchema,
+  updateEvaluatorNameSchema,
+  deleteByIdSchema,
+  type CreateEvaluatorInput,
+  type UpdateEvaluatorPointsInput,
+  type UpdateEvaluatorNameInput,
+  type DeleteByIdInput,
+} from '@/lib/validation/admin'
 
 // Get all evaluators
 export async function getAllEvaluators() {
@@ -32,83 +41,78 @@ export async function getLeagueEvaluators(leagueId: number) {
 }
 
 // Update evaluator points
-export async function updateEvaluatorPoints(evaluatorId: number, points: number) {
-  await requireAdmin()
-
-  if (points < 0) {
-    throw new Error('Points cannot be negative')
-  }
-
-  await prisma.evaluator.update({
-    where: { id: evaluatorId },
-    data: {
-      points: String(points),
-      updatedAt: new Date(),
+export async function updateEvaluatorPoints(input: UpdateEvaluatorPointsInput) {
+  return executeServerAction(input, {
+    validator: updateEvaluatorPointsSchema,
+    handler: async (validated) => {
+      await prisma.evaluator.update({
+        where: { id: validated.evaluatorId },
+        data: {
+          points: String(validated.points),
+          updatedAt: new Date(),
+        },
+      })
+      return {}
     },
+    revalidatePath: '/admin/evaluators',
+    requiresAdmin: true,
   })
-
-  revalidatePath('/admin/evaluators')
-  return { success: true }
 }
 
 // Create new evaluator
-export async function createEvaluator(input: {
-  leagueId: number
-  evaluatorTypeId: number
-  name: string
-  points: number
-}) {
-  await requireAdmin()
-
-  if (input.points < 0) {
-    throw new Error('Points cannot be negative')
-  }
-
-  const evaluator = await prisma.evaluator.create({
-    data: {
-      leagueId: input.leagueId,
-      evaluatorTypeId: input.evaluatorTypeId,
-      name: input.name,
-      points: String(input.points),
-      entity: 'match',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+export async function createEvaluator(input: CreateEvaluatorInput) {
+  return executeServerAction(input, {
+    validator: createEvaluatorSchema,
+    handler: async (validated) => {
+      const evaluator = await prisma.evaluator.create({
+        data: {
+          leagueId: validated.leagueId,
+          evaluatorTypeId: validated.evaluatorTypeId,
+          name: validated.name,
+          points: String(validated.points),
+          entity: 'match',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      })
+      return { evaluatorId: evaluator.id }
     },
+    revalidatePath: '/admin/evaluators',
+    requiresAdmin: true,
   })
-
-  revalidatePath('/admin/evaluators')
-  return { success: true, evaluatorId: evaluator.id }
 }
 
 // Update evaluator name
-export async function updateEvaluatorName(evaluatorId: number, name: string) {
-  await requireAdmin()
-
-  if (!name || name.trim().length === 0) {
-    throw new Error('Name cannot be empty')
-  }
-
-  await prisma.evaluator.update({
-    where: { id: evaluatorId },
-    data: {
-      name: name.trim(),
-      updatedAt: new Date(),
+export async function updateEvaluatorName(input: UpdateEvaluatorNameInput) {
+  return executeServerAction(input, {
+    validator: updateEvaluatorNameSchema,
+    handler: async (validated) => {
+      await prisma.evaluator.update({
+        where: { id: validated.evaluatorId },
+        data: {
+          name: validated.name.trim(),
+          updatedAt: new Date(),
+        },
+      })
+      return {}
     },
+    revalidatePath: '/admin/evaluators',
+    requiresAdmin: true,
   })
-
-  revalidatePath('/admin/evaluators')
-  return { success: true }
 }
 
 // Delete evaluator
-export async function deleteEvaluator(evaluatorId: number) {
-  await requireAdmin()
-
-  await prisma.evaluator.update({
-    where: { id: evaluatorId },
-    data: { deletedAt: new Date() },
+export async function deleteEvaluator(input: DeleteByIdInput) {
+  return executeServerAction(input, {
+    validator: deleteByIdSchema,
+    handler: async (validated) => {
+      await prisma.evaluator.update({
+        where: { id: validated.id },
+        data: { deletedAt: new Date() },
+      })
+      return {}
+    },
+    revalidatePath: '/admin/evaluators',
+    requiresAdmin: true,
   })
-
-  revalidatePath('/admin/evaluators')
-  return { success: true }
 }

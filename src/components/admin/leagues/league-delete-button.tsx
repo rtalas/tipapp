@@ -27,7 +27,7 @@ export function LeagueDeleteButton({ leagueId, leagueName }: LeagueDeleteButtonP
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      await deleteLeague(leagueId)
+      await deleteLeague({ id: leagueId })
       toast.success('League deleted successfully')
       setOpen(false)
     } catch (error) {

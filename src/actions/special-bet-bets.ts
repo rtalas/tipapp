@@ -71,6 +71,10 @@ export async function getSpecialBetsWithUserBets(filters?: {
   return specialBets
 }
 
+// Export types for components
+export type SpecialBetWithUserBets = Awaited<ReturnType<typeof getSpecialBetsWithUserBets>>[number]
+export type UserSpecialBet = SpecialBetWithUserBets['UserSpecialBetSingle'][number]
+
 /**
  * Creates a new user special bet
  * CRITICAL: Validates mutually exclusive fields (team OR player OR value)

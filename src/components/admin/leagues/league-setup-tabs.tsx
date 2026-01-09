@@ -113,7 +113,7 @@ export function LeagueSetupTabs({
 
   const handleRemoveTeam = async (leagueTeamId: number) => {
     try {
-      await removeTeamFromLeague(leagueTeamId)
+      await removeTeamFromLeague({ id: leagueTeamId })
       toast.success('Team removed from league')
     } catch (error) {
       toast.error('Failed to remove team')
@@ -142,7 +142,7 @@ export function LeagueSetupTabs({
 
   const handleRemovePlayer = async (leaguePlayerId: number) => {
     try {
-      await removePlayerFromLeagueTeam(leaguePlayerId)
+      await removePlayerFromLeagueTeam({ id: leaguePlayerId })
       toast.success('Player removed from team')
     } catch (error) {
       toast.error('Failed to remove player')

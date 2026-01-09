@@ -86,6 +86,10 @@ export async function getMatchesWithUserBets(filters?: {
   return matches
 }
 
+// Export types for components
+export type MatchWithUserBets = Awaited<ReturnType<typeof getMatchesWithUserBets>>[number]
+export type UserBet = MatchWithUserBets['UserBet'][number]
+
 /**
  * Creates a new user bet
  * Validates that the leagueMatch and leagueUser exist

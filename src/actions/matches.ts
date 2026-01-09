@@ -1,8 +1,7 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-utils'
+import { executeServerAction } from '@/lib/server-action-utils'
 import { buildLeagueMatchWhere } from '@/lib/query-builders'
 import { leagueMatchInclude, leagueMatchWithBetsInclude, matchWithEvaluatorsInclude } from '@/lib/prisma-helpers'
 import {
@@ -11,124 +10,135 @@ import {
   type CreateMatchInput,
   type UpdateMatchResultInput,
 } from '@/lib/validation/admin'
+import { deleteByIdSchema } from '@/lib/validation/admin'
 
 export async function createMatch(input: CreateMatchInput) {
-  await requireAdmin()
+  return executeServerAction(input, {
+    validator: createMatchSchema,
+    handler: async (validated) => {
+      const now = new Date()
 
-  const validated = createMatchSchema.parse(input)
-  const now = new Date()
+      // Verify teams belong to the league
+      const homeTeam = await prisma.leagueTeam.findFirst({
+        where: {
+          id: validated.homeTeamId,
+          leagueId: validated.leagueId,
+          deletedAt: null,
+        },
+      })
 
-  // Verify teams belong to the league
-  const homeTeam = await prisma.leagueTeam.findFirst({
-    where: {
-      id: validated.homeTeamId,
-      leagueId: validated.leagueId,
-      deletedAt: null,
+      const awayTeam = await prisma.leagueTeam.findFirst({
+        where: {
+          id: validated.awayTeamId,
+          leagueId: validated.leagueId,
+          deletedAt: null,
+        },
+      })
+
+      if (!homeTeam || !awayTeam) {
+        throw new Error('Teams must belong to the selected league')
+      }
+
+      // Transaction: Create match + league match
+      const result = await prisma.$transaction(async (tx) => {
+        // Create the match
+        const match = await tx.match.create({
+          data: {
+            dateTime: validated.dateTime,
+            homeTeamId: validated.homeTeamId,
+            awayTeamId: validated.awayTeamId,
+            isPlayoffGame: validated.isPlayoffGame,
+            createdAt: now,
+            updatedAt: now,
+          },
+        })
+
+        // Create the league match link
+        await tx.leagueMatch.create({
+          data: {
+            leagueId: validated.leagueId,
+            matchId: match.id,
+            isDoubled: validated.isDoubled,
+            createdAt: now,
+            updatedAt: now,
+          },
+        })
+
+        return match
+      })
+
+      return { matchId: result.id }
     },
+    revalidatePath: '/admin/matches',
+    requiresAdmin: true,
   })
-
-  const awayTeam = await prisma.leagueTeam.findFirst({
-    where: {
-      id: validated.awayTeamId,
-      leagueId: validated.leagueId,
-      deletedAt: null,
-    },
-  })
-
-  if (!homeTeam || !awayTeam) {
-    throw new Error('Teams must belong to the selected league')
-  }
-
-  // Transaction: Create match + league match
-  const result = await prisma.$transaction(async (tx) => {
-    // Create the match
-    const match = await tx.match.create({
-      data: {
-        dateTime: validated.dateTime,
-        homeTeamId: validated.homeTeamId,
-        awayTeamId: validated.awayTeamId,
-        isPlayoffGame: validated.isPlayoffGame,
-        createdAt: now,
-        updatedAt: now,
-      },
-    })
-
-    // Create the league match link
-    await tx.leagueMatch.create({
-      data: {
-        leagueId: validated.leagueId,
-        matchId: match.id,
-        isDoubled: validated.isDoubled,
-        createdAt: now,
-        updatedAt: now,
-      },
-    })
-
-    return match
-  })
-
-  revalidatePath('/admin/matches')
-  return { success: true, matchId: result.id }
 }
 
 export async function updateMatchResult(input: UpdateMatchResultInput) {
-  await requireAdmin()
+  return executeServerAction(input, {
+    validator: updateMatchResultSchema,
+    handler: async (validated) => {
+      const now = new Date()
 
-  const validated = updateMatchResultSchema.parse(input)
-  const now = new Date()
+      await prisma.$transaction(async (tx) => {
+        // Update the match scores
+        await tx.match.update({
+          where: { id: validated.matchId },
+          data: {
+            homeRegularScore: validated.homeRegularScore,
+            awayRegularScore: validated.awayRegularScore,
+            homeFinalScore: validated.homeFinalScore ?? validated.homeRegularScore,
+            awayFinalScore: validated.awayFinalScore ?? validated.awayRegularScore,
+            isOvertime: validated.isOvertime,
+            isShootout: validated.isShootout,
+            updatedAt: now,
+          },
+        })
 
-  await prisma.$transaction(async (tx) => {
-    // Update the match scores
-    await tx.match.update({
-      where: { id: validated.matchId },
-      data: {
-        homeRegularScore: validated.homeRegularScore,
-        awayRegularScore: validated.awayRegularScore,
-        homeFinalScore: validated.homeFinalScore ?? validated.homeRegularScore,
-        awayFinalScore: validated.awayFinalScore ?? validated.awayRegularScore,
-        isOvertime: validated.isOvertime,
-        isShootout: validated.isShootout,
-        updatedAt: now,
-      },
-    })
+        // Handle scorers
+        if (validated.scorers) {
+          // Delete existing scorers
+          await tx.matchScorer.deleteMany({
+            where: { matchId: validated.matchId },
+          })
 
-    // Handle scorers
-    if (validated.scorers) {
-      // Delete existing scorers
-      await tx.matchScorer.deleteMany({
-        where: { matchId: validated.matchId },
+          // Create new scorers
+          if (validated.scorers.length > 0) {
+            await tx.matchScorer.createMany({
+              data: validated.scorers.map((scorer: { playerId: number; numberOfGoals: number }) => ({
+                matchId: validated.matchId,
+                scorerId: scorer.playerId,
+                numberOfGoals: scorer.numberOfGoals,
+                createdAt: now,
+                updatedAt: now,
+              })),
+            })
+          }
+        }
       })
 
-      // Create new scorers
-      if (validated.scorers.length > 0) {
-        await tx.matchScorer.createMany({
-          data: validated.scorers.map((scorer) => ({
-            matchId: validated.matchId,
-            scorerId: scorer.playerId,
-            numberOfGoals: scorer.numberOfGoals,
-            createdAt: now,
-            updatedAt: now,
-          })),
-        })
-      }
-    }
+      return {}
+    },
+    revalidatePath: '/admin/matches',
+    requiresAdmin: true,
   })
-
-  revalidatePath('/admin/matches')
-  return { success: true }
 }
 
 export async function deleteMatch(matchId: number) {
-  await requireAdmin()
+  return executeServerAction({ id: matchId }, {
+    validator: deleteByIdSchema,
+    handler: async (validated) => {
+      // Soft delete by setting deletedAt
+      await prisma.match.update({
+        where: { id: validated.id },
+        data: { deletedAt: new Date() },
+      })
 
-  // Soft delete by setting deletedAt
-  await prisma.match.update({
-    where: { id: matchId },
-    data: { deletedAt: new Date() },
+      return {}
+    },
+    revalidatePath: '/admin/matches',
+    requiresAdmin: true,
   })
-
-  revalidatePath('/admin/matches')
-  return { success: true }
 }
 
 // Query functions
@@ -182,143 +192,4 @@ export async function getMatchById(matchId: number) {
   })
 }
 
-// Determine winner: 1 = home, 2 = away, 0 = draw
-function getWinner(homeScore: number, awayScore: number): number {
-  if (homeScore > awayScore) return 1
-  if (awayScore > homeScore) return 2
-  return 0
-}
-
-// Evaluate a single match and calculate points for all bets
-// Uses atomic transaction to prevent race conditions (double evaluation)
-export async function evaluateMatch(matchId: number) {
-  await requireAdmin()
-
-  const now = new Date()
-
-  // Wrapped in transaction with optimistic locking
-  // Prevents concurrent evaluations of the same match
-  const result = await prisma.$transaction(async (tx) => {
-    // Lock: Get match with exclusive lock within transaction
-    const match = await tx.match.findUnique({
-      where: { id: matchId, deletedAt: null },
-      include: {
-        LeagueMatch: {
-          include: {
-            League: {
-              include: {
-                Evaluator: {
-                  where: { deletedAt: null },
-                  include: { EvaluatorType: true },
-                },
-              },
-            },
-            UserBet: {
-              where: { deletedAt: null },
-            },
-          },
-        },
-        MatchScorer: true,
-      },
-    })
-
-    if (!match) {
-      throw new Error('Match not found')
-    }
-
-    // Race condition protection: Check if already evaluated
-    if (match.isEvaluated) {
-      throw new Error('Match is already evaluated')
-    }
-
-    if (match.homeRegularScore === null || match.awayRegularScore === null) {
-      throw new Error('Match scores must be entered before evaluation')
-    }
-
-    const leagueMatch = match.LeagueMatch[0]
-    if (!leagueMatch) {
-      throw new Error('Match is not linked to a league')
-    }
-
-    const evaluators = leagueMatch.League.Evaluator
-    const isDoubled = leagueMatch.isDoubled ?? false
-    const multiplier = isDoubled ? 2 : 1
-
-    // Build evaluator lookup by type name
-    const evaluatorByType: Record<string, number> = {}
-    for (const evaluator of evaluators) {
-      evaluatorByType[evaluator.EvaluatorType.name] = parseInt(evaluator.points, 10) || 0
-    }
-
-    // Actual match results
-    const actualHomeScore = match.homeRegularScore
-    const actualAwayScore = match.awayRegularScore
-    const actualWinner = getWinner(actualHomeScore, actualAwayScore)
-    const actualGoalDifference = actualHomeScore - actualAwayScore
-    const actualTotalGoals = actualHomeScore + actualAwayScore
-    const actualScorerIds = match.MatchScorer.map((s) => s.scorerId)
-
-    // Process each bet
-    for (const bet of leagueMatch.UserBet) {
-      let points = 0
-
-      // Check exact score
-      if (bet.homeScore === actualHomeScore && bet.awayScore === actualAwayScore) {
-        points += evaluatorByType['exact_score'] ?? 0
-      }
-
-      // Check correct winner
-      const betWinner = getWinner(bet.homeScore, bet.awayScore)
-      if (betWinner === actualWinner) {
-        points += evaluatorByType['winner'] ?? 0
-      }
-
-      // Check goal difference (only if not exact score and not a draw)
-      const betGoalDifference = bet.homeScore - bet.awayScore
-      if (betGoalDifference === actualGoalDifference) {
-        points += evaluatorByType['goal_difference'] ?? 0
-      }
-
-      // Check total goals
-      const betTotalGoals = bet.homeScore + bet.awayScore
-      if (betTotalGoals === actualTotalGoals) {
-        points += evaluatorByType['total_goals'] ?? 0
-      }
-
-      // Check scorer (if user predicted a scorer and it matches)
-      if (bet.scorerId && actualScorerIds.includes(bet.scorerId)) {
-        points += evaluatorByType['scorer'] ?? 0
-      }
-
-      // Apply multiplier
-      const totalPoints = points * multiplier
-
-      // Update bet with calculated points
-      await tx.userBet.update({
-        where: { id: bet.id },
-        data: {
-          totalPoints,
-          updatedAt: now,
-        },
-      })
-    }
-
-    // Mark match as evaluated - atomic update prevents double evaluation
-    await tx.match.update({
-      where: { id: matchId },
-      data: {
-        isEvaluated: true,
-        updatedAt: now,
-      },
-    })
-
-    return { evaluatedBets: leagueMatch.UserBet.length }
-  }, {
-    // Prisma transaction isolation level for strong consistency
-    isolationLevel: 'Serializable',
-  })
-
-  revalidatePath('/admin/matches')
-  return { success: true, evaluatedBets: result.evaluatedBets }
-}
 

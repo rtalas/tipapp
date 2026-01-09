@@ -9,14 +9,12 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
-import { updateUserBet, deleteUserBet } from '@/actions/user-bets'
+import { updateUserBet, deleteUserBet, type UserBet } from '@/actions/user-bets'
 import { evaluateMatchBets } from '@/actions/evaluate-matches'
 import { validateUserBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
-
-type UserBet = Awaited<ReturnType<typeof import('@/actions/user-bets').getMatchesWithUserBets>>[number]['UserBet'][number]
 type Team = { id: number; name: string; shortcut: string }
 type LeaguePlayer = { id: number; Player: { id: number; firstName: string | null; lastName: string | null } }
 
