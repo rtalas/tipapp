@@ -6,11 +6,12 @@ import { requireAdmin } from '@/lib/auth-utils'
 import { buildLeagueUserWhere } from '@/lib/query-builders'
 
 // Get pending user requests
-export async function getPendingRequests() {
+export async function getPendingRequests(filters?: { leagueId?: number }) {
   return prisma.userRequest.findMany({
     where: {
       decided: false,
       deletedAt: null,
+      ...(filters?.leagueId && { leagueId: filters.leagueId }),
     },
     include: {
       User: true,

@@ -78,9 +78,10 @@ interface UsersContentProps {
   pendingRequests: UserRequest[]
   leagueUsers: LeagueUser[]
   leagues: League[]
+  league?: League
 }
 
-export function UsersContent({ pendingRequests, leagueUsers, leagues }: UsersContentProps) {
+export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: UsersContentProps) {
   const [search, setSearch] = React.useState('')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
   const [processingRequests, setProcessingRequests] = React.useState<Set<number>>(new Set())
@@ -90,8 +91,8 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues }: UsersCon
 
   // Filter league users with optimized string search
   const filteredLeagueUsers = leagueUsers.filter((lu) => {
-    // League filter
-    if (leagueFilter !== 'all' && lu.leagueId !== parseInt(leagueFilter, 10)) {
+    // League filter (only if not on league-specific page)
+    if (!league && leagueFilter !== 'all' && lu.leagueId !== parseInt(leagueFilter, 10)) {
       return false
     }
 
@@ -305,19 +306,21 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues }: UsersCon
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-sm"
             />
-            <Select value={leagueFilter} onValueChange={setLeagueFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="League" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Leagues</SelectItem>
-                {leagues.map((league) => (
-                  <SelectItem key={league.id} value={league.id.toString()}>
-                    {league.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {!league && (
+              <Select value={leagueFilter} onValueChange={setLeagueFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="League" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Leagues</SelectItem>
+                  {leagues.map((lg) => (
+                    <SelectItem key={lg.id} value={lg.id.toString()}>
+                      {lg.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {filteredLeagueUsers.length === 0 ? (

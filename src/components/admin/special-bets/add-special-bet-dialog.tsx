@@ -30,19 +30,22 @@ interface AddSpecialBetDialogProps {
   onOpenChange: (open: boolean) => void
   leagues: League[]
   specialBetTypes: SpecialBetType[]
+  league?: { id: number; name: string }
 }
 
-export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTypes }: AddSpecialBetDialogProps) {
+export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTypes, league }: AddSpecialBetDialogProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [selectedLeagueId, setSelectedLeagueId] = React.useState<string>('')
+  const [selectedLeagueId, setSelectedLeagueId] = React.useState<string>(league?.id.toString() || '')
   const [selectedTypeId, setSelectedTypeId] = React.useState<string>('')
   const [points, setPoints] = React.useState<string>('0')
   const [dateTime, setDateTime] = React.useState<string>('')
 
+  const effectiveLeagueId = league?.id.toString() || selectedLeagueId
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedLeagueId || !selectedTypeId || !dateTime) {
+    if (!effectiveLeagueId || !selectedTypeId || !dateTime) {
       toast.error('Please fill in all required fields')
       return
     }
@@ -57,7 +60,7 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
 
     try {
       await createSpecialBet({
-        leagueId: parseInt(selectedLeagueId, 10),
+        leagueId: parseInt(effectiveLeagueId, 10),
         specialBetSingleId: parseInt(selectedTypeId, 10),
         points: pointsValue,
         dateTime: new Date(dateTime),
@@ -79,7 +82,9 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
   }
 
   const resetForm = () => {
-    setSelectedLeagueId('')
+    if (!league) {
+      setSelectedLeagueId('')
+    }
     setSelectedTypeId('')
     setPoints('0')
     setDateTime('')
@@ -96,21 +101,23 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="league">League</Label>
-            <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a league" />
-              </SelectTrigger>
-              <SelectContent>
-                {leagues.map((league) => (
-                  <SelectItem key={league.id} value={league.id.toString()}>
-                    {league.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!league && (
+            <div className="space-y-2">
+              <Label htmlFor="league">League</Label>
+              <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a league" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leagues.map((league) => (
+                    <SelectItem key={league.id} value={league.id.toString()}>
+                      {league.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="type">Special Bet Type</Label>

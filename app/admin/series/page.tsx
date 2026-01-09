@@ -1,44 +1,12 @@
-import { getSeriesWithUserBets } from '@/actions/series-bets'
-import { getUsers } from '@/actions/users'
-import { prisma } from '@/lib/prisma'
-import { SeriesContent } from '@/components/admin/series/series-content'
+import { redirect } from 'next/navigation'
+import { getActiveLeagues } from '@/lib/league-utils'
 
-export default async function SeriesPage() {
-  const [series, leagues, specialBetSeries, users] = await Promise.all([
-    getSeriesWithUserBets(),
-    prisma.league.findMany({
-      where: { deletedAt: null, isActive: true },
-      include: {
-        LeagueTeam: {
-          where: { deletedAt: null },
-          include: { Team: true },
-          orderBy: { Team: { name: 'asc' } },
-        },
-      },
-      orderBy: { name: 'asc' },
-    }),
-    prisma.specialBetSerie.findMany({
-      where: { deletedAt: null },
-      orderBy: { name: 'asc' },
-    }),
-    getUsers(),
-  ])
+export default async function SeriesRedirect() {
+  const leagues = await getActiveLeagues()
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Series</h1>
-        <p className="text-muted-foreground">
-          Manage playoff series and best-of-7 matchups.
-        </p>
-      </div>
+  if (leagues.length === 0) {
+    redirect('/admin/leagues')
+  }
 
-      <SeriesContent
-        series={series}
-        leagues={leagues}
-        specialBetSeries={specialBetSeries}
-        users={users}
-      />
-    </div>
-  )
+  redirect(`/admin/${leagues[0].id}/series`)
 }

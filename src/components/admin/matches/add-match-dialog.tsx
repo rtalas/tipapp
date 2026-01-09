@@ -48,19 +48,21 @@ interface AddMatchDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   leagues: League[]
+  league?: { id: number; name: string }
 }
 
-export function AddMatchDialog({ open, onOpenChange, leagues }: AddMatchDialogProps) {
+export function AddMatchDialog({ open, onOpenChange, leagues, league }: AddMatchDialogProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [selectedLeagueId, setSelectedLeagueId] = React.useState<string>('')
+  const [selectedLeagueId, setSelectedLeagueId] = React.useState<string>(league?.id.toString() || '')
   const [selectedHomeTeamId, setSelectedHomeTeamId] = React.useState<string>('')
   const [selectedAwayTeamId, setSelectedAwayTeamId] = React.useState<string>('')
   const [dateTime, setDateTime] = React.useState<string>('')
   const [isPlayoffGame, setIsPlayoffGame] = React.useState(false)
   const [isDoubled, setIsDoubled] = React.useState(false)
 
-  // Get teams for selected league
-  const selectedLeague = leagues.find((l) => l.id.toString() === selectedLeagueId)
+  // Get teams for selected league (from prop or from selection)
+  const effectiveLeagueId = league?.id.toString() || selectedLeagueId
+  const selectedLeague = leagues.find((l) => l.id.toString() === effectiveLeagueId)
   const availableTeams = selectedLeague?.LeagueTeam || []
 
   // Filter out selected teams from each other's options
@@ -74,7 +76,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues }: AddMatchDialogPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedLeagueId || !selectedHomeTeamId || !selectedAwayTeamId || !dateTime) {
+    if (!effectiveLeagueId || !selectedHomeTeamId || !selectedAwayTeamId || !dateTime) {
       toast.error('Please fill in all required fields')
       return
     }
@@ -83,7 +85,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues }: AddMatchDialogPr
 
     try {
       await createMatch({
-        leagueId: parseInt(selectedLeagueId, 10),
+        leagueId: parseInt(effectiveLeagueId, 10),
         homeTeamId: parseInt(selectedHomeTeamId, 10),
         awayTeamId: parseInt(selectedAwayTeamId, 10),
         dateTime: new Date(dateTime),
@@ -107,7 +109,9 @@ export function AddMatchDialog({ open, onOpenChange, leagues }: AddMatchDialogPr
   }
 
   const resetForm = () => {
-    setSelectedLeagueId('')
+    if (!league) {
+      setSelectedLeagueId('')
+    }
     setSelectedHomeTeamId('')
     setSelectedAwayTeamId('')
     setDateTime('')
@@ -115,11 +119,13 @@ export function AddMatchDialog({ open, onOpenChange, leagues }: AddMatchDialogPr
     setIsDoubled(false)
   }
 
-  // Reset team selections when league changes
+  // Reset team selections when league changes (only for manual selection)
   React.useEffect(() => {
-    setSelectedHomeTeamId('')
-    setSelectedAwayTeamId('')
-  }, [selectedLeagueId])
+    if (!league) {
+      setSelectedHomeTeamId('')
+      setSelectedAwayTeamId('')
+    }
+  }, [selectedLeagueId, league])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,21 +138,23 @@ export function AddMatchDialog({ open, onOpenChange, leagues }: AddMatchDialogPr
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="league">League</Label>
-            <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a league" />
-              </SelectTrigger>
-              <SelectContent>
-                {leagues.map((league) => (
-                  <SelectItem key={league.id} value={league.id.toString()}>
-                    {league.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!league && (
+            <div className="space-y-2">
+              <Label htmlFor="league">League</Label>
+              <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a league" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leagues.map((league) => (
+                    <SelectItem key={league.id} value={league.id.toString()}>
+                      {league.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -154,7 +162,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues }: AddMatchDialogPr
               <Select
                 value={selectedHomeTeamId}
                 onValueChange={setSelectedHomeTeamId}
-                disabled={!selectedLeagueId}
+                disabled={!effectiveLeagueId}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select team" />
@@ -174,7 +182,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues }: AddMatchDialogPr
               <Select
                 value={selectedAwayTeamId}
                 onValueChange={setSelectedAwayTeamId}
-                disabled={!selectedLeagueId}
+                disabled={!effectiveLeagueId}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select team" />

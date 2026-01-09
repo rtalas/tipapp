@@ -302,3 +302,32 @@ export const updateUserSpecialBetSchema = z.object({
 })
 
 export type UpdateUserSpecialBetInput = z.infer<typeof updateUserSpecialBetSchema>
+
+// Special Bet Type (Global) validation schemas
+export const createSpecialBetTypeSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(255),
+  sportId: z.number().int().positive('Sport is required'),
+  specialBetSingleTypeId: z.number().int().positive('Type is required'),
+})
+
+export type CreateSpecialBetTypeInput = z.infer<typeof createSpecialBetTypeSchema>
+
+export const updateSpecialBetTypeSchema = createSpecialBetTypeSchema.partial().extend({
+  id: z.number().int().positive(),
+})
+
+export type UpdateSpecialBetTypeInput = z.infer<typeof updateSpecialBetTypeSchema>
+
+// Series Type (Global) validation schemas
+export const createSeriesTypeSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(255),
+  bestOf: z.number().int().min(1, 'Best of must be at least 1').max(7, 'Best of cannot exceed 7'),
+})
+
+export type CreateSeriesTypeInput = z.infer<typeof createSeriesTypeSchema>
+
+export const updateSeriesTypeSchema = createSeriesTypeSchema.partial().extend({
+  id: z.number().int().positive(),
+})
+
+export type UpdateSeriesTypeInput = z.infer<typeof updateSeriesTypeSchema>

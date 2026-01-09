@@ -51,6 +51,7 @@ interface SpecialBetsContentProps {
   leagues: League[]
   specialBetTypes: SpecialBetType[]
   users: User[]
+  league?: { id: number; name: string }
 }
 
 function getSpecialBetStatus(specialBet: SpecialBet): 'scheduled' | 'finished' | 'evaluated' {
@@ -85,7 +86,7 @@ function getResultTypeAndDisplay(specialBet: SpecialBet): { type: string; displa
   return { type: 'none', display: '-' }
 }
 
-export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, users }: SpecialBetsContentProps) {
+export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, users, league }: SpecialBetsContentProps) {
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
@@ -111,8 +112,8 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
       return false
     }
 
-    // League filter
-    if (leagueFilter !== 'all' && sb.leagueId !== parseInt(leagueFilter, 10)) {
+    // League filter (only if not on league-specific page)
+    if (!league && leagueFilter !== 'all' && sb.leagueId !== parseInt(leagueFilter, 10)) {
       return false
     }
 
@@ -179,19 +180,21 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
               <SelectItem value="evaluated">Evaluated</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={leagueFilter} onValueChange={setLeagueFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="League" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Leagues</SelectItem>
-              {leagues.map((league) => (
-                <SelectItem key={league.id} value={league.id.toString()}>
-                  {league.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!league && (
+            <Select value={leagueFilter} onValueChange={setLeagueFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="League" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Leagues</SelectItem>
+                {leagues.map((lg) => (
+                  <SelectItem key={lg.id} value={lg.id.toString()}>
+                    {lg.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All Users" />
@@ -247,9 +250,9 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                   <TableRow>
                     <TableHead className="w-[40px]"></TableHead>
                     <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>League</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead>Date & Time</TableHead>
+                    {!league && <TableHead>League</TableHead>}
+                    <TableHead>Special Bet</TableHead>
                     <TableHead>Result</TableHead>
                     <TableHead>Points</TableHead>
                     <TableHead className="text-center">Bets</TableHead>
@@ -283,11 +286,23 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                             #{sb.id}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(sb.dateTime), 'MMM d, yyyy')}
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {format(new Date(sb.dateTime), 'd.M.yyyy')}
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                {format(new Date(sb.dateTime), 'HH:mm')}
+                              </span>
+                            </div>
                           </TableCell>
-                          <TableCell>{sb.League.name}</TableCell>
+                          {!league && <TableCell>{sb.League.name}</TableCell>}
                           <TableCell>
-                            <span className="text-sm">{sb.SpecialBetSingle.name}</span>
+                            <div className="flex flex-col gap-1">
+                              <span className="font-medium">{sb.SpecialBetSingle.name}</span>
+                              <Badge variant="outline" className="w-fit text-xs">
+                                {resultInfo.type !== 'none' ? resultInfo.type : 'not set'}
+                              </Badge>
+                            </div>
                           </TableCell>
                           <TableCell>
                             {resultInfo.type !== 'none' && (
@@ -418,6 +433,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
         onOpenChange={setAddDialogOpen}
         leagues={leagues}
         specialBetTypes={specialBetTypes}
+        league={league}
       />
 
       {/* Result Entry Dialog */}
@@ -452,6 +468,39 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
               Are you sure you want to delete this special bet? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
+          {specialBetToDelete && (() => {
+            const deleteResultInfo = getResultTypeAndDisplay(specialBetToDelete)
+            return (
+              <div className="rounded-lg border p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Bet ID:</span>
+                  <span className="font-mono">#{specialBetToDelete.id}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Date:</span>
+                  <span>{format(new Date(specialBetToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Name:</span>
+                  <span className="font-medium">{specialBetToDelete.SpecialBetSingle.name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Type:</span>
+                  <Badge variant="outline" className="text-xs">
+                    {deleteResultInfo.type !== 'none' ? deleteResultInfo.type : 'not set'}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Points:</span>
+                  <span>{specialBetToDelete.points} pts</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">League:</span>
+                  <span>{specialBetToDelete.League.name}</span>
+                </div>
+              </div>
+            )
+          })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel

@@ -4,7 +4,6 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard,
   Trophy,
   Calendar,
   Users,
@@ -14,72 +13,91 @@ import {
   Shield,
   User,
   ListChecks,
-  Star,
+  Target,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useLeagueContext } from '@/contexts/league-context'
+import type { League } from '@prisma/client'
 
 interface SidebarProps {
   collapsed: boolean
   onToggle: () => void
+  leagues: League[]
 }
 
-const navItems = [
-  {
-    label: 'Dashboard',
-    href: '/admin',
-    icon: LayoutDashboard,
-  },
-  {
-    label: 'Leagues',
-    href: '/admin/leagues',
-    icon: Trophy,
-  },
-  {
-    label: 'Evaluators',
-    href: '/admin/evaluators',
-    icon: Award,
-  },
-  {
-    label: 'Teams',
-    href: '/admin/teams',
-    icon: Shield,
-  },
-  {
-    label: 'Players',
-    href: '/admin/players',
-    icon: User,
-  },
-  {
-    label: 'Matches',
-    href: '/admin/matches',
-    icon: Calendar,
-  },
-  {
-    label: 'Series',
-    href: '/admin/series',
-    icon: ListChecks,
-  },
-  {
-    label: 'Special Bets',
-    href: '/admin/special-bets',
-    icon: Star,
-  },
-  {
-    label: 'Users',
-    href: '/admin/users',
-    icon: Users,
-  },
-]
-
-export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
   const pathname = usePathname()
+  const { selectedLeagueId } = useLeagueContext()
+
+  // Use selected league from context (persists across all pages)
+  const leagueId = selectedLeagueId
+  const currentLeague = leagues.find((l) => l.id.toString() === leagueId)
+
+  // Build league-specific items with dynamic URLs
+  const leagueSpecificItems = leagueId
+    ? [
+        { label: 'Matches', href: `/admin/${leagueId}/matches`, icon: Calendar },
+        { label: 'Special Bets', href: `/admin/${leagueId}/special-bets`, icon: Target },
+        { label: 'Series', href: `/admin/${leagueId}/series`, icon: ListChecks },
+        { label: 'Teams', href: `/admin/${leagueId}/teams`, icon: Shield },
+        { label: 'Players', href: `/admin/${leagueId}/players`, icon: User },
+        { label: 'Users', href: `/admin/${leagueId}/users`, icon: Users },
+        { label: 'Evaluators', href: `/admin/${leagueId}/evaluators`, icon: Award },
+      ]
+    : []
+
+  const generalAdminItems = [
+    { label: 'Leagues', href: '/admin/leagues', icon: Trophy },
+    { label: 'Teams (Global)', href: '/admin/teams', icon: Shield },
+    { label: 'Players (Global)', href: '/admin/players', icon: User },
+    { label: 'Users (Global)', href: '/admin/users', icon: Users },
+    { label: 'Special Bet Types', href: '/admin/special-bet-types', icon: Target },
+    { label: 'Series Types', href: '/admin/series-types', icon: ListChecks },
+  ]
+
+  const renderNavItem = (item: { label: string; href: string; icon: React.ElementType }) => {
+    const isActive =
+      pathname === item.href ||
+      (item.href !== '/admin' && pathname.startsWith(item.href + '/'))
+
+    const link = (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+          isActive
+            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          collapsed && 'justify-center px-2'
+        )}
+      >
+        <item.icon className="h-5 w-5 shrink-0" />
+        {!collapsed && <span>{item.label}</span>}
+      </Link>
+    )
+
+    if (collapsed) {
+      return (
+        <Tooltip key={item.href}>
+          <TooltipTrigger asChild>{link}</TooltipTrigger>
+          <TooltipContent side="right" sideOffset={10}>
+            {item.label}
+          </TooltipContent>
+        </Tooltip>
+      )
+    }
+
+    return link
+  }
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -102,42 +120,42 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 p-2">
-          {navItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== '/admin' && pathname.startsWith(item.href + '/'))
+        <nav className="flex-1 overflow-y-auto p-2">
+          {/* League-Specific Section */}
+          {leagueSpecificItems.length > 0 && (
+            <div className="space-y-1">
+              {!collapsed && currentLeague && (
+                <div className="px-3 py-2">
+                  <p className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider">
+                    {currentLeague.name}
+                  </p>
+                  <p className="text-xs text-sidebar-foreground/50">
+                    {currentLeague.seasonFrom}/{currentLeague.seasonTo}
+                  </p>
+                </div>
+              )}
+              {leagueSpecificItems.map(renderNavItem)}
+            </div>
+          )}
 
-            const link = (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                  collapsed && 'justify-center px-2'
-                )}
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
-              </Link>
-            )
+          {/* Separator between sections */}
+          {leagueSpecificItems.length > 0 && (
+            <div className="my-4">
+              <Separator className="bg-sidebar-border" />
+            </div>
+          )}
 
-            if (collapsed) {
-              return (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>{link}</TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={10}>
-                    {item.label}
-                  </TooltipContent>
-                </Tooltip>
-              )
-            }
-
-            return link
-          })}
+          {/* General Admin Section */}
+          <div className="space-y-1">
+            {!collapsed && (
+              <div className="px-3 py-2">
+                <p className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider">
+                  General Admin
+                </p>
+              </div>
+            )}
+            {generalAdminItems.map(renderNavItem)}
+          </div>
         </nav>
 
         {/* Toggle button */}

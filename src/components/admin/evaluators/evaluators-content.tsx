@@ -63,12 +63,14 @@ interface EvaluatorsContentProps {
   evaluators: Evaluator[]
   leagues: League[]
   evaluatorTypes: EvaluatorType[]
+  league?: League
 }
 
 export function EvaluatorsContent({
   evaluators,
   leagues,
   evaluatorTypes,
+  league,
 }: EvaluatorsContentProps) {
   const [search, setSearch] = React.useState('')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
@@ -90,8 +92,8 @@ export function EvaluatorsContent({
 
   // Filter evaluators with optimized string search
   const filteredEvaluators = evaluators.filter((evaluator) => {
-    // League filter
-    if (leagueFilter !== 'all' && evaluator.leagueId !== parseInt(leagueFilter, 10)) {
+    // League filter (only if not on league-specific page)
+    if (!league && leagueFilter !== 'all' && evaluator.leagueId !== parseInt(leagueFilter, 10)) {
       return false
     }
 
@@ -230,19 +232,21 @@ export function EvaluatorsContent({
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
           />
-          <Select value={leagueFilter} onValueChange={setLeagueFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="League" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Leagues</SelectItem>
-              {leagues.map((league) => (
-                <SelectItem key={league.id} value={league.id.toString()}>
-                  {league.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!league && (
+            <Select value={leagueFilter} onValueChange={setLeagueFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="League" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Leagues</SelectItem>
+                {leagues.map((lg) => (
+                  <SelectItem key={lg.id} value={lg.id.toString()}>
+                    {lg.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />

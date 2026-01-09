@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { Menu, Moon, Sun, LogOut, User } from 'lucide-react'
 import { useTheme } from 'next-themes'
@@ -17,7 +17,9 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Breadcrumbs } from './breadcrumbs'
+import { LeagueSelector } from './league-selector'
 import { cn } from '@/lib/utils'
+import type { League } from '@prisma/client'
 
 interface TopbarProps {
   sidebarCollapsed: boolean
@@ -26,11 +28,13 @@ interface TopbarProps {
     username: string
     isSuperadmin: boolean
   }
+  leagues: League[]
 }
 
-export function Topbar({ sidebarCollapsed, onMenuClick, user }: TopbarProps) {
+export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues }: TopbarProps) {
   const { theme, setTheme } = useTheme()
   const router = useRouter()
+  const pathname = usePathname()
 
   const handleSignOut = async () => {
     await signOut({ redirect: false })
@@ -40,6 +44,13 @@ export function Topbar({ sidebarCollapsed, onMenuClick, user }: TopbarProps) {
   const userInitials = user?.username
     ? user.username.slice(0, 2).toUpperCase()
     : 'AD'
+
+  // Extract leagueId from URL
+  const leagueIdMatch = pathname.match(/^\/admin\/(\d+)/)
+  const currentLeagueId = leagueIdMatch ? parseInt(leagueIdMatch[1], 10) : undefined
+
+  // Show league selector if we have leagues (always visible)
+  const showLeagueSelector = leagues.length > 0
 
   return (
     <header
@@ -60,16 +71,22 @@ export function Topbar({ sidebarCollapsed, onMenuClick, user }: TopbarProps) {
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle menu</span>
         </Button>
-        <Breadcrumbs />
+        <Breadcrumbs leagues={leagues} />
       </div>
 
-      {/* Right side: Theme toggle + User menu */}
+      {/* Right side: League selector + Theme toggle + User menu */}
       <div className="flex items-center gap-2">
+        {/* League selector (only on league-specific routes) */}
+        {showLeagueSelector && (
+          <LeagueSelector leagues={leagues} currentLeagueId={currentLeagueId} />
+        )}
+
         {/* Theme toggle */}
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          aria-label="Toggle theme"
         >
           <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />

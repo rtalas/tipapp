@@ -25,6 +25,7 @@ export async function getLeagueEvaluators(leagueId: number) {
     },
     include: {
       EvaluatorType: true,
+      League: true,
     },
     orderBy: { EvaluatorType: { name: 'asc' } },
   })

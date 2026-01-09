@@ -19,6 +19,41 @@ export async function getAllPlayers() {
   })
 }
 
+// Get players filtered by league
+export async function getLeaguePlayers(leagueId: number) {
+  return prisma.player.findMany({
+    where: {
+      LeaguePlayer: {
+        some: {
+          LeagueTeam: {
+            leagueId: leagueId,
+            League: { deletedAt: null },
+          },
+        },
+      },
+      deletedAt: null,
+    },
+    include: {
+      LeaguePlayer: {
+        where: {
+          LeagueTeam: { leagueId: leagueId },
+        },
+        include: {
+          LeagueTeam: {
+            include: {
+              Team: true,
+            },
+          },
+        },
+      },
+      _count: {
+        select: { LeaguePlayer: true },
+      },
+    },
+    orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+  })
+}
+
 // Get player by ID
 export async function getPlayerById(id: number) {
   return prisma.player.findUnique({

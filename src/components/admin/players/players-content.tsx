@@ -57,8 +57,14 @@ interface Player {
   }
 }
 
+interface League {
+  id: number
+  name: string
+}
+
 interface PlayersContentProps {
   players: Player[]
+  league?: League
 }
 
 interface EditFormData {
@@ -75,7 +81,7 @@ interface CreateFormData {
   externalId: string
 }
 
-export function PlayersContent({ players }: PlayersContentProps) {
+export function PlayersContent({ players, league }: PlayersContentProps) {
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
 

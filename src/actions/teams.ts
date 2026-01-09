@@ -20,6 +20,28 @@ export async function getAllTeams() {
   })
 }
 
+// Get teams filtered by league
+export async function getLeagueTeams(leagueId: number) {
+  return prisma.team.findMany({
+    where: {
+      LeagueTeam: {
+        some: {
+          leagueId: leagueId,
+          League: { deletedAt: null },
+        },
+      },
+      deletedAt: null,
+    },
+    include: {
+      Sport: true,
+      _count: {
+        select: { LeagueTeam: true },
+      },
+    },
+    orderBy: { name: 'asc' },
+  })
+}
+
 // Get team by ID
 export async function getTeamById(id: number) {
   return prisma.team.findUnique({

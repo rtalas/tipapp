@@ -67,6 +67,7 @@ interface Team {
 interface TeamsContentProps {
   teams: Team[]
   sports: Sport[]
+  league?: { id: number; name: string }
 }
 
 interface EditFormData {
@@ -88,7 +89,7 @@ interface CreateFormData {
   externalId: string
 }
 
-export function TeamsContent({ teams, sports }: TeamsContentProps) {
+export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
   const [search, setSearch] = React.useState('')
   const [sportFilter, setSportFilter] = React.useState<string>('all')
 

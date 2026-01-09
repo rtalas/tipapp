@@ -52,23 +52,36 @@
 ## Business Logic & Constraints
 - **Admin Access:** Routes under `/admin/**` require `isSuperadmin: true` in the JWT session.
 - **Betting Lock:** Users can only create or update a `UserBet` if `currentTime < match.dateTime`.
-- **League Context:** Users switch between leagues via the sidebar (hamburger menu). `LeagueUser` defines specific permissions within a league.
+- **League Context:** Admins select a league via the topbar dropdown. Selection persists in localStorage and syncs with URL for league-scoped routes. `LeagueUser` defines specific permissions within a league.
+- **League Routing:** Admin pages exist in two layers: global management (`/admin/teams`) and league-scoped (`/admin/[leagueId]/teams`). The `/admin` root redirects to the most active league's matches page.
 - **Point Calculation:** If `LeagueMatch.isDoubled` is true, all points for that match are multiplied by 2.
 - **Scoring Engine:** Points are calculated based on the `Evaluator` table associated with the specific league.
 
 ## Project Structure
-├── app/                    # Next.js App Router (Pages & API)
+├── app/                          # Next.js App Router (Pages & API)
+│   ├── admin/                    # Admin pages
+│   │   ├── [leagueId]/           # League-scoped admin pages
+│   │   ├── leagues/              # Global league management
+│   │   ├── teams/                # Global team management
+│   │   ├── players/              # Global player management
+│   │   ├── users/                # Global user management
+│   │   ├── series-types/         # Global series type management
+│   │   └── special-bet-types/    # Global special bet type management
 ├── src/
-│   ├── auth.ts             # Auth.js v5 configuration
-│   ├── components/         # UI Components (Mobile-first)
+│   ├── auth.ts                   # Auth.js v5 configuration
+│   ├── components/               # UI Components (Mobile-first)
+│   ├── contexts/
+│   │   └── league-context.tsx    # League selection state management
+│   ├── hooks/                    # Custom React hooks
 │   ├── lib/
-│   │   ├── evaluators/     # Bet evaluation functions (13 types)
-│   │   ├── prisma.ts       # Prisma client singleton
-│   │   └── validation.ts   # Zod validation schemas
-│   └── types/              # Extended session types
+│   │   ├── evaluators/           # Bet evaluation functions (13 types)
+│   │   ├── league-utils.ts       # League validation & access control
+│   │   ├── prisma.ts             # Prisma client singleton
+│   │   └── validation/           # Zod validation schemas
+│   └── types/                    # Extended session types
 ├── prisma/
-│   └── schema.prisma       # Introspected schema
-└── middleware.ts           # Route protection (Auth wrapper)
+│   └── schema.prisma             # Introspected schema
+└── middleware.ts                 # Route protection (Auth wrapper)
 
 ## Authentication Details
 - **Hashing:** `bcryptjs` with salt rounds: 12.
@@ -140,6 +153,7 @@ const isCorrect = evaluateExactScore(context); // true
   - ✅ Series page with series bets (CRUD operations)
   - ✅ Special Bets page with special bet picks (CRUD operations)
   - ✅ Deprecated picks pages removed (user-picks, series-picks, special-bet-picks)
+  - ✅ League-Scoped Architecture (dual-layer routing, league context, series types, special bet types)
 - **Phase 4 (Evaluation & Leaderboard): IN PROGRESS** (Point calculation engine, rankings view).
   - ✅ Evaluation Functions (13 evaluator types with 57 comprehensive tests)
   - 🔄 Point calculation engine integration (NEXT)
@@ -205,6 +219,94 @@ All three admin pages (Matches, Series, Special Bets) now use expandable rows to
 **Navigation Updates:**
 - Sidebar simplified: removed 3 "Picks" links, kept main entity pages
 - Total cleanup: ~1500+ lines of duplicate code removed
+
+### League-Scoped Architecture (Phase 3 Extension)
+
+**Dual-Layer Routing System:**
+The admin interface now supports both global and league-specific management through a dual-layer routing architecture:
+
+**Global Admin Routes** (Entity-wide management):
+- `/admin/leagues` - Manage all leagues
+- `/admin/teams` - Manage all teams across all leagues
+- `/admin/players` - Manage all players globally
+- `/admin/users` - Manage all users in the system
+- `/admin/series-types` - Manage series type templates (SpecialBetSerie)
+- `/admin/special-bet-types` - Manage special bet type templates (SpecialBetSingle)
+
+**League-Scoped Routes** (Context-specific management):
+- `/admin/[leagueId]/matches` - Matches specific to selected league
+- `/admin/[leagueId]/series` - Series bets for selected league
+- `/admin/[leagueId]/special-bets` - Special bets for selected league
+- `/admin/[leagueId]/teams` - Teams associated with selected league
+- `/admin/[leagueId]/players` - Players associated with selected league
+- `/admin/[leagueId]/users` - Users participating in selected league
+- `/admin/[leagueId]/evaluators` - Evaluators configured for selected league
+
+**League Context Management:**
+- **Context Provider:** `src/contexts/league-context.tsx`
+  - `useLeagueContext()` hook provides `selectedLeagueId` and `setSelectedLeagueId()`
+  - Automatically syncs with URL when on league-specific routes (pattern: `/admin/\d+`)
+  - Persists selection to localStorage (`tipapp_selected_league_id`)
+  - Initializes from localStorage on mount for persistence across page reloads
+
+- **League Selector Component:** `src/components/admin/layout/league-selector.tsx`
+  - Dropdown in admin topbar displaying all active leagues
+  - Shows league name with season range (e.g., "Premier League 2024/2025")
+  - Updates context immediately when changed
+  - Maintains current page type when switching leagues (e.g., `/admin/1/matches` → `/admin/2/matches`)
+  - Defaults to matches page when switching from a global route
+
+- **League Utilities:** `src/lib/league-utils.ts`
+  - `validateLeagueAccess(leagueId)` - Server-side validation that league exists and is active
+  - Redirects to `/admin/leagues` if league is invalid or deleted
+  - `getActiveLeagues()` - Fetches all active leagues ordered by season
+
+**Admin Page Redirect Logic:**
+- `/admin` root now intelligently redirects based on league availability:
+  1. First priority: Redirect to most active league's matches page (where `League.isTheMostActive = true`)
+  2. Second priority: Redirect to any active league's matches page (ordered by season descending)
+  3. Final fallback: Redirect to `/admin/leagues` if no active leagues exist
+
+**Sidebar Navigation:**
+- **Dynamic Menu:** Sidebar items change based on selected league context
+- **League-Specific Section:** Shows 7 items (Matches, Special Bets, Series, Teams, Players, Users, Evaluators) only when a league is selected
+- **Global Admin Section:** Always visible, shows 6 items with "(Global)" suffix for clarity
+- **Visual Separation:** Uses separator to distinguish league-scoped from global items
+
+**New Global Management Pages:**
+
+**1. Series Types (`/admin/series-types`)**
+- Manages `SpecialBetSerie` table (series type templates)
+- Fields: `name` (e.g., "Best of 5"), `bestOf` (integer)
+- Used in league-specific series bet configuration
+- CRUD operations: Create, update (inline edit), soft delete
+- Delete protection: Cannot delete if used in any leagues (shows count)
+- Server actions: `src/actions/series-types.ts`
+- Component: `src/components/admin/series-types/series-types-content.tsx`
+
+**2. Special Bet Types (`/admin/special-bet-types`)**
+- Manages `SpecialBetSingle` table (special bet templates)
+- Fields: `name`, `sportId`, `specialBetSingleTypeId`
+- Includes Sport and SpecialBetSingleType relations in display
+- Used in league-specific special bet configuration
+- CRUD operations: Create, update (inline edit), soft delete
+- Delete protection: Cannot delete if used in any leagues (shows count)
+- Server actions: `src/actions/special-bet-types.ts`
+- Component: `src/components/admin/special-bet-types/special-bet-types-content.tsx`
+
+**Technical Implementation:**
+- Both use `executeServerAction()` wrapper for consistent error handling
+- Validation via Zod schemas (`createSeriesTypeSchema`, `updateSeriesTypeSchema`, etc.)
+- Soft delete pattern with `deletedAt` timestamp
+- Path revalidation for immediate UI updates
+- Admin authorization required for all mutations
+
+**Architecture Benefits:**
+- **Separation of Concerns:** Global entity management vs. league-specific operations
+- **Better UX:** Context-aware navigation, persistent league selection
+- **Scalability:** Easy to add new league-scoped pages following the pattern
+- **Data Integrity:** Server-side league validation prevents invalid access
+- **Performance:** Filtered queries return only relevant data for selected league
 
 ---
 
@@ -278,8 +380,9 @@ All three admin pages (Matches, Series, Special Bets) now use expandable rows to
 ### Build Status
 - ✅ **Production Build:** Successful (0 errors, 0 warnings)
 - ✅ **TypeScript Compilation:** Clean
-- ✅ **Routes Generated:** 17/17
-- ✅ **Test Suite:** 57/57 evaluator tests passing
+- ✅ **Routes Generated:** 30/30 (including league-scoped routes)
+- ✅ **Test Suite:** 148/155 tests passing (57/57 evaluator tests passing)
+- ⚠️ **Known Test Issues:** 7 rate-limit test failures (config mismatch: expects 3, gets 10 maxAttempts)
 - ✅ **Ready for Deployment:** Yes
 
 ---

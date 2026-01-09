@@ -50,9 +50,10 @@ interface MatchesContentProps {
   matches: LeagueMatch[]
   leagues: League[]
   users: User[]
+  league?: { id: number; name: string }
 }
 
-export function MatchesContent({ matches, leagues, users }: MatchesContentProps) {
+export function MatchesContent({ matches, leagues, users, league }: MatchesContentProps) {
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
@@ -76,8 +77,8 @@ export function MatchesContent({ matches, leagues, users }: MatchesContentProps)
       return false
     }
 
-    // League filter
-    if (leagueFilter !== 'all' && lm.leagueId !== parseInt(leagueFilter, 10)) {
+    // League filter (only if not on league-specific page)
+    if (!league && leagueFilter !== 'all' && lm.leagueId !== parseInt(leagueFilter, 10)) {
       return false
     }
 
@@ -144,19 +145,21 @@ export function MatchesContent({ matches, leagues, users }: MatchesContentProps)
               <SelectItem value="evaluated">Evaluated</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={leagueFilter} onValueChange={setLeagueFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="League" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Leagues</SelectItem>
-              {leagues.map((league) => (
-                <SelectItem key={league.id} value={league.id.toString()}>
-                  {league.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!league && (
+            <Select value={leagueFilter} onValueChange={setLeagueFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="League" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Leagues</SelectItem>
+                {leagues.map((lg) => (
+                  <SelectItem key={lg.id} value={lg.id.toString()}>
+                    {lg.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All Users" />
@@ -202,7 +205,7 @@ export function MatchesContent({ matches, leagues, users }: MatchesContentProps)
                     <TableHead className="w-[40px]"></TableHead>
                     <TableHead className="w-[80px]">ID</TableHead>
                     <TableHead>Date & Time</TableHead>
-                    <TableHead>League</TableHead>
+                    {!league && <TableHead>League</TableHead>}
                     <TableHead>Matchup</TableHead>
                     <TableHead className="text-center">Score</TableHead>
                     <TableHead>Status</TableHead>
@@ -241,28 +244,35 @@ export function MatchesContent({ matches, leagues, users }: MatchesContentProps)
                           <TableCell>
                             <div className="flex flex-col">
                               <span className="font-medium">
-                                {format(new Date(lm.Match.dateTime), 'MMM d, yyyy')}
+                                {format(new Date(lm.Match.dateTime), 'd.M.yyyy')}
                               </span>
                               <span className="text-sm text-muted-foreground">
                                 {format(new Date(lm.Match.dateTime), 'HH:mm')}
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {lm.League.name}
-                              {lm.Match.isPlayoffGame && (
-                                <Badge variant="warning" className="text-xs">
-                                  Playoff
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
+                          {!league && (
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {lm.League.name}
+                                {lm.Match.isPlayoffGame && (
+                                  <Badge variant="warning" className="text-xs">
+                                    Playoff
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                          )}
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{homeTeam.name}</span>
                               <span className="text-muted-foreground">vs</span>
                               <span className="font-medium">{awayTeam.name}</span>
+                              {league && lm.Match.isPlayoffGame && (
+                                <Badge variant="warning" className="text-xs">
+                                  Playoff
+                                </Badge>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
@@ -405,6 +415,7 @@ export function MatchesContent({ matches, leagues, users }: MatchesContentProps)
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
         leagues={leagues}
+        league={league}
       />
 
       {/* Result Entry Dialog */}
@@ -440,6 +451,29 @@ export function MatchesContent({ matches, leagues, users }: MatchesContentProps)
               Are you sure you want to delete this match? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
+          {matchToDelete && (
+            <div className="rounded-lg border p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Match ID:</span>
+                <span className="font-mono">#{matchToDelete.Match.id}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Date:</span>
+                <span>{format(new Date(matchToDelete.Match.dateTime), 'd.M.yyyy HH:mm')}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Matchup:</span>
+                <span className="font-medium">
+                  {matchToDelete.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name} vs{' '}
+                  {matchToDelete.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">League:</span>
+                <span>{matchToDelete.League.name}</span>
+              </div>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel

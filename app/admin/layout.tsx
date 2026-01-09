@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { AdminLayout } from '@/components/admin/layout/admin-layout'
+import { getActiveLeagues } from '@/lib/league-utils'
 
 export default async function AdminRootLayout({
   children,
@@ -14,12 +15,16 @@ export default async function AdminRootLayout({
     redirect('/')
   }
 
+  // Fetch active leagues for sidebar and league selector
+  const leagues = await getActiveLeagues()
+
   return (
     <AdminLayout
       user={{
         username: session.user.username,
         isSuperadmin: session.user.isSuperadmin,
       }}
+      leagues={leagues}
     >
       {children}
     </AdminLayout>

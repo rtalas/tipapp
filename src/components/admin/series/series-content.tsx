@@ -51,6 +51,7 @@ interface SeriesContentProps {
   leagues: League[]
   specialBetSeries: SpecialBetSerie[]
   users: User[]
+  league?: { id: number; name: string }
 }
 
 function getSeriesStatus(series: Series): 'scheduled' | 'finished' | 'evaluated' {
@@ -59,7 +60,7 @@ function getSeriesStatus(series: Series): 'scheduled' | 'finished' | 'evaluated'
   return 'scheduled'
 }
 
-export function SeriesContent({ series, leagues, specialBetSeries, users }: SeriesContentProps) {
+export function SeriesContent({ series, leagues, specialBetSeries, users, league }: SeriesContentProps) {
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
@@ -83,8 +84,8 @@ export function SeriesContent({ series, leagues, specialBetSeries, users }: Seri
       return false
     }
 
-    // League filter
-    if (leagueFilter !== 'all' && s.leagueId !== parseInt(leagueFilter, 10)) {
+    // League filter (only if not on league-specific page)
+    if (!league && leagueFilter !== 'all' && s.leagueId !== parseInt(leagueFilter, 10)) {
       return false
     }
 
@@ -150,19 +151,21 @@ export function SeriesContent({ series, leagues, specialBetSeries, users }: Seri
               <SelectItem value="evaluated">Evaluated</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={leagueFilter} onValueChange={setLeagueFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="League" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Leagues</SelectItem>
-              {leagues.map((league) => (
-                <SelectItem key={league.id} value={league.id.toString()}>
-                  {league.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!league && (
+            <Select value={leagueFilter} onValueChange={setLeagueFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="League" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Leagues</SelectItem>
+                {leagues.map((lg) => (
+                  <SelectItem key={lg.id} value={lg.id.toString()}>
+                    {lg.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All Users" />
@@ -208,7 +211,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users }: Seri
                     <TableHead className="w-[40px]"></TableHead>
                     <TableHead className="w-[80px]">ID</TableHead>
                     <TableHead>Date & Time</TableHead>
-                    <TableHead>League</TableHead>
+                    {!league && <TableHead>League</TableHead>}
                     <TableHead>Type</TableHead>
                     <TableHead>Matchup</TableHead>
                     <TableHead className="text-center">Score</TableHead>
@@ -245,14 +248,14 @@ export function SeriesContent({ series, leagues, specialBetSeries, users }: Seri
                           <TableCell>
                             <div className="flex flex-col">
                               <span className="font-medium">
-                                {format(new Date(s.dateTime), 'MMM d, yyyy')}
+                                {format(new Date(s.dateTime), 'd.M.yyyy')}
                               </span>
                               <span className="text-sm text-muted-foreground">
                                 {format(new Date(s.dateTime), 'HH:mm')}
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell>{s.League.name}</TableCell>
+                          {!league && <TableCell>{s.League.name}</TableCell>}
                           <TableCell>
                             <span className="text-sm text-muted-foreground">
                               {s.SpecialBetSerie.name} (Best of {s.SpecialBetSerie.bestOf})
@@ -396,6 +399,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users }: Seri
         onOpenChange={setAddDialogOpen}
         leagues={leagues}
         specialBetSeries={specialBetSeries}
+        league={league}
       />
 
       {/* Result Entry Dialog */}
@@ -428,6 +432,33 @@ export function SeriesContent({ series, leagues, specialBetSeries, users }: Seri
               Are you sure you want to delete this series? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
+          {seriesToDelete && (
+            <div className="rounded-lg border p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Series ID:</span>
+                <span className="font-mono">#{seriesToDelete.id}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Date:</span>
+                <span>{format(new Date(seriesToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Type:</span>
+                <span>{seriesToDelete.SpecialBetSerie.name} (Best of {seriesToDelete.SpecialBetSerie.bestOf})</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Matchup:</span>
+                <span className="font-medium">
+                  {seriesToDelete.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team.name} vs{' '}
+                  {seriesToDelete.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team.name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">League:</span>
+                <span>{seriesToDelete.League.name}</span>
+              </div>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
