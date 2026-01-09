@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { getSpecialBetType } from '@/lib/special-bet-utils'
 
 type SpecialBet = Awaited<ReturnType<typeof import('@/actions/special-bets').getSpecialBets>>[number]
 type League = Awaited<ReturnType<typeof import('@/actions/shared-queries').getLeaguesWithTeams>>[number]
@@ -40,16 +41,7 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
   const [isEvaluating, setIsEvaluating] = React.useState(false)
 
   // Determine type from special bet definition
-  const getTypeFromDefinition = (): 'team' | 'player' | 'value' => {
-    const typeId = specialBet.SpecialBetSingle.SpecialBetSingleType.id
-    // Type IDs: 1=Player, 2=Team, 3=Exact Value, 4=Closest Value
-    if (typeId === 2) return 'team'
-    if (typeId === 1) return 'player'
-    if (typeId === 3 || typeId === 4) return 'value'
-    return 'value' // default
-  }
-
-  const resultType = getTypeFromDefinition()
+  const resultType = getSpecialBetType(specialBet.SpecialBetSingle.SpecialBetSingleType.id)
   const [selectedTeamId, setSelectedTeamId] = React.useState<string>(
     specialBet.specialBetTeamResultId?.toString() ?? ''
   )

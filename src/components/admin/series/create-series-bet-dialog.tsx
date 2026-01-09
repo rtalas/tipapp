@@ -17,6 +17,7 @@ import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { createUserSeriesBet } from '@/actions/series-bets'
 import { validateUserSeriesBetCreate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
+import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
 type SeriesWithBets = Awaited<ReturnType<typeof import('@/actions/series-bets').getSeriesWithUserBets>>[number]
 
@@ -101,20 +102,10 @@ export function CreateSeriesBetDialog({ open, onOpenChange, series }: CreateSeri
           </div>
 
           {/* User selection */}
-          <div className="space-y-2">
-            <Label htmlFor="user">User (LeagueUser ID)</Label>
-            <Input
-              id="user"
-              placeholder="Enter LeagueUser ID manually"
-              type="number"
-              value={createDialog.form.leagueUserId}
-              onChange={(e) => createDialog.updateForm({ leagueUserId: e.target.value })}
-              aria-label="League User ID"
-            />
-            <p className="text-xs text-muted-foreground">
-              Temporary: Enter the LeagueUser ID directly. In production, this would be a dropdown.
-            </p>
-          </div>
+          <UserSelectorInput
+            value={createDialog.form.leagueUserId}
+            onChange={(value) => createDialog.updateForm({ leagueUserId: value })}
+          />
 
           {/* Score inputs */}
           <div className="grid grid-cols-3 gap-4">

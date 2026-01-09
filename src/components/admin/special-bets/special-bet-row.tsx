@@ -1,27 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit, Trash2, Check, X, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Prisma } from '@prisma/client'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { updateUserSpecialBet, deleteUserSpecialBet } from '@/actions/special-bet-bets'
 import { validateUserSpecialBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
+import { getSpecialBetType } from '@/lib/special-bet-utils'
+import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
+import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 
 type UserSpecialBet = Awaited<ReturnType<typeof import('@/actions/special-bet-bets').getSpecialBetsWithUserBets>>[number]['UserSpecialBetSingle'][number]
 type SpecialBetWithBets = Awaited<ReturnType<typeof import('@/actions/special-bet-bets').getSpecialBetsWithUserBets>>[number]
@@ -51,15 +42,6 @@ interface SpecialBetRowProps {
   isEvaluated: boolean
 }
 
-// Helper to determine prediction type from special bet definition
-function getPredictionType(specialBet: SpecialBetWithBets): 'team' | 'player' | 'value' {
-  const typeId = specialBet.SpecialBetSingle.SpecialBetSingleType.id
-  // Type IDs: 1=Player, 2=Team, 3=Exact Value, 4=Closest Value
-  if (typeId === 2) return 'team'
-  if (typeId === 1) return 'player'
-  return 'value'
-}
-
 function getPredictionDisplay(bet: UserSpecialBet): string {
   if (bet.teamResultId && bet.LeagueTeam) {
     return bet.LeagueTeam.Team.name
@@ -81,7 +63,7 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated }: SpecialB
   const inlineEdit = useInlineEdit<UserSpecialBetFormData>()
 
   // Determine type from special bet definition
-  const predictionType = getPredictionType(specialBet)
+  const predictionType = getSpecialBetType(specialBet.SpecialBetSingle.SpecialBetSingleType.id)
 
   // Get teams and players from the league
   const availableTeams = league?.LeagueTeam || []
@@ -237,73 +219,28 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated }: SpecialB
 
         {/* Actions */}
         <TableCell className="text-right">
-          {isEditing ? (
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={inlineEdit.cancelEdit}
-                disabled={inlineEdit.isSaving}
-                aria-label="Cancel edit"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSaveEdit}
-                disabled={inlineEdit.isSaving}
-                aria-label="Save bet changes"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleStartEdit}
-                aria-label={`Edit bet for ${userName}`}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setDeleteDialogOpen(true)}
-                aria-label={`Delete bet for ${userName}`}
-              >
-                <Trash2 className="h-4 w-4 text-red-600" />
-              </Button>
-            </div>
-          )}
+          <BetRowActions
+            isEditing={isEditing}
+            isSaving={inlineEdit.isSaving}
+            userName={userName}
+            onStartEdit={handleStartEdit}
+            onCancelEdit={inlineEdit.cancelEdit}
+            onSaveEdit={handleSaveEdit}
+            onDelete={() => setDeleteDialogOpen(true)}
+          />
         </TableCell>
       </TableRow>
 
       {/* Delete confirmation dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Bet</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete the bet for {userName}? This action cannot be undone.
-              {isEvaluated && (
-                <div className="mt-2 flex items-center gap-2 text-orange-600">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="text-sm">Special bet is already evaluated</span>
-                </div>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <BetRowDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDelete}
+        userName={userName}
+        isDeleting={isDeleting}
+        isEvaluated={isEvaluated}
+        entityType="Special bet"
+      />
     </>
   )
 }

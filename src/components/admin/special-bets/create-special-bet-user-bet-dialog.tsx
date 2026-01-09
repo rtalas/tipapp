@@ -19,6 +19,8 @@ import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { createUserSpecialBet } from '@/actions/special-bet-bets'
 import { validateUserSpecialBetCreate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
+import { getSpecialBetType } from '@/lib/special-bet-utils'
+import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
 type SpecialBetWithBets = Awaited<ReturnType<typeof import('@/actions/special-bet-bets').getSpecialBetsWithUserBets>>[number]
 type LeagueWithTeams = Prisma.LeagueGetPayload<{
@@ -48,15 +50,6 @@ interface CreateSpecialBetDialogProps {
   league?: LeagueWithTeams
 }
 
-// Helper to determine prediction type from special bet definition
-function getPredictionType(specialBet: SpecialBetWithBets): 'team' | 'player' | 'value' {
-  const typeId = specialBet.SpecialBetSingle.SpecialBetSingleType.id
-  // Type IDs: 1=Player, 2=Team, 3=Exact Value, 4=Closest Value
-  if (typeId === 2) return 'team'
-  if (typeId === 1) return 'player'
-  return 'value'
-}
-
 const initialFormData: CreateSpecialBetFormData = {
   leagueUserId: '',
   teamResultId: '',
@@ -68,7 +61,7 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
   const createDialog = useCreateDialog<CreateSpecialBetFormData>(initialFormData)
 
   // Determine type from special bet definition
-  const predictionType = getPredictionType(specialBet)
+  const predictionType = getSpecialBetType(specialBet.SpecialBetSingle.SpecialBetSingleType.id)
 
   // Get teams and players from the league
   const availableTeams = league?.LeagueTeam || []
@@ -155,20 +148,10 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
           </div>
 
           {/* User selection */}
-          <div className="space-y-2">
-            <Label htmlFor="user">User (LeagueUser ID)</Label>
-            <Input
-              id="user"
-              placeholder="Enter LeagueUser ID manually"
-              type="number"
-              value={createDialog.form.leagueUserId}
-              onChange={(e) => createDialog.updateForm({ leagueUserId: e.target.value })}
-              aria-label="League User ID"
-            />
-            <p className="text-xs text-muted-foreground">
-              Temporary: Enter the LeagueUser ID directly. In production, this would be a dropdown.
-            </p>
-          </div>
+          <UserSelectorInput
+            value={createDialog.form.leagueUserId}
+            onChange={(value) => createDialog.updateForm({ leagueUserId: value })}
+          />
 
           {/* Prediction type (read-only, defined by special bet) */}
           <div className="space-y-2">

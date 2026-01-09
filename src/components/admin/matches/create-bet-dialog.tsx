@@ -20,7 +20,7 @@ import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { createUserBet } from '@/actions/user-bets'
 import { validateUserBetCreate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
-import { prisma } from '@/lib/prisma'
+import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
 type MatchWithBets = Awaited<ReturnType<typeof import('@/actions/user-bets').getMatchesWithUserBets>>[number]
 type LeaguePlayer = { id: number; Player: { id: number; firstName: string | null; lastName: string | null } }
@@ -139,29 +139,12 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Note about implementation */}
-          {allUsersHaveBets && (
-            <div className="rounded-lg bg-yellow-50 p-4 text-sm text-yellow-800">
-              Note: User selection requires fetching all league users. This is a placeholder implementation.
-              In production, this would fetch all users from the league and filter out those who already have bets.
-            </div>
-          )}
-
           {/* User selection */}
-          <div className="space-y-2">
-            <Label htmlFor="user">User</Label>
-            <Input
-              id="user"
-              placeholder="Enter LeagueUser ID manually"
-              type="number"
-              value={createDialog.form.leagueUserId}
-              onChange={(e) => createDialog.updateForm({ leagueUserId: e.target.value })}
-              aria-label="League User ID"
-            />
-            <p className="text-xs text-muted-foreground">
-              Temporary: Enter the LeagueUser ID directly. In production, this would be a dropdown.
-            </p>
-          </div>
+          <UserSelectorInput
+            value={createDialog.form.leagueUserId}
+            onChange={(value) => createDialog.updateForm({ leagueUserId: value })}
+            showAllUsersNote={allUsersHaveBets}
+          />
 
           {/* Score inputs */}
           <div className="grid grid-cols-3 gap-4">

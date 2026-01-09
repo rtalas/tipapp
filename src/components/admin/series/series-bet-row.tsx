@@ -1,25 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit, Trash2, Check, X, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TableCell, TableRow } from '@/components/ui/table'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { updateUserSeriesBet, deleteUserSeriesBet } from '@/actions/series-bets'
 import { validateUserSeriesBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
+import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
+import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 
 type UserSeriesBet = Awaited<ReturnType<typeof import('@/actions/series-bets').getSeriesWithUserBets>>[number]['UserSpecialBetSerie'][number]
 type Team = { id: number; name: string; shortcut: string }
@@ -150,73 +140,28 @@ export function SeriesBetRow({
 
         {/* Actions */}
         <TableCell className="text-right">
-          {isEditing ? (
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={inlineEdit.cancelEdit}
-                disabled={inlineEdit.isSaving}
-                aria-label="Cancel edit"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSaveEdit}
-                disabled={inlineEdit.isSaving}
-                aria-label="Save bet changes"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleStartEdit}
-                aria-label={`Edit bet for ${userName}`}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setDeleteDialogOpen(true)}
-                aria-label={`Delete bet for ${userName}`}
-              >
-                <Trash2 className="h-4 w-4 text-red-600" />
-              </Button>
-            </div>
-          )}
+          <BetRowActions
+            isEditing={isEditing}
+            isSaving={inlineEdit.isSaving}
+            userName={userName}
+            onStartEdit={handleStartEdit}
+            onCancelEdit={inlineEdit.cancelEdit}
+            onSaveEdit={handleSaveEdit}
+            onDelete={() => setDeleteDialogOpen(true)}
+          />
         </TableCell>
       </TableRow>
 
       {/* Delete confirmation dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Bet</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete the bet for {userName}? This action cannot be undone.
-              {isSeriesEvaluated && (
-                <div className="mt-2 flex items-center gap-2 text-orange-600">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="text-sm">Series is already evaluated</span>
-                </div>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <BetRowDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDelete}
+        userName={userName}
+        isDeleting={isDeleting}
+        isEvaluated={isSeriesEvaluated}
+        entityType="Series"
+      />
     </>
   )
 }
