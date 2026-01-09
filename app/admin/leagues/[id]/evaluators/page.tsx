@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { getLeagueEvaluators } from '@/actions/evaluators'
 import { getLeagueById } from '@/actions/leagues'
-import { getEvaluatorTypes } from '@/actions/evaluators'
+import { getEvaluatorTypes } from '@/actions/shared-queries'
 import { Button } from '@/components/ui/button'
 import { LeagueEvaluatorsContent } from '@/components/admin/leagues/league-evaluators-content'
 

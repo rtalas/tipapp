@@ -43,7 +43,7 @@ import { UserBetRow } from './user-bet-row'
 import { CreateBetDialog } from './create-bet-dialog'
 
 type LeagueMatch = Awaited<ReturnType<typeof import('@/actions/user-bets').getMatchesWithUserBets>>[number]
-type League = Awaited<ReturnType<typeof import('@/actions/matches').getLeaguesWithTeams>>[number]
+type League = Awaited<ReturnType<typeof import('@/actions/shared-queries').getLeaguesWithTeams>>[number]
 type User = Awaited<ReturnType<typeof import('@/actions/users').getUsers>>[number]
 
 interface MatchesContentProps {

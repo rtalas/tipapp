@@ -190,30 +190,6 @@ export async function getSpecialBetById(specialBetId: number) {
   })
 }
 
-export async function getLeaguesWithTeamsAndPlayers() {
-  return prisma.league.findMany({
-    where: {
-      deletedAt: null,
-      isActive: true,
-    },
-    include: {
-      LeagueTeam: {
-        where: { deletedAt: null },
-        include: {
-          Team: true,
-          LeaguePlayer: {
-            where: { deletedAt: null },
-            include: { Player: true },
-            orderBy: { Player: { lastName: 'asc' } },
-          },
-        },
-        orderBy: { Team: { name: 'asc' } },
-      },
-    },
-    orderBy: { name: 'asc' },
-  })
-}
-
 // Evaluate a single special bet and calculate points for all user bets
 // Uses atomic transaction to prevent race conditions (double evaluation)
 export async function evaluateSpecialBet(specialBetId: number) {

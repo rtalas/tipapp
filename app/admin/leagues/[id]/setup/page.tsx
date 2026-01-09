@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
-import { getLeagueById, getTeamsBySport, getAllPlayers } from '@/actions/leagues'
+import { getLeagueById } from '@/actions/leagues'
+import { getTeamsBySport, getAllPlayers } from '@/actions/shared-queries'
 import { LeagueSetupTabs } from '@/components/admin/leagues/league-setup-tabs'
 
 interface LeagueSetupPageProps {

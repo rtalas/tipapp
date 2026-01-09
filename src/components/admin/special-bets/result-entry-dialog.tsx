@@ -26,7 +26,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 
 type SpecialBet = Awaited<ReturnType<typeof import('@/actions/special-bets').getSpecialBets>>[number]
-type League = Awaited<ReturnType<typeof import('@/actions/special-bets').getLeaguesWithTeamsAndPlayers>>[number]
+type League = Awaited<ReturnType<typeof import('@/actions/shared-queries').getLeaguesWithTeams>>[number]
 
 interface ResultEntryDialogProps {
   specialBet: SpecialBet

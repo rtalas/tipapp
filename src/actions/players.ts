@@ -6,61 +6,6 @@ import { requireAdmin } from '@/lib/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { createPlayerSchema, updatePlayerSchema, deleteByIdSchema, type CreatePlayerInput, type UpdatePlayerInput } from '@/lib/validation/admin'
 
-// Get all players
-export async function getAllPlayers() {
-  return prisma.player.findMany({
-    where: { deletedAt: null },
-    include: {
-      _count: {
-        select: { LeaguePlayer: true },
-      },
-    },
-    orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
-  })
-}
-
-// Get players filtered by league
-export async function getLeaguePlayers(leagueId: number) {
-  return prisma.player.findMany({
-    where: {
-      LeaguePlayer: {
-        some: {
-          LeagueTeam: {
-            leagueId: leagueId,
-            League: { deletedAt: null },
-          },
-        },
-      },
-      deletedAt: null,
-    },
-    include: {
-      LeaguePlayer: {
-        where: {
-          LeagueTeam: { leagueId: leagueId },
-        },
-        include: {
-          LeagueTeam: {
-            include: {
-              Team: true,
-            },
-          },
-        },
-      },
-      _count: {
-        select: { LeaguePlayer: true },
-      },
-    },
-    orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
-  })
-}
-
-// Get player by ID
-export async function getPlayerById(id: number) {
-  return prisma.player.findUnique({
-    where: { id },
-  })
-}
-
 // Create new player
 export async function createPlayer(input: CreatePlayerInput) {
   return executeServerAction(input, {

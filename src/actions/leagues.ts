@@ -302,33 +302,3 @@ export async function getSports() {
     orderBy: { name: 'asc' },
   })
 }
-
-export async function getTeamsBySport(sportId: number) {
-  return prisma.team.findMany({
-    where: {
-      sportId,
-      deletedAt: null,
-    },
-    orderBy: { name: 'asc' },
-  })
-}
-
-export async function getAllPlayers() {
-  return prisma.player.findMany({
-    where: {
-      deletedAt: null,
-      isActive: true,
-    },
-    orderBy: [
-      { lastName: 'asc' },
-      { firstName: 'asc' },
-    ],
-  })
-}
-
-export async function getEvaluatorTypes() {
-  return prisma.evaluatorType.findMany({
-    where: { deletedAt: null },
-    orderBy: { name: 'asc' },
-  })
-}

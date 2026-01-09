@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { validateLeagueAccess } from '@/lib/league-utils'
-import { getMatches, getLeaguesWithTeams } from '@/actions/matches'
+import { getMatches } from '@/actions/matches'
+import { getLeaguesWithTeams } from '@/actions/shared-queries'
 import { getUsers } from '@/actions/users'
 import { MatchesContent } from '@/components/admin/matches/matches-content'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'

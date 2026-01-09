@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { buildDeletionErrorMessage } from '@/lib/delete-utils'
 import {
   createSeriesTypeSchema,
   updateSeriesTypeSchema,
@@ -95,9 +96,7 @@ export async function deleteSeriesType(id: number) {
       })
 
       if (usageCount > 0) {
-        throw new Error(
-          `Cannot delete: This series type is used in ${usageCount} league${usageCount !== 1 ? 's' : ''}`
-        )
+        throw new Error(buildDeletionErrorMessage('series type', usageCount))
       }
 
       await prisma.specialBetSerie.update({

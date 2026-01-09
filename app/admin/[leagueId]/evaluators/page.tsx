@@ -1,5 +1,6 @@
 import { validateLeagueAccess } from '@/lib/league-utils'
-import { getLeagueEvaluators, getEvaluatorTypes } from '@/actions/evaluators'
+import { getLeagueEvaluators } from '@/actions/evaluators'
+import { getEvaluatorTypes } from '@/actions/shared-queries'
 import { prisma } from '@/lib/prisma'
 import { EvaluatorsContent } from '@/components/admin/evaluators/evaluators-content'
 

@@ -11,8 +11,6 @@ import {
   updatePlayerSchema,
   createUserBetSchema,
   updateUserBetSchema,
-  createSeriesSchema,
-  updateSeriesResultSchema,
   createUserSeriesBetSchema,
   updateUserSeriesBetSchema,
   createSpecialBetSchema,
@@ -55,38 +53,6 @@ export function validatePlayerCreate(data: unknown) {
 }
 
 /**
- * Gets first validation error message for a field
- * Useful for displaying inline field-level errors
- */
-export function getFieldError(field: string, validationResult: ReturnType<typeof validateTeamEdit>): string | undefined {
-  if (validationResult.success) return undefined
-
-  const issues = validationResult.error.issues || []
-  for (const issue of issues) {
-    if (issue.path.join('.') === field) {
-      return issue.message
-    }
-  }
-
-  return undefined
-}
-
-/**
- * Gets all validation errors grouped by field
- */
-export function getFieldErrors(validationResult: ReturnType<typeof validateTeamEdit>): Record<string, string> {
-  if (validationResult.success) return {}
-
-  const errors: Record<string, string> = {}
-  const issues = validationResult.error.issues || []
-  for (const issue of issues) {
-    const field = issue.path.join('.')
-    errors[field] = issue.message
-  }
-  return errors
-}
-
-/**
  * Validates forgot password form data
  */
 export function validateForgotPassword(data: unknown) {
@@ -112,20 +78,6 @@ export function validateUserBetCreate(data: unknown) {
  */
 export function validateUserBetEdit(data: unknown) {
   return updateUserBetSchema.safeParse(data)
-}
-
-/**
- * Validates series creation form data
- */
-export function validateSeriesCreate(data: unknown) {
-  return createSeriesSchema.safeParse(data)
-}
-
-/**
- * Validates series result entry form data
- */
-export function validateSeriesEdit(data: unknown) {
-  return updateSeriesResultSchema.safeParse(data)
 }
 
 /**

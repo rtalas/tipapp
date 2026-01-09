@@ -182,30 +182,6 @@ export async function getMatchById(matchId: number) {
   })
 }
 
-export async function getLeaguesWithTeams() {
-  return prisma.league.findMany({
-    where: {
-      deletedAt: null,
-      isActive: true,
-    },
-    include: {
-      LeagueTeam: {
-        where: { deletedAt: null },
-        include: {
-          Team: true,
-          LeaguePlayer: {
-            where: { deletedAt: null },
-            include: { Player: true },
-            orderBy: { Player: { lastName: 'asc' } },
-          },
-        },
-        orderBy: { Team: { name: 'asc' } },
-      },
-    },
-    orderBy: { name: 'asc' },
-  })
-}
-
 // Determine winner: 1 = home, 2 = away, 0 = draw
 function getWinner(homeScore: number, awayScore: number): number {
   if (homeScore > awayScore) return 1

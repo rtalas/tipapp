@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Trash2, Edit, Plus } from 'lucide-react'
+import { Trash2, Edit } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   createTeam,
@@ -13,6 +13,7 @@ import { validateTeamCreate, validateTeamEdit } from '@/lib/validation-client'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
+import { ContentFilterHeader } from '@/components/admin/common/content-filter-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -243,33 +244,28 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
   return (
     <>
       {/* Header with Create Button and Filters */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-4 md:flex-row">
-          <Input
-            placeholder="Search by name, nickname, or shortcut..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
-          />
-          <Select value={sportFilter} onValueChange={setSportFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Sport" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sports</SelectItem>
-              {sports.map((sport) => (
-                <SelectItem key={sport.id} value={sport.id.toString()}>
-                  {sport.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button onClick={createDialog.openDialog}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Team
-        </Button>
-      </div>
+      <ContentFilterHeader
+        searchPlaceholder="Search by name, nickname, or shortcut..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        filters={[
+          {
+            name: 'sport',
+            value: sportFilter,
+            onChange: setSportFilter,
+            placeholder: 'Sport',
+            options: [
+              { value: 'all', label: 'All Sports' },
+              ...sports.map((sport) => ({
+                value: sport.id.toString(),
+                label: sport.name,
+              })),
+            ],
+          },
+        ]}
+        createButtonLabel="Add Team"
+        onCreateClick={createDialog.openDialog}
+      />
 
       {/* Teams Table */}
       <Card className="card-shadow">

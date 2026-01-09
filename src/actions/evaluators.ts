@@ -31,14 +31,6 @@ export async function getLeagueEvaluators(leagueId: number) {
   })
 }
 
-// Get all evaluator types
-export async function getEvaluatorTypes() {
-  return prisma.evaluatorType.findMany({
-    where: { deletedAt: null },
-    orderBy: { name: 'asc' },
-  })
-}
-
 // Update evaluator points
 export async function updateEvaluatorPoints(evaluatorId: number, points: number) {
   await requireAdmin()

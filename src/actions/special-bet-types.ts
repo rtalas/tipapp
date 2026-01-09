@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { buildDeletionErrorMessage } from '@/lib/delete-utils'
 import {
   createSpecialBetTypeSchema,
   updateSpecialBetTypeSchema,
@@ -149,9 +150,7 @@ export async function deleteSpecialBetType(id: number) {
       })
 
       if (usageCount > 0) {
-        throw new Error(
-          `Cannot delete: This special bet type is used in ${usageCount} league${usageCount !== 1 ? 's' : ''}`
-        )
+        throw new Error(buildDeletionErrorMessage('special bet type', usageCount))
       }
 
       await prisma.specialBetSingle.update({

@@ -1,4 +1,4 @@
-import { getAllPlayers } from '@/actions/players'
+import { getAllPlayers } from '@/actions/shared-queries'
 import { PlayersContent } from '@/components/admin/players/players-content'
 
 export default async function PlayersPage() {

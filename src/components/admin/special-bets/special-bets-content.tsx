@@ -42,7 +42,7 @@ import { SpecialBetRow } from './special-bet-row'
 import { CreateSpecialBetUserBetDialog } from './create-special-bet-user-bet-dialog'
 
 type SpecialBet = Awaited<ReturnType<typeof import('@/actions/special-bet-bets').getSpecialBetsWithUserBets>>[number]
-type League = Awaited<ReturnType<typeof import('@/actions/special-bets').getLeaguesWithTeamsAndPlayers>>[number]
+type League = Awaited<ReturnType<typeof import('@/actions/shared-queries').getLeaguesWithTeams>>[number]
 type SpecialBetType = { id: number; name: string }
 type User = Awaited<ReturnType<typeof import('@/actions/users').getUsers>>[number]
 

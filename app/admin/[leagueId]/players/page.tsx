@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
-import { getLeagueById, getAllPlayers } from '@/actions/leagues'
+import { getLeagueById } from '@/actions/leagues'
+import { getAllPlayers } from '@/actions/shared-queries'
 import { LeaguePlayersSetup } from '@/components/admin/leagues/league-players-setup'
 
 export default async function LeaguePlayersPage({

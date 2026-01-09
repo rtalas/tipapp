@@ -131,23 +131,6 @@ export async function getSeriesById(seriesId: number) {
   })
 }
 
-export async function getLeaguesWithTeams() {
-  return prisma.league.findMany({
-    where: {
-      deletedAt: null,
-      isActive: true,
-    },
-    include: {
-      LeagueTeam: {
-        where: { deletedAt: null },
-        include: { Team: true },
-        orderBy: { Team: { name: 'asc' } },
-      },
-    },
-    orderBy: { name: 'asc' },
-  })
-}
-
 // Evaluate a single series and calculate points for all bets
 // Uses atomic transaction to prevent race conditions (double evaluation)
 export async function evaluateSeries(seriesId: number) {
