@@ -3,9 +3,10 @@
 import * as React from 'react'
 import { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2, ChevronDown } from 'lucide-react'
+import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteMatch } from '@/actions/matches'
+import { evaluateMatchBets } from '@/actions/evaluate-matches'
 import { getMatchStatus } from '@/lib/match-utils'
 import { getErrorMessage } from '@/lib/error-handler'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
@@ -117,6 +118,26 @@ export function MatchesContent({ matches, leagues, users, league }: MatchesConte
       console.error(error)
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleEvaluate = async (leagueMatchId: number, matchId: number) => {
+    try {
+      const result = await evaluateMatchBets({
+        leagueMatchId,
+        matchId,
+      })
+
+      if (result.success) {
+        toast.success(
+          `Match evaluated! ${result.totalUsersEvaluated} user(s) updated.`
+        )
+      } else {
+        toast.error(getErrorMessage(result.error, 'Failed to evaluate match'))
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to evaluate match'))
+      console.error(error)
     }
   }
 
@@ -334,6 +355,17 @@ export function MatchesContent({ matches, leagues, users, league }: MatchesConte
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation()
+                                  handleEvaluate(lm.id, lm.Match.id)
+                                }}
+                                aria-label={`Evaluate match: ${homeTeam.name} vs ${awayTeam.name}`}
+                              >
+                                <Calculator className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   setMatchToDelete(lm)
                                   setDeleteDialogOpen(true)
                                 }}
@@ -377,6 +409,8 @@ export function MatchesContent({ matches, leagues, users, league }: MatchesConte
                                             matchAwayTeam={awayTeam}
                                             availablePlayers={allPlayers}
                                             isMatchEvaluated={lm.Match.isEvaluated}
+                                            leagueMatchId={lm.id}
+                                            matchId={lm.Match.id}
                                           />
                                         ))}
                                       </TableBody>

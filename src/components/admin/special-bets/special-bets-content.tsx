@@ -3,9 +3,10 @@
 import * as React from 'react'
 import { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2, ChevronDown } from 'lucide-react'
+import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteSpecialBet } from '@/actions/special-bets'
+import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
 import { getErrorMessage } from '@/lib/error-handler'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
 import { cn } from '@/lib/utils'
@@ -155,6 +156,21 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
       console.error(error)
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleEvaluate = async (specialBetId: number) => {
+    try {
+      const result = await evaluateSpecialBetBets({ specialBetId })
+
+      if (result.success) {
+        toast.success(`Special bet evaluated! ${result.totalUsersEvaluated} user(s) updated.`)
+      } else {
+        toast.error(getErrorMessage(result.error, 'Failed to evaluate special bet'))
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to evaluate special bet'))
+      console.error(error)
     }
   }
 
@@ -355,6 +371,17 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation()
+                                  handleEvaluate(sb.id)
+                                }}
+                                aria-label={`Evaluate special bet: ${sb.SpecialBetSingle.name}`}
+                              >
+                                <Calculator className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   setSpecialBetToDelete(sb)
                                   setDeleteDialogOpen(true)
                                 }}
@@ -394,6 +421,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                                             specialBet={sb}
                                             league={league}
                                             isEvaluated={sb.isEvaluated}
+                                            specialBetId={sb.id}
                                           />
                                         ))}
                                       </TableBody>

@@ -1,4 +1,4 @@
-import { Edit, Trash2, Check, X } from 'lucide-react'
+import { Edit, Trash2, Check, X, Calculator } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface BetRowActionsProps {
@@ -9,11 +9,12 @@ interface BetRowActionsProps {
   onCancelEdit: () => void
   onSaveEdit: () => void
   onDelete: () => void
+  onEvaluate?: () => void
 }
 
 /**
  * Shared action buttons for bet row components
- * Shows Edit/Delete buttons when not editing, Save/Cancel when editing
+ * Shows Edit/Delete/Evaluate buttons when not editing, Save/Cancel when editing
  * Used by: user-bet-row, series-bet-row, special-bet-row
  */
 export function BetRowActions({
@@ -24,6 +25,7 @@ export function BetRowActions({
   onCancelEdit,
   onSaveEdit,
   onDelete,
+  onEvaluate,
 }: BetRowActionsProps) {
   if (isEditing) {
     return (
@@ -60,6 +62,16 @@ export function BetRowActions({
       >
         <Edit className="h-4 w-4" />
       </Button>
+      {onEvaluate && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onEvaluate}
+          aria-label={`Evaluate bet for ${userName}`}
+        >
+          <Calculator className="h-4 w-4 text-blue-600" />
+        </Button>
+      )}
       <Button
         variant="ghost"
         size="sm"

@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { updateUserBet, deleteUserBet } from '@/actions/user-bets'
+import { evaluateMatchBets } from '@/actions/evaluate-matches'
 import { validateUserBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
@@ -33,6 +34,8 @@ interface UserBetRowProps {
   matchAwayTeam: Team
   availablePlayers: LeaguePlayer[]
   isMatchEvaluated: boolean
+  leagueMatchId: number
+  matchId: number
 }
 
 export function UserBetRow({
@@ -41,6 +44,8 @@ export function UserBetRow({
   matchAwayTeam,
   availablePlayers,
   isMatchEvaluated,
+  leagueMatchId,
+  matchId,
 }: UserBetRowProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -107,6 +112,26 @@ export function UserBetRow({
       toast.error(getErrorMessage(result.error, 'Failed to delete bet'))
     }
     setIsDeleting(false)
+  }
+
+  const handleEvaluate = async () => {
+    try {
+      const result = await evaluateMatchBets({
+        leagueMatchId,
+        matchId,
+        userId: bet.LeagueUser.userId, // Evaluate only this user
+      })
+
+      if (result.success) {
+        const userResult = result.results[0]
+        toast.success(`Bet evaluated! ${userResult.totalPoints} points awarded.`)
+      } else {
+        toast.error(getErrorMessage(result.error, 'Failed to evaluate bet'))
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to evaluate bet'))
+      console.error(error)
+    }
   }
 
   const userName = `${bet.LeagueUser.User.firstName} ${bet.LeagueUser.User.lastName}`
@@ -243,6 +268,7 @@ export function UserBetRow({
             onCancelEdit={inlineEdit.cancelEdit}
             onSaveEdit={handleSaveEdit}
             onDelete={() => setDeleteDialogOpen(true)}
+            onEvaluate={handleEvaluate}
           />
         </TableCell>
       </TableRow>

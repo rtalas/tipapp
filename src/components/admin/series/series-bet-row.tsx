@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { updateUserSeriesBet, deleteUserSeriesBet } from '@/actions/series-bets'
+import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { validateUserSeriesBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
@@ -24,6 +25,7 @@ interface SeriesBetRowProps {
   seriesHomeTeam: Team
   seriesAwayTeam: Team
   isSeriesEvaluated: boolean
+  seriesId: number
 }
 
 export function SeriesBetRow({
@@ -31,6 +33,7 @@ export function SeriesBetRow({
   seriesHomeTeam,
   seriesAwayTeam,
   isSeriesEvaluated,
+  seriesId,
 }: SeriesBetRowProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -87,6 +90,25 @@ export function SeriesBetRow({
       toast.error(getErrorMessage(result.error, 'Failed to delete bet'))
     }
     setIsDeleting(false)
+  }
+
+  const handleEvaluate = async () => {
+    try {
+      const result = await evaluateSeriesBets({
+        seriesId,
+        userId: bet.LeagueUser.userId, // Evaluate only this user
+      })
+
+      if (result.success) {
+        const userResult = result.results[0]
+        toast.success(`Bet evaluated! ${userResult.totalPoints} points awarded.`)
+      } else {
+        toast.error(getErrorMessage(result.error, 'Failed to evaluate bet'))
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to evaluate bet'))
+      console.error(error)
+    }
   }
 
   const userName = `${bet.LeagueUser.User.firstName} ${bet.LeagueUser.User.lastName}`
@@ -148,6 +170,7 @@ export function SeriesBetRow({
             onCancelEdit={inlineEdit.cancelEdit}
             onSaveEdit={handleSaveEdit}
             onDelete={() => setDeleteDialogOpen(true)}
+            onEvaluate={handleEvaluate}
           />
         </TableCell>
       </TableRow>

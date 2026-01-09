@@ -3,9 +3,10 @@
 import * as React from 'react'
 import { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2, ChevronDown } from 'lucide-react'
+import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteSeries } from '@/actions/series'
+import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { getErrorMessage } from '@/lib/error-handler'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
 import { cn } from '@/lib/utils'
@@ -124,6 +125,25 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
       console.error(error)
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleEvaluate = async (seriesId: number) => {
+    try {
+      const result = await evaluateSeriesBets({
+        seriesId,
+      })
+
+      if (result.success) {
+        toast.success(
+          `Series evaluated! ${result.totalUsersEvaluated} user(s) updated.`
+        )
+      } else {
+        toast.error(getErrorMessage(result.error, 'Failed to evaluate series'))
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to evaluate series'))
+      console.error(error)
     }
   }
 
@@ -320,6 +340,17 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation()
+                                  handleEvaluate(s.id)
+                                }}
+                                aria-label={`Evaluate series: ${homeTeam.name} vs ${awayTeam.name}`}
+                              >
+                                <Calculator className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   setSeriesToDelete(s)
                                   setDeleteDialogOpen(true)
                                 }}
@@ -360,6 +391,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                                             seriesHomeTeam={homeTeam}
                                             seriesAwayTeam={awayTeam}
                                             isSeriesEvaluated={s.isEvaluated}
+                                            seriesId={s.id}
                                           />
                                         ))}
                                       </TableBody>

@@ -8,6 +8,7 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { updateUserSpecialBet, deleteUserSpecialBet } from '@/actions/special-bet-bets'
+import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
 import { validateUserSpecialBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { getSpecialBetType } from '@/lib/special-bet-utils'
@@ -40,6 +41,7 @@ interface SpecialBetRowProps {
   specialBet: SpecialBetWithBets
   league?: LeagueWithTeams
   isEvaluated: boolean
+  specialBetId: number
 }
 
 function getPredictionDisplay(bet: UserSpecialBet): string {
@@ -56,7 +58,7 @@ function getPredictionDisplay(bet: UserSpecialBet): string {
   return '-'
 }
 
-export function SpecialBetRow({ bet, specialBet, league, isEvaluated }: SpecialBetRowProps) {
+export function SpecialBetRow({ bet, specialBet, league, isEvaluated, specialBetId }: SpecialBetRowProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -146,6 +148,25 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated }: SpecialB
     setIsDeleting(false)
   }
 
+  const handleEvaluate = async () => {
+    try {
+      const result = await evaluateSpecialBetBets({
+        specialBetId,
+        userId: bet.LeagueUser.userId, // Evaluate only this user
+      })
+
+      if (result.success) {
+        const userResult = result.results[0]
+        toast.success(`Bet evaluated! ${userResult.totalPoints} points awarded.`)
+      } else {
+        toast.error(getErrorMessage(result.error, 'Failed to evaluate bet'))
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to evaluate bet'))
+      console.error(error)
+    }
+  }
+
   const userName = `${bet.LeagueUser.User.firstName} ${bet.LeagueUser.User.lastName}`
   const isEditing = inlineEdit.editingId === bet.id
 
@@ -227,6 +248,7 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated }: SpecialB
             onCancelEdit={inlineEdit.cancelEdit}
             onSaveEdit={handleSaveEdit}
             onDelete={() => setDeleteDialogOpen(true)}
+            onEvaluate={handleEvaluate}
           />
         </TableCell>
       </TableRow>
