@@ -14,11 +14,8 @@ import {
   Award,
   Shield,
   User,
-  ClipboardList,
   ListChecks,
   Star,
-  FileCheck,
-  Target,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -71,29 +68,14 @@ const navItems = [
     icon: CheckCircle,
   },
   {
-    label: 'User Picks',
-    href: '/admin/user-picks',
-    icon: ClipboardList,
-  },
-  {
     label: 'Series',
     href: '/admin/series',
     icon: ListChecks,
   },
   {
-    label: 'Series Picks',
-    href: '/admin/series-picks',
-    icon: FileCheck,
-  },
-  {
     label: 'Special Bets',
     href: '/admin/special-bets',
     icon: Star,
-  },
-  {
-    label: 'Special Bet Picks',
-    href: '/admin/special-bet-picks',
-    icon: Target,
   },
   {
     label: 'Users',
@@ -130,7 +112,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.href !== '/admin' && pathname.startsWith(item.href))
+              (item.href !== '/admin' && pathname.startsWith(item.href + '/'))
 
             const link = (
               <Link

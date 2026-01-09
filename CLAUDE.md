@@ -134,7 +134,12 @@ const isCorrect = evaluateExactScore(context); // true
   - ✅ UI conversion from dropdown menus to direct action buttons (all 8 admin pages)
   - ✅ Code Quality Refactoring (centralized auth, error handling, validation, accessibility, custom hooks)
   - ✅ Security Audit & Fixes (CSRF protection, email injection prevention, security headers)
-- **Phase 3 (User Betting): NEXT** (Match feed UI, score/scorer submission logic).
+- **Phase 3 (User Betting): COMPLETED** (Match feed UI, user picks integration).
+  - ✅ Admin User Picks Management (inline editing, expandable rows)
+  - ✅ Matches page with user bets (CRUD operations)
+  - ✅ Series page with series bets (CRUD operations)
+  - ✅ Special Bets page with special bet picks (CRUD operations)
+  - ✅ Deprecated picks pages removed (user-picks, series-picks, special-bet-picks)
 - **Phase 4 (Evaluation & Leaderboard): IN PROGRESS** (Point calculation engine, rankings view).
   - ✅ Evaluation Functions (13 evaluator types with 57 comprehensive tests)
   - 🔄 Point calculation engine integration (NEXT)
@@ -163,6 +168,46 @@ const isCorrect = evaluateExactScore(context); // true
 6. Users (`users-content.tsx`) - Remove from League
 7. Leagues (`league-actions.tsx`) - Edit + Evaluators + Setup + Users + Delete
 8. Results (`results-content.tsx`) - Edit Result + Evaluate
+
+## Key Implementation Details (Phase 3)
+
+### Admin Picks Integration Architecture
+
+**Expandable Row Pattern:**
+All three admin pages (Matches, Series, Special Bets) now use expandable rows to show user predictions inline:
+- Click any row to expand and view all user bets for that item
+- Edit, delete, or create missing bets directly in the expanded section
+- Uses shared `useExpandableRow()` hook for consistent behavior
+
+**Components Created:**
+- `src/hooks/useExpandableRow.ts` - Shared hook for managing expanded row state
+- `src/components/admin/matches/user-bet-row.tsx` - User bet inline editor
+- `src/components/admin/matches/create-bet-dialog.tsx` - Create missing user bet
+- `src/components/admin/series/series-bet-row.tsx` - Series bet inline editor
+- `src/components/admin/series/create-series-bet-dialog.tsx` - Create missing series bet
+- `src/components/admin/special-bets/special-bet-row.tsx` - Special bet inline editor
+- `src/components/admin/special-bets/create-special-bet-user-bet-dialog.tsx` - Create missing special bet
+
+**Server Actions:**
+- `src/actions/user-bets.ts` - CRUD operations for user match bets
+- `src/actions/series-bets.ts` - CRUD operations for series bets (including getSeriesWithUserBets)
+- `src/actions/special-bet-bets.ts` - CRUD operations for special bet picks
+
+**Pages Modified:**
+1. `app/admin/matches/page.tsx` - Now fetches matches with user bets
+2. `app/admin/series/page.tsx` - Now fetches series with user bets
+3. `app/admin/special-bets/page.tsx` - Now fetches special bets with user picks
+
+**Deprecated Pages Removed:**
+- `/admin/user-picks` - Functionality merged into `/admin/matches`
+- `/admin/series-picks` - Functionality merged into `/admin/series`
+- `/admin/special-bet-picks` - Functionality merged into `/admin/special-bets`
+
+**Navigation Updates:**
+- Sidebar simplified: removed 3 "Picks" links, kept main entity pages
+- Total cleanup: ~1500+ lines of duplicate code removed
+
+---
 
 ## Code Quality Improvements (Phase 2 Refactoring)
 

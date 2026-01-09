@@ -3,6 +3,8 @@
  * Eliminates need for `any` types in dynamic where conditions
  */
 
+import type { Prisma } from '@prisma/client'
+
 /**
  * Where conditions for LeagueMatch filters
  */
@@ -16,6 +18,7 @@ export interface LeagueMatchWhere {
     homeRegularScore?: { not: null }
     awayRegularScore?: { not: null }
   }
+  UserBet?: Prisma.UserBetListRelationFilter
 }
 
 /**
@@ -24,6 +27,7 @@ export interface LeagueMatchWhere {
 export function buildLeagueMatchWhere(filters?: {
   leagueId?: number
   status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
+  userId?: number
 }): LeagueMatchWhere {
   const now = new Date()
   const where: LeagueMatchWhere = {
@@ -32,6 +36,18 @@ export function buildLeagueMatchWhere(filters?: {
 
   if (filters?.leagueId) {
     where.leagueId = filters.leagueId
+  }
+
+  // User filter: show only matches where this user has bets
+  if (filters?.userId) {
+    where.UserBet = {
+      some: {
+        deletedAt: null,
+        LeagueUser: {
+          userId: filters.userId,
+        },
+      },
+    }
   }
 
   where.Match = {

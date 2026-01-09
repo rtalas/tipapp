@@ -109,34 +109,37 @@ export function SeriesBetRow({
         {/* User name */}
         <TableCell>{userName}</TableCell>
 
-        {/* Series Score */}
+        {/* Home Team Score */}
         <TableCell>
           {isEditing && inlineEdit.form ? (
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min="0"
-                max="7"
-                value={inlineEdit.form.homeTeamScore}
-                onChange={(e) => inlineEdit.updateForm({ homeTeamScore: e.target.value })}
-                className="w-16"
-                aria-label={`${seriesHomeTeam.name} score`}
-              />
-              <span>:</span>
-              <Input
-                type="number"
-                min="0"
-                max="7"
-                value={inlineEdit.form.awayTeamScore}
-                onChange={(e) => inlineEdit.updateForm({ awayTeamScore: e.target.value })}
-                className="w-16"
-                aria-label={`${seriesAwayTeam.name} score`}
-              />
-            </div>
+            <Input
+              type="number"
+              min="0"
+              max="7"
+              value={inlineEdit.form.homeTeamScore}
+              onChange={(e) => inlineEdit.updateForm({ homeTeamScore: e.target.value })}
+              className="w-16"
+              aria-label={`${seriesHomeTeam.name} score`}
+            />
           ) : (
-            <span>
-              {bet.homeTeamScore ?? 0}:{bet.awayTeamScore ?? 0}
-            </span>
+            <span>{bet.homeTeamScore ?? 0}</span>
+          )}
+        </TableCell>
+
+        {/* Away Team Score */}
+        <TableCell>
+          {isEditing && inlineEdit.form ? (
+            <Input
+              type="number"
+              min="0"
+              max="7"
+              value={inlineEdit.form.awayTeamScore}
+              onChange={(e) => inlineEdit.updateForm({ awayTeamScore: e.target.value })}
+              className="w-16"
+              aria-label={`${seriesAwayTeam.name} score`}
+            />
+          ) : (
+            <span>{bet.awayTeamScore ?? 0}</span>
           )}
         </TableCell>
 

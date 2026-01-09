@@ -33,6 +33,59 @@ export const leagueMatchInclude = {
 } as const
 
 /**
+ * Include pattern for LeagueMatch with user bets
+ * Used in merged matches page to show expandable user bet rows
+ * Includes all match data plus UserBet array with full user context
+ */
+export const leagueMatchWithBetsInclude = {
+  League: true,
+  Match: {
+    include: {
+      LeagueTeam_Match_homeTeamIdToLeagueTeam: {
+        include: {
+          Team: true,
+          LeaguePlayer: {
+            where: { deletedAt: null },
+            include: { Player: true },
+          },
+        },
+      },
+      LeagueTeam_Match_awayTeamIdToLeagueTeam: {
+        include: {
+          Team: true,
+          LeaguePlayer: {
+            where: { deletedAt: null },
+            include: { Player: true },
+          },
+        },
+      },
+      MatchScorer: {
+        include: {
+          LeaguePlayer: {
+            include: { Player: true },
+          },
+        },
+      },
+    },
+  },
+  UserBet: {
+    where: { deletedAt: null },
+    include: {
+      LeagueUser: {
+        include: {
+          User: true,
+        },
+      },
+      LeaguePlayer: {
+        include: {
+          Player: true,
+        },
+      },
+    },
+  },
+} as const
+
+/**
  * Include pattern for Match with evaluator data
  * Used in evaluateMatch to load evaluators in bulk
  */

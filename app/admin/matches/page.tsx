@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { getMatches, getLeaguesWithTeams } from '@/actions/matches'
+import { getUsers } from '@/actions/users'
 import { MatchesContent } from '@/components/admin/matches/matches-content'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
@@ -12,12 +13,13 @@ import {
 } from '@/components/ui/table'
 
 async function MatchesData() {
-  const [matches, leagues] = await Promise.all([
+  const [matches, leagues, users] = await Promise.all([
     getMatches(),
     getLeaguesWithTeams(),
+    getUsers(),
   ])
 
-  return <MatchesContent matches={matches} leagues={leagues} />
+  return <MatchesContent matches={matches} leagues={leagues} users={users} />
 }
 
 function MatchesLoading() {

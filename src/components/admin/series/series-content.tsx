@@ -1,11 +1,14 @@
 'use client'
 
 import * as React from 'react'
+import { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { Plus, Edit, Trash2, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteSeries } from '@/actions/series'
 import { getErrorMessage } from '@/lib/error-handler'
+import { useExpandableRow } from '@/hooks/useExpandableRow'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -35,50 +38,19 @@ import {
 } from '@/components/ui/dialog'
 import { AddSeriesDialog } from './add-series-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
+import { SeriesBetRow } from './series-bet-row'
+import { CreateSeriesBetDialog } from './create-series-bet-dialog'
 
-interface Team {
-  id: number
-  name: string
-  shortcut: string
-}
-
-interface LeagueTeam {
-  id: number
-  Team: Team
-}
-
-interface League {
-  id: number
-  name: string
-  LeagueTeam: LeagueTeam[]
-}
-
-interface SpecialBetSerie {
-  id: number
-  name: string
-  bestOf: number
-}
-
-interface Series {
-  id: number
-  leagueId: number
-  dateTime: Date
-  homeTeamScore: number | null
-  awayTeamScore: number | null
-  isEvaluated: boolean
-  League: { name: string }
-  SpecialBetSerie: SpecialBetSerie
-  LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam: LeagueTeam
-  LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam: LeagueTeam
-  _count: {
-    UserSpecialBetSerie: number
-  }
-}
+type Series = Awaited<ReturnType<typeof import('@/actions/series-bets').getSeriesWithUserBets>>[number]
+type League = { id: number; name: string; LeagueTeam: { id: number; Team: { id: number; name: string; shortcut: string } }[] }
+type SpecialBetSerie = { id: number; name: string; bestOf: number }
+type User = Awaited<ReturnType<typeof import('@/actions/users').getUsers>>[number]
 
 interface SeriesContentProps {
   series: Series[]
   leagues: League[]
   specialBetSeries: SpecialBetSerie[]
+  users: User[]
 }
 
 function getSeriesStatus(series: Series): 'scheduled' | 'finished' | 'evaluated' {
@@ -87,15 +59,20 @@ function getSeriesStatus(series: Series): 'scheduled' | 'finished' | 'evaluated'
   return 'scheduled'
 }
 
-export function SeriesContent({ series, leagues, specialBetSeries }: SeriesContentProps) {
+export function SeriesContent({ series, leagues, specialBetSeries, users }: SeriesContentProps) {
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
+  const [userFilter, setUserFilter] = React.useState<string>('all')
   const [addDialogOpen, setAddDialogOpen] = React.useState(false)
   const [selectedSeries, setSelectedSeries] = React.useState<Series | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [seriesToDelete, setSeriesToDelete] = React.useState<Series | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
+  const [createBetSeriesId, setCreateBetSeriesId] = React.useState<number | null>(null)
+
+  // Expandable rows
+  const { isExpanded, toggleRow } = useExpandableRow()
 
   // Filter series with optimized string search
   const filteredSeries = series.filter((s) => {
@@ -109,6 +86,15 @@ export function SeriesContent({ series, leagues, specialBetSeries }: SeriesConte
     // League filter
     if (leagueFilter !== 'all' && s.leagueId !== parseInt(leagueFilter, 10)) {
       return false
+    }
+
+    // User filter - show only series where this user has bets
+    if (userFilter !== 'all') {
+      const userId = parseInt(userFilter, 10)
+      const hasUserBet = s.UserSpecialBetSerie.some((bet) => bet.LeagueUser.userId === userId)
+      if (!hasUserBet) {
+        return false
+      }
     }
 
     // Search filter
@@ -140,11 +126,13 @@ export function SeriesContent({ series, leagues, specialBetSeries }: SeriesConte
     }
   }
 
+  const createBetSeries = filteredSeries.find((s) => s.id === createBetSeriesId)
+
   return (
     <>
       {/* Filters */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-1 gap-4">
+        <div className="flex flex-1 flex-wrap gap-2">
           <Input
             placeholder="Search by team name..."
             value={search}
@@ -171,6 +159,19 @@ export function SeriesContent({ series, leagues, specialBetSeries }: SeriesConte
               {leagues.map((league) => (
                 <SelectItem key={league.id} value={league.id.toString()}>
                   {league.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={userFilter} onValueChange={setUserFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Users" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              {users.map((user) => (
+                <SelectItem key={user.id} value={user.id.toString()}>
+                  {user.firstName} {user.lastName}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -204,13 +205,14 @@ export function SeriesContent({ series, leagues, specialBetSeries }: SeriesConte
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]"></TableHead>
                     <TableHead className="w-[80px]">ID</TableHead>
                     <TableHead>Date & Time</TableHead>
                     <TableHead>League</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Matchup</TableHead>
                     <TableHead className="text-center">Score</TableHead>
-                    <TableHead>Bets</TableHead>
+                    <TableHead className="text-center">Bets</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
@@ -220,103 +222,165 @@ export function SeriesContent({ series, leagues, specialBetSeries }: SeriesConte
                     const status = getSeriesStatus(s)
                     const homeTeam = s.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team
                     const awayTeam = s.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team
+                    const expanded = isExpanded(s.id)
 
                     return (
-                      <TableRow
-                        key={s.id}
-                        className="table-row-hover cursor-pointer"
-                        onClick={() => setSelectedSeries(s)}
-                      >
-                        <TableCell className="font-mono text-muted-foreground">
-                          #{s.id}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {format(new Date(s.dateTime), 'MMM d, yyyy')}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              {format(new Date(s.dateTime), 'HH:mm')}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{s.League.name}</TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {s.SpecialBetSerie.name} (Best of {s.SpecialBetSerie.bestOf})
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{homeTeam.name}</span>
-                            <span className="text-muted-foreground">vs</span>
-                            <span className="font-medium">{awayTeam.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {s.homeTeamScore !== null ? (
-                            <div className="flex items-center justify-center gap-1">
-                              <span className="font-mono font-bold text-lg">
-                                {s.homeTeamScore}
+                      <Fragment key={s.id}>
+                        {/* Main row - clickable to expand */}
+                        <TableRow
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => toggleRow(s.id)}
+                        >
+                          <TableCell>
+                            <ChevronDown
+                              className={cn(
+                                'h-4 w-4 transition-transform',
+                                expanded && 'rotate-180'
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell className="font-mono text-muted-foreground">
+                            #{s.id}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {format(new Date(s.dateTime), 'MMM d, yyyy')}
                               </span>
-                              <span className="text-muted-foreground">:</span>
-                              <span className="font-mono font-bold text-lg">
-                                {s.awayTeamScore}
+                              <span className="text-sm text-muted-foreground">
+                                {format(new Date(s.dateTime), 'HH:mm')}
                               </span>
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {s._count.UserSpecialBetSerie} bet{s._count.UserSpecialBetSerie !== 1 ? 's' : ''}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              status === 'evaluated'
-                                ? 'evaluated'
-                                : status === 'finished'
-                                ? 'finished'
-                                : 'scheduled'
-                            }
-                          >
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div
-                            className="flex items-center gap-2"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedSeries(s)
-                              }}
-                              aria-label={`Edit series: ${homeTeam.name} vs ${awayTeam.name}`}
+                          </TableCell>
+                          <TableCell>{s.League.name}</TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">
+                              {s.SpecialBetSerie.name} (Best of {s.SpecialBetSerie.bestOf})
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{homeTeam.name}</span>
+                              <span className="text-muted-foreground">vs</span>
+                              <span className="font-medium">{awayTeam.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {s.homeTeamScore !== null ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <span className="font-mono font-bold text-lg">
+                                  {s.homeTeamScore}
+                                </span>
+                                <span className="text-muted-foreground">:</span>
+                                <span className="font-mono font-bold text-lg">
+                                  {s.awayTeamScore}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline">{s.UserSpecialBetSerie.length}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                status === 'evaluated'
+                                  ? 'evaluated'
+                                  : status === 'finished'
+                                  ? 'finished'
+                                  : 'scheduled'
+                              }
                             >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSeriesToDelete(s)
-                                setDeleteDialogOpen(true)
-                              }}
-                              aria-label={`Delete series: ${homeTeam.name} vs ${awayTeam.name}`}
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div
+                              className="flex items-center gap-2"
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedSeries(s)
+                                }}
+                                aria-label={`Edit series result: ${homeTeam.name} vs ${awayTeam.name}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSeriesToDelete(s)
+                                  setDeleteDialogOpen(true)
+                                }}
+                                aria-label={`Delete series: ${homeTeam.name} vs ${awayTeam.name}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Expanded row - user bets */}
+                        {expanded && (
+                          <TableRow>
+                            <TableCell colSpan={10} className="bg-muted/20 p-0">
+                              <div className="p-4">
+                                {s.UserSpecialBetSerie.length === 0 ? (
+                                  <div className="py-8 text-center">
+                                    <p className="text-muted-foreground">No bets yet for this series</p>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-lg border bg-background">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>User</TableHead>
+                                          <TableHead>Home Score</TableHead>
+                                          <TableHead>Away Score</TableHead>
+                                          <TableHead>Points</TableHead>
+                                          <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {s.UserSpecialBetSerie.map((bet) => (
+                                          <SeriesBetRow
+                                            key={bet.id}
+                                            bet={bet}
+                                            seriesHomeTeam={homeTeam}
+                                            seriesAwayTeam={awayTeam}
+                                            isSeriesEvaluated={s.isEvaluated}
+                                          />
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                )}
+
+                                {/* Add Missing Bet button */}
+                                <div className="mt-4 flex justify-end">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCreateBetSeriesId(s.id)}
+                                    aria-label="Add missing bet for this series"
+                                  >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Missing Bet
+                                  </Button>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
                     )
                   })}
                 </TableBody>
@@ -337,9 +401,21 @@ export function SeriesContent({ series, leagues, specialBetSeries }: SeriesConte
       {/* Result Entry Dialog */}
       {selectedSeries && (
         <ResultEntryDialog
-          series={selectedSeries}
+          series={{
+            ...selectedSeries,
+            _count: { UserSpecialBetSerie: selectedSeries.UserSpecialBetSerie.length }
+          }}
           open={!!selectedSeries}
           onOpenChange={(open) => !open && setSelectedSeries(null)}
+        />
+      )}
+
+      {/* Create Bet Dialog */}
+      {createBetSeries && (
+        <CreateSeriesBetDialog
+          open={createBetSeriesId !== null}
+          onOpenChange={(open) => !open && setCreateBetSeriesId(null)}
+          series={createBetSeries}
         />
       )}
 

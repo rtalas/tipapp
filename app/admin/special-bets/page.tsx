@@ -1,10 +1,11 @@
-import { getSpecialBets } from '@/actions/special-bets'
+import { getSpecialBetsWithUserBets } from '@/actions/special-bet-bets'
+import { getUsers } from '@/actions/users'
 import { prisma } from '@/lib/prisma'
 import { SpecialBetsContent } from '@/components/admin/special-bets/special-bets-content'
 
 export default async function SpecialBetsPage() {
-  const [specialBets, leagues, specialBetTypes] = await Promise.all([
-    getSpecialBets(),
+  const [specialBets, leagues, specialBetTypes, users] = await Promise.all([
+    getSpecialBetsWithUserBets(),
     prisma.league.findMany({
       where: { deletedAt: null, isActive: true },
       include: {
@@ -26,6 +27,7 @@ export default async function SpecialBetsPage() {
       where: { deletedAt: null },
       orderBy: { name: 'asc' },
     }),
+    getUsers(),
   ])
 
   return (
@@ -41,6 +43,7 @@ export default async function SpecialBetsPage() {
         specialBets={specialBets}
         leagues={leagues}
         specialBetTypes={specialBetTypes}
+        users={users}
       />
     </div>
   )

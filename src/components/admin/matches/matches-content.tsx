@@ -1,12 +1,15 @@
 'use client'
 
 import * as React from 'react'
+import { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { Plus, Edit, Trash2, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteMatch } from '@/actions/matches'
 import { getMatchStatus } from '@/lib/match-utils'
 import { getErrorMessage } from '@/lib/error-handler'
+import { useExpandableRow } from '@/hooks/useExpandableRow'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -36,61 +39,33 @@ import {
 } from '@/components/ui/dialog'
 import { AddMatchDialog } from './add-match-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
+import { UserBetRow } from './user-bet-row'
+import { CreateBetDialog } from './create-bet-dialog'
 
-interface Team {
-  id: number
-  name: string
-  shortcut: string
-}
-
-interface LeagueTeam {
-  id: number
-  Team: Team
-}
-
-interface League {
-  id: number
-  name: string
-  LeagueTeam: LeagueTeam[]
-}
-
-interface Match {
-  id: number
-  dateTime: Date
-  isEvaluated: boolean
-  isPlayoffGame: boolean
-  homeRegularScore: number | null
-  awayRegularScore: number | null
-  homeFinalScore: number | null
-  awayFinalScore: number | null
-  isOvertime: boolean | null
-  isShootout: boolean | null
-  LeagueTeam_Match_homeTeamIdToLeagueTeam: LeagueTeam
-  LeagueTeam_Match_awayTeamIdToLeagueTeam: LeagueTeam
-}
-
-interface LeagueMatch {
-  id: number
-  leagueId: number
-  isDoubled: boolean | null
-  League: { name: string }
-  Match: Match
-}
+type LeagueMatch = Awaited<ReturnType<typeof import('@/actions/user-bets').getMatchesWithUserBets>>[number]
+type League = Awaited<ReturnType<typeof import('@/actions/matches').getLeaguesWithTeams>>[number]
+type User = Awaited<ReturnType<typeof import('@/actions/users').getUsers>>[number]
 
 interface MatchesContentProps {
   matches: LeagueMatch[]
   leagues: League[]
+  users: User[]
 }
 
-export function MatchesContent({ matches, leagues }: MatchesContentProps) {
+export function MatchesContent({ matches, leagues, users }: MatchesContentProps) {
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
+  const [userFilter, setUserFilter] = React.useState<string>('all')
   const [addDialogOpen, setAddDialogOpen] = React.useState(false)
   const [selectedMatch, setSelectedMatch] = React.useState<LeagueMatch | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [matchToDelete, setMatchToDelete] = React.useState<LeagueMatch | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
+  const [createBetMatchId, setCreateBetMatchId] = React.useState<number | null>(null)
+
+  // Expandable rows
+  const { isExpanded, toggleRow } = useExpandableRow()
 
   // Filter matches with optimized string search
   const filteredMatches = matches.filter((lm) => {
@@ -104,6 +79,15 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
     // League filter
     if (leagueFilter !== 'all' && lm.leagueId !== parseInt(leagueFilter, 10)) {
       return false
+    }
+
+    // User filter - show only matches where this user has bets
+    if (userFilter !== 'all') {
+      const userId = parseInt(userFilter, 10)
+      const hasUserBet = lm.UserBet.some((bet) => bet.LeagueUser.userId === userId)
+      if (!hasUserBet) {
+        return false
+      }
     }
 
     // Search filter - optimized: combine team names
@@ -135,11 +119,13 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
     }
   }
 
+  const createBetMatch = filteredMatches.find((m) => m.id === createBetMatchId)
+
   return (
     <>
       {/* Filters */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-1 gap-4">
+        <div className="flex flex-1 flex-wrap gap-2">
           <Input
             placeholder="Search by team name..."
             value={search}
@@ -167,6 +153,19 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
               {leagues.map((league) => (
                 <SelectItem key={league.id} value={league.id.toString()}>
                   {league.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={userFilter} onValueChange={setUserFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Users" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              {users.map((user) => (
+                <SelectItem key={user.id} value={user.id.toString()}>
+                  {user.firstName} {user.lastName}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -200,12 +199,14 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]"></TableHead>
                     <TableHead className="w-[80px]">ID</TableHead>
                     <TableHead>Date & Time</TableHead>
                     <TableHead>League</TableHead>
                     <TableHead>Matchup</TableHead>
                     <TableHead className="text-center">Score</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Bets</TableHead>
                     <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -214,109 +215,182 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
                     const status = getMatchStatus(lm.Match)
                     const homeTeam = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team
                     const awayTeam = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team
+                    const homePlayers = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.LeaguePlayer
+                    const awayPlayers = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.LeaguePlayer
+                    const allPlayers = [...homePlayers, ...awayPlayers]
+                    const expanded = isExpanded(lm.id)
 
                     return (
-                      <TableRow
-                        key={lm.id}
-                        className="table-row-hover cursor-pointer"
-                        onClick={() => setSelectedMatch(lm)}
-                      >
-                        <TableCell className="font-mono text-muted-foreground">
-                          #{lm.Match.id}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {format(new Date(lm.Match.dateTime), 'MMM d, yyyy')}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              {format(new Date(lm.Match.dateTime), 'HH:mm')}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {lm.League.name}
-                            {lm.Match.isPlayoffGame && (
-                              <Badge variant="warning" className="text-xs">
-                                Playoff
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{homeTeam.name}</span>
-                            <span className="text-muted-foreground">vs</span>
-                            <span className="font-medium">{awayTeam.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {lm.Match.homeRegularScore !== null ? (
-                            <div className="flex items-center justify-center gap-1">
-                              <span className="font-mono font-bold text-lg">
-                                {lm.Match.homeRegularScore}
+                      <Fragment key={lm.id}>
+                        {/* Main row - clickable to expand */}
+                        <TableRow
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => toggleRow(lm.id)}
+                        >
+                          <TableCell>
+                            <ChevronDown
+                              className={cn(
+                                'h-4 w-4 transition-transform',
+                                expanded && 'rotate-180'
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell className="font-mono text-muted-foreground">
+                            #{lm.Match.id}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {format(new Date(lm.Match.dateTime), 'MMM d, yyyy')}
                               </span>
-                              <span className="text-muted-foreground">:</span>
-                              <span className="font-mono font-bold text-lg">
-                                {lm.Match.awayRegularScore}
+                              <span className="text-sm text-muted-foreground">
+                                {format(new Date(lm.Match.dateTime), 'HH:mm')}
                               </span>
-                              {(lm.Match.isOvertime || lm.Match.isShootout) && (
-                                <span className="ml-2 text-xs text-muted-foreground">
-                                  {lm.Match.isShootout ? '(SO)' : '(OT)'}
-                                </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {lm.League.name}
+                              {lm.Match.isPlayoffGame && (
+                                <Badge variant="warning" className="text-xs">
+                                  Playoff
+                                </Badge>
                               )}
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              status === 'evaluated'
-                                ? 'evaluated'
-                                : status === 'finished'
-                                ? 'finished'
-                                : status === 'live'
-                                ? 'live'
-                                : 'scheduled'
-                            }
-                          >
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div
-                            className="flex items-center gap-2"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedMatch(lm)
-                              }}
-                              aria-label={`Edit match: ${homeTeam.name} vs ${awayTeam.name}`}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{homeTeam.name}</span>
+                              <span className="text-muted-foreground">vs</span>
+                              <span className="font-medium">{awayTeam.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {lm.Match.homeRegularScore !== null ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <span className="font-mono font-bold text-lg">
+                                  {lm.Match.homeRegularScore}
+                                </span>
+                                <span className="text-muted-foreground">:</span>
+                                <span className="font-mono font-bold text-lg">
+                                  {lm.Match.awayRegularScore}
+                                </span>
+                                {(lm.Match.isOvertime || lm.Match.isShootout) && (
+                                  <span className="ml-2 text-xs text-muted-foreground">
+                                    {lm.Match.isShootout ? '(SO)' : '(OT)'}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                status === 'evaluated'
+                                  ? 'evaluated'
+                                  : status === 'finished'
+                                  ? 'finished'
+                                  : status === 'live'
+                                  ? 'live'
+                                  : 'scheduled'
+                              }
                             >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setMatchToDelete(lm)
-                                setDeleteDialogOpen(true)
-                              }}
-                              aria-label={`Delete match: ${homeTeam.name} vs ${awayTeam.name}`}
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline">{lm.UserBet.length}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div
+                              className="flex items-center gap-2"
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedMatch(lm)
+                                }}
+                                aria-label={`Edit match result: ${homeTeam.name} vs ${awayTeam.name}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setMatchToDelete(lm)
+                                  setDeleteDialogOpen(true)
+                                }}
+                                aria-label={`Delete match: ${homeTeam.name} vs ${awayTeam.name}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Expanded row - user bets */}
+                        {expanded && (
+                          <TableRow>
+                            <TableCell colSpan={9} className="bg-muted/20 p-0">
+                              <div className="p-4">
+                                {lm.UserBet.length === 0 ? (
+                                  <div className="py-8 text-center">
+                                    <p className="text-muted-foreground">No bets yet for this match</p>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-lg border bg-background">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>User</TableHead>
+                                          <TableHead>Score</TableHead>
+                                          <TableHead>Scorer</TableHead>
+                                          <TableHead>OT</TableHead>
+                                          <TableHead>Advanced</TableHead>
+                                          <TableHead>Points</TableHead>
+                                          <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {lm.UserBet.map((bet) => (
+                                          <UserBetRow
+                                            key={bet.id}
+                                            bet={bet}
+                                            matchHomeTeam={homeTeam}
+                                            matchAwayTeam={awayTeam}
+                                            availablePlayers={allPlayers}
+                                            isMatchEvaluated={lm.Match.isEvaluated}
+                                          />
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                )}
+
+                                {/* Add Missing Bet button */}
+                                <div className="mt-4 flex justify-end">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCreateBetMatchId(lm.id)}
+                                    aria-label="Add missing bet for this match"
+                                  >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Missing Bet
+                                  </Button>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
                     )
                   })}
                 </TableBody>
@@ -339,6 +413,21 @@ export function MatchesContent({ matches, leagues }: MatchesContentProps) {
           match={selectedMatch}
           open={!!selectedMatch}
           onOpenChange={(open) => !open && setSelectedMatch(null)}
+        />
+      )}
+
+      {/* Create Bet Dialog */}
+      {createBetMatch && (
+        <CreateBetDialog
+          open={createBetMatchId !== null}
+          onOpenChange={(open) => !open && setCreateBetMatchId(null)}
+          match={createBetMatch}
+          availablePlayers={
+            [
+              ...createBetMatch.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.LeaguePlayer,
+              ...createBetMatch.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.LeaguePlayer,
+            ]
+          }
         />
       )}
 

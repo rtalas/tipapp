@@ -1,11 +1,14 @@
 'use client'
 
 import * as React from 'react'
+import { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { Plus, Edit, Trash2, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteSpecialBet } from '@/actions/special-bets'
 import { getErrorMessage } from '@/lib/error-handler'
+import { useExpandableRow } from '@/hooks/useExpandableRow'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -35,15 +38,19 @@ import {
 } from '@/components/ui/dialog'
 import { AddSpecialBetDialog } from './add-special-bet-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
+import { SpecialBetRow } from './special-bet-row'
+import { CreateSpecialBetUserBetDialog } from './create-special-bet-user-bet-dialog'
 
+type SpecialBet = Awaited<ReturnType<typeof import('@/actions/special-bet-bets').getSpecialBetsWithUserBets>>[number]
 type League = Awaited<ReturnType<typeof import('@/actions/special-bets').getLeaguesWithTeamsAndPlayers>>[number]
-type SpecialBet = Awaited<ReturnType<typeof import('@/actions/special-bets').getSpecialBets>>[number]
 type SpecialBetType = { id: number; name: string }
+type User = Awaited<ReturnType<typeof import('@/actions/users').getUsers>>[number]
 
 interface SpecialBetsContentProps {
   specialBets: SpecialBet[]
   leagues: League[]
   specialBetTypes: SpecialBetType[]
+  users: User[]
 }
 
 function getSpecialBetStatus(specialBet: SpecialBet): 'scheduled' | 'finished' | 'evaluated' {
@@ -78,16 +85,21 @@ function getResultTypeAndDisplay(specialBet: SpecialBet): { type: string; displa
   return { type: 'none', display: '-' }
 }
 
-export function SpecialBetsContent({ specialBets, leagues, specialBetTypes }: SpecialBetsContentProps) {
+export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, users }: SpecialBetsContentProps) {
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
+  const [userFilter, setUserFilter] = React.useState<string>('all')
   const [typeFilter, setTypeFilter] = React.useState<string>('all')
   const [addDialogOpen, setAddDialogOpen] = React.useState(false)
   const [selectedSpecialBet, setSelectedSpecialBet] = React.useState<SpecialBet | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [specialBetToDelete, setSpecialBetToDelete] = React.useState<SpecialBet | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
+  const [createBetSpecialBetId, setCreateBetSpecialBetId] = React.useState<number | null>(null)
+
+  // Expandable rows
+  const { isExpanded, toggleRow } = useExpandableRow()
 
   // Filter special bets
   const filteredSpecialBets = specialBets.filter((sb) => {
@@ -102,6 +114,15 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes }: Sp
     // League filter
     if (leagueFilter !== 'all' && sb.leagueId !== parseInt(leagueFilter, 10)) {
       return false
+    }
+
+    // User filter - show only special bets where this user has bets
+    if (userFilter !== 'all') {
+      const userId = parseInt(userFilter, 10)
+      const hasUserBet = sb.UserSpecialBetSingle.some((bet) => bet.LeagueUser.userId === userId)
+      if (!hasUserBet) {
+        return false
+      }
     }
 
     // Type filter
@@ -171,6 +192,19 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes }: Sp
               ))}
             </SelectContent>
           </Select>
+          <Select value={userFilter} onValueChange={setUserFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Users" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              {users.map((user) => (
+                <SelectItem key={user.id} value={user.id.toString()}>
+                  {user.firstName} {user.lastName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Type" />
@@ -211,13 +245,14 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes }: Sp
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]"></TableHead>
                     <TableHead className="w-[80px]">ID</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>League</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Result</TableHead>
                     <TableHead>Points</TableHead>
-                    <TableHead>Bets</TableHead>
+                    <TableHead className="text-center">Bets</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
@@ -226,86 +261,148 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes }: Sp
                   {filteredSpecialBets.map((sb) => {
                     const status = getSpecialBetStatus(sb)
                     const resultInfo = getResultTypeAndDisplay(sb)
+                    const expanded = isExpanded(sb.id)
+                    const league = leagues.find((l) => l.id === sb.leagueId)
 
                     return (
-                      <TableRow
-                        key={sb.id}
-                        className="table-row-hover cursor-pointer"
-                        onClick={() => setSelectedSpecialBet(sb)}
-                      >
-                        <TableCell className="font-mono text-muted-foreground">
-                          #{sb.id}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(sb.dateTime), 'MMM d, yyyy')}
-                        </TableCell>
-                        <TableCell>{sb.League.name}</TableCell>
-                        <TableCell>
-                          <span className="text-sm">{sb.SpecialBetSingle.name}</span>
-                        </TableCell>
-                        <TableCell>
-                          {resultInfo.type !== 'none' && (
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {resultInfo.type}
-                              </Badge>
-                              <span className="text-sm">{resultInfo.display}</span>
+                      <Fragment key={sb.id}>
+                        {/* Main row - clickable to expand */}
+                        <TableRow
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => toggleRow(sb.id)}
+                        >
+                          <TableCell>
+                            <ChevronDown
+                              className={cn(
+                                'h-4 w-4 transition-transform',
+                                expanded && 'rotate-180'
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell className="font-mono text-muted-foreground">
+                            #{sb.id}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(sb.dateTime), 'MMM d, yyyy')}
+                          </TableCell>
+                          <TableCell>{sb.League.name}</TableCell>
+                          <TableCell>
+                            <span className="text-sm">{sb.SpecialBetSingle.name}</span>
+                          </TableCell>
+                          <TableCell>
+                            {resultInfo.type !== 'none' && (
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {resultInfo.type}
+                                </Badge>
+                                <span className="text-sm">{resultInfo.display}</span>
+                              </div>
+                            )}
+                            {resultInfo.type === 'none' && (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{sb.points} pts</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline">{sb.UserSpecialBetSingle.length}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                status === 'evaluated'
+                                  ? 'evaluated'
+                                  : status === 'finished'
+                                  ? 'finished'
+                                  : 'scheduled'
+                              }
+                            >
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div
+                              className="flex items-center gap-2"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedSpecialBet(sb)
+                                }}
+                                aria-label={`Edit special bet: ${sb.SpecialBetSingle.name}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSpecialBetToDelete(sb)
+                                  setDeleteDialogOpen(true)
+                                }}
+                                aria-label={`Delete special bet: ${sb.SpecialBetSingle.name}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
                             </div>
-                          )}
-                          {resultInfo.type === 'none' && (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{sb.points} pts</TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {sb._count.UserSpecialBetSingle} bet{sb._count.UserSpecialBetSingle !== 1 ? 's' : ''}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              status === 'evaluated'
-                                ? 'evaluated'
-                                : status === 'finished'
-                                ? 'finished'
-                                : 'scheduled'
-                            }
-                          >
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div
-                            className="flex items-center gap-2"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedSpecialBet(sb)
-                              }}
-                              aria-label={`Edit special bet: ${sb.SpecialBetSingle.name}`}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSpecialBetToDelete(sb)
-                                setDeleteDialogOpen(true)
-                              }}
-                              aria-label={`Delete special bet: ${sb.SpecialBetSingle.name}`}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Expanded row - user bets */}
+                        {expanded && (
+                          <TableRow>
+                            <TableCell colSpan={10} className="bg-muted/20 p-0">
+                              <div className="p-4">
+                                {sb.UserSpecialBetSingle.length === 0 ? (
+                                  <div className="py-8 text-center">
+                                    <p className="text-muted-foreground">No bets yet for this special bet</p>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-lg border bg-background">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>User</TableHead>
+                                          <TableHead>Prediction</TableHead>
+                                          <TableHead>Points</TableHead>
+                                          <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {sb.UserSpecialBetSingle.map((bet) => (
+                                          <SpecialBetRow
+                                            key={bet.id}
+                                            bet={bet}
+                                            specialBet={sb}
+                                            league={league}
+                                            isEvaluated={sb.isEvaluated}
+                                          />
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                )}
+
+                                {/* Add Missing Bet button */}
+                                <div className="mt-4 flex justify-end">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCreateBetSpecialBetId(sb.id)}
+                                    aria-label="Add missing bet for this special bet"
+                                  >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Missing Bet
+                                  </Button>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
                     )
                   })}
                 </TableBody>
@@ -326,10 +423,23 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes }: Sp
       {/* Result Entry Dialog */}
       {selectedSpecialBet && (
         <ResultEntryDialog
-          specialBet={selectedSpecialBet}
+          specialBet={{
+            ...selectedSpecialBet,
+            _count: { UserSpecialBetSingle: selectedSpecialBet.UserSpecialBetSingle.length }
+          }}
           leagues={leagues}
           open={!!selectedSpecialBet}
           onOpenChange={(open) => !open && setSelectedSpecialBet(null)}
+        />
+      )}
+
+      {/* Create Bet Dialog */}
+      {createBetSpecialBetId && (
+        <CreateSpecialBetUserBetDialog
+          open={createBetSpecialBetId !== null}
+          onOpenChange={(open) => !open && setCreateBetSpecialBetId(null)}
+          specialBet={filteredSpecialBets.find((sb) => sb.id === createBetSpecialBetId)!}
+          league={leagues.find((l) => l.id === filteredSpecialBets.find((sb) => sb.id === createBetSpecialBetId)?.leagueId)}
         />
       )}
 

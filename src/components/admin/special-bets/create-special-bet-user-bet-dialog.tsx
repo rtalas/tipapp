@@ -64,7 +64,7 @@ const initialFormData: CreateSpecialBetFormData = {
   value: '',
 }
 
-export function CreateSpecialBetDialog({ open, onOpenChange, specialBet, league }: CreateSpecialBetDialogProps) {
+export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, league }: CreateSpecialBetDialogProps) {
   const createDialog = useCreateDialog<CreateSpecialBetFormData>(initialFormData)
 
   // Determine type from special bet definition

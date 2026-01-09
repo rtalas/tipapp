@@ -1,10 +1,11 @@
-import { getSeries } from '@/actions/series'
+import { getSeriesWithUserBets } from '@/actions/series-bets'
+import { getUsers } from '@/actions/users'
 import { prisma } from '@/lib/prisma'
 import { SeriesContent } from '@/components/admin/series/series-content'
 
 export default async function SeriesPage() {
-  const [series, leagues, specialBetSeries] = await Promise.all([
-    getSeries(),
+  const [series, leagues, specialBetSeries, users] = await Promise.all([
+    getSeriesWithUserBets(),
     prisma.league.findMany({
       where: { deletedAt: null, isActive: true },
       include: {
@@ -20,6 +21,7 @@ export default async function SeriesPage() {
       where: { deletedAt: null },
       orderBy: { name: 'asc' },
     }),
+    getUsers(),
   ])
 
   return (
@@ -35,6 +37,7 @@ export default async function SeriesPage() {
         series={series}
         leagues={leagues}
         specialBetSeries={specialBetSeries}
+        users={users}
       />
     </div>
   )

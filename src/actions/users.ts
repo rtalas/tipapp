@@ -112,6 +112,20 @@ export async function rejectRequest(requestId: number) {
   return { success: true }
 }
 
+// Get all users (for filter dropdowns)
+export async function getUsers() {
+  return prisma.user.findMany({
+    where: { deletedAt: null },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      username: true,
+    },
+    orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+  })
+}
+
 // Get league users with filters
 export async function getLeagueUsers(filters?: { leagueId?: number }) {
   const whereConditions = buildLeagueUserWhere(filters)

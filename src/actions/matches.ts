@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-utils'
 import { buildLeagueMatchWhere, buildPendingMatchWhere } from '@/lib/query-builders'
-import { leagueMatchInclude, matchWithEvaluatorsInclude } from '@/lib/prisma-helpers'
+import { leagueMatchInclude, leagueMatchWithBetsInclude, matchWithEvaluatorsInclude } from '@/lib/prisma-helpers'
 import {
   createMatchSchema,
   updateMatchResultSchema,
@@ -136,12 +136,13 @@ export async function deleteMatch(matchId: number) {
 export async function getMatches(filters?: {
   leagueId?: number
   status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
+  userId?: number
 }) {
   const whereConditions = buildLeagueMatchWhere(filters)
 
   return prisma.leagueMatch.findMany({
     where: whereConditions,
-    include: leagueMatchInclude,
+    include: leagueMatchWithBetsInclude,
     orderBy: { Match: { dateTime: 'desc' } },
   })
 }
@@ -191,7 +192,14 @@ export async function getLeaguesWithTeams() {
     include: {
       LeagueTeam: {
         where: { deletedAt: null },
-        include: { Team: true },
+        include: {
+          Team: true,
+          LeaguePlayer: {
+            where: { deletedAt: null },
+            include: { Player: true },
+            orderBy: { Player: { lastName: 'asc' } },
+          },
+        },
         orderBy: { Team: { name: 'asc' } },
       },
     },
