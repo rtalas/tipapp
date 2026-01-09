@@ -167,7 +167,6 @@ const isCorrect = evaluateExactScore(context); // true
 5. Matches (`matches-content.tsx`) - Enter Result + Evaluate
 6. Users (`users-content.tsx`) - Remove from League
 7. Leagues (`league-actions.tsx`) - Edit + Evaluators + Setup + Users + Delete
-8. Results (`results-content.tsx`) - Edit Result + Evaluate
 
 ## Key Implementation Details (Phase 3)
 

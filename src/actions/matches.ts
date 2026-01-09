@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-utils'
-import { buildLeagueMatchWhere, buildPendingMatchWhere } from '@/lib/query-builders'
+import { buildLeagueMatchWhere } from '@/lib/query-builders'
 import { leagueMatchInclude, leagueMatchWithBetsInclude, matchWithEvaluatorsInclude } from '@/lib/prisma-helpers'
 import {
   createMatchSchema,
@@ -115,7 +115,6 @@ export async function updateMatchResult(input: UpdateMatchResultInput) {
   })
 
   revalidatePath('/admin/matches')
-  revalidatePath('/admin/results')
   return { success: true }
 }
 
@@ -204,22 +203,6 @@ export async function getLeaguesWithTeams() {
       },
     },
     orderBy: { name: 'asc' },
-  })
-}
-
-// Get pending matches (finished but not evaluated)
-export async function getPendingMatches(filters?: { leagueId?: number }) {
-  const whereConditions = buildPendingMatchWhere(filters)
-
-  return prisma.leagueMatch.findMany({
-    where: whereConditions,
-    include: {
-      ...leagueMatchInclude,
-      _count: {
-        select: { UserBet: true },
-      },
-    },
-    orderBy: { Match: { dateTime: 'asc' } },
   })
 }
 
@@ -360,38 +343,6 @@ export async function evaluateMatch(matchId: number) {
   })
 
   revalidatePath('/admin/matches')
-  revalidatePath('/admin/results')
   return { success: true, evaluatedBets: result.evaluatedBets }
-}
-
-// Get recently evaluated matches
-export async function getEvaluatedMatches(limit = 10) {
-  return prisma.leagueMatch.findMany({
-    where: {
-      deletedAt: null,
-      Match: {
-        deletedAt: null,
-        isEvaluated: true,
-      },
-    },
-    include: {
-      League: true,
-      Match: {
-        include: {
-          LeagueTeam_Match_homeTeamIdToLeagueTeam: {
-            include: { Team: true },
-          },
-          LeagueTeam_Match_awayTeamIdToLeagueTeam: {
-            include: { Team: true },
-          },
-        },
-      },
-      _count: {
-        select: { UserBet: true },
-      },
-    },
-    orderBy: { Match: { updatedAt: 'desc' } },
-    take: limit,
-  })
 }
 

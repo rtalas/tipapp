@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Trophy,
   Calendar,
-  CheckCircle,
   Users,
   ChevronLeft,
   Zap,
@@ -61,11 +60,6 @@ const navItems = [
     label: 'Matches',
     href: '/admin/matches',
     icon: Calendar,
-  },
-  {
-    label: 'Results',
-    href: '/admin/results',
-    icon: CheckCircle,
   },
   {
     label: 'Series',

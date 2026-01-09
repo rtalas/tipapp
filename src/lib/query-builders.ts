@@ -68,41 +68,6 @@ export function buildLeagueMatchWhere(filters?: {
 }
 
 /**
- * Where conditions for pending matches (finished but not evaluated)
- */
-export interface PendingMatchWhere {
-  deletedAt: null
-  leagueId?: number
-  Match: {
-    deletedAt: null
-    dateTime: { lt: Date }
-    isEvaluated: false
-    homeRegularScore: { not: null }
-    awayRegularScore: { not: null }
-  }
-}
-
-/**
- * Build type-safe where conditions for pending matches
- */
-export function buildPendingMatchWhere(filters?: {
-  leagueId?: number
-}): PendingMatchWhere {
-  const now = new Date()
-  return {
-    deletedAt: null,
-    ...(filters?.leagueId && { leagueId: filters.leagueId }),
-    Match: {
-      deletedAt: null,
-      dateTime: { lt: now },
-      isEvaluated: false,
-      homeRegularScore: { not: null },
-      awayRegularScore: { not: null },
-    },
-  }
-}
-
-/**
  * Where conditions for LeagueUser filters
  */
 export interface LeagueUserWhere {
