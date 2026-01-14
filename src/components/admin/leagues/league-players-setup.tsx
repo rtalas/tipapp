@@ -128,10 +128,10 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
 
   const getRankingBadge = (ranking: number) => {
     const labels: Record<number, string> = {
-      1: '1st',
-      2: '2nd',
-      3: '3rd',
-      4: '4th',
+      1: '⭐',
+      2: '⭐⭐',
+      3: '⭐⭐⭐',
+      4: '⭐⭐⭐⭐',
     }
     return labels[ranking] || ''
   }
@@ -261,7 +261,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                                     className="w-full justify-start"
                                     onClick={() => handleUpdateRanking(lp.id, '1')}
                                   >
-                                    🥇 1st Best
+                                    ⭐ 1st Best
                                   </Button>
                                   <Button
                                     variant={lp.topScorerRanking === 2 ? 'secondary' : 'ghost'}
@@ -269,7 +269,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                                     className="w-full justify-start"
                                     onClick={() => handleUpdateRanking(lp.id, '2')}
                                   >
-                                    🥈 2nd Best
+                                    ⭐⭐ 2nd Best
                                   </Button>
                                   <Button
                                     variant={lp.topScorerRanking === 3 ? 'secondary' : 'ghost'}
@@ -277,7 +277,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                                     className="w-full justify-start"
                                     onClick={() => handleUpdateRanking(lp.id, '3')}
                                   >
-                                    🥉 3rd Best
+                                    ⭐⭐⭐ 3rd Best
                                   </Button>
                                   <Button
                                     variant={lp.topScorerRanking === 4 ? 'secondary' : 'ghost'}
@@ -285,7 +285,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                                     className="w-full justify-start"
                                     onClick={() => handleUpdateRanking(lp.id, '4')}
                                   >
-                                    4th Best
+                                    ⭐⭐⭐⭐ 4th Best
                                   </Button>
                                 </div>
                               </div>
