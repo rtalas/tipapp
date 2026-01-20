@@ -284,13 +284,51 @@ export async function removePlayerFromLeagueTeam(input: DeleteByIdInput) {
 export async function updateTopScorerRanking(input: UpdateTopScorerRankingInput) {
   return executeServerAction(input, {
     validator: updateTopScorerRankingSchema,
-    handler: async (validated) => {
-      await prisma.leaguePlayer.update({
+    handler: async (validated, session) => {
+      const now = new Date()
+
+      // Get league context from the leaguePlayer
+      const leaguePlayer = await prisma.leaguePlayer.findUniqueOrThrow({
         where: { id: validated.leaguePlayerId },
-        data: {
-          topScorerRanking: validated.topScorerRanking,
-          updatedAt: new Date(),
-        },
+        include: { LeagueTeam: true },
+      })
+      const leagueId = leaguePlayer.LeagueTeam.leagueId
+
+      await prisma.$transaction(async (tx) => {
+        // 1. Close any existing current version for this player
+        await tx.topScorerRankingVersion.updateMany({
+          where: {
+            leaguePlayerId: validated.leaguePlayerId,
+            effectiveTo: null, // Only close current version
+          },
+          data: {
+            effectiveTo: now,
+          },
+        })
+
+        // 2. Create new version (only if ranking is not null)
+        if (validated.topScorerRanking !== null) {
+          await tx.topScorerRankingVersion.create({
+            data: {
+              leagueId,
+              leaguePlayerId: validated.leaguePlayerId,
+              ranking: validated.topScorerRanking,
+              effectiveFrom: now,
+              effectiveTo: null, // This is now the current version
+              createdAt: now,
+              createdByUserId: session?.user?.id ? parseInt(session.user.id) : null,
+            },
+          })
+        }
+
+        // 3. Update the materialized current state in LeaguePlayer
+        await tx.leaguePlayer.update({
+          where: { id: validated.leaguePlayerId },
+          data: {
+            topScorerRanking: validated.topScorerRanking,
+            updatedAt: now,
+          },
+        })
       })
 
       return {}

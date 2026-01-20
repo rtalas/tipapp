@@ -1,13 +1,14 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import type { Session } from 'next-auth'
 import { ZodSchema } from 'zod'
 import { requireAdmin } from './auth-utils'
 import { getErrorMessage } from './error-handler'
 
 export interface ServerActionOptions {
   validator: ZodSchema
-  handler: (validated: any) => Promise<any>
+  handler: (validated: any, session?: Session | null) => Promise<any>
   revalidatePath: string
   requiresAdmin?: boolean
 }
@@ -25,16 +26,17 @@ export async function executeServerAction(
   options: ServerActionOptions,
 ) {
   try {
-    // Authorization check
+    // Authorization check (returns session if admin required)
+    let session: Session | null = null
     if (options.requiresAdmin) {
-      await requireAdmin()
+      session = await requireAdmin()
     }
 
     // Validation
     const validated = options.validator.parse(input)
 
-    // Handler logic
-    const result = await options.handler(validated)
+    // Handler logic (pass session for audit trail purposes)
+    const result = await options.handler(validated, session)
 
     // Revalidate cache
     revalidatePath(options.revalidatePath)

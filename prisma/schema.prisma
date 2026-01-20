@@ -32,28 +32,29 @@ model EvaluatorType {
 }
 
 model League {
-  id                     Int                      @id @default(autoincrement())
-  name                   String                   @db.VarChar(255)
-  sportId                Int
-  isActive               Boolean                  @default(false)
-  isTheMostActive        Boolean?                 @default(false)
-  seasonFrom             Int
-  seasonTo               Int
-  isFinished             Boolean?                 @default(false)
-  isPublic               Boolean                  @default(false)
-  createdAt              DateTime                 @db.Timestamptz(6)
-  updatedAt              DateTime                 @db.Timestamptz(6)
-  deletedAt              DateTime?                @db.Timestamptz(6)
-  Evaluator              Evaluator[]
-  Sport                  Sport                    @relation(fields: [sportId], references: [id], onDelete: NoAction)
-  LeagueMatch                LeagueMatch[]
-  LeagueSpecialBetSerie      LeagueSpecialBetSerie[]
-  LeagueSpecialBetSingle     LeagueSpecialBetSingle[]
-  LeagueSpecialBetQuestion   LeagueSpecialBetQuestion[]
-  LeagueTeam                 LeagueTeam[]
-  LeagueUser                 LeagueUser[]
-  UserRequest                UserRequest[]
-  UserSetting                UserSetting[]
+  id                       Int                         @id @default(autoincrement())
+  name                     String                      @db.VarChar(255)
+  sportId                  Int
+  isActive                 Boolean                     @default(false)
+  isTheMostActive          Boolean?                    @default(false)
+  seasonFrom               Int
+  seasonTo                 Int
+  isFinished               Boolean?                    @default(false)
+  isPublic                 Boolean                     @default(false)
+  createdAt                DateTime                    @db.Timestamptz(6)
+  updatedAt                DateTime                    @db.Timestamptz(6)
+  deletedAt                DateTime?                   @db.Timestamptz(6)
+  Evaluator                Evaluator[]
+  Sport                    Sport                       @relation(fields: [sportId], references: [id], onDelete: NoAction)
+  LeagueMatch              LeagueMatch[]
+  LeagueSpecialBetSerie    LeagueSpecialBetSerie[]
+  LeagueSpecialBetSingle   LeagueSpecialBetSingle[]
+  LeagueSpecialBetQuestion LeagueSpecialBetQuestion[]
+  LeagueTeam               LeagueTeam[]
+  LeagueUser               LeagueUser[]
+  UserRequest              UserRequest[]
+  UserSetting              UserSetting[]
+  TopScorerRankingVersion  TopScorerRankingVersion[]
 }
 
 model LeagueMatch {
@@ -80,26 +81,27 @@ model LeaguePhase {
 }
 
 model LeaguePlayer {
-  id                     Int                      @id @default(autoincrement())
-  leagueTeamId           Int
-  playerId               Int
-  seasonGames            Int?
-  seasonGoals            Int?
-  seasonAssists          Int?
-  clubName               String?                  @db.VarChar(255)
-  createdAt              DateTime                 @db.Timestamptz(6)
-  updatedAt              DateTime                 @db.Timestamptz(6)
-  deletedAt              DateTime?                @db.Timestamptz(6)
-  playoffGames           Int?
-  playoffGoals           Int?
-  playoffAssists         Int?
-  topScorerRanking       Int?
-  LeagueTeam             LeagueTeam               @relation(fields: [leagueTeamId], references: [id], onDelete: NoAction)
-  Player                 Player                   @relation(fields: [playerId], references: [id], onDelete: NoAction)
-  LeagueSpecialBetSingle LeagueSpecialBetSingle[]
-  MatchScorer            MatchScorer[]
-  UserBet                UserBet[]
-  UserSpecialBetSingle   UserSpecialBetSingle[]
+  id                      Int                       @id @default(autoincrement())
+  leagueTeamId            Int
+  playerId                Int
+  seasonGames             Int?
+  seasonGoals             Int?
+  seasonAssists           Int?
+  clubName                String?                   @db.VarChar(255)
+  createdAt               DateTime                  @db.Timestamptz(6)
+  updatedAt               DateTime                  @db.Timestamptz(6)
+  deletedAt               DateTime?                 @db.Timestamptz(6)
+  playoffGames            Int?
+  playoffGoals            Int?
+  playoffAssists          Int?
+  topScorerRanking        Int?
+  LeagueTeam              LeagueTeam                @relation(fields: [leagueTeamId], references: [id], onDelete: NoAction)
+  Player                  Player                    @relation(fields: [playerId], references: [id], onDelete: NoAction)
+  LeagueSpecialBetSingle  LeagueSpecialBetSingle[]
+  MatchScorer             MatchScorer[]
+  UserBet                 UserBet[]
+  UserSpecialBetSingle    UserSpecialBetSingle[]
+  TopScorerRankingVersion TopScorerRankingVersion[]
 }
 
 model LeagueSpecialBetSerie {
@@ -309,23 +311,24 @@ model Team {
 }
 
 model User {
-  id                 Int                  @id @default(autoincrement())
-  firstName          String               @db.VarChar(255)
-  lastName           String               @db.VarChar(255)
-  username           String               @db.VarChar(255)
-  email              String               @unique @db.VarChar(255)
-  mobileNumber       String?              @db.VarChar(255)
-  password           String               @db.VarChar(255)
-  salt               String?              @db.VarChar(255)
-  pushId             String?              @db.VarChar(255)
-  isSuperadmin       Boolean              @default(false)
-  createdAt          DateTime             @db.Timestamptz(6)
-  updatedAt          DateTime             @db.Timestamptz(6)
-  deletedAt          DateTime?            @db.Timestamptz(6)
-  notifyHours        Int                  @default(2)
-  LeagueUser         LeagueUser[]
-  PasswordResetToken PasswordResetToken[]
-  UserRequest        UserRequest[]
+  id                      Int                       @id @default(autoincrement())
+  firstName               String                    @db.VarChar(255)
+  lastName                String                    @db.VarChar(255)
+  username                String                    @db.VarChar(255)
+  email                   String                    @unique @db.VarChar(255)
+  mobileNumber            String?                   @db.VarChar(255)
+  password                String                    @db.VarChar(255)
+  salt                    String?                   @db.VarChar(255)
+  pushId                  String?                   @db.VarChar(255)
+  isSuperadmin            Boolean                   @default(false)
+  createdAt               DateTime                  @db.Timestamptz(6)
+  updatedAt               DateTime                  @db.Timestamptz(6)
+  deletedAt               DateTime?                 @db.Timestamptz(6)
+  notifyHours             Int                       @default(2)
+  LeagueUser              LeagueUser[]
+  PasswordResetToken      PasswordResetToken[]
+  UserRequest             UserRequest[]
+  TopScorerRankingVersion TopScorerRankingVersion[]
 }
 
 model PasswordResetToken {
@@ -433,4 +436,22 @@ model UserSpecialBetQuestion {
   deletedAt                  DateTime?                  @db.Timestamptz(6)
   LeagueSpecialBetQuestion   LeagueSpecialBetQuestion   @relation(fields: [leagueSpecialBetQuestionId], references: [id], onDelete: NoAction)
   LeagueUser                 LeagueUser                 @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
+}
+
+model TopScorerRankingVersion {
+  id              Int           @id @default(autoincrement())
+  leagueId        Int
+  leaguePlayerId  Int
+  ranking         Int
+  effectiveFrom   DateTime      @db.Timestamptz(6)
+  effectiveTo     DateTime?     @db.Timestamptz(6)
+  createdAt       DateTime      @db.Timestamptz(6)
+  createdByUserId Int?
+  League          League        @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  LeaguePlayer    LeaguePlayer  @relation(fields: [leaguePlayerId], references: [id], onDelete: NoAction)
+  User            User?         @relation(fields: [createdByUserId], references: [id])
+
+  @@index([leagueId, effectiveFrom])
+  @@index([leaguePlayerId, effectiveFrom])
+  @@index([leagueId, effectiveTo])
 }
