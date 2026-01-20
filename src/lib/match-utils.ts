@@ -13,4 +13,4 @@ export function getMatchStatus(match: {
   return 'finished'
 }
 
-export type MatchStatus = ReturnType<typeof getMatchStatus>
+type MatchStatus = ReturnType<typeof getMatchStatus>

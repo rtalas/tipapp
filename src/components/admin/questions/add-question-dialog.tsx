@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { toast } from 'sonner'
 import { createQuestion } from '@/actions/questions'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -63,7 +64,7 @@ export function AddQuestionDialog({ open, onOpenChange, league }: AddQuestionDia
       } else {
         toast.error('Failed to create question')
       }
-      console.error(error)
+      logger.error('Failed to create question', { error })
     } finally {
       setIsSubmitting(false)
     }

@@ -1,5 +1,29 @@
+/**
+ * Authentication Validation Schemas
+ *
+ * Zod schemas for validating user authentication inputs:
+ * - User registration (with password strength requirements)
+ * - Sign in (username/email + password)
+ * - Password reset flow
+ *
+ * @module validation
+ * @example
+ * ```typescript
+ * import { registerSchema, RegisterFormInput } from '@/lib/validation'
+ *
+ * const result = registerSchema.safeParse(formData)
+ * if (!result.success) {
+ *   // Handle validation errors
+ * }
+ * ```
+ */
 import { z } from "zod";
 
+/**
+ * Registration form validation
+ * Requires: firstName, lastName, username, email, password, confirmPassword
+ * Password must be 8+ chars with uppercase, lowercase, and number
+ */
 export const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(255),
   lastName: z.string().min(1, "Last name is required").max(255),
@@ -21,8 +45,6 @@ export const registerSchema = z.object({
   path: ["confirmPassword"],
 });
 
-export type RegisterFormInput = z.infer<typeof registerSchema>;
-
 export const signInSchema = z.object({
   username: z.string().min(1, "Username or email is required"),
   password: z.string().min(1, "Password is required"),
@@ -31,8 +53,6 @@ export const signInSchema = z.object({
 export const forgotPasswordSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email address").max(255),
 });
-
-export type ForgotPasswordFormInput = z.infer<typeof forgotPasswordSchema>;
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(1, "Reset token is required").length(64, "Invalid reset token format"),
@@ -47,5 +67,3 @@ export const resetPasswordSchema = z.object({
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
-
-export type ResetPasswordFormInput = z.infer<typeof resetPasswordSchema>;

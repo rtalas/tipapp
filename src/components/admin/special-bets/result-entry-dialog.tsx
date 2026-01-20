@@ -3,8 +3,9 @@
 import * as React from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import { updateSpecialBetResult } from '@/actions/special-bets'
+import { updateSpecialBetResult, type SpecialBetWithDetails } from '@/actions/special-bets'
 import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,9 +27,10 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { getSpecialBetType } from '@/lib/special-bet-utils'
+import { type LeagueWithTeams } from '@/actions/shared-queries'
 
-type SpecialBet = Awaited<ReturnType<typeof import('@/actions/special-bets').getSpecialBets>>[number]
-type League = Awaited<ReturnType<typeof import('@/actions/shared-queries').getLeaguesWithTeams>>[number]
+type SpecialBet = SpecialBetWithDetails
+type League = LeagueWithTeams
 
 interface ResultEntryDialogProps {
   specialBet: SpecialBet
@@ -95,7 +97,7 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
       } else {
         toast.error('Failed to save special bet result')
       }
-      console.error(error)
+      logger.error('Failed to save special bet result', { error, specialBetId: specialBet.id })
     } finally {
       setIsSubmitting(false)
     }
@@ -118,12 +120,12 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
     try {
       const result = await evaluateSpecialBetBets({ specialBetId: specialBet.id })
 
-      if (result.success) {
-        const betsCount = result.data?.results.length ?? 0
+      if (result.success && 'results' in result) {
+        const betsCount = result.results?.length ?? 0
         toast.success(`Special bet evaluated! ${betsCount} bets scored.`)
         onOpenChange(false)
-      } else {
-        toast.error(result.error || 'Failed to evaluate special bet')
+      } else if (!result.success) {
+        toast.error('error' in result ? result.error : 'Failed to evaluate special bet')
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -131,7 +133,7 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
       } else {
         toast.error('Failed to evaluate special bet')
       }
-      console.error(error)
+      logger.error('Failed to evaluate special bet', { error, specialBetId: specialBet.id })
     } finally {
       setIsEvaluating(false)
     }

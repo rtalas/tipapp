@@ -156,8 +156,8 @@ export async function deleteSpecialBet(id: number) {
   })
 }
 
-// Query functions
-export async function getSpecialBets(filters?: {
+// Query functions (internal use only)
+async function getSpecialBets(filters?: {
   leagueId?: number
   status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
   type?: 'all' | 'team' | 'player' | 'value'
@@ -171,7 +171,10 @@ export async function getSpecialBets(filters?: {
   })
 }
 
-export async function getSpecialBetById(specialBetId: number) {
+// Export type for components
+export type SpecialBetWithDetails = Awaited<ReturnType<typeof getSpecialBets>>[number]
+
+async function getSpecialBetById(specialBetId: number) {
   return prisma.leagueSpecialBetSingle.findUnique({
     where: { id: specialBetId, deletedAt: null },
     include: {

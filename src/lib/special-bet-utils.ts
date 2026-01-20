@@ -5,7 +5,7 @@
  * Database Type IDs: 1=Player, 2=Team, 3=Exact Value, 4=Closest Value
  */
 
-export const SPECIAL_BET_TYPE_IDS = {
+const SPECIAL_BET_TYPE_IDS = {
   PLAYER: 1,
   TEAM: 2,
   EXACT_VALUE: 3,
@@ -28,34 +28,34 @@ export function getSpecialBetType(typeId: number): SpecialBetType {
 /**
  * Type guard: Check if bet type is team-based
  */
-export function isTeamBet(typeId: number): boolean {
+function isTeamBet(typeId: number): boolean {
   return typeId === SPECIAL_BET_TYPE_IDS.TEAM
 }
 
 /**
  * Type guard: Check if bet type is player-based
  */
-export function isPlayerBet(typeId: number): boolean {
+function isPlayerBet(typeId: number): boolean {
   return typeId === SPECIAL_BET_TYPE_IDS.PLAYER
 }
 
 /**
  * Type guard: Check if bet type is value-based (exact or closest)
  */
-export function isValueBet(typeId: number): boolean {
+function isValueBet(typeId: number): boolean {
   return typeId === SPECIAL_BET_TYPE_IDS.EXACT_VALUE || typeId === SPECIAL_BET_TYPE_IDS.CLOSEST_VALUE
 }
 
 /**
  * Type guard: Check if bet type is exact value
  */
-export function isExactValueBet(typeId: number): boolean {
+function isExactValueBet(typeId: number): boolean {
   return typeId === SPECIAL_BET_TYPE_IDS.EXACT_VALUE
 }
 
 /**
  * Type guard: Check if bet type is closest value
  */
-export function isClosestValueBet(typeId: number): boolean {
+function isClosestValueBet(typeId: number): boolean {
   return typeId === SPECIAL_BET_TYPE_IDS.CLOSEST_VALUE
 }

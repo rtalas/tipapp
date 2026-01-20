@@ -16,8 +16,9 @@ import {
 /**
  * Fetches matches with all user bets for the User Picks page
  * Includes full nested data: League, Match (teams, scorers), UserBets (user, scorer)
+ * (internal use only)
  */
-export async function getMatchesWithUserBets(filters?: {
+async function getMatchesWithUserBets(filters?: {
   leagueId?: number
   status?: 'evaluated' | 'unevaluated' | 'all'
 }) {

@@ -28,8 +28,8 @@ export async function getAllSpecialBetTypes() {
   })
 }
 
-// Get special bet type by ID
-export async function getSpecialBetTypeById(id: number) {
+// Get special bet type by ID (internal use only)
+async function getSpecialBetTypeById(id: number) {
   return prisma.specialBetSingle.findUnique({
     where: { id },
     include: {

@@ -4,6 +4,7 @@ import * as React from 'react'
 import { toast } from 'sonner'
 import { Plus, Trash2, Users, Trophy } from 'lucide-react'
 import { assignPlayerToLeagueTeam, removePlayerFromLeagueTeam, updateTopScorerRanking } from '@/actions/leagues'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -95,7 +96,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
       setSelectedPlayerId('')
     } catch (error) {
       toast.error('Failed to add player')
-      console.error(error)
+      logger.error('Failed to add player to team', { error, leagueTeamId: selectedLeagueTeamId, playerId: selectedPlayerId })
     } finally {
       setIsAddingPlayer(false)
     }
@@ -107,7 +108,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
       toast.success('Player removed from team')
     } catch (error) {
       toast.error('Failed to remove player')
-      console.error(error)
+      logger.error('Failed to remove player from team', { error, leaguePlayerId })
     }
   }
 
@@ -122,7 +123,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
       setOpenRankingPopover(null)
     } catch (error) {
       toast.error('Failed to update ranking')
-      console.error(error)
+      logger.error('Failed to update top scorer ranking', { error, leaguePlayerId, ranking })
     }
   }
 

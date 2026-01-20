@@ -71,23 +71,14 @@ export async function updateQuestion(input: UpdateQuestionInput) {
         throw new Error('Question not found')
       }
 
-      // Build update data object with only provided fields
-      const updateData: any = {
-        updatedAt: now,
-      }
-
-      if (validated.text !== undefined) {
-        updateData.text = validated.text
-      }
-
-      if (validated.dateTime !== undefined) {
-        updateData.dateTime = validated.dateTime
-      }
-
-      // Update the question
+      // Update the question with provided fields
       await prisma.leagueSpecialBetQuestion.update({
         where: { id: validated.id },
-        data: updateData,
+        data: {
+          ...(validated.text !== undefined && { text: validated.text }),
+          ...(validated.dateTime !== undefined && { dateTime: validated.dateTime }),
+          updatedAt: now,
+        },
       })
 
       return {}
@@ -161,9 +152,9 @@ export async function deleteQuestion(id: number) {
 }
 
 /**
- * Get all questions with optional filters
+ * Get all questions with optional filters (internal use only)
  */
-export async function getQuestions(filters?: {
+async function getQuestions(filters?: {
   leagueId?: number
   status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
 }) {
@@ -177,9 +168,9 @@ export async function getQuestions(filters?: {
 }
 
 /**
- * Get single question by ID with full details
+ * Get single question by ID with full details (internal use only)
  */
-export async function getQuestionById(questionId: number) {
+async function getQuestionById(questionId: number) {
   return prisma.leagueSpecialBetQuestion.findUnique({
     where: { id: questionId, deletedAt: null },
     include: {

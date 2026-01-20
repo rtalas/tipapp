@@ -10,6 +10,7 @@ import {
   deleteEvaluator,
 } from '@/actions/evaluators'
 import { getEvaluatorTypes } from '@/actions/shared-queries'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -149,7 +150,7 @@ export function EvaluatorsContent({
       } else {
         toast.error('Failed to update points')
       }
-      console.error(error)
+      logger.error('Failed to update evaluator points', { error, evaluatorId })
     } finally {
       setIsSaving(false)
     }
@@ -172,7 +173,7 @@ export function EvaluatorsContent({
       } else {
         toast.error('Failed to update name')
       }
-      console.error(error)
+      logger.error('Failed to update evaluator name', { error, evaluatorId })
     } finally {
       setIsSaving(false)
     }
@@ -211,7 +212,7 @@ export function EvaluatorsContent({
       } else {
         toast.error('Failed to create evaluator')
       }
-      console.error(error)
+      logger.error('Failed to create evaluator', { error })
     } finally {
       setIsCreating(false)
     }
@@ -227,7 +228,7 @@ export function EvaluatorsContent({
       setEvaluatorToDelete(null)
     } catch (error) {
       toast.error('Failed to delete evaluator')
-      console.error(error)
+      logger.error('Failed to delete evaluator', { error, evaluatorId: evaluatorToDelete?.id })
     } finally {
       setIsDeleting(false)
     }

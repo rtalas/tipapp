@@ -14,12 +14,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
-import { createUserSeriesBet } from '@/actions/series-bets'
+import { createUserSeriesBet, type SeriesWithUserBets } from '@/actions/series-bets'
 import { validateUserSeriesBetCreate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
-type SeriesWithBets = Awaited<ReturnType<typeof import('@/actions/series-bets').getSeriesWithUserBets>>[number]
+type SeriesWithBets = SeriesWithUserBets
 
 interface CreateSeriesBetFormData {
   leagueUserId: string
@@ -70,7 +70,7 @@ export function CreateSeriesBetDialog({ open, onOpenChange, series }: CreateSeri
       createDialog.finishCreating()
       onOpenChange(false)
     } else {
-      toast.error(getErrorMessage(result.error, 'Failed to create bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to create bet'))
       createDialog.cancelCreating()
     }
   }

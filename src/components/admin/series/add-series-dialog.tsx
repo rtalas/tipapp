@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { toast } from 'sonner'
 import { createSeries } from '@/actions/series'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -102,7 +103,7 @@ export function AddSeriesDialog({ open, onOpenChange, leagues, specialBetSeries,
       } else {
         toast.error('Failed to create series')
       }
-      console.error(error)
+      logger.error('Failed to create series', { error, leagueId: effectiveLeagueId })
     } finally {
       setIsSubmitting(false)
     }

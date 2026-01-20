@@ -13,7 +13,6 @@ import {
   updateUserBetSchema,
   createUserSeriesBetSchema,
   updateUserSeriesBetSchema,
-  createSpecialBetSchema,
   updateSpecialBetResultSchema,
   createUserSpecialBetSchema,
   updateUserSpecialBetSchema,
@@ -98,16 +97,9 @@ export function validateUserSeriesBetEdit(data: unknown) {
 }
 
 /**
- * Validates special bet creation form data
- */
-export function validateSpecialBetCreate(data: unknown) {
-  return createSpecialBetSchema.safeParse(data)
-}
-
-/**
  * Validates special bet result entry form data
  */
-export function validateSpecialBetEdit(data: unknown) {
+function validateSpecialBetEdit(data: unknown) {
   return updateSpecialBetResultSchema.safeParse(data)
 }
 

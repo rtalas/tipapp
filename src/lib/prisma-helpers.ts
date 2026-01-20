@@ -112,7 +112,7 @@ export const matchWithEvaluatorsInclude = {
  * Include pattern for League with evaluators and teams
  * Prevents N+1 when fetching league setups
  */
-export const leagueWithEvaluatorsInclude = {
+const leagueWithEvaluatorsInclude = {
   Sport: true,
   Evaluator: {
     where: { deletedAt: null },
@@ -135,7 +135,7 @@ export const leagueWithEvaluatorsInclude = {
  * Include pattern for LeagueUser with full context
  * Prevents N+1 when fetching league users
  */
-export const leagueUserInclude = {
+const leagueUserInclude = {
   User: true,
   League: true,
 } as const
@@ -144,7 +144,7 @@ export const leagueUserInclude = {
  * Include pattern for Team with sport and league info
  * Prevents N+1 when listing teams
  */
-export const teamWithSportInclude = {
+const teamWithSportInclude = {
   Sport: true,
   _count: {
     select: { LeagueTeam: true },
@@ -155,7 +155,7 @@ export const teamWithSportInclude = {
  * Include pattern for Player with league counts
  * Prevents N+1 when listing players
  */
-export const playerWithCountsInclude = {
+const playerWithCountsInclude = {
   _count: {
     select: { LeaguePlayer: true },
   },
@@ -187,7 +187,7 @@ export const seriesInclude = {
  * Include pattern for Series with user bets
  * Used in series-picks page to show all predictions
  */
-export const seriesWithBetsInclude = {
+const seriesWithBetsInclude = {
   League: true,
   SpecialBetSerie: true,
   LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam: {
@@ -242,7 +242,7 @@ export const specialBetInclude = {
  * Include pattern for Special Bets with user bets
  * Used in special-bet-picks page to show all predictions
  */
-export const specialBetWithBetsInclude = {
+const specialBetWithBetsInclude = {
   League: true,
   SpecialBetSingle: {
     include: {
@@ -294,7 +294,7 @@ export const questionInclude = {
 /**
  * Include object for LeagueSpecialBetQuestion with user bets (full)
  */
-export const questionWithBetsInclude = {
+const questionWithBetsInclude = {
   League: true,
   UserSpecialBetQuestion: {
     where: { deletedAt: null },

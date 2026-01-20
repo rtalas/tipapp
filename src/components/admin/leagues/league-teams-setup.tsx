@@ -4,6 +4,7 @@ import * as React from 'react'
 import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
 import { assignTeamToLeague, removeTeamFromLeague } from '@/actions/leagues'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -72,7 +73,7 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
       setSelectedTeamId('')
     } catch (error) {
       toast.error('Failed to add team')
-      console.error(error)
+      logger.error('Failed to add team to league', { error, leagueId: league.id, teamId: selectedTeamId })
     } finally {
       setIsAddingTeam(false)
     }
@@ -84,7 +85,7 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
       toast.success('Team removed from league')
     } catch (error) {
       toast.error('Failed to remove team')
-      console.error(error)
+      logger.error('Failed to remove team from league', { error, leagueTeamId })
     }
   }
 

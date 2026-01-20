@@ -12,28 +12,31 @@ vi.mock('@/lib/prisma', () => ({
 
 const mockPrisma = vi.mocked(prisma);
 
+// Get the actual config values to keep tests in sync with implementation
+const { maxAttempts } = getRateLimitConfig();
+
 describe('Rate Limiting', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('isPasswordResetRateLimited', () => {
-    it('should return false if user has fewer than 3 attempts', async () => {
-      mockPrisma.passwordResetToken.count.mockResolvedValue(2);
+    it('should return false if user has fewer than max attempts', async () => {
+      mockPrisma.passwordResetToken.count.mockResolvedValue(maxAttempts - 1);
 
       const result = await isPasswordResetRateLimited(123);
       expect(result).toBe(false);
     });
 
-    it('should return true if user has exactly 3 attempts', async () => {
-      mockPrisma.passwordResetToken.count.mockResolvedValue(3);
+    it('should return true if user has exactly max attempts', async () => {
+      mockPrisma.passwordResetToken.count.mockResolvedValue(maxAttempts);
 
       const result = await isPasswordResetRateLimited(123);
       expect(result).toBe(true);
     });
 
-    it('should return true if user has more than 3 attempts', async () => {
-      mockPrisma.passwordResetToken.count.mockResolvedValue(5);
+    it('should return true if user has more than max attempts', async () => {
+      mockPrisma.passwordResetToken.count.mockResolvedValue(maxAttempts + 5);
 
       const result = await isPasswordResetRateLimited(123);
       expect(result).toBe(true);
@@ -58,36 +61,36 @@ describe('Rate Limiting', () => {
   });
 
   describe('getRemainingResetAttempts', () => {
-    it('should return 3 if user has no recent attempts', async () => {
+    it('should return maxAttempts if user has no recent attempts', async () => {
       mockPrisma.passwordResetToken.count.mockResolvedValue(0);
 
       const result = await getRemainingResetAttempts(123);
-      expect(result).toBe(3);
+      expect(result).toBe(maxAttempts);
     });
 
-    it('should return 2 if user has 1 recent attempt', async () => {
+    it('should return maxAttempts - 1 if user has 1 recent attempt', async () => {
       mockPrisma.passwordResetToken.count.mockResolvedValue(1);
 
       const result = await getRemainingResetAttempts(123);
-      expect(result).toBe(2);
+      expect(result).toBe(maxAttempts - 1);
     });
 
-    it('should return 1 if user has 2 recent attempts', async () => {
+    it('should return maxAttempts - 2 if user has 2 recent attempts', async () => {
       mockPrisma.passwordResetToken.count.mockResolvedValue(2);
 
       const result = await getRemainingResetAttempts(123);
-      expect(result).toBe(1);
+      expect(result).toBe(maxAttempts - 2);
     });
 
-    it('should return 0 if user has 3 or more recent attempts', async () => {
-      mockPrisma.passwordResetToken.count.mockResolvedValue(3);
+    it('should return 0 if user has reached max attempts', async () => {
+      mockPrisma.passwordResetToken.count.mockResolvedValue(maxAttempts);
 
       const result = await getRemainingResetAttempts(123);
       expect(result).toBe(0);
     });
 
     it('should return 0 (not negative) if user exceeds limit', async () => {
-      mockPrisma.passwordResetToken.count.mockResolvedValue(10);
+      mockPrisma.passwordResetToken.count.mockResolvedValue(maxAttempts + 10);
 
       const result = await getRemainingResetAttempts(123);
       expect(result).toBe(0);
@@ -98,7 +101,7 @@ describe('Rate Limiting', () => {
     it('should return the rate limit configuration', () => {
       const config = getRateLimitConfig();
       expect(config).toEqual({
-        maxAttempts: 3,
+        maxAttempts: 10,
         windowHours: 1,
       });
     });

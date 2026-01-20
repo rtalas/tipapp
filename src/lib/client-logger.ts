@@ -4,9 +4,9 @@
  * Can be extended to send logs to external service (Sentry, LogRocket, etc.)
  */
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
-export interface LogEntry {
+interface LogEntry {
   level: LogLevel
   message: string
   context?: Record<string, unknown>

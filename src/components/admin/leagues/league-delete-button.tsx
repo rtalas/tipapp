@@ -5,6 +5,7 @@ import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteLeague } from '@/actions/leagues'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import {
   Dialog,
   DialogContent,
@@ -33,7 +34,7 @@ export function LeagueDeleteButton({ leagueId, leagueName }: LeagueDeleteButtonP
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete league')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to delete league', { error, leagueId })
     } finally {
       setIsDeleting(false)
     }

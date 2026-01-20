@@ -5,7 +5,7 @@ import { executeServerAction } from '@/lib/server-action-utils'
 import { evaluateSpecialBetAtomic } from '@/lib/evaluation/special-bet-evaluator'
 import { z } from 'zod'
 
-export const evaluateSpecialBetSchema = z.object({
+const evaluateSpecialBetSchema = z.object({
   specialBetId: z.number().int().positive(),
   userId: z.number().int().positive().optional(),
 })

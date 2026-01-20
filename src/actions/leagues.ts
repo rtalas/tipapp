@@ -134,7 +134,7 @@ export async function deleteLeague(input: DeleteByIdInput) {
   })
 }
 
-export async function updateEvaluatorRules(input: UpdateEvaluatorInput) {
+async function updateEvaluatorRules(input: UpdateEvaluatorInput) {
   return executeServerAction(input, {
     validator: updateEvaluatorSchema,
     handler: async (validated) => {
@@ -212,7 +212,7 @@ export async function removeTeamFromLeague(input: DeleteByIdInput) {
   })
 }
 
-export async function updateTeamGroup(input: UpdateTeamGroupInput) {
+async function updateTeamGroup(input: UpdateTeamGroupInput) {
   return executeServerAction(input, {
     validator: updateTeamGroupSchema,
     handler: async (validated) => {

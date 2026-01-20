@@ -127,6 +127,9 @@ export async function getUsers() {
   })
 }
 
+// Export type for components
+export type UserBasic = Awaited<ReturnType<typeof getUsers>>[number]
+
 // Get league users with filters
 export async function getLeagueUsers(filters?: { leagueId?: number }) {
   const whereConditions = buildLeagueUserWhere(filters)

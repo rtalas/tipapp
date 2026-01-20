@@ -31,13 +31,24 @@ interface EvaluationResult {
   }>
 }
 
-export async function evaluateSpecialBet(
-  options: EvaluateSpecialBetOptions
+type TransactionClient = Omit<
+  typeof prisma,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>
+
+/**
+ * Evaluate special bets
+ * @param options - Evaluation options including specialBetId and optional userId
+ * @param tx - Prisma transaction client for atomic operations
+ */
+async function evaluateSpecialBet(
+  options: EvaluateSpecialBetOptions,
+  tx: TransactionClient
 ): Promise<EvaluationResult[]> {
   const { specialBetId, userId } = options
 
   // 1. Fetch special bet with data
-  const specialBet = await prisma.leagueSpecialBetSingle.findUniqueOrThrow({
+  const specialBet = await tx.leagueSpecialBetSingle.findUniqueOrThrow({
     where: { id: specialBetId },
     include: {
       League: {
@@ -151,7 +162,7 @@ export async function evaluateSpecialBet(
     })
 
     // 5. Update UserSpecialBetSingle.totalPoints
-    await prisma.userSpecialBetSingle.update({
+    await tx.userSpecialBetSingle.update({
       where: { id: userBet.id },
       data: {
         totalPoints,
@@ -162,7 +173,7 @@ export async function evaluateSpecialBet(
 
   // 6. Mark special bet as evaluated
   if (!userId) {
-    await prisma.leagueSpecialBetSingle.update({
+    await tx.leagueSpecialBetSingle.update({
       where: { id: specialBetId },
       data: {
         isEvaluated: true,
@@ -174,6 +185,10 @@ export async function evaluateSpecialBet(
   return results
 }
 
+/**
+ * Wrapper for atomic transaction
+ * Ensures all-or-nothing evaluation using proper transaction client pattern
+ */
 export async function evaluateSpecialBetAtomic(
   options: EvaluateSpecialBetOptions
 ): Promise<{
@@ -182,24 +197,9 @@ export async function evaluateSpecialBetAtomic(
   totalUsersEvaluated: number
 }> {
   const results = await prisma.$transaction(async (tx) => {
-    const originalFindUniqueOrThrow = prisma.leagueSpecialBetSingle.findUniqueOrThrow
-    const originalUpdate = prisma.userSpecialBetSingle.update
-    const originalSpecialBetUpdate = prisma.leagueSpecialBetSingle.update
-
-    try {
-      // @ts-ignore - Override for transaction
-      prisma.leagueSpecialBetSingle.findUniqueOrThrow = tx.leagueSpecialBetSingle.findUniqueOrThrow.bind(tx.leagueSpecialBetSingle)
-      // @ts-ignore - Override for transaction
-      prisma.userSpecialBetSingle.update = tx.userSpecialBetSingle.update.bind(tx.userSpecialBetSingle)
-      // @ts-ignore - Override for transaction
-      prisma.leagueSpecialBetSingle.update = tx.leagueSpecialBetSingle.update.bind(tx.leagueSpecialBetSingle)
-
-      return await evaluateSpecialBet(options)
-    } finally {
-      prisma.leagueSpecialBetSingle.findUniqueOrThrow = originalFindUniqueOrThrow
-      prisma.userSpecialBetSingle.update = originalUpdate
-      prisma.leagueSpecialBetSingle.update = originalSpecialBetUpdate
-    }
+    return await evaluateSpecialBet(options, tx)
+  }, {
+    isolationLevel: 'Serializable',
   })
 
   return {

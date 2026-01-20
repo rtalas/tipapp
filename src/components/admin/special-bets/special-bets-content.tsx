@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { deleteSpecialBet } from '@/actions/special-bets'
 import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -41,11 +42,14 @@ import { AddSpecialBetDialog } from './add-special-bet-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
 import { SpecialBetRow } from './special-bet-row'
 import { CreateSpecialBetUserBetDialog } from './create-special-bet-user-bet-dialog'
+import { type SpecialBetWithUserBets } from '@/actions/special-bet-bets'
+import { type LeagueWithTeams } from '@/actions/shared-queries'
+import { type UserBasic } from '@/actions/users'
 
-type SpecialBet = Awaited<ReturnType<typeof import('@/actions/special-bet-bets').getSpecialBetsWithUserBets>>[number]
-type League = Awaited<ReturnType<typeof import('@/actions/shared-queries').getLeaguesWithTeams>>[number]
+type SpecialBet = SpecialBetWithUserBets
+type League = LeagueWithTeams
 type SpecialBetType = { id: number; name: string }
-type User = Awaited<ReturnType<typeof import('@/actions/users').getUsers>>[number]
+type User = UserBasic
 
 interface SpecialBetsContentProps {
   specialBets: SpecialBet[]
@@ -153,7 +157,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete special bet')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to delete special bet', { error, specialBetId: specialBetToDelete?.id })
     } finally {
       setIsDeleting(false)
     }
@@ -163,14 +167,14 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
     try {
       const result = await evaluateSpecialBetBets({ specialBetId })
 
-      if (result.success) {
+      if (result.success && 'totalUsersEvaluated' in result) {
         toast.success(`Special bet evaluated! ${result.totalUsersEvaluated} user(s) updated.`)
-      } else {
-        toast.error(getErrorMessage(result.error, 'Failed to evaluate special bet'))
+      } else if (!result.success) {
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to evaluate special bet'))
       }
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to evaluate special bet'))
-      console.error(error)
+      logger.error('Failed to evaluate special bet', { error, specialBetId })
     }
   }
 

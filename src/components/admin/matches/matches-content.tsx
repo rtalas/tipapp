@@ -9,6 +9,7 @@ import { deleteMatch } from '@/actions/matches'
 import { evaluateMatchBets } from '@/actions/evaluate-matches'
 import { getMatchStatus } from '@/lib/match-utils'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -42,10 +43,13 @@ import { AddMatchDialog } from './add-match-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
 import { UserBetRow } from './user-bet-row'
 import { CreateBetDialog } from './create-bet-dialog'
+import { type MatchWithUserBets } from '@/actions/user-bets'
+import { type LeagueWithTeams } from '@/actions/shared-queries'
+import { type UserBasic } from '@/actions/users'
 
-type LeagueMatch = Awaited<ReturnType<typeof import('@/actions/user-bets').getMatchesWithUserBets>>[number]
-type League = Awaited<ReturnType<typeof import('@/actions/shared-queries').getLeaguesWithTeams>>[number]
-type User = Awaited<ReturnType<typeof import('@/actions/users').getUsers>>[number]
+type LeagueMatch = MatchWithUserBets
+type League = LeagueWithTeams
+type User = UserBasic
 
 interface MatchesContentProps {
   matches: LeagueMatch[]
@@ -115,7 +119,7 @@ export function MatchesContent({ matches, leagues, users, league }: MatchesConte
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete match')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to delete match', { error, matchId: matchToDelete?.Match.id })
     } finally {
       setIsDeleting(false)
     }
@@ -128,16 +132,16 @@ export function MatchesContent({ matches, leagues, users, league }: MatchesConte
         matchId,
       })
 
-      if (result.success) {
+      if (result.success && 'totalUsersEvaluated' in result) {
         toast.success(
           `Match evaluated! ${result.totalUsersEvaluated} user(s) updated.`
         )
-      } else {
-        toast.error(getErrorMessage(result.error, 'Failed to evaluate match'))
+      } else if (!result.success) {
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to evaluate match'))
       }
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to evaluate match'))
-      console.error(error)
+      logger.error('Failed to evaluate match', { error, leagueMatchId, matchId })
     }
   }
 

@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { deleteQuestion } from '@/actions/questions'
 import { evaluateQuestionBets } from '@/actions/evaluate-questions'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -41,9 +42,11 @@ import { AddQuestionDialog } from './add-question-dialog'
 import { EditQuestionDialog } from './edit-question-dialog'
 import { QuestionBetRow } from './question-bet-row'
 import { CreateQuestionBetDialog } from './create-question-bet-dialog'
+import { type QuestionWithUserBets } from '@/actions/question-bets'
+import { type UserBasic } from '@/actions/users'
 
-type Question = Awaited<ReturnType<typeof import('@/actions/question-bets').getQuestionsWithUserBets>>[number]
-type User = Awaited<ReturnType<typeof import('@/actions/users').getUsers>>[number]
+type Question = QuestionWithUserBets
+type User = UserBasic
 
 interface QuestionsContentProps {
   questions: Question[]
@@ -109,7 +112,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete question')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to delete question', { error, questionId: questionToDelete?.id })
     } finally {
       setIsDeleting(false)
     }
@@ -121,16 +124,16 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
         questionId,
       })
 
-      if (result.success) {
+      if (result.success && 'totalUsersEvaluated' in result) {
         toast.success(
           `Question evaluated! ${result.totalUsersEvaluated} user(s) updated.`
         )
-      } else {
-        toast.error(getErrorMessage(result.error, 'Failed to evaluate question'))
+      } else if (!result.success) {
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to evaluate question'))
       }
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to evaluate question'))
-      console.error(error)
+      logger.error('Failed to evaluate question', { error, questionId })
     }
   }
 

@@ -9,6 +9,7 @@ import {
   deleteSpecialBetType,
 } from '@/actions/special-bet-types'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
@@ -149,7 +150,7 @@ export function SpecialBetTypesContent({
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to update special bet type')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to update special bet type', { error, itemId })
     } finally {
       inlineEdit.setSaving(false)
     }
@@ -173,7 +174,7 @@ export function SpecialBetTypesContent({
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to create special bet type')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to create special bet type', { error })
       createDialog.cancelCreating()
     }
   }
@@ -189,7 +190,7 @@ export function SpecialBetTypesContent({
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete special bet type')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to delete special bet type', { error, specialBetTypeId: deleteDialog.itemToDelete?.id })
       deleteDialog.cancelDeleting()
     }
   }

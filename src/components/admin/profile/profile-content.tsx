@@ -6,6 +6,7 @@ import { User, Mail, Phone, Bell, Lock, Shield } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateProfile, updatePassword, type UpdateProfileInput, type UpdatePasswordInput } from '@/actions/profile'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -63,11 +64,11 @@ export function ProfileContent({ user }: ProfileContentProps) {
         toast.success('Profile updated successfully')
         setIsEditingProfile(false)
       } else {
-        toast.error(getErrorMessage(result.error, 'Failed to update profile'))
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to update profile'))
       }
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to update profile'))
-      console.error(error)
+      logger.error('Failed to update profile', { error })
     } finally {
       setIsSubmitting(false)
     }
@@ -95,11 +96,11 @@ export function ProfileContent({ user }: ProfileContentProps) {
           confirmPassword: '',
         })
       } else {
-        toast.error(getErrorMessage(result.error, 'Failed to update password'))
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to update password'))
       }
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to update password'))
-      console.error(error)
+      logger.error('Failed to update password', { error })
     } finally {
       setIsSubmitting(false)
     }

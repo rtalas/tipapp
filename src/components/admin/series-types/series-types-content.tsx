@@ -9,6 +9,7 @@ import {
   deleteSeriesType,
 } from '@/actions/series-types'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
@@ -110,7 +111,7 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to update series type')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to update series type', { error, itemId })
     } finally {
       inlineEdit.setSaving(false)
     }
@@ -139,7 +140,7 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to create series type')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to create series type', { error })
       createDialog.cancelCreating()
     }
   }
@@ -155,7 +156,7 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete series type')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to delete series type', { error, seriesTypeId: deleteDialog.itemToDelete?.id })
       deleteDialog.cancelDeleting()
     }
   }

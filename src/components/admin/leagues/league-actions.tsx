@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Settings, Users, Trash2, Edit, Award } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateLeague } from '@/actions/leagues'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -75,7 +76,7 @@ export function LeagueActions({
       } else {
         toast.error('Failed to update league')
       }
-      console.error(error)
+      logger.error('Failed to update league', { error, leagueId })
     } finally {
       setIsSaving(false)
     }

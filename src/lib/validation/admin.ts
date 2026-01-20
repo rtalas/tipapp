@@ -8,7 +8,7 @@ export const deleteByIdSchema = z.object({
 export type DeleteByIdInput = z.infer<typeof deleteByIdSchema>
 
 // Evaluator schemas (defined first for use in league schema)
-export const evaluatorRuleSchema = z.object({
+const evaluatorRuleSchema = z.object({
   evaluatorTypeId: z.number().int().positive(),
   points: z.number().int().min(0).max(100),
 })
@@ -84,7 +84,7 @@ export const assignTeamSchema = z.object({
 
 export type AssignTeamInput = z.infer<typeof assignTeamSchema>
 
-export const removeTeamSchema = z.object({
+const removeTeamSchema = z.object({
   leagueTeamId: z.number().int().positive(),
 })
 
@@ -141,23 +141,23 @@ export const updateMatchResultSchema = z.object({
 
 export type UpdateMatchResultInput = z.infer<typeof updateMatchResultSchema>
 
-// User request schemas
-export const handleUserRequestSchema = z.object({
+// User request schemas (internal use only)
+const handleUserRequestSchema = z.object({
   requestId: z.number().int().positive(),
   accepted: z.boolean(),
 })
 
-export type HandleUserRequestInput = z.infer<typeof handleUserRequestSchema>
+type HandleUserRequestInput = z.infer<typeof handleUserRequestSchema>
 
-// League user schemas
-export const updateLeagueUserSchema = z.object({
+// League user schemas (internal use only)
+const updateLeagueUserSchema = z.object({
   leagueUserId: z.number().int().positive(),
   admin: z.boolean().optional(),
   active: z.boolean().optional(),
   paid: z.boolean().optional(),
 })
 
-export type UpdateLeagueUserInput = z.infer<typeof updateLeagueUserSchema>
+type UpdateLeagueUserInput = z.infer<typeof updateLeagueUserSchema>
 
 // Team validation schemas
 export const createTeamSchema = z.object({

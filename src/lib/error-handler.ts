@@ -1,7 +1,30 @@
+/**
+ * Centralized Error Handling Utilities
+ *
+ * Provides standardized error handling across the application:
+ * - Type guards for Prisma errors
+ * - Custom AppError class for business logic errors
+ * - Error normalization for consistent API responses
+ * - User-friendly error message extraction
+ * - Production-safe error logging
+ *
+ * @module error-handler
+ * @example
+ * ```typescript
+ * try {
+ *   await someOperation()
+ * } catch (error) {
+ *   const message = getErrorMessage(error, 'Operation failed')
+ *   logError(error, { operation: 'someOperation' })
+ *   return { success: false, error: message }
+ * }
+ * ```
+ */
 import { ZodError } from 'zod'
 
 /**
- * Type guard for Prisma errors
+ * Type guard for Prisma database errors
+ * @see https://www.prisma.io/docs/reference/api-reference/error-reference
  */
 export interface PrismaError {
   code: string

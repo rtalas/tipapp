@@ -14,7 +14,8 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
-import { createUserQuestionBet } from '@/actions/question-bets'
+import { createUserQuestionBet, type QuestionWithUserBets } from '@/actions/question-bets'
+import { type UserBasic } from '@/actions/users'
 import { validateUserQuestionBetCreate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import {
@@ -25,8 +26,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-type QuestionWithBets = Awaited<ReturnType<typeof import('@/actions/question-bets').getQuestionsWithUserBets>>[number]
-type User = Awaited<ReturnType<typeof import('@/actions/users').getUsers>>[number]
+type QuestionWithBets = QuestionWithUserBets
+type User = UserBasic
 
 interface CreateQuestionBetFormData {
   leagueUserId: string
@@ -81,7 +82,7 @@ export function CreateQuestionBetDialog({ open, onOpenChange, question, users }:
       createDialog.finishCreating()
       onOpenChange(false)
     } else {
-      toast.error(getErrorMessage(result.error, 'Failed to create bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to create bet'))
       createDialog.cancelCreating()
     }
   }

@@ -15,12 +15,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-export interface FilterOption {
+interface FilterOption {
   value: string
   label: string
 }
 
-export interface FilterConfig {
+interface FilterConfig {
   name: string
   value: string
   options: FilterOption[]

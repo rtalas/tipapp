@@ -1,6 +1,29 @@
 /**
  * Evaluator functions for bet evaluation
- * Each evaluator type has its own file for maintainability
+ *
+ * The TipApp betting system uses 13 distinct evaluator types organized into three categories:
+ *
+ * ## Match Bet Evaluators
+ * - `exact-score` - Exact match prediction (e.g., 3-2)
+ * - `score-difference` - Goal difference prediction (excludes exact score)
+ * - `winner` - Match winner prediction (includes OT/SO)
+ * - `scorer` - Goal scorer prediction
+ * - `draw` - Draw prediction (soccer only, excludes exact score)
+ * - `soccer-playoff-advance` - Team advancement in playoffs
+ *
+ * ## Series Bet Evaluators
+ * - `series-exact` - Exact series result (e.g., 4-2)
+ * - `series-winner` - Series winner prediction (excludes exact)
+ *
+ * ## Special Bet Evaluators
+ * - `exact-player` - Player prediction (e.g., best scorer)
+ * - `exact-team` - Team prediction (e.g., tournament winner)
+ * - `exact-value` - Exact numeric value
+ * - `closest-value` - Closest prediction among all users
+ * - `question` - Yes/no question answers
+ *
+ * @module evaluators
+ * @see {@link ../../CLAUDE.md} for detailed documentation
  */
 
 // Export types
@@ -10,7 +33,6 @@ export type {
   SpecialBetContext,
   ClosestValueContext,
 } from "./types";
-export type { QuestionContext } from "./question";
 
 // Export match bet evaluators
 export { evaluateExactScore } from "./exact-score";
@@ -38,8 +60,6 @@ export {
   getSpecialEvaluator,
   isClosestValueEvaluator,
   isQuestionEvaluator,
-  getSupportedEvaluatorTypes,
-  type EvaluatorFunction,
 } from "./evaluator-mapper";
 
 export {

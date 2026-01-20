@@ -20,8 +20,8 @@ export async function getAllTeams() {
   })
 }
 
-// Get teams filtered by league
-export async function getLeagueTeams(leagueId: number) {
+// Get teams filtered by league (internal use only)
+async function getLeagueTeams(leagueId: number) {
   return prisma.team.findMany({
     where: {
       LeagueTeam: {

@@ -9,6 +9,7 @@ import {
   deletePlayer,
 } from '@/actions/players'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import { validatePlayerCreate, validatePlayerEdit } from '@/lib/validation-client'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
@@ -159,7 +160,7 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to update player')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to update player', { error, playerId })
     } finally {
       inlineEdit.setSaving(false)
     }
@@ -178,7 +179,7 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
       } else {
         toast.error('Failed to update player')
       }
-      console.error(error)
+      logger.error('Failed to toggle player active status', { error, playerId: player.id })
     }
   }
 
@@ -212,7 +213,7 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to create player')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to create player', { error })
       createDialog.cancelCreating()
     }
   }
@@ -228,7 +229,7 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete player')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to delete player', { error, playerId: deleteDialog.itemToDelete?.id })
       deleteDialog.cancelDeleting()
     }
   }

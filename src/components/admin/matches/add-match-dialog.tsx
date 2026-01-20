@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { createMatch } from '@/actions/matches'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -102,7 +103,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league }: AddMatch
       } else {
         toast.error('Failed to create match')
       }
-      console.error(error)
+      logger.error('Failed to create match', { error, leagueId: effectiveLeagueId })
     } finally {
       setIsSubmitting(false)
     }

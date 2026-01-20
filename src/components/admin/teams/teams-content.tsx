@@ -9,6 +9,7 @@ import {
   deleteTeam,
 } from '@/actions/teams'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import { validateTeamCreate, validateTeamEdit } from '@/lib/validation-client'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
@@ -177,7 +178,7 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to update team')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to update team', { error, teamId })
     } finally {
       inlineEdit.setSaving(false)
     }
@@ -220,7 +221,7 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to create team')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to create team', { error })
       createDialog.cancelCreating()
     }
   }
@@ -236,7 +237,7 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete team')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to delete team', { error, teamId: deleteDialog.itemToDelete?.id })
       deleteDialog.cancelDeleting()
     }
   }

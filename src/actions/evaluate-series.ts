@@ -5,7 +5,7 @@ import { executeServerAction } from '@/lib/server-action-utils'
 import { evaluateSeriesAtomic } from '@/lib/evaluation/series-evaluator'
 import { z } from 'zod'
 
-export const evaluateSeriesSchema = z.object({
+const evaluateSeriesSchema = z.object({
   seriesId: z.number().int().positive(),
   userId: z.number().int().positive().optional(),
 })

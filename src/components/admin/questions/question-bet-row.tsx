@@ -11,6 +11,7 @@ import { updateUserQuestionBet, deleteUserQuestionBet, type UserQuestionBet } fr
 import { evaluateQuestionBets } from '@/actions/evaluate-questions'
 import { validateUserQuestionBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 
@@ -68,7 +69,7 @@ export function QuestionBetRow({
       }
       inlineEdit.finishEdit()
     } else {
-      toast.error(getErrorMessage(result.error, 'Failed to update bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to update bet'))
       inlineEdit.setSaving(false)
     }
   }
@@ -81,7 +82,7 @@ export function QuestionBetRow({
       toast.success('Bet deleted successfully')
       setDeleteDialogOpen(false)
     } else {
-      toast.error(getErrorMessage(result.error, 'Failed to delete bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to delete bet'))
     }
     setIsDeleting(false)
   }
@@ -93,15 +94,15 @@ export function QuestionBetRow({
         userId: bet.LeagueUser.userId, // Evaluate only this user
       })
 
-      if (result.success) {
+      if (result.success && 'results' in result) {
         const userResult = result.results[0]
         toast.success(`Bet evaluated! ${userResult.pointsAwarded} points awarded.`)
-      } else {
-        toast.error(getErrorMessage(result.error, 'Failed to evaluate bet'))
+      } else if (!result.success) {
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to evaluate bet'))
       }
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to evaluate bet'))
-      console.error(error)
+      logger.error('Failed to evaluate question bet', { error, betId: bet.id, questionId })
     }
   }
 

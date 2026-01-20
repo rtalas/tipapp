@@ -12,6 +12,7 @@ import {
   updateLeagueUserPaid,
   removeLeagueUser,
 } from '@/actions/users'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -120,7 +121,7 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
       } else {
         toast.error('Failed to approve request')
       }
-      console.error(error)
+      logger.error('Failed to approve user request', { error, requestId })
     } finally {
       setProcessingRequests((prev) => {
         const next = new Set(prev)
@@ -141,7 +142,7 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
       } else {
         toast.error('Failed to reject request')
       }
-      console.error(error)
+      logger.error('Failed to reject user request', { error, requestId })
     } finally {
       setProcessingRequests((prev) => {
         const next = new Set(prev)
@@ -157,7 +158,7 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
       toast.success(currentValue ? 'Admin role removed' : 'Admin role granted')
     } catch (error) {
       toast.error('Failed to update admin status')
-      console.error(error)
+      logger.error('Failed to toggle admin status', { error, leagueUserId })
     }
   }
 
@@ -167,7 +168,7 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
       toast.success(currentValue ? 'User deactivated' : 'User activated')
     } catch (error) {
       toast.error('Failed to update active status')
-      console.error(error)
+      logger.error('Failed to toggle active status', { error, leagueUserId })
     }
   }
 
@@ -177,7 +178,7 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
       toast.success(currentValue ? 'Marked as unpaid' : 'Marked as paid')
     } catch (error) {
       toast.error('Failed to update paid status')
-      console.error(error)
+      logger.error('Failed to toggle paid status', { error, leagueUserId })
     }
   }
 
@@ -191,7 +192,7 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
       setUserToRemove(null)
     } catch (error) {
       toast.error('Failed to remove user')
-      console.error(error)
+      logger.error('Failed to remove user from league', { error, leagueUserId: userToRemove?.id })
     } finally {
       setIsRemoving(false)
     }

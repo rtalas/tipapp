@@ -17,12 +17,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
-import { createUserBet } from '@/actions/user-bets'
+import { createUserBet, type MatchWithUserBets } from '@/actions/user-bets'
 import { validateUserBetCreate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
-type MatchWithBets = Awaited<ReturnType<typeof import('@/actions/user-bets').getMatchesWithUserBets>>[number]
+type MatchWithBets = MatchWithUserBets
 type LeaguePlayer = { id: number; Player: { id: number; firstName: string | null; lastName: string | null } }
 
 interface CreateBetFormData {
@@ -106,7 +106,7 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
       createDialog.finishCreating()
       onOpenChange(false)
     } else {
-      toast.error(getErrorMessage(result.error, 'Failed to create bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to create bet'))
       createDialog.cancelCreating()
     }
   }

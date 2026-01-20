@@ -28,7 +28,7 @@ type SeriesEvaluatorFn = (context: SeriesBetContext) => boolean
 type SpecialEvaluatorFn = (context: SpecialBetContext) => boolean
 type ClosestValueEvaluatorFn = (context: ClosestValueContext) => boolean
 
-export type EvaluatorFunction =
+type EvaluatorFunction =
   | MatchEvaluatorFn
   | SeriesEvaluatorFn
   | SpecialEvaluatorFn
@@ -106,9 +106,9 @@ export function isQuestionEvaluator(evaluatorTypeName: string): boolean {
 }
 
 /**
- * Get all supported evaluator types by entity
+ * Get all supported evaluator types by entity (internal use only)
  */
-export function getSupportedEvaluatorTypes(
+function getSupportedEvaluatorTypes(
   entity: 'match' | 'series' | 'special'
 ): string[] {
   switch (entity) {

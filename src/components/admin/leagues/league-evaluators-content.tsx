@@ -9,6 +9,7 @@ import {
   updateEvaluatorName,
   deleteEvaluator,
 } from '@/actions/evaluators'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -112,7 +113,7 @@ export function LeagueEvaluatorsContent({
       } else {
         toast.error('Failed to update points')
       }
-      console.error(error)
+      logger.error('Failed to update evaluator points', { error, evaluatorId })
     } finally {
       setIsSaving(false)
     }
@@ -135,7 +136,7 @@ export function LeagueEvaluatorsContent({
       } else {
         toast.error('Failed to update name')
       }
-      console.error(error)
+      logger.error('Failed to update evaluator name', { error, evaluatorId })
     } finally {
       setIsSaving(false)
     }
@@ -169,7 +170,7 @@ export function LeagueEvaluatorsContent({
       } else {
         toast.error('Failed to create evaluator')
       }
-      console.error(error)
+      logger.error('Failed to create evaluator', { error, leagueId })
     } finally {
       setIsCreating(false)
     }
@@ -185,7 +186,7 @@ export function LeagueEvaluatorsContent({
       setEvaluatorToDelete(null)
     } catch (error) {
       toast.error('Failed to delete evaluator')
-      console.error(error)
+      logger.error('Failed to delete evaluator', { error, evaluatorId: evaluatorToDelete?.id })
     } finally {
       setIsDeleting(false)
     }

@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { createLeague } from '@/actions/leagues'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -48,7 +49,7 @@ export function LeagueForm({ sports }: LeagueFormProps) {
         isPublic: formData.get('isPublic') === 'on',
       })
 
-      if (result.success) {
+      if (result.success && 'leagueId' in result) {
         toast.success('League created successfully')
         router.push(`/admin/leagues/${result.leagueId}/setup`)
       }
@@ -58,7 +59,7 @@ export function LeagueForm({ sports }: LeagueFormProps) {
       } else {
         toast.error('Failed to create league')
       }
-      console.error(error)
+      logger.error('Failed to create league', { error })
     } finally {
       setIsSubmitting(false)
     }

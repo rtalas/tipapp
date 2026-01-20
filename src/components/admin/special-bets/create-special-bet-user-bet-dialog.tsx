@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Prisma } from '@prisma/client'
 import {
   Dialog,
   DialogContent,
@@ -16,25 +15,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
-import { createUserSpecialBet } from '@/actions/special-bet-bets'
+import { createUserSpecialBet, type SpecialBetWithUserBets } from '@/actions/special-bet-bets'
+import { type LeagueWithTeams } from '@/actions/shared-queries'
 import { validateUserSpecialBetCreate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { getSpecialBetType } from '@/lib/special-bet-utils'
 import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
-type SpecialBetWithBets = Awaited<ReturnType<typeof import('@/actions/special-bet-bets').getSpecialBetsWithUserBets>>[number]
-type LeagueWithTeams = Prisma.LeagueGetPayload<{
-  include: {
-    LeagueTeam: {
-      include: {
-        Team: true
-        LeaguePlayer: {
-          include: { Player: true }
-        }
-      }
-    }
-  }
-}>
+type SpecialBetWithBets = SpecialBetWithUserBets
 
 interface CreateSpecialBetFormData {
   leagueUserId: string
@@ -116,7 +104,7 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
       createDialog.finishCreating()
       onOpenChange(false)
     } else {
-      toast.error(getErrorMessage(result.error, 'Failed to create bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to create bet'))
       createDialog.cancelCreating()
     }
   }

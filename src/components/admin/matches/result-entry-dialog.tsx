@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { Plus, Trash2 } from 'lucide-react'
 import { updateMatchResult, getMatchById } from '@/actions/matches'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -153,7 +154,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
         }
       }
     } catch (error) {
-      console.error('Failed to load match data:', error)
+      logger.error('Failed to load match data', { error, matchId: match.Match.id })
     }
   }
 
@@ -213,7 +214,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
       } else {
         toast.error('Failed to save result')
       }
-      console.error(error)
+      logger.error('Failed to save match result', { error, matchId: match.Match.id })
     } finally {
       setIsSubmitting(false)
     }

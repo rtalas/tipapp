@@ -13,8 +13,8 @@ import {
   type DeleteByIdInput,
 } from '@/lib/validation/admin'
 
-// Get all evaluators
-export async function getAllEvaluators() {
+// Get all evaluators (internal use only)
+async function getAllEvaluators() {
   return prisma.evaluator.findMany({
     where: { deletedAt: null },
     include: {

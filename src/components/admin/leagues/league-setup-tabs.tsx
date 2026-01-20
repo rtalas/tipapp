@@ -9,6 +9,7 @@ import {
   assignPlayerToLeagueTeam,
   removePlayerFromLeagueTeam,
 } from '@/actions/leagues'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -105,7 +106,7 @@ export function LeagueSetupTabs({
       setSelectedTeamId('')
     } catch (error) {
       toast.error('Failed to add team')
-      console.error(error)
+      logger.error('Failed to add team to league', { error, leagueId: league.id, teamId: selectedTeamId })
     } finally {
       setIsAddingTeam(false)
     }
@@ -117,7 +118,7 @@ export function LeagueSetupTabs({
       toast.success('Team removed from league')
     } catch (error) {
       toast.error('Failed to remove team')
-      console.error(error)
+      logger.error('Failed to remove team from league', { error, leagueTeamId })
     }
   }
 
@@ -134,7 +135,7 @@ export function LeagueSetupTabs({
       setSelectedPlayerId('')
     } catch (error) {
       toast.error('Failed to add player')
-      console.error(error)
+      logger.error('Failed to add player to team', { error, leagueTeamId: selectedLeagueTeamId, playerId: selectedPlayerId })
     } finally {
       setIsAddingPlayer(false)
     }
@@ -146,7 +147,7 @@ export function LeagueSetupTabs({
       toast.success('Player removed from team')
     } catch (error) {
       toast.error('Failed to remove player')
-      console.error(error)
+      logger.error('Failed to remove player from team', { error, leaguePlayerId })
     }
   }
 

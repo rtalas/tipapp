@@ -7,6 +7,7 @@ import { updateQuestion, updateQuestionResult } from '@/actions/questions'
 import { evaluateQuestionBets } from '@/actions/evaluate-questions'
 import { validateQuestionEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -94,11 +95,11 @@ export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestio
       if (updateResult.success) {
         toast.success('Question updated successfully')
       } else {
-        toast.error(getErrorMessage(updateResult.error, 'Failed to update question'))
+        toast.error(getErrorMessage('error' in updateResult ? updateResult.error : undefined, 'Failed to update question'))
       }
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to update question'))
-      console.error(error)
+      logger.error('Failed to update question', { error, questionId: question.id })
     } finally {
       setIsSubmitting(false)
     }
@@ -125,7 +126,7 @@ export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestio
       } else {
         toast.error('Failed to save question result')
       }
-      console.error(error)
+      logger.error('Failed to save question result', { error, questionId: question.id })
     } finally {
       setIsSubmitting(false)
     }
@@ -142,12 +143,12 @@ export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestio
     try {
       const evaluationResult = await evaluateQuestionBets({ questionId: question.id })
 
-      if (evaluationResult.success) {
+      if (evaluationResult.success && 'results' in evaluationResult) {
         const betsCount = evaluationResult.results?.length ?? 0
         toast.success(`Question evaluated! ${betsCount} bets scored.`)
         onOpenChange(false)
-      } else {
-        toast.error(evaluationResult.error || 'Failed to evaluate question')
+      } else if (!evaluationResult.success) {
+        toast.error('error' in evaluationResult ? evaluationResult.error : 'Failed to evaluate question')
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -155,7 +156,7 @@ export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestio
       } else {
         toast.error('Failed to evaluate question')
       }
-      console.error(error)
+      logger.error('Failed to evaluate question', { error, questionId: question.id })
     } finally {
       setIsEvaluating(false)
     }

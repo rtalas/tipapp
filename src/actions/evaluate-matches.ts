@@ -6,7 +6,7 @@ import { evaluateMatchAtomic } from '@/lib/evaluation/match-evaluator'
 import { z } from 'zod'
 
 // Validation schemas
-export const evaluateMatchSchema = z.object({
+const evaluateMatchSchema = z.object({
   leagueMatchId: z.number().int().positive(),
   matchId: z.number().int().positive(),
   userId: z.number().int().positive().optional(),

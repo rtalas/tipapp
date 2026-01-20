@@ -22,17 +22,25 @@ interface EvaluationResult {
   }>
 }
 
+type TransactionClient = Omit<
+  typeof prisma,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>
+
 /**
  * Main evaluation function for matches
  * Returns detailed results for each user
+ * @param options - Evaluation options including matchId and optional userId
+ * @param tx - Prisma transaction client for atomic operations
  */
-export async function evaluateMatch(
-  options: EvaluateMatchOptions
+async function evaluateMatch(
+  options: EvaluateMatchOptions,
+  tx: TransactionClient
 ): Promise<EvaluationResult[]> {
   const { matchId, leagueMatchId, userId } = options
 
   // 1. Fetch match with all necessary data
-  const leagueMatch = await prisma.leagueMatch.findUniqueOrThrow({
+  const leagueMatch = await tx.leagueMatch.findUniqueOrThrow({
     where: { id: leagueMatchId },
     include: {
       Match: {
@@ -136,7 +144,7 @@ export async function evaluateMatch(
     })
 
     // 5. Update UserBet.totalPoints in database
-    await prisma.userBet.update({
+    await tx.userBet.update({
       where: { id: userBet.id },
       data: {
         totalPoints,
@@ -147,7 +155,7 @@ export async function evaluateMatch(
 
   // 6. Mark match as evaluated (only if evaluating all users)
   if (!userId) {
-    await prisma.match.update({
+    await tx.match.update({
       where: { id: matchId },
       data: {
         isEvaluated: true,
@@ -161,7 +169,7 @@ export async function evaluateMatch(
 
 /**
  * Wrapper for atomic transaction
- * Ensures all-or-nothing evaluation
+ * Ensures all-or-nothing evaluation using proper transaction client pattern
  */
 export async function evaluateMatchAtomic(
   options: EvaluateMatchOptions
@@ -171,26 +179,9 @@ export async function evaluateMatchAtomic(
   totalUsersEvaluated: number
 }> {
   const results = await prisma.$transaction(async (tx) => {
-    // Temporarily override prisma for transaction
-    const originalFindUniqueOrThrow = prisma.leagueMatch.findUniqueOrThrow
-    const originalUpdate = prisma.userBet.update
-    const originalMatchUpdate = prisma.match.update
-
-    try {
-      // @ts-ignore - Override for transaction
-      prisma.leagueMatch.findUniqueOrThrow = tx.leagueMatch.findUniqueOrThrow.bind(tx.leagueMatch)
-      // @ts-ignore - Override for transaction
-      prisma.userBet.update = tx.userBet.update.bind(tx.userBet)
-      // @ts-ignore - Override for transaction
-      prisma.match.update = tx.match.update.bind(tx.match)
-
-      return await evaluateMatch(options)
-    } finally {
-      // Restore original functions
-      prisma.leagueMatch.findUniqueOrThrow = originalFindUniqueOrThrow
-      prisma.userBet.update = originalUpdate
-      prisma.match.update = originalMatchUpdate
-    }
+    return await evaluateMatch(options, tx)
+  }, {
+    isolationLevel: 'Serializable',
   })
 
   return {

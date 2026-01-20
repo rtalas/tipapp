@@ -26,8 +26,8 @@ export async function getAllSeriesTypes() {
   })
 }
 
-// Get series type by ID
-export async function getSeriesTypeById(id: number) {
+// Get series type by ID (internal use only)
+async function getSeriesTypeById(id: number) {
   return prisma.specialBetSerie.findUnique({
     where: { id },
     include: {

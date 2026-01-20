@@ -1,6 +1,28 @@
 /**
- * Type-safe query builders for Prisma filters
- * Eliminates need for `any` types in dynamic where conditions
+ * Type-safe Query Builders for Prisma
+ *
+ * Provides type-safe query builder functions for constructing Prisma where conditions.
+ * These builders eliminate the need for `any` types when building dynamic filters
+ * and ensure compile-time type safety for all database queries.
+ *
+ * ## Available Builders
+ * - `buildLeagueMatchWhere` - Filter league matches by status, user, league
+ * - `buildMatchWhere` - Filter matches (deprecated, use buildLeagueMatchWhere)
+ * - `buildSeriesWhere` - Filter series bets
+ * - `buildSpecialBetWhere` - Filter special bets
+ * - `buildQuestionWhere` - Filter yes/no questions
+ *
+ * @module query-builders
+ * @example
+ * ```typescript
+ * const where = buildLeagueMatchWhere({
+ *   leagueId: 1,
+ *   status: 'scheduled',
+ *   userId: 42,
+ * })
+ *
+ * const matches = await prisma.leagueMatch.findMany({ where })
+ * ```
  */
 
 import type { Prisma } from '@prisma/client'

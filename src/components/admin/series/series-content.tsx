@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { deleteSeries } from '@/actions/series'
 import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { getErrorMessage } from '@/lib/error-handler'
+import { logger } from '@/lib/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -41,11 +42,13 @@ import { AddSeriesDialog } from './add-series-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
 import { SeriesBetRow } from './series-bet-row'
 import { CreateSeriesBetDialog } from './create-series-bet-dialog'
+import { type SeriesWithUserBets } from '@/actions/series-bets'
+import { type UserBasic } from '@/actions/users'
 
-type Series = Awaited<ReturnType<typeof import('@/actions/series-bets').getSeriesWithUserBets>>[number]
+type Series = SeriesWithUserBets
 type League = { id: number; name: string; LeagueTeam: { id: number; Team: { id: number; name: string; shortcut: string } }[] }
 type SpecialBetSerie = { id: number; name: string; bestOf: number }
-type User = Awaited<ReturnType<typeof import('@/actions/users').getUsers>>[number]
+type User = UserBasic
 
 interface SeriesContentProps {
   series: Series[]
@@ -122,7 +125,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete series')
       toast.error(message)
-      console.error(error)
+      logger.error('Failed to delete series', { error, seriesId: seriesToDelete?.id })
     } finally {
       setIsDeleting(false)
     }
@@ -134,16 +137,16 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
         seriesId,
       })
 
-      if (result.success) {
+      if (result.success && 'totalUsersEvaluated' in result) {
         toast.success(
           `Series evaluated! ${result.totalUsersEvaluated} user(s) updated.`
         )
-      } else {
-        toast.error(getErrorMessage(result.error, 'Failed to evaluate series'))
+      } else if (!result.success) {
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to evaluate series'))
       }
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to evaluate series'))
-      console.error(error)
+      logger.error('Failed to evaluate series', { error, seriesId })
     }
   }
 

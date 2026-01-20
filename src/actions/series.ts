@@ -99,8 +99,8 @@ export async function deleteSeries(id: number) {
   })
 }
 
-// Query functions
-export async function getSeries(filters?: {
+// Query functions (internal use only)
+async function getSeries(filters?: {
   leagueId?: number
   status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
 }) {
@@ -113,7 +113,7 @@ export async function getSeries(filters?: {
   })
 }
 
-export async function getSeriesById(seriesId: number) {
+async function getSeriesById(seriesId: number) {
   return prisma.leagueSpecialBetSerie.findUnique({
     where: { id: seriesId, deletedAt: null },
     include: {

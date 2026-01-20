@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateSeriesResult } from '@/actions/series'
 import { evaluateSeriesBets } from '@/actions/evaluate-series'
+import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -113,7 +114,7 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
       } else {
         toast.error('Failed to save series result')
       }
-      console.error(error)
+      logger.error('Failed to save series result', { error, seriesId: series.id })
     } finally {
       setIsSubmitting(false)
     }
@@ -130,12 +131,12 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
     try {
       const result = await evaluateSeriesBets({ seriesId: series.id })
 
-      if (result.success) {
-        const betsCount = result.data?.results.length ?? 0
+      if (result.success && 'results' in result) {
+        const betsCount = result.results?.length ?? 0
         toast.success(`Series evaluated! ${betsCount} bets scored.`)
         onOpenChange(false)
-      } else {
-        toast.error(result.error || 'Failed to evaluate series')
+      } else if (!result.success) {
+        toast.error('error' in result ? result.error : 'Failed to evaluate series')
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -143,7 +144,7 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
       } else {
         toast.error('Failed to evaluate series')
       }
-      console.error(error)
+      logger.error('Failed to evaluate series', { error, seriesId: series.id })
     } finally {
       setIsEvaluating(false)
     }
