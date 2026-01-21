@@ -357,6 +357,7 @@ model UserBet {
   awayScore     Int           @default(0)
   homeAdvanced  Boolean?
   scorerId      Int?
+  noScorer      Boolean?
   totalPoints   Int           @default(0)
   overtime      Boolean       @default(false)
   createdAt     DateTime      @db.Timestamptz(6)

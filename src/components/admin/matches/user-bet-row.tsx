@@ -134,7 +134,9 @@ export function UserBetRow({
   }
 
   const userName = `${bet.LeagueUser.User.firstName} ${bet.LeagueUser.User.lastName}`
-  const scorerName = bet.LeaguePlayer
+  const scorerDisplay = bet.noScorer
+    ? 'No Scorer'
+    : bet.LeaguePlayer
     ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
     : '-'
 
@@ -202,7 +204,9 @@ export function UserBetRow({
               </SelectContent>
             </Select>
           ) : (
-            <span>{scorerName}</span>
+            <span className={bet.noScorer ? 'italic text-muted-foreground' : ''}>
+              {scorerDisplay}
+            </span>
           )}
         </TableCell>
 

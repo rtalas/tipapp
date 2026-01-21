@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -30,6 +30,7 @@ interface CreateBetFormData {
   homeScore: string
   awayScore: string
   scorerId: string
+  noScorer: boolean
   overtime: boolean
   homeAdvanced: string // 'home' | 'away' | 'none'
 }
@@ -46,36 +47,19 @@ const initialFormData: CreateBetFormData = {
   homeScore: '0',
   awayScore: '0',
   scorerId: 'none',
+  noScorer: false,
   overtime: false,
   homeAdvanced: 'none',
 }
 
 export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }: CreateBetDialogProps) {
-  const [leagueUsers, setLeagueUsers] = useState<
-    Array<{ id: number; User: { id: number; firstName: string | null; lastName: string | null } }>
-  >([])
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
-
   const createDialog = useCreateDialog<CreateBetFormData>(initialFormData)
 
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team
 
-  // Fetch league users when dialog opens
-  useEffect(() => {
-    if (open) {
-      setIsLoadingUsers(true)
-      // In a real implementation, this would be a server action
-      // For now, we'll filter users who already have bets client-side
-      const usersWithBets = new Set(match.UserBet.map((bet) => bet.LeagueUser.id))
-
-      // Get all league users (this would normally come from a server action)
-      // For now, we'll work with what we have in the match data
-      // In production, you'd call a server action like getLeagueUsers(match.leagueId)
-
-      setIsLoadingUsers(false)
-    }
-  }, [open, match])
+  // Get IDs of users who already have bets
+  const existingBetUserIds = match.UserBet.map((bet) => bet.LeagueUser.id)
 
   const handleSubmit = async () => {
     // Convert form data to proper types for validation
@@ -85,6 +69,7 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
       homeScore: parseInt(createDialog.form.homeScore),
       awayScore: parseInt(createDialog.form.awayScore),
       scorerId: createDialog.form.scorerId !== 'none' ? parseInt(createDialog.form.scorerId) : undefined,
+      noScorer: createDialog.form.noScorer || undefined,
       overtime: createDialog.form.overtime,
       homeAdvanced:
         createDialog.form.homeAdvanced === 'none'
@@ -118,16 +103,6 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
     onOpenChange(newOpen)
   }
 
-  // Get users who don't have bets yet
-  const usersWithBets = new Set(match.UserBet.map((bet) => bet.LeagueUser.id))
-  const availableUsers = match.UserBet.map((bet) => bet.LeagueUser).filter(
-    (lu) => !usersWithBets.has(lu.id)
-  )
-
-  // Note: In production, you'd fetch ALL league users and filter them
-  // For now, this is a simplified version that won't show users who haven't bet yet
-  const allUsersHaveBets = match.UserBet.length > 0 && availableUsers.length === 0
-
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -143,7 +118,8 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
           <UserSelectorInput
             value={createDialog.form.leagueUserId}
             onChange={(value) => createDialog.updateForm({ leagueUserId: value })}
-            showAllUsersNote={allUsersHaveBets}
+            leagueId={match.leagueId}
+            existingBetUserIds={existingBetUserIds}
           />
 
           {/* Score inputs */}
@@ -181,6 +157,7 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
             <Select
               value={createDialog.form.scorerId}
               onValueChange={(value) => createDialog.updateForm({ scorerId: value })}
+              disabled={createDialog.form.noScorer}
             >
               <SelectTrigger id="scorer" aria-label="Select scorer">
                 <SelectValue placeholder="No scorer" />
@@ -194,6 +171,24 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* No Scorer checkbox */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="noScorer"
+              checked={createDialog.form.noScorer}
+              onCheckedChange={(checked) => {
+                const isChecked = checked === true
+                createDialog.updateForm({
+                  noScorer: isChecked,
+                  scorerId: isChecked ? 'none' : createDialog.form.scorerId
+                })
+              }}
+            />
+            <Label htmlFor="noScorer" className="text-sm font-normal cursor-pointer">
+              No Scorer (0:0 game)
+            </Label>
           </div>
 
           {/* Overtime checkbox */}

@@ -28,6 +28,7 @@ type UserBet = {
   homeScore: number
   awayScore: number
   scorerId: number | null
+  noScorer: boolean | null
   overtime: boolean
   homeAdvanced: boolean | null
 }
@@ -69,6 +70,7 @@ export function buildMatchBetContext(
       homeScore: userBet.homeScore,
       awayScore: userBet.awayScore,
       scorerId: userBet.scorerId,
+      noScorer: userBet.noScorer,
       overtime: userBet.overtime,
       homeAdvanced: userBet.homeAdvanced,
     },

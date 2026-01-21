@@ -103,17 +103,15 @@ export default async function ChatPage({ params }: ChatPageProps) {
   const initialMessages = messages.reverse() as unknown as ChatMessage[]
 
   return (
-    <div className="h-screen">
-      <ChatView
-        leagueId={leagueId}
-        leagueName={league.name}
-        initialMessages={initialMessages}
-        currentUserId={userId}
-        currentLeagueUserId={leagueUser.id}
-        isLeagueAdmin={leagueUser.admin === true}
-        isSuperadmin={session.user.isSuperadmin === true}
-        isSuspended={league.chatSuspendedAt !== null}
-      />
-    </div>
+    <ChatView
+      leagueId={leagueId}
+      leagueName={league.name}
+      initialMessages={initialMessages}
+      currentUserId={userId}
+      currentLeagueUserId={leagueUser.id}
+      isLeagueAdmin={leagueUser.admin === true}
+      isSuperadmin={session.user.isSuperadmin === true}
+      isSuspended={league.chatSuspendedAt !== null}
+    />
   )
 }

@@ -59,6 +59,13 @@
 
 ## Project Structure
 ├── app/                          # Next.js App Router (Pages & API)
+│   ├── [leagueId]/               # User-facing league pages
+│   │   ├── loading.tsx           # Shared loading state for all child routes
+│   │   ├── matches/              # Match predictions
+│   │   ├── series/               # Series bets
+│   │   ├── special-bets/         # Special bets and questions (unified)
+│   │   ├── leaderboard/          # Rankings with podium
+│   │   └── chat/                 # League chat
 │   ├── admin/                    # Admin pages
 │   │   ├── [leagueId]/           # League-scoped admin pages
 │   │   ├── leagues/              # Global league management
@@ -69,18 +76,45 @@
 │   │   └── special-bet-types/    # Global special bet type management
 ├── src/
 │   ├── auth.ts                   # Auth.js v5 configuration
+│   ├── actions/user/             # User-facing server actions
+│   │   ├── matches.ts            # Match bet CRUD
+│   │   ├── series.ts             # Series bet CRUD
+│   │   ├── special-bets.ts       # Special bet CRUD
+│   │   ├── questions.ts          # Question bet CRUD
+│   │   └── leaderboard.ts        # Leaderboard queries
 │   ├── components/               # UI Components (Mobile-first)
+│   │   ├── user/                 # User-facing components
+│   │   │   ├── layout/           # Header, bottom nav, user layout
+│   │   │   ├── matches/          # Match card, score input, scorer select, friend predictions
+│   │   │   ├── series/           # Series list with friend predictions
+│   │   │   ├── special-bets/     # Special bets & questions list (unified)
+│   │   │   ├── leaderboard/      # Leaderboard table with podium
+│   │   │   └── common/           # Shared (countdown, refresh, loading, pull-to-refresh)
+│   │   └── admin/                # Admin components
 │   ├── contexts/
-│   │   └── league-context.tsx    # League selection state management
+│   │   ├── league-context.tsx    # Admin league selection
+│   │   └── user-league-context.tsx # User league selection
 │   ├── hooks/                    # Custom React hooks
+│   │   ├── useRefresh.ts         # Page refresh with loading state
+│   │   ├── useInlineEdit.ts      # Inline editing state
+│   │   └── ...                   # Other hooks
 │   ├── lib/
 │   │   ├── evaluators/           # Bet evaluation functions (13 types)
+│   │   ├── constants.ts          # App constants (SPORT_IDS)
+│   │   ├── user-auth-utils.ts    # User auth (requireLeagueMember)
 │   │   ├── league-utils.ts       # League validation & access control
 │   │   ├── prisma.ts             # Prisma client singleton
 │   │   └── validation/           # Zod validation schemas
+│   │       ├── admin.ts          # Admin validation
+│   │       └── user.ts           # User validation
 │   └── types/                    # Extended session types
+│       └── user.ts               # User-facing types
 ├── prisma/
 │   └── schema.prisma             # Introspected schema
+├── public/
+│   ├── manifest.json             # PWA manifest
+│   ├── sw.js                     # Service worker
+│   └── icons/                    # PWA icons
 └── middleware.ts                 # Route protection (Auth wrapper)
 
 ## Authentication Details
@@ -147,7 +181,7 @@ const isCorrect = evaluateExactScore(context); // true
   - ✅ UI conversion from dropdown menus to direct action buttons (all 8 admin pages)
   - ✅ Code Quality Refactoring (centralized auth, error handling, validation, accessibility, custom hooks)
   - ✅ Security Audit & Fixes (CSRF protection, email injection prevention, security headers)
-- **Phase 3 (User Betting): COMPLETED** (Match feed UI, user picks integration).
+- **Phase 3 (Admin User Betting): COMPLETED** (Match feed UI, user picks integration).
   - ✅ Admin User Picks Management (inline editing, expandable rows)
   - ✅ Matches page with user bets (CRUD operations)
   - ✅ Series page with series bets (CRUD operations)
@@ -155,11 +189,27 @@ const isCorrect = evaluateExactScore(context); // true
   - ✅ Questions page with question bets (CRUD operations, yes/no answers)
   - ✅ Deprecated picks pages removed (user-picks, series-picks, special-bet-picks)
   - ✅ League-Scoped Architecture (dual-layer routing, league context, series types, special bet types, questions)
-- **Phase 4 (Evaluation & Leaderboard): IN PROGRESS** (Point calculation engine, rankings view).
+- **Phase 4 (Evaluation Engine): COMPLETED** (Point calculation engine).
   - ✅ Evaluation Functions (13 evaluator types with 68 comprehensive tests)
   - ✅ Question Evaluation System (atomic transactions, betting lock, comprehensive tests)
-  - 🔄 Point calculation engine integration (NEXT)
-  - 🔄 Leaderboard and rankings view
+- **Phase 5 (User-Side App): COMPLETED** (Mobile-first user interface, PWA).
+  - ✅ Mobile-first layout with bottom tab navigation (5 tabs: Matches, Series, Chat, Special, Rankings)
+  - ✅ Fixed position headers on all list pages (matches, series, special-bets, leaderboard)
+  - ✅ Matches tab - Score predictions with +/- controls, scorer selection with search and top scorer badges
+  - ✅ Sport-based controls: Overtime/Shootout checkbox (hockey + soccer regular), Team advance selector (soccer playoff)
+  - ✅ Series tab - Series predictions with +/- score buttons
+  - ✅ Special Bets tab - Unified special bets and questions list with date grouping
+  - ✅ Leaderboard tab - Rankings with podium display (top 3) and detailed list
+  - ✅ Friend predictions dialog - Shows other users' picks after betting closes
+  - ✅ PWA support (manifest, service worker, icons)
+  - ✅ Pull-to-refresh on mobile for all list pages
+  - ✅ Consolidated loading states (single loading.tsx at route level)
+  - ✅ Sport ID constants (SPORT_IDS.HOCKEY, SPORT_IDS.FOOTBALL) for type-safe comparisons
+  - ✅ Code refactoring (useRefresh hook, RefreshButton, PageLoading, PullToRefresh components)
+- **Phase 6 (Polish & Production): PENDING**
+  - 🔄 Point calculation engine integration with admin evaluation triggers
+  - 🔄 Push notifications for betting deadlines
+  - 🔄 Performance optimization
 
 ## Key Implementation Details (Phase 2)
 
@@ -365,6 +415,198 @@ UserSpecialBetQuestion {
 
 ---
 
+## Key Implementation Details (Phase 5 - User Side)
+
+### User-Side Architecture
+
+**Mobile-First Design:**
+- Bottom tab navigation with 5 tabs: Matches, Series, Chat, Special, Rankings
+- Header with league selector, user dropdown, and theme toggle
+- Responsive layout adapts to desktop but optimized for mobile
+- Fixed position headers on all list pages (matches, series, special-bets, leaderboard)
+- Max-width constraints: content `max-w-2xl` (672px), bottom nav `max-w-lg` (512px)
+
+**User Routes:**
+- `/[leagueId]/matches` - Match predictions
+- `/[leagueId]/series` - Series bets
+- `/[leagueId]/special-bets` - Special bets and questions (unified)
+- `/[leagueId]/leaderboard` - Rankings with podium display
+- `/[leagueId]/chat` - League chat (existing)
+
+**Authentication:**
+- Uses `requireLeagueMember()` from `src/lib/user-auth-utils.ts`
+- Validates user is logged in AND is a member of the specific league
+- No admin privileges required
+
+**Betting Lock Enforcement:**
+- Server-side check: `isBettingOpen(dateTime)` returns `dateTime > now`
+- All save actions validate betting is still open before persisting
+- Friend predictions only visible after betting closes (isLocked = true)
+
+**Sport ID Constants** (`src/lib/constants.ts`):
+```typescript
+export const SPORT_IDS = {
+  HOCKEY: 1,   // Hokej
+  FOOTBALL: 2, // Fotbal
+} as const
+```
+- All sport comparisons use numeric IDs instead of string names
+- Performance: Direct integer comparison instead of string toLowerCase()
+- Type safety: No dependency on sport name spelling or casing
+- Usage: `sportId === SPORT_IDS.HOCKEY` instead of `sport === 'hockey'`
+
+**Fixed Position Headers:**
+All user list pages have fixed headers that stay visible while scrolling:
+- Position: `top-14` (below main header) with `z-30` layering
+- Style: `glass-card` with rounded bottom corners
+- Width: `max-w-2xl mx-auto` for content alignment
+- Content padding: `pt-32` to account for fixed header height
+- Contains: Page title with icon, filter tabs (where applicable), refresh button
+- Pages: Matches (Current/Past tabs), Series (Current/Past tabs), Special Bets (Current/Past tabs), Leaderboard (no tabs)
+
+**Loading States:**
+- Consolidated loading.tsx: Single file at `/app/[leagueId]/loading.tsx` applies to all child routes
+- Component: `PageLoading` from `src/components/user/common/page-loading.tsx`
+- Pattern: Fixed overlay with centered spinner using Loader2 icon
+
+### Server Actions (src/actions/user/)
+
+| File | Actions | Key Features |
+|------|---------|--------------|
+| `matches.ts` | `getUserMatches`, `getMatchFriendPredictions`, `saveMatchBet` | Includes `sportId` in League select for type-safe comparisons |
+| `series.ts` | `getUserSeries`, `getSeriesFriendPredictions`, `saveSeriesBet` | Includes `sportId` for gradient selection |
+| `special-bets.ts` | `getUserSpecialBets`, `getSpecialBetFriendPredictions`, `saveSpecialBet` | Unified with questions |
+| `questions.ts` | `getUserQuestions`, `getQuestionFriendPredictions`, `saveQuestionBet` | Boolean yes/no answers |
+| `leaderboard.ts` | `getLeaderboard` | Aggregates points from all bet types |
+
+**Data Flow:**
+1. Page component (Server Component) fetches data via server action
+2. Passes data to client component for interactivity
+3. Client component manages local state (scores, selections)
+4. User clicks "Save" → calls server action with bet data
+5. Server validates betting is still open + user is league member
+6. Server persists to database and revalidates page path
+7. Page refreshes showing updated bet
+
+### Match Card Controls Logic
+
+**Sport-Based Controls** (using `sportId` from `League.sportId`):
+
+**Soccer Playoff Games** (`sportId === SPORT_IDS.FOOTBALL && isPlayoff`):
+- Shows "Who will advance?" radio buttons (home/away team selection)
+- Used for penalty shootout scenarios where regular time is a draw
+- Control appears in both editable and locked states
+
+**All Other Games** (hockey all games, soccer regular season):
+- Shows "Overtime / Shootout" checkbox
+- Applies to: All hockey games (regular + playoff) and soccer regular season games
+- Hockey: OT/SO common in both regular and playoff games
+- Soccer regular: For tracking extra time scenarios
+
+**Implementation Pattern:**
+```typescript
+// Editable state
+{sportId === SPORT_IDS.FOOTBALL && isPlayoff ? (
+  <RadioGroup /> // Team advancement selector
+) : (
+  <Checkbox /> // Overtime/Shootout checkbox
+)}
+
+// Locked state (read-only display)
+{sportId === SPORT_IDS.FOOTBALL && isPlayoff ? (
+  <div>Advancing: {teamName}</div>
+) : (
+  <Checkbox disabled />
+)}
+```
+
+**Key Features:**
+- **Score Input:** +/- buttons for home/away scores (0-99 range)
+- **Scorer Selection:** Searchable dropdown with top scorer ranking badges (1-4)
+  - Groups players by team with visual separators
+  - Shows player position in brackets (e.g., "John Doe (FW)")
+  - Filters by name or position
+- **Overtime Control:** Checkbox for OT/Shootout scenarios (shown for all non-soccer-playoff games)
+- **Playoff Advance:** Radio buttons for team selection (shown only for soccer playoff games)
+- **Manual Save:** User must click "Save Prediction" button (no auto-save)
+- **Friend Predictions:** Modal showing all users' picks (only visible after match starts)
+- **Status Badges:** Countdown, Live, Locked, 2x (doubled points), Points earned
+- **Group/Playoff Indicator:** Shows in top left corner instead of game time
+
+### Reusable Components (src/components/user/common/)
+
+**1. CountdownBadge** (`countdown-badge.tsx`)
+- Shows time remaining until deadline
+- Color-coded: green (>24h), yellow (>1h), red (<1h), gray (locked)
+
+**2. RefreshButton** (`refresh-button.tsx`)
+- Reusable refresh button with spin animation
+- Props: `isRefreshing`, `onRefresh`
+
+**3. PointsDisplay** (`points-display.tsx`)
+- Shows earned points with trophy icon
+- Color-coded: green (positive), red (negative), muted (zero)
+
+**4. PageLoading** (`page-loading.tsx`)
+- Fixed overlay with centered spinner
+- Used by all pages via consolidated loading.tsx at route level
+
+**5. PullToRefresh** (`pull-to-refresh.tsx`)
+- Touch-based pull-to-refresh for mobile
+- Wraps content areas on all list pages
+- Shows loading indicator during refresh
+
+### Custom Hooks
+
+**useRefresh** (`src/hooks/useRefresh.ts`)
+- Provides `{ isRefreshing, refresh }` for manual page refresh
+- 500ms animation delay for visual feedback
+- Used by all list components
+
+### PWA Support
+
+**Manifest** (`public/manifest.json`)
+- App name, icons, theme color, display mode
+- Enables "Add to Home Screen" on mobile
+
+**Service Worker** (`public/sw.js`)
+- Network-first strategy with cache fallback
+- Caches static assets
+- Skips API and auth routes
+
+**Registration** (`src/components/providers/service-worker-register.tsx`)
+- Client component registers SW in production only
+
+### Validation Schemas (src/lib/validation/user.ts)
+
+```typescript
+userMatchBetSchema     // homeScore, awayScore, scorerId?, overtime?, homeAdvanced?
+userSeriesBetSchema    // homeTeamScore, awayTeamScore (with bestOf validation)
+userSpecialBetSchema   // teamResultId | playerResultId | value
+userQuestionBetSchema  // userBet (boolean)
+```
+
+### Type Definitions (src/types/user.ts)
+
+```typescript
+interface LeaderboardEntry {
+  rank: number
+  leagueUserId: number
+  userId: number
+  username: string
+  firstName: string | null
+  lastName: string | null
+  matchPoints: number
+  seriesPoints: number
+  specialBetPoints: number
+  questionPoints: number
+  totalPoints: number
+  isCurrentUser: boolean
+}
+```
+
+---
+
 ## Code Quality Improvements (Phase 2 Refactoring)
 
 ### ✅ Completed Refactoring Tasks
@@ -435,9 +677,12 @@ UserSpecialBetQuestion {
 ### Build Status
 - ✅ **Production Build:** Successful (0 errors, 0 warnings)
 - ✅ **TypeScript Compilation:** Clean
-- ✅ **Routes Generated:** 30/30 (including league-scoped routes)
-- ✅ **Test Suite:** 148/155 tests passing (57/57 evaluator tests passing)
-- ⚠️ **Known Test Issues:** 7 rate-limit test failures (config mismatch: expects 3, gets 10 maxAttempts)
+- ✅ **Routes Generated:** 37 routes (admin + user-facing)
+  - 8 user routes: `/[leagueId]/*` (matches, series, special-bets, leaderboard, chat)
+  - 29 admin routes: `/admin/**` (global + league-scoped management)
+- ✅ **Test Suite:** 324/330 tests passing
+- ⚠️ **Known Test Issues:** 6 password-reset test failures (mock configuration), 1 email test failure
+- ✅ **PWA Ready:** manifest.json, service worker, icons
 - ✅ **Ready for Deployment:** Yes
 
 ---

@@ -47,6 +47,9 @@ export function CreateSeriesBetDialog({ open, onOpenChange, series }: CreateSeri
   const bestOf = series.SpecialBetSerie.bestOf
   const gamesRequired = Math.ceil(bestOf / 2)
 
+  // Get IDs of users who already have bets
+  const existingBetUserIds = series.UserSpecialBetSerie.map((bet) => bet.leagueUserId)
+
   const handleSubmit = async () => {
     // Convert form data to proper types for validation
     const validationData = {
@@ -105,6 +108,8 @@ export function CreateSeriesBetDialog({ open, onOpenChange, series }: CreateSeri
           <UserSelectorInput
             value={createDialog.form.leagueUserId}
             onChange={(value) => createDialog.updateForm({ leagueUserId: value })}
+            leagueId={series.leagueId}
+            existingBetUserIds={existingBetUserIds}
           />
 
           {/* Score inputs */}

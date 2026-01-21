@@ -105,6 +105,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
   const [isOvertime, setIsOvertime] = React.useState(match.Match.isOvertime ?? false)
   const [isShootout, setIsShootout] = React.useState(match.Match.isShootout ?? false)
   const [scorers, setScorers] = React.useState<Scorer[]>([])
+  const [hasScorers, setHasScorers] = React.useState(true)
   const [players, setPlayers] = React.useState<{
     home: LeaguePlayer[]
     away: LeaguePlayer[]
@@ -143,7 +144,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
           away: fullMatch.LeagueTeam_Match_awayTeamIdToLeagueTeam.LeaguePlayer || [],
         })
 
-        // Load existing scorers
+        // Load existing scorers (if any)
         if (fullMatch.MatchScorer?.length) {
           setScorers(
             fullMatch.MatchScorer.map((ms) => ({
@@ -152,6 +153,8 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
             }))
           )
         }
+        // Always default to hasScorers=true (checkbox unchecked)
+        // Admins must actively check "No scorers" for rare 0:0 games
       }
     } catch (error) {
       logger.error('Failed to load match data', { error, matchId: match.Match.id })
@@ -198,12 +201,14 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
         awayFinalScore: (isOvertime || isShootout) ? parseInt(awayFinalScore, 10) : undefined,
         isOvertime,
         isShootout,
-        scorers: scorers
-          .filter((s) => s.playerId)
-          .map((s) => ({
-            playerId: parseInt(s.playerId, 10),
-            numberOfGoals: s.numberOfGoals,
-          })),
+        scorers: hasScorers
+          ? scorers
+              .filter((s) => s.playerId)
+              .map((s) => ({
+                playerId: parseInt(s.playerId, 10),
+                numberOfGoals: s.numberOfGoals,
+              }))
+          : [],
       })
 
       toast.success('Match result saved successfully')
@@ -354,13 +359,40 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-medium">Goal Scorers</h4>
-                <Button type="button" variant="outline" size="sm" onClick={handleAddScorer}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Scorer
-                </Button>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="noScorers"
+                      checked={!hasScorers}
+                      onCheckedChange={(checked) => {
+                        setHasScorers(!checked)
+                        if (checked) {
+                          setScorers([])
+                        }
+                      }}
+                    />
+                    <Label htmlFor="noScorers" className="text-sm font-normal cursor-pointer">
+                      No scorers (0:0 game)
+                    </Label>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddScorer}
+                    disabled={!hasScorers}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Scorer
+                  </Button>
+                </div>
               </div>
 
-              {scorers.length === 0 ? (
+              {!hasScorers ? (
+                <p className="text-sm text-muted-foreground text-center py-4 italic">
+                  No scorers recorded for this match (0:0 game).
+                </p>
+              ) : scorers.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   No scorers added yet. Click "Add Scorer" to record goal scorers.
                 </p>

@@ -1,6 +1,7 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/theme-provider'
+import { ServiceWorkerRegister } from '@/components/providers/service-worker-register'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
@@ -17,6 +18,24 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'TipApp - Sports Predictions',
   description: 'Compete with friends in football and hockey predictions',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'TipApp',
+  },
+  icons: {
+    icon: '/icons/icon.svg',
+    apple: '/icons/icon-192.png',
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#0f172a',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({
@@ -37,6 +56,7 @@ export default function RootLayout({
         >
           {children}
           <Toaster />
+          <ServiceWorkerRegister />
         </ThemeProvider>
       </body>
     </html>

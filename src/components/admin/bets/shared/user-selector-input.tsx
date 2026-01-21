@@ -1,39 +1,135 @@
-import { Input } from '@/components/ui/input'
+'use client'
+
+import { useEffect, useState } from 'react'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { getLeagueUsers } from '@/actions/users'
 
 interface UserSelectorInputProps {
   value: string
   onChange: (value: string) => void
-  showAllUsersNote?: boolean
+  leagueId: number
+  existingBetUserIds: number[] // LeagueUser IDs who already have bets
+}
+
+type LeagueUserOption = {
+  id: number
+  User: {
+    id: number
+    firstName: string | null
+    lastName: string | null
+    username: string
+  }
 }
 
 /**
- * Shared user selector input for create bet dialogs
- * Currently a placeholder using manual LeagueUser ID input
- * TODO: Replace with dropdown that fetches all league users and filters out those with existing bets
+ * User selector with dropdown for create bet dialogs
+ * Fetches all league users and filters out those who already have bets
  * Used by: create-bet-dialog, create-series-bet-dialog, create-special-bet-user-bet-dialog
  */
-export function UserSelectorInput({ value, onChange, showAllUsersNote = false }: UserSelectorInputProps) {
+export function UserSelectorInput({
+  value,
+  onChange,
+  leagueId,
+  existingBetUserIds,
+}: UserSelectorInputProps) {
+  const [users, setUsers] = useState<LeagueUserOption[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        const allUsers = await getLeagueUsers({ leagueId })
+
+        // Filter out users who already have bets and only include active users
+        const availableUsers = allUsers
+          .filter((lu) => lu.active && !lu.deletedAt && !existingBetUserIds.includes(lu.id))
+          .map((lu) => ({
+            id: lu.id,
+            User: {
+              id: lu.User.id,
+              firstName: lu.User.firstName,
+              lastName: lu.User.lastName,
+              username: lu.User.username,
+            },
+          }))
+
+        setUsers(availableUsers)
+      } catch (err) {
+        console.error('Failed to fetch league users:', err)
+        setError('Failed to load users')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchUsers()
+  }, [leagueId, existingBetUserIds])
+
+  // Helper to get display name
+  const getUserDisplayName = (user: LeagueUserOption['User']) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName} (${user.username})`
+    }
+    return user.username
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <Label>User</Label>
+        <div className="text-sm text-muted-foreground">Loading users...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-2">
+        <Label>User</Label>
+        <div className="text-sm text-destructive">{error}</div>
+      </div>
+    )
+  }
+
+  if (users.length === 0) {
+    return (
+      <div className="space-y-2">
+        <Label>User</Label>
+        <div className="rounded-lg bg-yellow-50 dark:bg-yellow-950 p-4 text-sm text-yellow-800 dark:text-yellow-200">
+          All users in this league already have bets for this item.
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-2">
-      {showAllUsersNote && (
-        <div className="rounded-lg bg-yellow-50 p-4 text-sm text-yellow-800">
-          Note: User selection requires fetching all league users. This is a placeholder implementation.
-          In production, this would fetch all users from the league and filter out those who already have bets.
-        </div>
-      )}
-
-      <Label htmlFor="user">User</Label>
-      <Input
-        id="user"
-        placeholder="Enter LeagueUser ID manually"
-        type="number"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-label="League User ID"
-      />
+      <Label htmlFor="user-selector">User</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger id="user-selector" aria-label="Select user">
+          <SelectValue placeholder="Select a user..." />
+        </SelectTrigger>
+        <SelectContent>
+          {users.map((user) => (
+            <SelectItem key={user.id} value={user.id.toString()}>
+              {getUserDisplayName(user.User)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <p className="text-xs text-muted-foreground">
-        Temporary: Enter the LeagueUser ID directly. In production, this would be a dropdown.
+        Showing {users.length} user{users.length !== 1 ? 's' : ''} without bets
       </p>
     </div>
   )

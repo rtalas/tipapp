@@ -11,6 +11,7 @@ export interface MatchBetContext {
     homeScore: number;
     awayScore: number;
     scorerId?: number | null;
+    noScorer?: boolean | null;
     homeAdvanced?: boolean | null;
     overtime?: boolean;
   };

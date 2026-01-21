@@ -49,7 +49,7 @@ export function MessageInput({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-end gap-2 p-4 border-t bg-background">
+    <form onSubmit={handleSubmit} className="flex items-end gap-2 p-4">
       <textarea
         ref={textareaRef}
         value={text}
@@ -59,7 +59,7 @@ export function MessageInput({
         disabled={disabled || isSending}
         rows={1}
         className={cn(
-          'flex-1 resize-none rounded-xl border border-input bg-background px-4 py-3',
+          'flex-1 resize-none rounded-xl border border-border bg-secondary/50 px-4 py-3',
           'text-sm placeholder:text-muted-foreground',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           'disabled:cursor-not-allowed disabled:opacity-50',

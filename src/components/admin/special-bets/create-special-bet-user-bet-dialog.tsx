@@ -57,6 +57,9 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
     (lt.LeaguePlayer || []).map((lp) => ({ ...lp, teamName: lt.Team.name }))
   )
 
+  // Get IDs of users who already have bets
+  const existingBetUserIds = specialBet.UserSpecialBetSingle.map((bet) => bet.leagueUserId)
+
   const handleSubmit = async () => {
     // Build validation data based on prediction type (from special bet definition)
     const validationData: {
@@ -139,6 +142,8 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
           <UserSelectorInput
             value={createDialog.form.leagueUserId}
             onChange={(value) => createDialog.updateForm({ leagueUserId: value })}
+            leagueId={specialBet.leagueId}
+            existingBetUserIds={existingBetUserIds}
           />
 
           {/* Prediction type (read-only, defined by special bet) */}

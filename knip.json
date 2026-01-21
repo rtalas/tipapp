@@ -1,0 +1,9 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "ignore": [
+    "public/sw.js",
+    "src/components/ui/**"
+  ],
+  "ignoreDependencies": [],
+  "ignoreExportsUsedInFile": true
+}

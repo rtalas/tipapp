@@ -151,6 +151,11 @@ export async function createUserBet(input: CreateUserBetInput) {
         }
       }
 
+      // Validate mutual exclusivity between scorerId and noScorer
+      if (validated.noScorer === true && validated.scorerId !== undefined) {
+        throw new Error('Cannot set both scorer and no scorer')
+      }
+
       const now = new Date()
 
       const bet = await prisma.userBet.create({
@@ -160,6 +165,7 @@ export async function createUserBet(input: CreateUserBetInput) {
           homeScore: validated.homeScore,
           awayScore: validated.awayScore,
           scorerId: validated.scorerId,
+          noScorer: validated.noScorer,
           overtime: validated.overtime,
           homeAdvanced: validated.homeAdvanced,
           dateTime: now,
@@ -200,6 +206,11 @@ export async function updateUserBet(input: UpdateUserBetInput) {
         )
       }
 
+      // Validate mutual exclusivity between scorerId and noScorer
+      if (validated.noScorer === true && validated.scorerId !== undefined) {
+        throw new Error('Cannot set both scorer and no scorer')
+      }
+
       // Verify scorer belongs to one of the teams if provided
       if (validated.scorerId) {
         const scorer = await prisma.leaguePlayer.findUnique({
@@ -225,6 +236,7 @@ export async function updateUserBet(input: UpdateUserBetInput) {
           ...(validated.homeScore !== undefined && { homeScore: validated.homeScore }),
           ...(validated.awayScore !== undefined && { awayScore: validated.awayScore }),
           ...(validated.scorerId !== undefined && { scorerId: validated.scorerId }),
+          ...(validated.noScorer !== undefined && { noScorer: validated.noScorer }),
           ...(validated.overtime !== undefined && { overtime: validated.overtime }),
           ...(validated.homeAdvanced !== undefined && { homeAdvanced: validated.homeAdvanced }),
           updatedAt: new Date(),

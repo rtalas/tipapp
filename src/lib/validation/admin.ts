@@ -201,15 +201,29 @@ export const updatePlayerSchema = createPlayerSchema.partial().extend({
 export type UpdatePlayerInput = z.infer<typeof updatePlayerSchema>
 
 // UserBet validation schemas
-export const createUserBetSchema = z.object({
-  leagueMatchId: z.number().int().positive('League Match ID is required'),
-  leagueUserId: z.number().int().positive('League User ID is required'),
-  homeScore: z.number().int().min(0, 'Home score must be non-negative'),
-  awayScore: z.number().int().min(0, 'Away score must be non-negative'),
-  scorerId: z.number().int().positive().optional(),
-  overtime: z.boolean().default(false),
-  homeAdvanced: z.boolean().optional(), // true = home, false = away, undefined = null
-})
+export const createUserBetSchema = z
+  .object({
+    leagueMatchId: z.number().int().positive('League Match ID is required'),
+    leagueUserId: z.number().int().positive('League User ID is required'),
+    homeScore: z.number().int().min(0, 'Home score must be non-negative'),
+    awayScore: z.number().int().min(0, 'Away score must be non-negative'),
+    scorerId: z.number().int().positive().optional(),
+    noScorer: z.boolean().optional(),
+    overtime: z.boolean().default(false),
+    homeAdvanced: z.boolean().optional(), // true = home, false = away, undefined = null
+  })
+  .refine(
+    (data) => {
+      // Mutual exclusivity: cannot set both scorerId and noScorer
+      if (data.noScorer === true && data.scorerId !== undefined) return false
+      if (data.scorerId !== undefined && data.noScorer === true) return false
+      return true
+    },
+    {
+      message: 'Cannot set both scorer and no scorer',
+      path: ['scorerId'],
+    }
+  )
 
 export type CreateUserBetInput = z.infer<typeof createUserBetSchema>
 

@@ -2,26 +2,40 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 47.4% 11.2%;
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --popover-foreground: 222 47% 11%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 20% 95%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 215 20% 94%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 215 20% 94%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 20% 91%;
+    --input: 215 20% 91%;
+    --ring: 160 84% 39%;
+    --radius: 1rem;
+
+    /* Custom sport tokens */
+    --emerald: 160 84% 39%;
+    --emerald-light: 160 72% 47%;
+    --hockey-blue: 217 91% 60%;
+    --hockey-blue-light: 217 91% 70%;
+    --football-orange: 25 95% 53%;
+    --football-orange-light: 25 95% 63%;
+    --gold: 45 93% 47%;
+    --silver: 210 14% 66%;
+    --bronze: 30 41% 51%;
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 0 0% 100% / 0.2;
+    --chat-orange: 25 95% 53%;
 
     /* Sidebar colors */
     --sidebar: 210 40% 98%;
@@ -55,25 +69,27 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222 47% 5%;
     --foreground: 210 40% 98%;
-    --card: 222.2 47.4% 11.2%;
+    --card: 222 47% 8%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 47.4% 11.2%;
+    --popover: 222 47% 8%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 160 84% 39%;
+    --glass-bg: 222 47% 8% / 0.8;
+    --glass-border: 210 40% 98% / 0.1;
 
     /* Sidebar colors - dark */
     --sidebar: 222.2 47.4% 6%;
@@ -203,6 +219,118 @@
   }
 }
 
+/* Custom component classes */
+@layer components {
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-lg;
+  }
+
+  .glass-card-hover {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/30 hover:-translate-y-0.5;
+  }
+
+  .gradient-primary {
+    background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--emerald-light)));
+  }
+
+  .gradient-hockey {
+    background: linear-gradient(to right, hsl(var(--hockey-blue)), hsl(var(--hockey-blue-light)));
+  }
+
+  .gradient-football {
+    background: linear-gradient(to right, hsl(var(--football-orange)), hsl(var(--football-orange-light)));
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--emerald-light)), hsl(var(--hockey-blue)));
+  }
+
+  .podium-gold {
+    @apply bg-gradient-to-br from-yellow-400 via-yellow-500 to-amber-600 text-white shadow-lg shadow-yellow-500/30;
+  }
+
+  .podium-silver {
+    @apply bg-gradient-to-br from-slate-300 via-slate-400 to-slate-500 text-white shadow-lg shadow-slate-400/30;
+  }
+
+  .podium-bronze {
+    @apply bg-gradient-to-br from-orange-400 via-orange-500 to-orange-700 text-white shadow-lg shadow-orange-500/30;
+  }
+
+  .input-score {
+    @apply w-14 h-12 text-center text-xl font-bold bg-secondary/50 border-2 border-border rounded-xl
+           focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200;
+  }
+
+  .btn-predict {
+    @apply px-6 py-3 rounded-xl font-semibold text-primary-foreground
+           shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30
+           transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0;
+    background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--emerald-light)));
+  }
+
+  .nav-item {
+    @apply flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200
+           text-muted-foreground hover:text-foreground hover:bg-secondary/50;
+  }
+
+  .nav-item-active {
+    @apply flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200 text-primary bg-primary/10;
+  }
+
+  .badge-live {
+    @apply px-2 py-0.5 rounded-full text-xs font-bold bg-destructive text-destructive-foreground animate-pulse;
+  }
+
+  .badge-upcoming {
+    @apply px-2 py-0.5 rounded-full text-xs font-semibold bg-secondary text-muted-foreground;
+  }
+
+  .badge-finished {
+    @apply px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground;
+  }
+
+  .badge-locked {
+    @apply px-1.5 py-0.5 rounded font-medium bg-amber-500/20 text-amber-500;
+  }
+
+  .badge-points {
+    @apply px-2 py-0.5 rounded text-xs font-bold;
+  }
+
+  .badge-points-positive {
+    @apply px-2 py-0.5 rounded text-xs font-bold bg-primary/20 text-primary;
+  }
+
+  .badge-points-zero {
+    @apply px-2 py-0.5 rounded text-xs font-bold bg-secondary text-muted-foreground;
+  }
+
+  .locked-overlay {
+    @apply absolute inset-0 bg-background/80 backdrop-blur-sm rounded-2xl
+           flex items-center justify-center z-10;
+  }
+
+  .score-button {
+    @apply w-6 h-6 flex items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors;
+  }
+
+  .score-display {
+    @apply w-8 h-9 flex items-center justify-center text-sm font-bold bg-secondary/50 border border-border rounded-lg select-none;
+  }
+
+  .date-divider {
+    @apply flex items-center gap-3;
+  }
+
+  .date-divider::before,
+  .date-divider::after {
+    content: '';
+    @apply h-px flex-1 bg-border;
+  }
+}
+
 /* Custom utilities */
 @layer utilities {
   .transition-smooth {
@@ -219,5 +347,18 @@
 
   .focus-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
