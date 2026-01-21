@@ -10,6 +10,7 @@ import {
   assignPlayerSchema,
   updateTeamGroupSchema,
   updateTopScorerRankingSchema,
+  updateLeagueChatSettingsSchema,
   deleteByIdSchema,
   type CreateLeagueInput,
   type UpdateLeagueInput,
@@ -18,6 +19,7 @@ import {
   type AssignPlayerInput,
   type UpdateTeamGroupInput,
   type UpdateTopScorerRankingInput,
+  type UpdateLeagueChatSettingsInput,
   type DeleteByIdInput,
 } from '@/lib/validation/admin'
 
@@ -385,5 +387,52 @@ export async function getSports() {
   return prisma.sport.findMany({
     where: { deletedAt: null },
     orderBy: { name: 'asc' },
+  })
+}
+
+/**
+ * Update chat settings for a league.
+ * - isChatEnabled: Enable or disable chat feature
+ * - suspend: true to suspend chat, false to resume
+ */
+export async function updateLeagueChatSettings(input: UpdateLeagueChatSettingsInput) {
+  return executeServerAction(input, {
+    validator: updateLeagueChatSettingsSchema,
+    handler: async (validated) => {
+      const league = await prisma.league.findUnique({
+        where: { id: validated.leagueId, deletedAt: null },
+      })
+
+      if (!league) {
+        throw new Error('League not found')
+      }
+
+      const updateData: { isChatEnabled?: boolean; chatSuspendedAt?: Date | null; updatedAt: Date } = {
+        updatedAt: new Date(),
+      }
+
+      // Handle enable/disable
+      if (validated.isChatEnabled !== undefined) {
+        updateData.isChatEnabled = validated.isChatEnabled
+        // If disabling chat, also clear suspension
+        if (!validated.isChatEnabled) {
+          updateData.chatSuspendedAt = null
+        }
+      }
+
+      // Handle suspend/resume (only if chat is enabled)
+      if (validated.suspend !== undefined && league.isChatEnabled) {
+        updateData.chatSuspendedAt = validated.suspend ? new Date() : null
+      }
+
+      await prisma.league.update({
+        where: { id: validated.leagueId },
+        data: updateData,
+      })
+
+      return {}
+    },
+    revalidatePath: '/admin/leagues',
+    requiresAdmin: true,
   })
 }

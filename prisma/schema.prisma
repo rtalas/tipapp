@@ -41,6 +41,8 @@ model League {
   seasonTo                 Int
   isFinished               Boolean?                    @default(false)
   isPublic                 Boolean                     @default(false)
+  isChatEnabled            Boolean                     @default(false)
+  chatSuspendedAt          DateTime?                   @db.Timestamptz(6)
   createdAt                DateTime                    @db.Timestamptz(6)
   updatedAt                DateTime                    @db.Timestamptz(6)
   deletedAt                DateTime?                   @db.Timestamptz(6)
@@ -55,6 +57,7 @@ model League {
   UserRequest              UserRequest[]
   UserSetting              UserSetting[]
   TopScorerRankingVersion  TopScorerRankingVersion[]
+  Message                  Message[]
 }
 
 model LeagueMatch {
@@ -180,22 +183,23 @@ model LeagueTeam {
 }
 
 model LeagueUser {
-  id                   Int                    @id @default(autoincrement())
-  leagueId             Int
-  userId               Int
-  paid                 Boolean                @default(false)
-  active               Boolean?               @default(true)
-  admin                Boolean?               @default(false)
-  createdAt            DateTime               @db.Timestamptz(6)
-  updatedAt            DateTime               @db.Timestamptz(6)
-  deletedAt            DateTime?              @db.Timestamptz(6)
-  League                   League                     @relation(fields: [leagueId], references: [id], onDelete: NoAction)
-  User                     User                       @relation(fields: [userId], references: [id], onDelete: NoAction)
-  UserBet                  UserBet[]
-  UserSetting              UserSetting[]
-  UserSpecialBetSerie      UserSpecialBetSerie[]
-  UserSpecialBetSingle     UserSpecialBetSingle[]
-  UserSpecialBetQuestion   UserSpecialBetQuestion[]
+  id                     Int                      @id @default(autoincrement())
+  leagueId               Int
+  userId                 Int
+  paid                   Boolean                  @default(false)
+  active                 Boolean?                 @default(true)
+  admin                  Boolean?                 @default(false)
+  createdAt              DateTime                 @db.Timestamptz(6)
+  updatedAt              DateTime                 @db.Timestamptz(6)
+  deletedAt              DateTime?                @db.Timestamptz(6)
+  League                 League                   @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  User                   User                     @relation(fields: [userId], references: [id], onDelete: NoAction)
+  UserBet                UserBet[]
+  UserSetting            UserSetting[]
+  UserSpecialBetSerie    UserSpecialBetSerie[]
+  UserSpecialBetSingle   UserSpecialBetSingle[]
+  UserSpecialBetQuestion UserSpecialBetQuestion[]
+  Message                Message[]
 }
 
 model Match {
@@ -439,19 +443,33 @@ model UserSpecialBetQuestion {
 }
 
 model TopScorerRankingVersion {
-  id              Int           @id @default(autoincrement())
+  id              Int          @id @default(autoincrement())
   leagueId        Int
   leaguePlayerId  Int
   ranking         Int
-  effectiveFrom   DateTime      @db.Timestamptz(6)
-  effectiveTo     DateTime?     @db.Timestamptz(6)
-  createdAt       DateTime      @db.Timestamptz(6)
+  effectiveFrom   DateTime     @db.Timestamptz(6)
+  effectiveTo     DateTime?    @db.Timestamptz(6)
+  createdAt       DateTime     @db.Timestamptz(6)
   createdByUserId Int?
-  League          League        @relation(fields: [leagueId], references: [id], onDelete: NoAction)
-  LeaguePlayer    LeaguePlayer  @relation(fields: [leaguePlayerId], references: [id], onDelete: NoAction)
-  User            User?         @relation(fields: [createdByUserId], references: [id])
+  League          League       @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  LeaguePlayer    LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: NoAction)
+  User            User?        @relation(fields: [createdByUserId], references: [id])
 
   @@index([leagueId, effectiveFrom])
   @@index([leaguePlayerId, effectiveFrom])
   @@index([leagueId, effectiveTo])
+}
+
+model Message {
+  id           Int        @id @default(autoincrement())
+  leagueId     Int
+  leagueUserId Int
+  text         String
+  createdAt    DateTime   @db.Timestamptz(6)
+  updatedAt    DateTime   @db.Timestamptz(6)
+  deletedAt    DateTime?  @db.Timestamptz(6)
+  League       League     @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  LeagueUser   LeagueUser @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
+
+  @@index([leagueId, createdAt])
 }

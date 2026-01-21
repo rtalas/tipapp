@@ -2,9 +2,9 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Settings, Users, Trash2, Edit, Award } from 'lucide-react'
+import { Settings, Users, Trash2, Edit, Award, MessageSquare, Pause, Play } from 'lucide-react'
 import { toast } from 'sonner'
-import { updateLeague } from '@/actions/leagues'
+import { updateLeague, updateLeagueChatSettings } from '@/actions/leagues'
 import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,6 +27,8 @@ interface LeagueActionsProps {
   seasonTo: number
   isActive: boolean
   isPublic: boolean
+  isChatEnabled: boolean
+  chatSuspendedAt: Date | null
 }
 
 export function LeagueActions({
@@ -36,6 +38,8 @@ export function LeagueActions({
   seasonTo,
   isActive,
   isPublic,
+  isChatEnabled,
+  chatSuspendedAt,
 }: LeagueActionsProps) {
   const [editDialogOpen, setEditDialogOpen] = React.useState(false)
   const [isSaving, setIsSaving] = React.useState(false)
@@ -45,7 +49,9 @@ export function LeagueActions({
     seasonTo,
     isActive,
     isPublic,
+    isChatEnabled,
   })
+  const [isChatSuspended, setIsChatSuspended] = React.useState(chatSuspendedAt !== null)
 
   const handleSave = async () => {
     if (!editForm.name.trim()) {
@@ -60,6 +66,7 @@ export function LeagueActions({
 
     setIsSaving(true)
     try {
+      // Update basic league info
       await updateLeague({
         id: leagueId,
         name: editForm.name,
@@ -68,6 +75,15 @@ export function LeagueActions({
         isActive: editForm.isActive,
         isPublic: editForm.isPublic,
       })
+
+      // Update chat settings if changed
+      if (editForm.isChatEnabled !== isChatEnabled) {
+        await updateLeagueChatSettings({
+          leagueId,
+          isChatEnabled: editForm.isChatEnabled,
+        })
+      }
+
       toast.success('League updated successfully')
       setEditDialogOpen(false)
     } catch (error) {
@@ -77,6 +93,29 @@ export function LeagueActions({
         toast.error('Failed to update league')
       }
       logger.error('Failed to update league', { error, leagueId })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSuspendChat = async () => {
+    setIsSaving(true)
+    try {
+      const result = await updateLeagueChatSettings({
+        leagueId,
+        suspend: !isChatSuspended,
+      })
+
+      if (result.success) {
+        setIsChatSuspended(!isChatSuspended)
+        toast.success(isChatSuspended ? 'Chat resumed' : 'Chat suspended')
+      } else {
+        const errorMessage = 'error' in result ? result.error : 'Failed to update chat status'
+        toast.error(errorMessage)
+      }
+    } catch (error) {
+      toast.error('Failed to update chat status')
+      logger.error('Failed to suspend/resume chat', { error, leagueId })
     } finally {
       setIsSaving(false)
     }
@@ -193,6 +232,59 @@ export function LeagueActions({
                   setEditForm({ ...editForm, isPublic: checked })
                 }
               />
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Chat Settings
+              </h4>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="isChatEnabled">Enable Chat</Label>
+                  <p className="text-xs text-muted-foreground">Allow users to chat in this league</p>
+                </div>
+                <Switch
+                  id="isChatEnabled"
+                  checked={editForm.isChatEnabled}
+                  onCheckedChange={(checked) =>
+                    setEditForm({ ...editForm, isChatEnabled: checked })
+                  }
+                />
+              </div>
+
+              {editForm.isChatEnabled && (
+                <div className="flex items-center justify-between mt-3 p-3 bg-muted/50 rounded-md">
+                  <div>
+                    <span className="text-sm">
+                      {isChatSuspended ? 'Chat is suspended' : 'Chat is active'}
+                    </span>
+                    {isChatSuspended && chatSuspendedAt && (
+                      <p className="text-xs text-muted-foreground">
+                        Since {new Date(chatSuspendedAt).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant={isChatSuspended ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={handleSuspendChat}
+                    disabled={isSaving}
+                  >
+                    {isChatSuspended ? (
+                      <>
+                        <Play className="h-3 w-3 mr-1" /> Resume
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="h-3 w-3 mr-1" /> Suspend
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 

@@ -72,6 +72,8 @@ async function LeaguesTable() {
                   seasonTo={league.seasonTo}
                   isActive={league.isActive}
                   isPublic={league.isPublic}
+                  isChatEnabled={league.isChatEnabled}
+                  chatSuspendedAt={league.chatSuspendedAt}
                 />
               </TableCell>
             </TableRow>

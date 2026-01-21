@@ -414,3 +414,34 @@ export const updateUserQuestionBetSchema = createUserQuestionBetSchema.partial()
 })
 
 export type UpdateUserQuestionBetInput = z.infer<typeof updateUserQuestionBetSchema>
+
+// Message validation schemas
+export const sendMessageSchema = z.object({
+  leagueId: z.number().int().positive('League ID is required'),
+  text: z.string().min(1, 'Message cannot be empty').max(1000, 'Message must not exceed 1000 characters'),
+})
+
+export type SendMessageInput = z.infer<typeof sendMessageSchema>
+
+export const getMessagesSchema = z.object({
+  leagueId: z.number().int().positive('League ID is required'),
+  limit: z.number().int().min(1).max(100).default(50),
+  before: z.date().optional(),
+})
+
+export type GetMessagesInput = z.infer<typeof getMessagesSchema>
+
+export const deleteMessageSchema = z.object({
+  id: z.number().int().positive('Message ID is required'),
+})
+
+export type DeleteMessageInput = z.infer<typeof deleteMessageSchema>
+
+// League chat settings schema
+export const updateLeagueChatSettingsSchema = z.object({
+  leagueId: z.number().int().positive('League ID is required'),
+  isChatEnabled: z.boolean().optional(),
+  suspend: z.boolean().optional(),
+})
+
+export type UpdateLeagueChatSettingsInput = z.infer<typeof updateLeagueChatSettingsSchema>
