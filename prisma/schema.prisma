@@ -58,6 +58,23 @@ model League {
   UserSetting              UserSetting[]
   TopScorerRankingVersion  TopScorerRankingVersion[]
   Message                  Message[]
+  LeaguePrize              LeaguePrize[]
+}
+
+model LeaguePrize {
+  id        Int       @id @default(autoincrement())
+  leagueId  Int
+  rank      Int
+  amount    Int
+  currency  String    @default("CZK") @db.VarChar(3)
+  label     String?   @db.VarChar(100)
+  createdAt DateTime  @db.Timestamptz(6)
+  updatedAt DateTime  @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
+  League    League    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, rank, deletedAt])
+  @@index([leagueId, deletedAt])
 }
 
 model LeagueMatch {
@@ -205,6 +222,7 @@ model LeagueUser {
 model Match {
   id                                      Int           @id @default(autoincrement())
   gameNumber                              Int?
+  matchPhaseId                            Int?
   dateTime                                DateTime      @db.Timestamptz(6)
   homeTeamId                              Int
   awayTeamId                              Int
@@ -223,7 +241,19 @@ model Match {
   LeagueMatch                             LeagueMatch[]
   LeagueTeam_Match_awayTeamIdToLeagueTeam LeagueTeam    @relation("Match_awayTeamIdToLeagueTeam", fields: [awayTeamId], references: [id], onDelete: NoAction)
   LeagueTeam_Match_homeTeamIdToLeagueTeam LeagueTeam    @relation("Match_homeTeamIdToLeagueTeam", fields: [homeTeamId], references: [id], onDelete: NoAction)
+  MatchPhase                              MatchPhase?   @relation(fields: [matchPhaseId], references: [id], onDelete: SetNull)
   MatchScorer                             MatchScorer[]
+}
+
+model MatchPhase {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  rank      Int       @default(0)
+  bestOf    Int?
+  createdAt DateTime  @db.Timestamptz(6)
+  updatedAt DateTime  @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
+  Match     Match[]
 }
 
 model MatchScorer {

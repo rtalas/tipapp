@@ -3,7 +3,18 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { Moon, Sun, LogOut, User, ChevronDown, Settings, Check } from 'lucide-react'
+import {
+  Moon,
+  Sun,
+  LogOut,
+  User,
+  ChevronDown,
+  Settings,
+  Check,
+  Plus,
+  Loader2,
+  Trophy,
+} from 'lucide-react'
 import { useTheme } from 'next-themes'
 import {
   DropdownMenu,
@@ -20,8 +31,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import { useUserLeagueContext } from '@/contexts/user-league-context'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import { getAllLeaguesForSelector, joinLeague } from '@/actions/user/leagues'
 
 interface HeaderProps {
   user: {
@@ -36,13 +50,70 @@ interface HeaderProps {
 // Helper to get sport emoji
 function getSportEmoji(sportId?: number): string {
   switch (sportId) {
-    case 1:
-      return '⚽'
-    case 2:
+    case 1: // HOCKEY
       return '🏒'
+    case 2: // FOOTBALL
+      return '⚽'
     default:
       return '🏆'
   }
+}
+
+// League join row component
+function LeagueJoinRow({
+  league,
+  onJoinSuccess,
+}: {
+  league: {
+    id: number
+    name: string
+    seasonFrom: number
+    seasonTo: number
+    sport: { id: number; name: string }
+  }
+  onJoinSuccess: () => void
+}) {
+  const [isJoining, setIsJoining] = React.useState(false)
+
+  const handleJoin = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsJoining(true)
+    try {
+      await joinLeague(league.id)
+      toast.success(`Joined ${league.name}!`)
+      onJoinSuccess()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to join league')
+      setIsJoining(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/20 border-2 border-dashed border-border/50">
+      <span className="text-2xl">{getSportEmoji(league.sport?.id)}</span>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-sm">{league.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {league.seasonFrom}/{league.seasonTo}
+        </p>
+      </div>
+      <Button
+        size="sm"
+        onClick={handleJoin}
+        disabled={isJoining}
+        className="shrink-0 h-8 px-3 text-xs gradient-primary"
+      >
+        {isJoining ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <>
+            <Plus className="h-3 w-3 mr-1" />
+            Join
+          </>
+        )}
+      </Button>
+    </div>
+  )
 }
 
 export function Header({ user }: HeaderProps) {
@@ -51,6 +122,59 @@ export function Header({ user }: HeaderProps) {
   const { leagues, selectedLeagueId, selectedLeague, setSelectedLeagueId } =
     useUserLeagueContext()
   const [showLeagueDialog, setShowLeagueDialog] = React.useState(false)
+  const [userLeagues, setUserLeagues] = React.useState<
+    Array<{
+      id: number
+      name: string
+      seasonFrom: number
+      seasonTo: number
+      sportId: number
+      leagueId?: number
+      sport: { id: number; name: string }
+    }>
+  >([])
+  const [pastLeagues, setPastLeagues] = React.useState<
+    Array<{
+      id: number
+      name: string
+      seasonFrom: number
+      seasonTo: number
+      sportId: number
+      leagueId?: number
+      sport: { id: number; name: string }
+    }>
+  >([])
+  const [availableLeagues, setAvailableLeagues] = React.useState<
+    Array<{
+      id: number
+      name: string
+      seasonFrom: number
+      seasonTo: number
+      sportId: number
+      sport: { id: number; name: string }
+    }>
+  >([])
+  const [isLoadingLeagues, setIsLoadingLeagues] = React.useState(false)
+
+  const loadLeagues = React.useCallback(async () => {
+    setIsLoadingLeagues(true)
+    try {
+      const data = await getAllLeaguesForSelector()
+      setUserLeagues(data.userLeagues)
+      setPastLeagues(data.pastLeagues)
+      setAvailableLeagues(data.availableLeagues)
+    } catch (error) {
+      toast.error('Failed to load leagues')
+    } finally {
+      setIsLoadingLeagues(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    if (showLeagueDialog) {
+      loadLeagues()
+    }
+  }, [showLeagueDialog, loadLeagues])
 
   const handleSignOut = async () => {
     await signOut({ redirect: false })
@@ -60,6 +184,10 @@ export function Header({ user }: HeaderProps) {
   const handleLeagueSelect = (leagueId: number) => {
     setSelectedLeagueId(leagueId)
     setShowLeagueDialog(false)
+  }
+
+  const handleJoinSuccess = () => {
+    loadLeagues() // Refresh lists
   }
 
   // Get user initials
@@ -84,12 +212,8 @@ export function Header({ user }: HeaderProps) {
         <div className="flex h-14 items-center justify-between px-4 max-w-2xl mx-auto">
           {/* Left side: League selector */}
           <button
-            onClick={() => leagues.length > 1 && setShowLeagueDialog(true)}
-            className={cn(
-              'flex items-center gap-2 rounded-xl px-3 py-2 transition-colors',
-              leagues.length > 1 && 'hover:bg-secondary/50 active:bg-secondary'
-            )}
-            disabled={leagues.length <= 1}
+            onClick={() => setShowLeagueDialog(true)}
+            className="flex items-center gap-2 rounded-xl px-3 py-2 transition-colors hover:bg-secondary/50 active:bg-secondary"
           >
             {selectedLeague && (
               <>
@@ -104,9 +228,7 @@ export function Header({ user }: HeaderProps) {
                     {selectedLeague.seasonFrom}/{selectedLeague.seasonTo}
                   </span>
                 </div>
-                {leagues.length > 1 && (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
-                )}
+                <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
               </>
             )}
             {!selectedLeague && (
@@ -175,37 +297,123 @@ export function Header({ user }: HeaderProps) {
 
       {/* League Selection Dialog */}
       <Dialog open={showLeagueDialog} onOpenChange={setShowLeagueDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Select League</DialogTitle>
+            <DialogTitle>Your Leagues</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2 mt-4">
-            {leagues.map((league) => (
-              <button
-                key={league.leagueId}
-                onClick={() => handleLeagueSelect(league.leagueId)}
-                className={cn(
-                  'w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left',
-                  selectedLeagueId === league.leagueId
-                    ? 'bg-primary/10 border-2 border-primary'
-                    : 'bg-secondary/30 hover:bg-secondary/50 border-2 border-transparent'
-                )}
-              >
-                <span className="text-2xl">
-                  {getSportEmoji(league.sport?.id)}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{league.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {league.seasonFrom}/{league.seasonTo}
-                  </p>
+
+          {isLoadingLeagues ? (
+            <div className="py-8 text-center text-muted-foreground">
+              Loading leagues...
+            </div>
+          ) : (
+            <>
+              {/* User's Leagues Section */}
+              {userLeagues.length > 0 && (
+                <div className="space-y-2 mt-4">
+                  {userLeagues.map((league) => (
+                    <button
+                      key={league.leagueId}
+                      onClick={() => handleLeagueSelect(league.leagueId!)}
+                      className={cn(
+                        'w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left',
+                        selectedLeagueId === league.leagueId
+                          ? 'bg-primary/10 border-2 border-primary'
+                          : 'bg-secondary/30 hover:bg-secondary/50 border-2 border-transparent'
+                      )}
+                    >
+                      <span className="text-2xl">
+                        {getSportEmoji(league.sport?.id)}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{league.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {league.seasonFrom}/{league.seasonTo}
+                        </p>
+                      </div>
+                      {selectedLeagueId === league.leagueId && (
+                        <Check className="h-5 w-5 text-primary shrink-0" />
+                      )}
+                    </button>
+                  ))}
                 </div>
-                {selectedLeagueId === league.leagueId && (
-                  <Check className="h-5 w-5 text-primary shrink-0" />
+              )}
+
+              {/* Past Leagues Section */}
+              {pastLeagues.length > 0 && (
+                <>
+                  <div className="mt-6 mb-3 flex items-center gap-2">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">
+                      Past Leagues
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  <div className="space-y-2">
+                    {pastLeagues.map((league) => (
+                      <button
+                        key={league.leagueId}
+                        onClick={() => handleLeagueSelect(league.leagueId!)}
+                        className={cn(
+                          'w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left opacity-75',
+                          selectedLeagueId === league.leagueId
+                            ? 'bg-primary/10 border-2 border-primary'
+                            : 'bg-secondary/20 hover:bg-secondary/40 border-2 border-transparent'
+                        )}
+                      >
+                        <span className="text-2xl opacity-60">
+                          {getSportEmoji(league.sport?.id)}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm">{league.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {league.seasonFrom}/{league.seasonTo}
+                          </p>
+                        </div>
+                        {selectedLeagueId === league.leagueId && (
+                          <Check className="h-5 w-5 text-primary shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Available Leagues Section */}
+              {availableLeagues.length > 0 && (
+                <>
+                  <div className="mt-6 mb-3 flex items-center gap-2">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">
+                      Available to Join
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  <div className="space-y-2">
+                    {availableLeagues.map((league) => (
+                      <LeagueJoinRow
+                        key={league.id}
+                        league={league}
+                        onJoinSuccess={handleJoinSuccess}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Empty State */}
+              {userLeagues.length === 0 &&
+                pastLeagues.length === 0 &&
+                availableLeagues.length === 0 && (
+                  <div className="py-8 text-center">
+                    <Trophy className="w-12 h-12 text-muted-foreground opacity-20 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">No leagues available</p>
+                  </div>
                 )}
-              </button>
-            ))}
-          </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </>

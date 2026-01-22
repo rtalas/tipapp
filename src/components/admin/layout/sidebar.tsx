@@ -15,6 +15,7 @@ import {
   ListChecks,
   Target,
   MessageSquare,
+  Layers,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -63,6 +64,7 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
     { label: 'Users (Global)', href: '/admin/users', icon: Users },
     { label: 'Special Bet Types', href: '/admin/special-bet-types', icon: Target },
     { label: 'Series Types', href: '/admin/series-types', icon: ListChecks },
+    { label: 'Match Phases', href: '/admin/match-phases', icon: Layers },
   ]
 
   const renderNavItem = (item: { label: string; href: string; icon: React.ElementType }) => {

@@ -58,6 +58,7 @@ export async function getUserMatches(leagueId: number) {
               },
             },
           },
+          MatchPhase: true,
         },
       },
       // Get only the current user's bet

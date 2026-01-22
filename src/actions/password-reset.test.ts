@@ -168,7 +168,7 @@ describe('Password Reset Actions', () => {
       mockPrisma.$transaction.mockResolvedValue([{}, {}, {}]);
 
       const result = await resetPassword({
-        token: 'plain_token_1234',
+        token: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', // 64 chars
         password: 'NewPassword123',
         confirmPassword: 'NewPassword123',
       });
@@ -181,7 +181,7 @@ describe('Password Reset Actions', () => {
       mockPrisma.passwordResetToken.findUnique.mockResolvedValue(null);
 
       const result = await resetPassword({
-        token: 'invalid_token',
+        token: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', // 64 chars
         password: 'NewPassword123',
         confirmPassword: 'NewPassword123',
       });
@@ -204,7 +204,7 @@ describe('Password Reset Actions', () => {
       mockPrisma.passwordResetToken.findUnique.mockResolvedValue(mockToken as any);
 
       const result = await resetPassword({
-        token: 'expired_token',
+        token: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', // 64 chars
         password: 'NewPassword123',
         confirmPassword: 'NewPassword123',
       });
@@ -227,7 +227,7 @@ describe('Password Reset Actions', () => {
       mockPrisma.passwordResetToken.findUnique.mockResolvedValue(mockToken as any);
 
       const result = await resetPassword({
-        token: 'used_token',
+        token: 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', // 64 chars
         password: 'NewPassword123',
         confirmPassword: 'NewPassword123',
       });
@@ -249,7 +249,7 @@ describe('Password Reset Actions', () => {
 
     it('should validate password confirmation', async () => {
       const result = await resetPassword({
-        token: 'token_1234567890123456789012345678901234567890123456789012345678901234',
+        token: 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', // 64 chars
         password: 'NewPassword123',
         confirmPassword: 'DifferentPassword123',
       });
@@ -273,7 +273,7 @@ describe('Password Reset Actions', () => {
       mockPrisma.$transaction.mockResolvedValue([{}, {}, {}]);
 
       await resetPassword({
-        token: 'plain_token',
+        token: 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // 64 chars
         password: 'NewPassword123',
         confirmPassword: 'NewPassword123',
       });

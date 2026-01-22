@@ -6,8 +6,10 @@ import { buildLeagueMatchWhere } from '@/lib/query-builders'
 import { leagueMatchInclude, leagueMatchWithBetsInclude, matchWithEvaluatorsInclude } from '@/lib/prisma-helpers'
 import {
   createMatchSchema,
+  updateMatchSchema,
   updateMatchResultSchema,
   type CreateMatchInput,
+  type UpdateMatchInput,
   type UpdateMatchResultInput,
 } from '@/lib/validation/admin'
 import { deleteByIdSchema } from '@/lib/validation/admin'
@@ -39,6 +41,25 @@ export async function createMatch(input: CreateMatchInput) {
         throw new Error('Teams must belong to the selected league')
       }
 
+      // Verify match phase exists if provided
+      if (validated.matchPhaseId) {
+        const matchPhase = await prisma.matchPhase.findFirst({
+          where: {
+            id: validated.matchPhaseId,
+            deletedAt: null,
+          },
+        })
+
+        if (!matchPhase) {
+          throw new Error('Match phase not found')
+        }
+
+        // Validate game number against phase bestOf if both provided
+        if (validated.gameNumber && matchPhase.bestOf && validated.gameNumber > matchPhase.bestOf) {
+          throw new Error(`Game number cannot exceed best of ${matchPhase.bestOf}`)
+        }
+      }
+
       // Transaction: Create match + league match
       const result = await prisma.$transaction(async (tx) => {
         // Create the match
@@ -48,6 +69,8 @@ export async function createMatch(input: CreateMatchInput) {
             homeTeamId: validated.homeTeamId,
             awayTeamId: validated.awayTeamId,
             isPlayoffGame: validated.isPlayoffGame,
+            matchPhaseId: validated.matchPhaseId ?? null,
+            gameNumber: validated.gameNumber ?? null,
             createdAt: now,
             updatedAt: now,
           },
@@ -68,6 +91,60 @@ export async function createMatch(input: CreateMatchInput) {
       })
 
       return { matchId: result.id }
+    },
+    revalidatePath: '/admin/matches',
+    requiresAdmin: true,
+  })
+}
+
+export async function updateMatch(input: UpdateMatchInput) {
+  return executeServerAction(input, {
+    validator: updateMatchSchema,
+    handler: async (validated) => {
+      // Verify match phase exists if provided
+      if (validated.matchPhaseId) {
+        const matchPhase = await prisma.matchPhase.findFirst({
+          where: {
+            id: validated.matchPhaseId,
+            deletedAt: null,
+          },
+        })
+
+        if (!matchPhase) {
+          throw new Error('Match phase not found')
+        }
+
+        // Validate game number against phase bestOf if both provided
+        if (validated.gameNumber && matchPhase.bestOf && validated.gameNumber > matchPhase.bestOf) {
+          throw new Error(`Game number cannot exceed best of ${matchPhase.bestOf}`)
+        }
+      }
+
+      const updateData: {
+        dateTime?: Date
+        matchPhaseId?: number | null
+        gameNumber?: number | null
+        updatedAt: Date
+      } = {
+        updatedAt: new Date(),
+      }
+
+      if (validated.dateTime) {
+        updateData.dateTime = validated.dateTime
+      }
+      if (validated.matchPhaseId !== undefined) {
+        updateData.matchPhaseId = validated.matchPhaseId
+      }
+      if (validated.gameNumber !== undefined) {
+        updateData.gameNumber = validated.gameNumber
+      }
+
+      await prisma.match.update({
+        where: { id: validated.matchId },
+        data: updateData,
+      })
+
+      return {}
     },
     revalidatePath: '/admin/matches',
     requiresAdmin: true,
@@ -188,6 +265,7 @@ export async function getMatchById(matchId: number) {
       LeagueMatch: {
         include: { League: true },
       },
+      MatchPhase: true,
     },
   })
 }

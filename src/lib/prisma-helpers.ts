@@ -28,6 +28,7 @@ export const leagueMatchInclude = {
           },
         },
       },
+      MatchPhase: true,
     },
   },
 } as const
@@ -66,6 +67,7 @@ export const leagueMatchWithBetsInclude = {
           },
         },
       },
+      MatchPhase: true,
     },
   },
   UserBet: {

@@ -138,7 +138,7 @@ export function ScorerSelect({
                 )}
               </span>
             ) : (
-              'Select scorer (optional)'
+              'Select scorer'
             )}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

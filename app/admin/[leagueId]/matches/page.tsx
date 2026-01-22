@@ -3,6 +3,7 @@ import { validateLeagueAccess } from '@/lib/league-utils'
 import { getMatches } from '@/actions/matches'
 import { getLeaguesWithTeams } from '@/actions/shared-queries'
 import { getUsers } from '@/actions/users'
+import { getMatchPhases } from '@/actions/match-phases'
 import { MatchesContent } from '@/components/admin/matches/matches-content'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
@@ -15,13 +16,14 @@ import {
 } from '@/components/ui/table'
 
 async function MatchesData({ league }: { league: { id: number; name: string } }) {
-  const [matches, leagues, users] = await Promise.all([
+  const [matches, leagues, users, phases] = await Promise.all([
     getMatches({ leagueId: league.id }),
     getLeaguesWithTeams(),
     getUsers(),
+    getMatchPhases(),
   ])
 
-  return <MatchesContent matches={matches} leagues={leagues} users={users} league={league} />
+  return <MatchesContent matches={matches} leagues={leagues} users={users} league={league} phases={phases} />
 }
 
 function MatchesLoading() {

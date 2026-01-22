@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
+import { Plus, Edit, Trash2, ChevronDown, Calculator, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteMatch } from '@/actions/matches'
 import { evaluateMatchBets } from '@/actions/evaluate-matches'
@@ -40,6 +40,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { AddMatchDialog } from './add-match-dialog'
+import { EditMatchDialog } from './edit-match-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
 import { UserBetRow } from './user-bet-row'
 import { CreateBetDialog } from './create-bet-dialog'
@@ -51,20 +52,29 @@ type LeagueMatch = MatchWithUserBets
 type League = LeagueWithTeams
 type User = UserBasic
 
+interface MatchPhase {
+  id: number
+  name: string
+  rank: number
+  bestOf: number | null
+}
+
 interface MatchesContentProps {
   matches: LeagueMatch[]
   leagues: League[]
   users: User[]
   league?: { id: number; name: string }
+  phases: MatchPhase[]
 }
 
-export function MatchesContent({ matches, leagues, users, league }: MatchesContentProps) {
+export function MatchesContent({ matches, leagues, users, league, phases }: MatchesContentProps) {
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
   const [userFilter, setUserFilter] = React.useState<string>('all')
   const [addDialogOpen, setAddDialogOpen] = React.useState(false)
   const [selectedMatch, setSelectedMatch] = React.useState<LeagueMatch | null>(null)
+  const [editMatch, setEditMatch] = React.useState<LeagueMatch | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [matchToDelete, setMatchToDelete] = React.useState<LeagueMatch | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
@@ -348,6 +358,17 @@ export function MatchesContent({ matches, leagues, users, league }: MatchesConte
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation()
+                                  setEditMatch(lm)
+                                }}
+                                aria-label={`Edit match details: ${homeTeam.name} vs ${awayTeam.name}`}
+                              >
+                                <Calendar className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   setSelectedMatch(lm)
                                 }}
                                 aria-label={`Edit match result: ${homeTeam.name} vs ${awayTeam.name}`}
@@ -454,7 +475,18 @@ export function MatchesContent({ matches, leagues, users, league }: MatchesConte
         onOpenChange={setAddDialogOpen}
         leagues={leagues}
         league={league}
+        phases={phases}
       />
+
+      {/* Edit Match Dialog */}
+      {editMatch && (
+        <EditMatchDialog
+          match={editMatch}
+          open={!!editMatch}
+          onOpenChange={(open) => !open && setEditMatch(null)}
+          phases={phases}
+        />
+      )}
 
       {/* Result Entry Dialog */}
       {selectedMatch && (

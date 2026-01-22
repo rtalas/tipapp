@@ -175,15 +175,30 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-1.5">
-            {homeTeam.group && (
+            {/* Phase + Game Number badge */}
+            {match.Match.MatchPhase && (
               <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
-                {homeTeam.group}
+                {match.Match.MatchPhase.name}
+                {match.Match.gameNumber && match.Match.MatchPhase.bestOf && match.Match.MatchPhase.bestOf > 1 && (
+                  <>, Game {match.Match.gameNumber}</>
+                )}
               </span>
             )}
-            {isPlayoff && (
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
-                Playoff
-              </span>
+
+            {/* Fallback badges for backward compatibility (only if no phase) */}
+            {!match.Match.MatchPhase && (
+              <>
+                {homeTeam.group && (
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
+                    {homeTeam.group}
+                  </span>
+                )}
+                {isPlayoff && (
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
+                    Playoff
+                  </span>
+                )}
+              </>
             )}
           </div>
           <div className="flex items-center gap-1.5">

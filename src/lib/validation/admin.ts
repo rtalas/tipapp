@@ -118,12 +118,56 @@ export const createMatchSchema = z.object({
     }),
   isPlayoffGame: z.boolean().default(false),
   isDoubled: z.boolean().default(false),
+  matchPhaseId: z.number().int().positive().nullable().optional(),
+  gameNumber: z.number().int().min(1).max(7).nullable().optional(),
 }).refine((data) => data.homeTeamId !== data.awayTeamId, {
   message: 'Home and away teams must be different',
   path: ['awayTeamId'],
+}).refine((data) => {
+  // If gameNumber provided, matchPhaseId must also be provided
+  if (data.gameNumber && !data.matchPhaseId) {
+    return false
+  }
+  return true
+}, {
+  message: 'Game number requires a match phase',
+  path: ['gameNumber'],
 })
 
 export type CreateMatchInput = z.infer<typeof createMatchSchema>
+
+export const updateMatchSchema = z.object({
+  matchId: z.number().int().positive(),
+  dateTime: z.date().optional(),
+  matchPhaseId: z.number().int().positive().nullable().optional(),
+  gameNumber: z.number().int().min(1).max(7).nullable().optional(),
+}).refine((data) => {
+  // If gameNumber provided, matchPhaseId must also be provided
+  if (data.gameNumber && !data.matchPhaseId) {
+    return false
+  }
+  return true
+}, {
+  message: 'Game number requires a match phase',
+  path: ['gameNumber'],
+})
+
+export type UpdateMatchInput = z.infer<typeof updateMatchSchema>
+
+// Match Phase validation schemas
+export const createMatchPhaseSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(255),
+  rank: z.number().int().min(0, 'Rank must be non-negative').default(0),
+  bestOf: z.number().int().min(1).max(7).nullable().optional(),
+})
+
+export type CreateMatchPhaseInput = z.infer<typeof createMatchPhaseSchema>
+
+export const updateMatchPhaseSchema = createMatchPhaseSchema.partial().extend({
+  id: z.number().int().positive(),
+})
+
+export type UpdateMatchPhaseInput = z.infer<typeof updateMatchPhaseSchema>
 
 export const updateMatchResultSchema = z.object({
   matchId: z.number().int().positive(),
@@ -459,3 +503,26 @@ export const updateLeagueChatSettingsSchema = z.object({
 })
 
 export type UpdateLeagueChatSettingsInput = z.infer<typeof updateLeagueChatSettingsSchema>
+
+// League prize validation schemas
+const prizeTierSchema = z.object({
+  rank: z.number().int().min(1, 'Rank must be at least 1').max(10, 'Maximum 10 prize tiers allowed'),
+  amount: z.number().int().min(0, 'Amount cannot be negative'),
+  currency: z.string().length(3, 'Currency must be 3 characters').default('CZK'),
+  label: z.string().max(100, 'Label must not exceed 100 characters').optional(),
+})
+
+export const updateLeaguePrizesSchema = z.object({
+  leagueId: z.number().int().positive('League ID is required'),
+  prizes: z.array(prizeTierSchema).max(10, 'Maximum 10 prize tiers allowed'),
+}).refine((data) => {
+  // Ensure unique ranks
+  const ranks = data.prizes.map(p => p.rank)
+  return new Set(ranks).size === ranks.length
+}, {
+  message: 'Prize ranks must be unique',
+  path: ['prizes'],
+})
+
+export type UpdateLeaguePrizesInput = z.infer<typeof updateLeaguePrizesSchema>
+export type PrizeTier = z.infer<typeof prizeTierSchema>

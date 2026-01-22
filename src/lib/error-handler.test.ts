@@ -73,7 +73,8 @@ describe('error-handler', () => {
         schema.parse({ email: 'invalid', age: 10 })
       } catch (error) {
         const result = handleActionError(error)
-        expect(result.message).toBe('Validation failed')
+        // Now returns first error message instead of generic "Validation failed"
+        expect(result.message).toContain('email')
         expect(result.code).toBe('VALIDATION_ERROR')
         expect(result.fieldErrors).toBeDefined()
         expect(result.fieldErrors?.email).toBeDefined()
@@ -152,7 +153,8 @@ describe('error-handler', () => {
         schema.parse('invalid')
       } catch (error) {
         const message = getErrorMessage(error)
-        expect(message).toBe('Validation failed')
+        // Now returns first error message instead of generic "Validation failed"
+        expect(message).toContain('email')
       }
     })
 
@@ -357,7 +359,8 @@ describe('error-handler', () => {
         schema.parse({ username: 'ab', password: '123' })
       } catch (error) {
         const message = getErrorMessage(error, 'Validation error')
-        expect(message).toBe('Validation failed')
+        // Now returns first error message (username too small)
+        expect(message).toContain('expected string to have')
 
         const errorResponse = handleActionError(error)
         expect(errorResponse.fieldErrors?.username).toBeDefined()

@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { Settings, Users, Trash2, Edit, Award, MessageSquare, Pause, Play } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateLeague, updateLeagueChatSettings } from '@/actions/leagues'
+import { getLeaguePrizes, updateLeaguePrizes } from '@/actions/league-prizes'
 import { logger } from '@/lib/client-logger'
+import type { PrizeTier } from '@/lib/validation/admin'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -19,6 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { LeagueDeleteButton } from './league-delete-button'
+import { LeaguePrizesSection } from './league-prizes-section'
 
 interface LeagueActionsProps {
   leagueId: number
@@ -52,6 +55,30 @@ export function LeagueActions({
     isChatEnabled,
   })
   const [isChatSuspended, setIsChatSuspended] = React.useState(chatSuspendedAt !== null)
+  const [prizes, setPrizes] = React.useState<PrizeTier[]>([])
+  const [prizesLoaded, setPrizesLoaded] = React.useState(false)
+
+  // Fetch prizes when dialog opens
+  React.useEffect(() => {
+    if (editDialogOpen && !prizesLoaded) {
+      getLeaguePrizes(leagueId).then((result) => {
+        if (result.success && 'prizes' in result && result.prizes) {
+          // Map prizes to PrizeTier format (remove id field)
+          const mappedPrizes = result.prizes.map(({ rank, amount, currency, label }) => ({
+            rank,
+            amount,
+            currency,
+            label: label ?? undefined,
+          }))
+          setPrizes(mappedPrizes)
+        }
+        setPrizesLoaded(true)
+      }).catch((error) => {
+        logger.error('Failed to load prizes', { error, leagueId })
+        setPrizesLoaded(true)
+      })
+    }
+  }, [editDialogOpen, prizesLoaded, leagueId])
 
   const handleSave = async () => {
     if (!editForm.name.trim()) {
@@ -84,8 +111,15 @@ export function LeagueActions({
         })
       }
 
+      // Update prizes
+      await updateLeaguePrizes({
+        leagueId,
+        prizes,
+      })
+
       toast.success('League updated successfully')
       setEditDialogOpen(false)
+      setPrizesLoaded(false) // Reset to reload on next open
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
@@ -285,6 +319,10 @@ export function LeagueActions({
                   </Button>
                 </div>
               )}
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <LeaguePrizesSection prizes={prizes} onChange={setPrizes} />
             </div>
           </div>
 

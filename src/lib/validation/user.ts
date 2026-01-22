@@ -79,3 +79,10 @@ export const userQuestionBetSchema = z.object({
 })
 
 export type UserQuestionBetInput = z.infer<typeof userQuestionBetSchema>
+
+// Join league schema (user-facing)
+export const joinLeagueSchema = z.object({
+  leagueId: z.number().int().positive('League ID is required'),
+})
+
+export type JoinLeagueInput = z.infer<typeof joinLeagueSchema>

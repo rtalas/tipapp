@@ -1,28 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Create hoisted mock
+const sendMock = vi.hoisted(() => vi.fn());
+
+vi.mock('resend', () => ({
+  Resend: vi.fn().mockImplementation(() => ({
+    emails: {
+      send: sendMock,
+    },
+  })),
+}));
+
 import { sendPasswordResetEmail } from './email';
-
-// Create a mock for the send function
-const mockSend = vi.fn();
-
-// Mock Resend before importing the module
-vi.mock('resend', () => {
-  return {
-    Resend: vi.fn().mockImplementation(() => ({
-      emails: {
-        send: mockSend,
-      },
-    })),
-  };
-});
 
 describe('Email Utilities', () => {
   beforeEach(() => {
-    mockSend.mockClear();
+    sendMock.mockClear();
   });
 
   describe('sendPasswordResetEmail', () => {
     it('should send password reset email successfully', async () => {
-      mockSend.mockResolvedValue({
+      sendMock.mockResolvedValue({
         data: { id: 'msg_123456' },
         error: null,
       });
@@ -35,11 +33,11 @@ describe('Email Utilities', () => {
 
       expect(result.success).toBe(true);
       expect(result.messageId).toBe('msg_123456');
-      expect(mockSend).toHaveBeenCalled();
+      expect(sendMock).toHaveBeenCalled();
     });
 
     it('should include correct email fields', async () => {
-      mockSend.mockResolvedValue({
+      sendMock.mockResolvedValue({
         data: { id: 'msg_123456' },
         error: null,
       });
@@ -50,7 +48,7 @@ describe('Email Utilities', () => {
         username: 'Jane Doe',
       });
 
-      const callArg = mockSend.mock.calls[0]?.[0];
+      const callArg = sendMock.mock.calls[0]?.[0];
       expect(callArg).toBeDefined();
       expect(callArg?.to).toBe('user@example.com');
       expect(callArg?.subject).toContain('Reset Your Password');
@@ -59,7 +57,7 @@ describe('Email Utilities', () => {
     });
 
     it('should handle email sending errors', async () => {
-      mockSend.mockResolvedValue({
+      sendMock.mockResolvedValue({
         data: null,
         error: { message: 'Invalid email address' },
       });
@@ -75,7 +73,7 @@ describe('Email Utilities', () => {
     });
 
     it('should handle unexpected errors gracefully', async () => {
-      mockSend.mockRejectedValue(new Error('Network error'));
+      sendMock.mockRejectedValue(new Error('Network error'));
 
       const result = await sendPasswordResetEmail({
         email: 'user@example.com',
@@ -88,7 +86,7 @@ describe('Email Utilities', () => {
     });
 
     it('should include reset link in both HTML and plain text', async () => {
-      mockSend.mockResolvedValue({
+      sendMock.mockResolvedValue({
         data: { id: 'msg_123456' },
         error: null,
       });
@@ -100,13 +98,13 @@ describe('Email Utilities', () => {
         username: 'User',
       });
 
-      const callArg = mockSend.mock.calls[0]?.[0];
+      const callArg = sendMock.mock.calls[0]?.[0];
       expect(callArg?.html).toContain(resetUrl);
       expect(callArg?.text).toContain(resetUrl);
     });
 
     it('should include security warning about expiration', async () => {
-      mockSend.mockResolvedValue({
+      sendMock.mockResolvedValue({
         data: { id: 'msg_123456' },
         error: null,
       });
@@ -117,7 +115,7 @@ describe('Email Utilities', () => {
         username: 'User',
       });
 
-      const callArg = mockSend.mock.calls[0]?.[0];
+      const callArg = sendMock.mock.calls[0]?.[0];
       expect(callArg?.html).toContain('1 hour');
       expect(callArg?.text).toContain('1 hour');
     });

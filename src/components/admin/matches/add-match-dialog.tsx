@@ -45,14 +45,22 @@ interface League {
   LeagueTeam: LeagueTeam[]
 }
 
+interface MatchPhase {
+  id: number
+  name: string
+  rank: number
+  bestOf: number | null
+}
+
 interface AddMatchDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   leagues: League[]
   league?: { id: number; name: string }
+  phases: MatchPhase[]
 }
 
-export function AddMatchDialog({ open, onOpenChange, leagues, league }: AddMatchDialogProps) {
+export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: AddMatchDialogProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [selectedLeagueId, setSelectedLeagueId] = React.useState<string>(league?.id.toString() || '')
   const [selectedHomeTeamId, setSelectedHomeTeamId] = React.useState<string>('')
@@ -60,11 +68,16 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league }: AddMatch
   const [dateTime, setDateTime] = React.useState<string>('')
   const [isPlayoffGame, setIsPlayoffGame] = React.useState(false)
   const [isDoubled, setIsDoubled] = React.useState(false)
+  const [selectedPhaseId, setSelectedPhaseId] = React.useState<string>('')
+  const [gameNumber, setGameNumber] = React.useState<string>('')
 
   // Get teams for selected league (from prop or from selection)
   const effectiveLeagueId = league?.id.toString() || selectedLeagueId
   const selectedLeague = leagues.find((l) => l.id.toString() === effectiveLeagueId)
   const availableTeams = selectedLeague?.LeagueTeam || []
+
+  // Get selected phase
+  const selectedPhase = phases.find((p) => p.id.toString() === selectedPhaseId)
 
   // Filter out selected teams from each other's options
   const homeTeamOptions = availableTeams.filter(
@@ -92,6 +105,8 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league }: AddMatch
         dateTime: new Date(dateTime),
         isPlayoffGame,
         isDoubled,
+        matchPhaseId: selectedPhaseId ? parseInt(selectedPhaseId, 10) : null,
+        gameNumber: gameNumber ? parseInt(gameNumber, 10) : null,
       })
 
       toast.success('Match created successfully')
@@ -118,6 +133,8 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league }: AddMatch
     setDateTime('')
     setIsPlayoffGame(false)
     setIsDoubled(false)
+    setSelectedPhaseId('')
+    setGameNumber('')
   }
 
   // Reset team selections when league changes (only for manual selection)
@@ -236,6 +253,37 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league }: AddMatch
               </Label>
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="matchPhase">Match Phase (Optional)</Label>
+            <Select value={selectedPhaseId || undefined} onValueChange={(value) => setSelectedPhaseId(value || '')}>
+              <SelectTrigger>
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                {phases.map((phase) => (
+                  <SelectItem key={phase.id} value={phase.id.toString()}>
+                    {phase.name} {phase.bestOf ? `(Best of ${phase.bestOf})` : '(Single)'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedPhase?.bestOf && selectedPhase.bestOf > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="gameNumber">Game Number</Label>
+              <Input
+                id="gameNumber"
+                type="number"
+                min="1"
+                max={selectedPhase.bestOf}
+                value={gameNumber}
+                onChange={(e) => setGameNumber(e.target.value)}
+                placeholder={`1-${selectedPhase.bestOf}`}
+              />
+            </div>
+          )}
 
           <DialogFooter>
             <Button

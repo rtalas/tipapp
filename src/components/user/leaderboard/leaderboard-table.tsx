@@ -14,12 +14,14 @@ import { PullToRefresh } from '@/components/user/common/pull-to-refresh'
 import { useRefresh } from '@/hooks/useRefresh'
 import { cn } from '@/lib/utils'
 import type { LeaderboardEntry } from '@/types/user'
+import type { LeaguePrize } from '@/actions/user/leaderboard'
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[]
+  prizes: LeaguePrize[]
 }
 
-export function LeaderboardTable({ entries }: LeaderboardTableProps) {
+export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
   const [selectedUser, setSelectedUser] = React.useState<LeaderboardEntry | null>(
     null
@@ -66,6 +68,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
                   key={entry.leagueUserId}
                   entry={entry}
                   index={index}
+                  prizes={prizes}
                   onClick={() => setSelectedUser(entry)}
                 />
               ))}
@@ -79,6 +82,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
                     key={entry.leagueUserId}
                     entry={entry}
                     index={index + 3}
+                    prizes={prizes}
                     onClick={() => setSelectedUser(entry)}
                   />
                 ))}
@@ -194,10 +198,11 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
 interface RankingRowProps {
   entry: LeaderboardEntry
   index: number
+  prizes: LeaguePrize[]
   onClick: () => void
 }
 
-function RankingRow({ entry, index, onClick }: RankingRowProps) {
+function RankingRow({ entry, index, prizes, onClick }: RankingRowProps) {
   const initials = getInitials(entry.firstName, entry.lastName, entry.username)
   const displayName = getDisplayName(
     entry.firstName,
@@ -205,7 +210,7 @@ function RankingRow({ entry, index, onClick }: RankingRowProps) {
     entry.username
   )
   const rankStyle = getRankStyle(entry.rank)
-  const prize = getPrize(entry.rank)
+  const prize = getPrize(entry.rank, prizes)
 
   return (
     <button
@@ -305,11 +310,15 @@ function getRankStyle(rank: number) {
   return { bg: 'bg-secondary', ring: 'ring-border', text: 'text-muted-foreground' }
 }
 
-function getPrize(rank: number) {
-  if (rank === 1) return '1 000 Kč'
-  if (rank === 2) return '600 Kč'
-  if (rank === 3) return '200 Kč'
-  return null
+function getPrize(rank: number, prizes: LeaguePrize[]) {
+  const prize = prizes.find((p) => p.rank === rank)
+  if (!prize) return null
+
+  const formatted = new Intl.NumberFormat('cs-CZ', {
+    minimumFractionDigits: 0,
+  }).format(prize.amount / 100)
+
+  return `${formatted}\u00A0${prize.currency}`
 }
 
 function getInitials(

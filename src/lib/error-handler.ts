@@ -89,8 +89,10 @@ export function handleActionError(
       }
       fieldErrors[path].push(issue.message)
     })
+    // Use the first error message as the main message for better UX
+    const firstError = issues[0]?.message || 'Validation failed'
     return {
-      message: 'Validation failed',
+      message: firstError,
       code: 'VALIDATION_ERROR',
       fieldErrors,
     }

@@ -4,10 +4,22 @@ import { prisma } from '@/lib/prisma'
 import { requireLeagueMember } from '@/lib/user-auth-utils'
 import type { LeaderboardEntry } from '@/types/user'
 
+export interface LeaguePrize {
+  rank: number
+  amount: number
+  currency: string
+  label: string | null
+}
+
+export interface LeaderboardData {
+  entries: LeaderboardEntry[]
+  prizes: LeaguePrize[]
+}
+
 /**
- * Fetches leaderboard for a league with aggregated points
+ * Fetches leaderboard for a league with aggregated points and prizes
  */
-export async function getLeaderboard(leagueId: number): Promise<LeaderboardEntry[]> {
+export async function getLeaderboard(leagueId: number): Promise<LeaderboardData> {
   const { leagueUser, userId } = await requireLeagueMember(leagueId)
 
   // Fetch all league users with their bets
@@ -82,10 +94,32 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardEntry
   entries.sort((a, b) => b.totalPoints - a.totalPoints)
 
   // Add ranks
-  return entries.map((entry, index) => ({
+  const rankedEntries = entries.map((entry, index) => ({
     ...entry,
     rank: index + 1,
   }))
+
+  // Fetch prizes for this league
+  const prizes = await prisma.leaguePrize.findMany({
+    where: {
+      leagueId,
+      deletedAt: null,
+    },
+    orderBy: {
+      rank: 'asc',
+    },
+    select: {
+      rank: true,
+      amount: true,
+      currency: true,
+      label: true,
+    },
+  })
+
+  return {
+    entries: rankedEntries,
+    prizes,
+  }
 }
 
 
