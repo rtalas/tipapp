@@ -9,8 +9,6 @@ This project has been configured with a complete authentication system using Pri
 │   ├── auth.ts                    # Auth.js v5 configuration with CredentialsProvider
 │   ├── lib/
 │   │   └── prisma.ts              # Prisma client singleton
-│   ├── components/
-│   │   └── SignOutButton.tsx       # Sign out button component
 │   ├── types/
 │   │   └── next-auth.d.ts          # TypeScript types for extended session
 │   └── app/
