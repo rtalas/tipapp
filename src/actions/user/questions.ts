@@ -122,37 +122,31 @@ export async function saveQuestionBet(input: UserQuestionBetInput) {
     return { success: false, error: 'Betting is closed for this question' }
   }
 
-  const existingBet = await prisma.userSpecialBetQuestion.findFirst({
-    where: {
-      leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
-      leagueUserId: leagueUser.id,
-      deletedAt: null,
-    },
-  })
-
+  // Atomic upsert to prevent race conditions
   const now = new Date()
 
-  if (existingBet) {
-    await prisma.userSpecialBetQuestion.update({
-      where: { id: existingBet.id },
-      data: {
-        userBet: validated.userBet,
-        updatedAt: now,
-      },
-    })
-  } else {
-    await prisma.userSpecialBetQuestion.create({
-      data: {
+  await prisma.userSpecialBetQuestion.upsert({
+    where: {
+      leagueSpecialBetQuestionId_leagueUserId_deletedAt: {
         leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
         leagueUserId: leagueUser.id,
-        userBet: validated.userBet,
-        totalPoints: 0,
-        dateTime: now,
-        createdAt: now,
-        updatedAt: now,
+        deletedAt: null as any,
       },
-    })
-  }
+    },
+    update: {
+      userBet: validated.userBet,
+      updatedAt: now,
+    },
+    create: {
+      leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
+      leagueUserId: leagueUser.id,
+      userBet: validated.userBet,
+      totalPoints: 0,
+      dateTime: now,
+      createdAt: now,
+      updatedAt: now,
+    },
+  })
 
   revalidatePath(`/${question.leagueId}/questions`)
 

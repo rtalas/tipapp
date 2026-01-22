@@ -65,7 +65,7 @@ export async function createLeague(input: CreateLeagueInput) {
             data: validated.evaluatorRules.map((rule: { evaluatorTypeId: number; points: number }) => ({
               evaluatorTypeId: rule.evaluatorTypeId,
               leagueId: league.id,
-              points: String(rule.points),
+              points: rule.points,
               entity: 'match',
               name: typeMap.get(rule.evaluatorTypeId) || 'Rule',
               createdAt: now,
@@ -80,7 +80,7 @@ export async function createLeague(input: CreateLeagueInput) {
                 name: type.name,
                 evaluatorTypeId: type.id,
                 leagueId: league.id,
-                points: String(DEFAULT_EVALUATOR_POINTS[type.name] ?? 1),
+                points: DEFAULT_EVALUATOR_POINTS[type.name] ?? 1,
                 entity: 'match',
                 createdAt: now,
                 updatedAt: now,
@@ -149,7 +149,7 @@ async function updateEvaluatorRules(input: UpdateEvaluatorInput) {
               evaluatorTypeId: rule.evaluatorTypeId,
             },
             data: {
-              points: String(rule.points),
+              points: rule.points,
               updatedAt: new Date(),
             },
           })

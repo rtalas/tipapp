@@ -52,7 +52,7 @@ interface League {
 interface Evaluator {
   id: number
   name: string
-  points: string
+  points: number
   entity: string
   leagueId: number
   evaluatorTypeId: number
@@ -118,7 +118,7 @@ export function EvaluatorsContent({
   const handleStartEdit = (evaluator: Evaluator) => {
     setEditingId(evaluator.id)
     setEditNameValue(evaluator.name)
-    setEditPointsValue(evaluator.points)
+    setEditPointsValue(String(evaluator.points))
   }
 
   const handleCancelEditName = () => {

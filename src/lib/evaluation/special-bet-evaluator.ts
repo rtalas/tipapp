@@ -126,7 +126,7 @@ async function evaluateSpecialBet(
       if (isQuestionEvaluator(evaluator.EvaluatorType.name)) {
         const context = buildQuestionContext(userBet, specialBet)
         const multiplier = evaluateQuestion(context)
-        points = Math.round(multiplier * parseInt(evaluator.points, 10))
+        points = Math.round(multiplier * evaluator.points)
         awarded = points !== 0 // For tracking purposes
       }
       // Special handling for closest_value
@@ -137,13 +137,13 @@ async function evaluateSpecialBet(
           specialBet.UserSpecialBetSingle
         )
         awarded = (evaluatorFn as (ctx: ClosestValueContext) => boolean)(context)
-        points = awarded ? parseInt(evaluator.points, 10) : 0
+        points = awarded ? evaluator.points : 0
       }
       // Standard special bet evaluators
       else {
         const context = buildSpecialBetContext(userBet, specialBet)
         awarded = (evaluatorFn as (ctx: SpecialBetContext) => boolean)(context)
-        points = awarded ? parseInt(evaluator.points, 10) : 0
+        points = awarded ? evaluator.points : 0
       }
 
       evaluatorResults.push({

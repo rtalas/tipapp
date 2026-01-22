@@ -11,12 +11,12 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = registerSchema.parse(body);
 
-    // Check if username or email already exists
+    // Check if username or email already exists (email is case-insensitive)
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
           { username: validatedData.username },
-          { email: validatedData.email },
+          { email: validatedData.email.toLowerCase() },
         ],
       },
     });
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      if (existingUser.email === validatedData.email) {
+      if (existingUser.email.toLowerCase() === validatedData.email.toLowerCase()) {
         return NextResponse.json(
           { error: "Email already registered" },
           { status: 400 }
@@ -39,13 +39,13 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await hash(validatedData.password, 12);
 
-    // Create user
+    // Create user (store email in lowercase for case-insensitive comparisons)
     const user = await prisma.user.create({
       data: {
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
         username: validatedData.username,
-        email: validatedData.email,
+        email: validatedData.email.toLowerCase(),
         password: hashedPassword,
         isSuperadmin: false,
         notifyHours: 2,

@@ -39,7 +39,7 @@ describe('Question Evaluator', () => {
         League: {
           Evaluator: [
             {
-              points: '10',
+              points: 10,
               EvaluatorType: { name: 'question' },
             },
           ],
@@ -81,7 +81,7 @@ describe('Question Evaluator', () => {
         League: {
           Evaluator: [
             {
-              points: '10',
+              points: 10,
               EvaluatorType: { name: 'question' },
             },
           ],
@@ -123,7 +123,7 @@ describe('Question Evaluator', () => {
         League: {
           Evaluator: [
             {
-              points: '10',
+              points: 10,
               EvaluatorType: { name: 'question' },
             },
           ],
@@ -165,7 +165,7 @@ describe('Question Evaluator', () => {
         League: {
           Evaluator: [
             {
-              points: '15', // Odd number
+              points: 15, // Odd number
               EvaluatorType: { name: 'question' },
             },
           ],
@@ -196,7 +196,7 @@ describe('Question Evaluator', () => {
         League: {
           Evaluator: [
             {
-              points: '10',
+              points: 10,
               EvaluatorType: { name: 'question' },
             },
           ],
@@ -257,7 +257,7 @@ describe('Question Evaluator', () => {
         League: {
           Evaluator: [
             {
-              points: '10',
+              points: 10,
               EvaluatorType: { name: 'question' },
             },
           ],
@@ -295,7 +295,7 @@ describe('Question Evaluator', () => {
         League: {
           Evaluator: [
             {
-              points: '10',
+              points: 10,
               EvaluatorType: { name: 'question' },
             },
           ],
@@ -327,7 +327,7 @@ describe('Question Evaluator', () => {
         League: {
           Evaluator: [
             {
-              points: '10',
+              points: 10,
               EvaluatorType: { name: 'question' },
             },
           ],
@@ -368,7 +368,7 @@ describe('Question Evaluator', () => {
         League: {
           Evaluator: [
             {
-              points: '10',
+              points: 10,
               EvaluatorType: { name: 'question' },
             },
           ],
@@ -396,7 +396,7 @@ describe('Question Evaluator', () => {
         League: {
           Evaluator: [
             {
-              points: '10',
+              points: 10,
               EvaluatorType: { name: 'question' },
             },
           ],

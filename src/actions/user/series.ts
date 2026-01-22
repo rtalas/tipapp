@@ -132,39 +132,33 @@ export async function saveSeriesBet(input: UserSeriesBetInput) {
     return { success: false, error: 'Betting is closed for this series' }
   }
 
-  const existingBet = await prisma.userSpecialBetSerie.findFirst({
-    where: {
-      leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
-      leagueUserId: leagueUser.id,
-      deletedAt: null,
-    },
-  })
-
+  // Atomic upsert to prevent race conditions
   const now = new Date()
 
-  if (existingBet) {
-    await prisma.userSpecialBetSerie.update({
-      where: { id: existingBet.id },
-      data: {
-        homeTeamScore: validated.homeTeamScore,
-        awayTeamScore: validated.awayTeamScore,
-        updatedAt: now,
-      },
-    })
-  } else {
-    await prisma.userSpecialBetSerie.create({
-      data: {
+  await prisma.userSpecialBetSerie.upsert({
+    where: {
+      leagueSpecialBetSerieId_leagueUserId_deletedAt: {
         leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
         leagueUserId: leagueUser.id,
-        homeTeamScore: validated.homeTeamScore,
-        awayTeamScore: validated.awayTeamScore,
-        totalPoints: 0,
-        dateTime: now,
-        createdAt: now,
-        updatedAt: now,
+        deletedAt: null as any,
       },
-    })
-  }
+    },
+    update: {
+      homeTeamScore: validated.homeTeamScore,
+      awayTeamScore: validated.awayTeamScore,
+      updatedAt: now,
+    },
+    create: {
+      leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
+      leagueUserId: leagueUser.id,
+      homeTeamScore: validated.homeTeamScore,
+      awayTeamScore: validated.awayTeamScore,
+      totalPoints: 0,
+      dateTime: now,
+      createdAt: now,
+      updatedAt: now,
+    },
+  })
 
   revalidatePath(`/${series.leagueId}/series`)
 

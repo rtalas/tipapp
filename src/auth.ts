@@ -16,12 +16,12 @@ export const { handlers, auth } = NextAuth({
         try {
           const validatedCredentials = signInSchema.parse(credentials);
 
-          // Find user by username or email
+          // Find user by username or email (email is case-insensitive)
           const user = await prisma.user.findFirst({
             where: {
               OR: [
                 { username: validatedCredentials.username },
-                { email: validatedCredentials.username },
+                { email: validatedCredentials.username.toLowerCase() },
               ],
             },
           });

@@ -12,7 +12,7 @@ model Evaluator {
   id              Int           @id @default(autoincrement())
   name            String        @db.VarChar(255)
   evaluatorTypeId Int
-  points          String        @db.VarChar(255)
+  points          Int
   leagueId        Int
   entity          String        @default("match") @db.VarChar(255)
   createdAt       DateTime      @db.Timestamptz(6)
@@ -142,6 +142,9 @@ model LeagueSpecialBetSerie {
   League                                                  League                @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   SpecialBetSerie                                         SpecialBetSerie       @relation(fields: [specialBetSerieId], references: [id], onDelete: NoAction)
   UserSpecialBetSerie                                     UserSpecialBetSerie[]
+
+  @@index([leagueId, deletedAt])
+  @@index([isEvaluated, deletedAt])
 }
 
 model LeagueSpecialBetSingle {
@@ -162,6 +165,9 @@ model LeagueSpecialBetSingle {
   SpecialBetSingle         SpecialBetSingle       @relation(fields: [specialBetSingleId], references: [id], onDelete: NoAction)
   LeagueTeam               LeagueTeam?            @relation(fields: [specialBetTeamResultId], references: [id])
   UserSpecialBetSingle     UserSpecialBetSingle[]
+
+  @@index([leagueId, deletedAt])
+  @@index([isEvaluated, deletedAt])
 }
 
 model LeagueSpecialBetQuestion {
@@ -217,6 +223,8 @@ model LeagueUser {
   UserSpecialBetSingle   UserSpecialBetSingle[]
   UserSpecialBetQuestion UserSpecialBetQuestion[]
   Message                Message[]
+
+  @@unique([leagueId, userId, deletedAt])
 }
 
 model Match {
@@ -396,6 +404,11 @@ model UserBet {
   LeagueMatch   LeagueMatch   @relation(fields: [leagueMatchId], references: [id], onDelete: NoAction)
   LeagueUser    LeagueUser    @relation(fields: [leagueUserId], references: [id], onDelete: Cascade)
   LeaguePlayer  LeaguePlayer? @relation(fields: [scorerId], references: [id])
+
+  @@unique([leagueMatchId, leagueUserId, deletedAt])
+  @@index([leagueMatchId, leagueUserId, deletedAt])
+  @@index([leagueUserId, deletedAt])
+  @@index([leagueMatchId, deletedAt])
 }
 
 model UserRequest {
@@ -439,6 +452,8 @@ model UserSpecialBetSerie {
   deletedAt               DateTime?             @db.Timestamptz(6)
   LeagueSpecialBetSerie   LeagueSpecialBetSerie @relation(fields: [leagueSpecialBetSerieId], references: [id], onDelete: NoAction)
   LeagueUser              LeagueUser            @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
+
+  @@unique([leagueSpecialBetSerieId, leagueUserId, deletedAt])
 }
 
 model UserSpecialBetSingle {
@@ -457,6 +472,8 @@ model UserSpecialBetSingle {
   LeagueUser               LeagueUser             @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
   LeaguePlayer             LeaguePlayer?          @relation(fields: [playerResultId], references: [id])
   LeagueTeam               LeagueTeam?            @relation(fields: [teamResultId], references: [id])
+
+  @@unique([leagueSpecialBetSingleId, leagueUserId, deletedAt])
 }
 
 model UserSpecialBetQuestion {
@@ -471,6 +488,8 @@ model UserSpecialBetQuestion {
   deletedAt                  DateTime?                  @db.Timestamptz(6)
   LeagueSpecialBetQuestion   LeagueSpecialBetQuestion   @relation(fields: [leagueSpecialBetQuestionId], references: [id], onDelete: NoAction)
   LeagueUser                 LeagueUser                 @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
+
+  @@unique([leagueSpecialBetQuestionId, leagueUserId, deletedAt])
 }
 
 model TopScorerRankingVersion {

@@ -74,7 +74,7 @@ async function evaluateQuestion(
     throw new Error('No question evaluator configured for this league')
   }
 
-  const basePoints = parseInt(questionEvaluator.points, 10) || 0
+  const basePoints = questionEvaluator.points || 0
   const correctPoints = basePoints
   const wrongPoints = Math.floor(basePoints / 2) * -1 // Divide by 2, then negate
 

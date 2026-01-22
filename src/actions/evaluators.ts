@@ -48,7 +48,7 @@ export async function updateEvaluatorPoints(input: UpdateEvaluatorPointsInput) {
       await prisma.evaluator.update({
         where: { id: validated.evaluatorId },
         data: {
-          points: String(validated.points),
+          points: validated.points,
           updatedAt: new Date(),
         },
       })
@@ -69,7 +69,7 @@ export async function createEvaluator(input: CreateEvaluatorInput) {
           leagueId: validated.leagueId,
           evaluatorTypeId: validated.evaluatorTypeId,
           name: validated.name,
-          points: String(validated.points),
+          points: validated.points,
           entity: 'match',
           createdAt: new Date(),
           updatedAt: new Date(),

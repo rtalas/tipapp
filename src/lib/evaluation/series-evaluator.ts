@@ -107,7 +107,7 @@ async function evaluateSeries(
       }
 
       const awarded = evaluatorFn(context)
-      const points = awarded ? parseInt(evaluator.points, 10) : 0
+      const points = awarded ? evaluator.points : 0
 
       evaluatorResults.push({
         evaluatorName: evaluator.EvaluatorType.name,

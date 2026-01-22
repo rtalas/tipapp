@@ -226,50 +226,41 @@ export async function saveMatchBet(input: UserMatchBetInput) {
     }
   }
 
-  // Check if bet already exists
-  const existingBet = await prisma.userBet.findFirst({
-    where: {
-      leagueMatchId: validated.leagueMatchId,
-      leagueUserId: leagueUser.id,
-      deletedAt: null,
-    },
-  })
-
+  // Atomic upsert to prevent race conditions
   const now = new Date()
 
-  if (existingBet) {
-    // Update existing bet
-    await prisma.userBet.update({
-      where: { id: existingBet.id },
-      data: {
-        homeScore: validated.homeScore,
-        awayScore: validated.awayScore,
-        scorerId: validated.scorerId,
-        noScorer: validated.noScorer,
-        overtime: validated.overtime,
-        homeAdvanced: validated.homeAdvanced,
-        updatedAt: now,
-      },
-    })
-  } else {
-    // Create new bet
-    await prisma.userBet.create({
-      data: {
+  await prisma.userBet.upsert({
+    where: {
+      leagueMatchId_leagueUserId_deletedAt: {
         leagueMatchId: validated.leagueMatchId,
         leagueUserId: leagueUser.id,
-        homeScore: validated.homeScore,
-        awayScore: validated.awayScore,
-        scorerId: validated.scorerId,
-        noScorer: validated.noScorer,
-        overtime: validated.overtime,
-        homeAdvanced: validated.homeAdvanced,
-        dateTime: now,
-        totalPoints: 0,
-        createdAt: now,
-        updatedAt: now,
+        deletedAt: null as any,
       },
-    })
-  }
+    },
+    update: {
+      homeScore: validated.homeScore,
+      awayScore: validated.awayScore,
+      scorerId: validated.scorerId,
+      noScorer: validated.noScorer,
+      overtime: validated.overtime,
+      homeAdvanced: validated.homeAdvanced,
+      updatedAt: now,
+    },
+    create: {
+      leagueMatchId: validated.leagueMatchId,
+      leagueUserId: leagueUser.id,
+      homeScore: validated.homeScore,
+      awayScore: validated.awayScore,
+      scorerId: validated.scorerId,
+      noScorer: validated.noScorer,
+      overtime: validated.overtime,
+      homeAdvanced: validated.homeAdvanced,
+      dateTime: now,
+      totalPoints: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+  })
 
   revalidatePath(`/${leagueMatch.leagueId}/matches`)
 

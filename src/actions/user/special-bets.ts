@@ -194,41 +194,35 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
     return { success: false, error: 'Betting is closed for this special bet' }
   }
 
-  const existingBet = await prisma.userSpecialBetSingle.findFirst({
-    where: {
-      leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
-      leagueUserId: leagueUser.id,
-      deletedAt: null,
-    },
-  })
-
+  // Atomic upsert to prevent race conditions
   const now = new Date()
 
-  if (existingBet) {
-    await prisma.userSpecialBetSingle.update({
-      where: { id: existingBet.id },
-      data: {
-        teamResultId: validated.teamResultId,
-        playerResultId: validated.playerResultId,
-        value: validated.value,
-        updatedAt: now,
-      },
-    })
-  } else {
-    await prisma.userSpecialBetSingle.create({
-      data: {
+  await prisma.userSpecialBetSingle.upsert({
+    where: {
+      leagueSpecialBetSingleId_leagueUserId_deletedAt: {
         leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
         leagueUserId: leagueUser.id,
-        teamResultId: validated.teamResultId,
-        playerResultId: validated.playerResultId,
-        value: validated.value,
-        totalPoints: 0,
-        dateTime: now,
-        createdAt: now,
-        updatedAt: now,
+        deletedAt: null as any,
       },
-    })
-  }
+    },
+    update: {
+      teamResultId: validated.teamResultId,
+      playerResultId: validated.playerResultId,
+      value: validated.value,
+      updatedAt: now,
+    },
+    create: {
+      leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
+      leagueUserId: leagueUser.id,
+      teamResultId: validated.teamResultId,
+      playerResultId: validated.playerResultId,
+      value: validated.value,
+      totalPoints: 0,
+      dateTime: now,
+      createdAt: now,
+      updatedAt: now,
+    },
+  })
 
   revalidatePath(`/${specialBet.leagueId}/special-bets`)
 

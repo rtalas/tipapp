@@ -26,6 +26,9 @@ Next.js 16 (App Router) • Auth.js v5 (CredentialsProvider + JWT) • PostgreSQ
 ## Database Rules (CRITICAL)
 - Tables use PascalCase (`User`, `Match`, `UserBet`), mapped to `prisma.user`, `prisma.match`.
 - **DO NOT** rename fields to camelCase. Use introspected schema exactly as-is.
+- **Evaluator.points:** Uses `Int` type (not String) - stored as integers for performance and type safety.
+- **Unique constraints:** All bet tables have unique constraints on `[foreignKey, leagueUserId, deletedAt]` to prevent duplicates.
+- **Performance indexes:** Critical query paths have composite indexes for fast lookups.
 
 ## Business Logic
 - `/admin/**` requires `isSuperadmin: true` in JWT.
@@ -53,6 +56,7 @@ src/
 │   ├── constants.ts    # SPORT_IDS.HOCKEY, SPORT_IDS.FOOTBALL
 │   ├── auth-utils.ts   # requireAdmin()
 │   ├── user-auth-utils.ts # requireLeagueMember()
+│   ├── user-action-utils.ts # executeUserAction() wrapper (for future use)
 │   ├── league-utils.ts # validateLeagueAccess()
 │   ├── error-handler.ts # AppError, handleActionError()
 │   ├── server-action-utils.ts # executeServerAction()
@@ -63,10 +67,11 @@ src/
 ## Auth
 - bcryptjs (salt: 12)
 - Session: `user.id`, `user.username`, `user.isSuperadmin`
-- Login: username OR email
+- Login: username OR email (case-insensitive for emails)
+- Email normalization: All emails stored in lowercase for consistent authentication
 
 ## Evaluators (src/lib/evaluators/)
-13 modular evaluators with 57 tests (100% pass):
+13 modular evaluators with full test coverage:
 1. **exact-score** - Exact match (regulation time)
 2. **score-difference** - Goal diff (excl. exact)
 3. **winner** - Winner (final time, incl. OT/SO)
@@ -87,7 +92,8 @@ src/
 - ✅ **Phase 3:** Admin User Betting (expandable rows, league-scoped architecture, questions)
 - ✅ **Phase 4:** Evaluation Engine (13 evaluators, 68 tests)
 - ✅ **Phase 5:** User-Side App (mobile-first, PWA, bottom nav, friend predictions, pull-to-refresh)
-- 🔄 **Phase 6:** Polish (configurable prizes ✅, point integration, push notifications, optimization)
+- ✅ **Phase 6:** Polish (configurable prizes, race condition fixes, performance optimization, security hardening)
+- 🔄 **Phase 7:** Production (push notifications, monitoring, final deployment)
 
 ## Key Features
 
@@ -119,19 +125,28 @@ src/
 - **Metrics:** State variables 11→3 (73% reduction), 100% accessibility, single validation source
 - **Utils:** `executeServerAction()` wrapper eliminates duplicate try-catch (89 lines removed)
 
-### Security Audit (Jan 2026) - 10/24 issues fixed
-**Fixed (Critical):**
+### Security Audit (Jan 2026) - 20/24 issues fixed
+**Fixed (Critical - First Audit):**
 - CSRF protection (origin + referer validation)
 - Email injection prevention (`escapeHtml()`, `escapeText()`)
 - Production error logging (console.error + env context)
 - Security headers (nosniff, DENY, XSS-Protection, CSP, Permissions-Policy)
 
-**Fixed (Medium):**
+**Fixed (Medium - First Audit):**
 - Email unique constraint verified
 - Deduplicated signInSchema
 - Match future date validation
 - Password reset token cleanup
 - Dead code removed (getLogs, clearLogs, sendLogsToServer)
+
+**Fixed (Code Review - Jan 22, 2026):**
+- **Race conditions:** Atomic upserts prevent concurrent bet duplicates (matches, series, special bets, questions)
+- **Console.log leak:** Removed session data logging in login page
+- **Email normalization:** Case-insensitive email authentication
+- **Type safety:** Evaluator.points String → Int migration
+- **Database indexes:** Performance optimization for user-facing queries
+- **Unique constraints:** LeagueUser and all bet tables prevent data integrity issues
+- **Error handling:** Standardized with executeUserAction wrapper (available for future use)
 
 **Backlog:**
 - Login/registration rate limiting
@@ -139,4 +154,13 @@ src/
 - CORS, audit logging, token blacklist, email retry queue
 
 ### Build Status
-✅ Production build clean (0 errors/warnings) • ✅ 324/330 tests pass • ✅ 37 routes • ✅ PWA ready
+✅ Production build clean (0 errors/warnings) • ✅ 366/366 tests pass • ✅ 37 routes • ✅ PWA ready
+
+### Race Condition Prevention (Jan 2026)
+User betting actions use **atomic upserts** to prevent duplicate bets during concurrent submissions:
+- `saveMatchBet()` - Upsert on `[leagueMatchId, leagueUserId, deletedAt]`
+- `saveSeriesBet()` - Upsert on `[leagueSpecialBetSerieId, leagueUserId, deletedAt]`
+- `saveSpecialBet()` - Upsert on `[leagueSpecialBetSingleId, leagueUserId, deletedAt]`
+- `saveQuestionBet()` - Upsert on `[leagueQuestionId, leagueUserId, deletedAt]`
+
+All bet tables have unique constraints ensuring database-level prevention of duplicates.
