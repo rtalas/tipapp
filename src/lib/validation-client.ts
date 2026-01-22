@@ -1,7 +1,14 @@
 /**
- * Client-side validation utilities that mirror server-side Zod schemas
- * This prevents duplication of validation logic between client and server
- * Use these in components for immediate feedback before sending to server
+ * Client-side validation utilities that mirror server-side Zod schemas.
+ * Use these in components for immediate feedback before sending to server.
+ *
+ * @example
+ * ```ts
+ * const result = validate.teamEdit(formData)
+ * if (!result.success) {
+ *   console.error(result.error)
+ * }
+ * ```
  */
 
 import {
@@ -26,114 +33,55 @@ import {
 } from './validation'
 
 /**
- * Validates team edit form data
- * Returns validation result with detailed error information
+ * Centralized validation namespace for client-side form validation.
+ * All validators return Zod's SafeParseReturnType with success flag and data/error.
  */
-export function validateTeamEdit(data: unknown) {
-  return updateTeamSchema.safeParse(data)
-}
+export const validate = {
+  teamEdit: (data: unknown) => updateTeamSchema.safeParse(data),
+  teamCreate: (data: unknown) => createTeamSchema.safeParse(data),
+  playerEdit: (data: unknown) => updatePlayerSchema.safeParse(data),
+  playerCreate: (data: unknown) => createPlayerSchema.safeParse(data),
+  forgotPassword: (data: unknown) => forgotPasswordSchema.safeParse(data),
+  resetPassword: (data: unknown) => resetPasswordSchema.safeParse(data),
+  userBetCreate: (data: unknown) => createUserBetSchema.safeParse(data),
+  userBetEdit: (data: unknown) => updateUserBetSchema.safeParse(data),
+  userSeriesBetCreate: (data: unknown) => createUserSeriesBetSchema.safeParse(data),
+  userSeriesBetEdit: (data: unknown) => updateUserSeriesBetSchema.safeParse(data),
+  userSpecialBetCreate: (data: unknown) => createUserSpecialBetSchema.safeParse(data),
+  userSpecialBetEdit: (data: unknown) => updateUserSpecialBetSchema.safeParse(data),
+  questionEdit: (data: unknown) => updateQuestionSchema.safeParse(data),
+  userQuestionBetCreate: (data: unknown) => createUserQuestionBetSchema.safeParse(data),
+  userQuestionBetEdit: (data: unknown) => updateUserQuestionBetSchema.safeParse(data),
+} as const
 
-/**
- * Validates team creation form data
- */
-export function validateTeamCreate(data: unknown) {
-  return createTeamSchema.safeParse(data)
-}
-
-/**
- * Validates player edit form data
- */
-export function validatePlayerEdit(data: unknown) {
-  return updatePlayerSchema.safeParse(data)
-}
-
-/**
- * Validates player creation form data
- */
-export function validatePlayerCreate(data: unknown) {
-  return createPlayerSchema.safeParse(data)
-}
-
-/**
- * Validates forgot password form data
- */
-export function validateForgotPassword(data: unknown) {
-  return forgotPasswordSchema.safeParse(data)
-}
-
-/**
- * Validates reset password form data
- */
-export function validateResetPassword(data: unknown) {
-  return resetPasswordSchema.safeParse(data)
-}
-
-/**
- * Validates user bet creation form data
- */
-export function validateUserBetCreate(data: unknown) {
-  return createUserBetSchema.safeParse(data)
-}
-
-/**
- * Validates user bet edit form data
- */
-export function validateUserBetEdit(data: unknown) {
-  return updateUserBetSchema.safeParse(data)
-}
-
-/**
- * Validates user series bet creation form data
- */
-export function validateUserSeriesBetCreate(data: unknown) {
-  return createUserSeriesBetSchema.safeParse(data)
-}
-
-/**
- * Validates user series bet edit form data
- */
-export function validateUserSeriesBetEdit(data: unknown) {
-  return updateUserSeriesBetSchema.safeParse(data)
-}
-
-/**
- * Validates special bet result entry form data
- */
-function validateSpecialBetEdit(data: unknown) {
-  return updateSpecialBetResultSchema.safeParse(data)
-}
-
-/**
- * Validates user special bet creation form data
- */
-export function validateUserSpecialBetCreate(data: unknown) {
-  return createUserSpecialBetSchema.safeParse(data)
-}
-
-/**
- * Validates user special bet edit form data
- */
-export function validateUserSpecialBetEdit(data: unknown) {
-  return updateUserSpecialBetSchema.safeParse(data)
-}
-
-/**
- * Validates question edit form data
- */
-export function validateQuestionEdit(data: unknown) {
-  return updateQuestionSchema.safeParse(data)
-}
-
-/**
- * Validates user question bet creation form data
- */
-export function validateUserQuestionBetCreate(data: unknown) {
-  return createUserQuestionBetSchema.safeParse(data)
-}
-
-/**
- * Validates user question bet edit form data
- */
-export function validateUserQuestionBetEdit(data: unknown) {
-  return updateUserQuestionBetSchema.safeParse(data)
-}
+// Legacy named exports for backwards compatibility (use `validate` namespace instead)
+/** @deprecated Use `validate.teamEdit` instead */
+export const validateTeamEdit = validate.teamEdit
+/** @deprecated Use `validate.teamCreate` instead */
+export const validateTeamCreate = validate.teamCreate
+/** @deprecated Use `validate.playerEdit` instead */
+export const validatePlayerEdit = validate.playerEdit
+/** @deprecated Use `validate.playerCreate` instead */
+export const validatePlayerCreate = validate.playerCreate
+/** @deprecated Use `validate.forgotPassword` instead */
+export const validateForgotPassword = validate.forgotPassword
+/** @deprecated Use `validate.resetPassword` instead */
+export const validateResetPassword = validate.resetPassword
+/** @deprecated Use `validate.userBetCreate` instead */
+export const validateUserBetCreate = validate.userBetCreate
+/** @deprecated Use `validate.userBetEdit` instead */
+export const validateUserBetEdit = validate.userBetEdit
+/** @deprecated Use `validate.userSeriesBetCreate` instead */
+export const validateUserSeriesBetCreate = validate.userSeriesBetCreate
+/** @deprecated Use `validate.userSeriesBetEdit` instead */
+export const validateUserSeriesBetEdit = validate.userSeriesBetEdit
+/** @deprecated Use `validate.userSpecialBetCreate` instead */
+export const validateUserSpecialBetCreate = validate.userSpecialBetCreate
+/** @deprecated Use `validate.userSpecialBetEdit` instead */
+export const validateUserSpecialBetEdit = validate.userSpecialBetEdit
+/** @deprecated Use `validate.questionEdit` instead */
+export const validateQuestionEdit = validate.questionEdit
+/** @deprecated Use `validate.userQuestionBetCreate` instead */
+export const validateUserQuestionBetCreate = validate.userQuestionBetCreate
+/** @deprecated Use `validate.userQuestionBetEdit` instead */
+export const validateUserQuestionBetEdit = validate.userQuestionBetEdit

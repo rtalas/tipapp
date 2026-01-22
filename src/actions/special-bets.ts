@@ -1,5 +1,7 @@
 'use server'
 
+import { Prisma } from '@prisma/client'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildSpecialBetsWhere } from '@/lib/query-builders'
@@ -10,7 +12,6 @@ import {
   type CreateSpecialBetInput,
   type UpdateSpecialBetResultInput,
 } from '@/lib/validation/admin'
-import { deleteByIdSchema } from '@/lib/validation/admin'
 
 export async function createSpecialBet(input: CreateSpecialBetInput) {
   return executeServerAction(input, {
@@ -140,15 +141,14 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
 }
 
 export async function deleteSpecialBet(id: number) {
+  'use server'
   return executeServerAction({ id }, {
-    validator: deleteByIdSchema,
+    validator: z.object({ id: z.number().int().positive() }),
     handler: async (validated) => {
-      // Soft delete by setting deletedAt
       await prisma.leagueSpecialBetSingle.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
-
       return {}
     },
     revalidatePath: '/admin/special-bets',
@@ -156,45 +156,15 @@ export async function deleteSpecialBet(id: number) {
   })
 }
 
-// Query functions (internal use only)
-async function getSpecialBets(filters?: {
-  leagueId?: number
-  status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
-  type?: 'all' | 'team' | 'player' | 'value'
-}) {
-  const whereConditions = buildSpecialBetsWhere(filters)
-
-  return prisma.leagueSpecialBetSingle.findMany({
-    where: whereConditions,
-    include: specialBetInclude,
-    orderBy: { dateTime: 'desc' },
-  })
-}
-
-// Export type for components
-export type SpecialBetWithDetails = Awaited<ReturnType<typeof getSpecialBets>>[number]
-
-async function getSpecialBetById(specialBetId: number) {
-  return prisma.leagueSpecialBetSingle.findUnique({
-    where: { id: specialBetId, deletedAt: null },
-    include: {
-      League: true,
-      SpecialBetSingle: true,
-      LeagueTeam: {
-        include: { Team: true },
-      },
-      LeaguePlayer: {
-        include: { Player: true },
-      },
-      UserSpecialBetSingle: {
-        where: { deletedAt: null },
-        include: {
-          LeagueUser: {
-            include: { User: true },
-          },
-        },
-      },
-    },
-  })
-}
-
+// Export type for components (derived from shared query structure)
+export type SpecialBetWithDetails = Awaited<
+  ReturnType<
+    () => Promise<
+      Array<
+        Prisma.LeagueSpecialBetSingleGetPayload<{
+          include: typeof specialBetInclude
+        }>
+      >
+    >
+  >
+>[number]

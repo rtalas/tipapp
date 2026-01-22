@@ -150,39 +150,3 @@ export async function deleteQuestion(id: number) {
     requiresAdmin: true,
   })
 }
-
-/**
- * Get all questions with optional filters (internal use only)
- */
-async function getQuestions(filters?: {
-  leagueId?: number
-  status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
-}) {
-  const whereConditions = buildQuestionWhere(filters)
-
-  return prisma.leagueSpecialBetQuestion.findMany({
-    where: whereConditions,
-    include: questionInclude,
-    orderBy: { dateTime: 'desc' },
-  })
-}
-
-/**
- * Get single question by ID with full details (internal use only)
- */
-async function getQuestionById(questionId: number) {
-  return prisma.leagueSpecialBetQuestion.findUnique({
-    where: { id: questionId, deletedAt: null },
-    include: {
-      League: true,
-      UserSpecialBetQuestion: {
-        where: { deletedAt: null },
-        include: {
-          LeagueUser: {
-            include: { User: true },
-          },
-        },
-      },
-    },
-  })
-}

@@ -1,9 +1,10 @@
 'use server'
 
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildLeagueMatchWhere } from '@/lib/query-builders'
-import { leagueMatchInclude, leagueMatchWithBetsInclude, matchWithEvaluatorsInclude } from '@/lib/prisma-helpers'
+import { leagueMatchWithBetsInclude } from '@/lib/prisma-helpers'
 import {
   createMatchSchema,
   updateMatchSchema,
@@ -12,7 +13,6 @@ import {
   type UpdateMatchInput,
   type UpdateMatchResultInput,
 } from '@/lib/validation/admin'
-import { deleteByIdSchema } from '@/lib/validation/admin'
 
 export async function createMatch(input: CreateMatchInput) {
   return executeServerAction(input, {
@@ -201,16 +201,15 @@ export async function updateMatchResult(input: UpdateMatchResultInput) {
   })
 }
 
-export async function deleteMatch(matchId: number) {
-  return executeServerAction({ id: matchId }, {
-    validator: deleteByIdSchema,
+export async function deleteMatch(id: number) {
+  'use server'
+  return executeServerAction({ id }, {
+    validator: z.object({ id: z.number().int().positive() }),
     handler: async (validated) => {
-      // Soft delete by setting deletedAt
       await prisma.match.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
-
       return {}
     },
     revalidatePath: '/admin/matches',

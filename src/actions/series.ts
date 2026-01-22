@@ -1,5 +1,6 @@
 'use server'
 
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildSeriesWhere } from '@/lib/query-builders'
@@ -10,7 +11,6 @@ import {
   type CreateSeriesInput,
   type UpdateSeriesResultInput,
 } from '@/lib/validation/admin'
-import { deleteByIdSchema } from '@/lib/validation/admin'
 
 export async function createSeries(input: CreateSeriesInput) {
   return executeServerAction(input, {
@@ -83,56 +83,17 @@ export async function updateSeriesResult(input: UpdateSeriesResultInput) {
 }
 
 export async function deleteSeries(id: number) {
+  'use server'
   return executeServerAction({ id }, {
-    validator: deleteByIdSchema,
+    validator: z.object({ id: z.number().int().positive() }),
     handler: async (validated) => {
-      // Soft delete by setting deletedAt
       await prisma.leagueSpecialBetSerie.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
-
       return {}
     },
     revalidatePath: '/admin/series',
     requiresAdmin: true,
   })
 }
-
-// Query functions (internal use only)
-async function getSeries(filters?: {
-  leagueId?: number
-  status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
-}) {
-  const whereConditions = buildSeriesWhere(filters)
-
-  return prisma.leagueSpecialBetSerie.findMany({
-    where: whereConditions,
-    include: seriesInclude,
-    orderBy: { dateTime: 'desc' },
-  })
-}
-
-async function getSeriesById(seriesId: number) {
-  return prisma.leagueSpecialBetSerie.findUnique({
-    where: { id: seriesId, deletedAt: null },
-    include: {
-      League: true,
-      LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam: {
-        include: { Team: true },
-      },
-      LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam: {
-        include: { Team: true },
-      },
-      UserSpecialBetSerie: {
-        where: { deletedAt: null },
-        include: {
-          LeagueUser: {
-            include: { User: true },
-          },
-        },
-      },
-    },
-  })
-}
-

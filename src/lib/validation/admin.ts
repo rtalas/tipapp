@@ -84,10 +84,6 @@ export const assignTeamSchema = z.object({
 
 export type AssignTeamInput = z.infer<typeof assignTeamSchema>
 
-const removeTeamSchema = z.object({
-  leagueTeamId: z.number().int().positive(),
-})
-
 // Player assignment schemas
 export const assignPlayerSchema = z.object({
   leagueTeamId: z.number().int().positive(),
