@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userMatchBetSchema, type UserMatchBetInput } from '@/lib/validation/user'
+import { nullableUniqueConstraint } from '@/lib/prisma-utils'
+import { AppError } from '@/lib/error-handler'
+import { SPORT_IDS } from '@/lib/constants'
 
 /**
  * Fetches matches for a league with the current user's bets
@@ -156,6 +159,7 @@ export type FriendPrediction = Awaited<
 /**
  * Creates or updates a match bet for the current user
  * Enforces betting lock (cannot bet after match starts)
+ * Uses Serializable transaction for data consistency
  */
 export async function saveMatchBet(input: UserMatchBetInput) {
   const parsed = userMatchBetSchema.safeParse(input)
@@ -169,101 +173,141 @@ export async function saveMatchBet(input: UserMatchBetInput) {
 
   const validated = parsed.data
 
-  // Get the match and verify membership
-  const leagueMatch = await prisma.leagueMatch.findUnique({
+  // Get the match leagueId for membership check (outside transaction)
+  const matchInfo = await prisma.leagueMatch.findUnique({
     where: { id: validated.leagueMatchId, deletedAt: null },
-    include: {
-      Match: {
-        include: {
-          LeagueTeam_Match_homeTeamIdToLeagueTeam: true,
-          LeagueTeam_Match_awayTeamIdToLeagueTeam: true,
-        },
-      },
-    },
+    select: { leagueId: true },
   })
 
-  if (!leagueMatch) {
+  if (!matchInfo) {
     return { success: false, error: 'Match not found' }
   }
 
-  const { leagueUser } = await requireLeagueMember(leagueMatch.leagueId)
+  // Verify league membership (outside transaction)
+  const { leagueUser } = await requireLeagueMember(matchInfo.leagueId)
 
-  // Check betting lock
-  if (!isBettingOpen(leagueMatch.Match.dateTime)) {
-    return {
-      success: false,
-      error: 'Betting is closed for this match',
-    }
-  }
+  // Wrap database operations in Serializable transaction
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        // Fetch match details within transaction for consistency
+        const leagueMatch = await tx.leagueMatch.findUnique({
+          where: { id: validated.leagueMatchId, deletedAt: null },
+          include: {
+            League: { select: { sportId: true } },
+            Match: {
+              include: {
+                LeagueTeam_Match_homeTeamIdToLeagueTeam: true,
+                LeagueTeam_Match_awayTeamIdToLeagueTeam: true,
+              },
+            },
+          },
+        })
 
-  // Validate mutual exclusivity between scorerId and noScorer
-  if (validated.noScorer === true && validated.scorerId !== null) {
-    return {
-      success: false,
-      error: 'Cannot set both scorer and no scorer',
-    }
-  }
+        if (!leagueMatch) {
+          throw new AppError('Match not found', 'NOT_FOUND', 404)
+        }
 
-  // Verify scorer belongs to one of the teams if provided
-  if (validated.scorerId) {
-    const scorer = await prisma.leaguePlayer.findUnique({
-      where: { id: validated.scorerId, deletedAt: null },
-    })
+        // Check betting lock
+        if (!isBettingOpen(leagueMatch.Match.dateTime)) {
+          throw new AppError(
+            'Betting is closed for this match',
+            'BETTING_CLOSED',
+            400
+          )
+        }
 
-    if (!scorer) {
-      return { success: false, error: 'Scorer not found' }
-    }
+        // Validate mutual exclusivity between scorerId and noScorer
+        if (validated.noScorer === true && validated.scorerId !== null) {
+          throw new AppError(
+            'Cannot set both scorer and no scorer',
+            'VALIDATION_ERROR',
+            400
+          )
+        }
 
-    const isValidScorer =
-      scorer.leagueTeamId === leagueMatch.Match.homeTeamId ||
-      scorer.leagueTeamId === leagueMatch.Match.awayTeamId
+        // Validate that noScorer can only be set for soccer matches
+        if (validated.noScorer === true && leagueMatch.League.sportId !== SPORT_IDS.FOOTBALL) {
+          throw new AppError(
+            'No scorer option is only available for soccer matches',
+            'VALIDATION_ERROR',
+            400
+          )
+        }
 
-    if (!isValidScorer) {
-      return {
-        success: false,
-        error: 'Scorer must belong to one of the teams playing',
-      }
-    }
-  }
+        // Verify scorer belongs to one of the teams if provided
+        if (validated.scorerId) {
+          const scorer = await tx.leaguePlayer.findUnique({
+            where: { id: validated.scorerId, deletedAt: null },
+          })
 
-  // Atomic upsert to prevent race conditions
-  const now = new Date()
+          if (!scorer) {
+            throw new AppError('Scorer not found', 'NOT_FOUND', 404)
+          }
 
-  await prisma.userBet.upsert({
-    where: {
-      leagueMatchId_leagueUserId_deletedAt: {
-        leagueMatchId: validated.leagueMatchId,
-        leagueUserId: leagueUser.id,
-        deletedAt: null as any,
+          const isValidScorer =
+            scorer.leagueTeamId === leagueMatch.Match.homeTeamId ||
+            scorer.leagueTeamId === leagueMatch.Match.awayTeamId
+
+          if (!isValidScorer) {
+            throw new AppError(
+              'Scorer must belong to one of the teams playing',
+              'VALIDATION_ERROR',
+              400
+            )
+          }
+        }
+
+        // Atomic upsert to prevent race conditions
+        const now = new Date()
+
+        await tx.userBet.upsert({
+          where: {
+            leagueMatchId_leagueUserId_deletedAt: nullableUniqueConstraint({
+              leagueMatchId: validated.leagueMatchId,
+              leagueUserId: leagueUser.id,
+              deletedAt: null,
+            }),
+          },
+          update: {
+            homeScore: validated.homeScore,
+            awayScore: validated.awayScore,
+            scorerId: validated.scorerId,
+            noScorer: validated.noScorer,
+            overtime: validated.overtime,
+            homeAdvanced: validated.homeAdvanced,
+            updatedAt: now,
+          },
+          create: {
+            leagueMatchId: validated.leagueMatchId,
+            leagueUserId: leagueUser.id,
+            homeScore: validated.homeScore,
+            awayScore: validated.awayScore,
+            scorerId: validated.scorerId,
+            noScorer: validated.noScorer,
+            overtime: validated.overtime,
+            homeAdvanced: validated.homeAdvanced,
+            dateTime: now,
+            totalPoints: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        })
       },
-    },
-    update: {
-      homeScore: validated.homeScore,
-      awayScore: validated.awayScore,
-      scorerId: validated.scorerId,
-      noScorer: validated.noScorer,
-      overtime: validated.overtime,
-      homeAdvanced: validated.homeAdvanced,
-      updatedAt: now,
-    },
-    create: {
-      leagueMatchId: validated.leagueMatchId,
-      leagueUserId: leagueUser.id,
-      homeScore: validated.homeScore,
-      awayScore: validated.awayScore,
-      scorerId: validated.scorerId,
-      noScorer: validated.noScorer,
-      overtime: validated.overtime,
-      homeAdvanced: validated.homeAdvanced,
-      dateTime: now,
-      totalPoints: 0,
-      createdAt: now,
-      updatedAt: now,
-    },
-  })
+      {
+        isolationLevel: 'Serializable',
+        maxWait: 5000, // 5s max wait for lock
+        timeout: 10000, // 10s max transaction time
+      }
+    )
 
-  revalidatePath(`/${leagueMatch.leagueId}/matches`)
-
-  return { success: true }
+    revalidatePath(`/${matchInfo.leagueId}/matches`)
+    return { success: true }
+  } catch (error) {
+    if (error instanceof AppError) {
+      return { success: false, error: error.message }
+    }
+    throw error
+  }
 }
 

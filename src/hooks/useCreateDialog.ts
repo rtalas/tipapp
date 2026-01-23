@@ -24,7 +24,7 @@ export function useCreateDialog<T = unknown>(initialData: T) {
   }, [initialData])
 
   const updateForm = useCallback((updates: Partial<T>) => {
-    setForm((prev) => ({ ...(prev as Record<string, unknown>), ...updates } as T))
+    setForm((prev) => Object.assign({}, prev, updates))
   }, [])
 
   const startCreating = useCallback(() => {

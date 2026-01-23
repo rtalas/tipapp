@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userSpecialBetSchema, type UserSpecialBetInput } from '@/lib/validation/user'
+import { nullableUniqueConstraint } from '@/lib/prisma-utils'
+import { AppError } from '@/lib/error-handler'
 
 /**
  * Fetches special bets for a league with the current user's picks
@@ -167,6 +169,7 @@ export async function getSpecialBetPlayers(leagueId: number) {
 
 /**
  * Creates or updates a special bet pick for the current user
+ * Uses Serializable transaction for data consistency
  */
 export async function saveSpecialBet(input: UserSpecialBetInput) {
   const parsed = userSpecialBetSchema.safeParse(input)
@@ -180,51 +183,85 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
 
   const validated = parsed.data
 
-  const specialBet = await prisma.leagueSpecialBetSingle.findUnique({
+  // Get special bet leagueId for membership check (outside transaction)
+  const specialBetInfo = await prisma.leagueSpecialBetSingle.findUnique({
     where: { id: validated.leagueSpecialBetSingleId, deletedAt: null },
+    select: { leagueId: true },
   })
 
-  if (!specialBet) {
+  if (!specialBetInfo) {
     return { success: false, error: 'Special bet not found' }
   }
 
-  const { leagueUser } = await requireLeagueMember(specialBet.leagueId)
+  // Verify league membership (outside transaction)
+  const { leagueUser } = await requireLeagueMember(specialBetInfo.leagueId)
 
-  if (!isBettingOpen(specialBet.dateTime)) {
-    return { success: false, error: 'Betting is closed for this special bet' }
-  }
+  // Wrap database operations in Serializable transaction
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        // Fetch special bet details within transaction for consistency
+        const specialBet = await tx.leagueSpecialBetSingle.findUnique({
+          where: { id: validated.leagueSpecialBetSingleId, deletedAt: null },
+        })
 
-  // Atomic upsert to prevent race conditions
-  const now = new Date()
+        if (!specialBet) {
+          throw new AppError('Special bet not found', 'NOT_FOUND', 404)
+        }
 
-  await prisma.userSpecialBetSingle.upsert({
-    where: {
-      leagueSpecialBetSingleId_leagueUserId_deletedAt: {
-        leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
-        leagueUserId: leagueUser.id,
-        deletedAt: null as any,
+        // Check betting lock
+        if (!isBettingOpen(specialBet.dateTime)) {
+          throw new AppError(
+            'Betting is closed for this special bet',
+            'BETTING_CLOSED',
+            400
+          )
+        }
+
+        // Atomic upsert to prevent race conditions
+        const now = new Date()
+
+        await tx.userSpecialBetSingle.upsert({
+          where: {
+            leagueSpecialBetSingleId_leagueUserId_deletedAt:
+              nullableUniqueConstraint({
+                leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
+                leagueUserId: leagueUser.id,
+                deletedAt: null,
+              }),
+          },
+          update: {
+            teamResultId: validated.teamResultId,
+            playerResultId: validated.playerResultId,
+            value: validated.value,
+            updatedAt: now,
+          },
+          create: {
+            leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
+            leagueUserId: leagueUser.id,
+            teamResultId: validated.teamResultId,
+            playerResultId: validated.playerResultId,
+            value: validated.value,
+            totalPoints: 0,
+            dateTime: now,
+            createdAt: now,
+            updatedAt: now,
+          },
+        })
       },
-    },
-    update: {
-      teamResultId: validated.teamResultId,
-      playerResultId: validated.playerResultId,
-      value: validated.value,
-      updatedAt: now,
-    },
-    create: {
-      leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
-      leagueUserId: leagueUser.id,
-      teamResultId: validated.teamResultId,
-      playerResultId: validated.playerResultId,
-      value: validated.value,
-      totalPoints: 0,
-      dateTime: now,
-      createdAt: now,
-      updatedAt: now,
-    },
-  })
+      {
+        isolationLevel: 'Serializable',
+        maxWait: 5000, // 5s max wait for lock
+        timeout: 10000, // 10s max transaction time
+      }
+    )
 
-  revalidatePath(`/${specialBet.leagueId}/special-bets`)
-
-  return { success: true }
+    revalidatePath(`/${specialBetInfo.leagueId}/special-bets`)
+    return { success: true }
+  } catch (error) {
+    if (error instanceof AppError) {
+      return { success: false, error: error.message }
+    }
+    throw error
+  }
 }

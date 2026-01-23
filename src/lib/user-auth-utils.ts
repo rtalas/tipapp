@@ -1,5 +1,6 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { AppError } from '@/lib/error-handler'
 import type { Session } from 'next-auth'
 
 export interface LeagueMemberResult {
@@ -20,7 +21,7 @@ export interface LeagueMemberResult {
  * Does NOT require admin/superadmin access - just league membership.
  *
  * @param leagueId - The league ID to check membership for
- * @throws {Error} If user is not authenticated or not a member of the league
+ * @throws {AppError} If user is not authenticated or not a member of the league
  * @returns {Promise<LeagueMemberResult>} The session and league user data
  */
 export async function requireLeagueMember(
@@ -29,7 +30,7 @@ export async function requireLeagueMember(
   const session = await auth()
 
   if (!session?.user?.id) {
-    throw new Error('Unauthorized: Login required')
+    throw new AppError('Unauthorized: Login required', 'UNAUTHORIZED', 401)
   }
 
   const userId = parseInt(session.user.id, 10)
@@ -52,7 +53,7 @@ export async function requireLeagueMember(
   })
 
   if (!leagueUser) {
-    throw new Error('Unauthorized: Not a member of this league')
+    throw new AppError('Unauthorized: Not a member of this league', 'FORBIDDEN', 403)
   }
 
   return { session, leagueUser, userId }
@@ -62,14 +63,14 @@ export async function requireLeagueMember(
 /**
  * Gets all leagues the current user is a member of.
  *
- * @throws {Error} If user is not authenticated
+ * @throws {AppError} If user is not authenticated
  * @returns {Promise<Array>} Array of leagues with user's membership info
  */
 async function getUserLeagues() {
   const session = await auth()
 
   if (!session?.user?.id) {
-    throw new Error('Unauthorized: Login required')
+    throw new AppError('Unauthorized: Login required', 'UNAUTHORIZED', 401)
   }
 
   const userId = parseInt(session.user.id, 10)

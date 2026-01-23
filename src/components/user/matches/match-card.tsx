@@ -378,6 +378,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
                 awayPlayers={awayTeam.LeaguePlayer}
                 homeTeamName={homeTeamName}
                 awayTeamName={awayTeamName}
+                sportId={sportId}
                 disabled={isLocked}
               />
             )}

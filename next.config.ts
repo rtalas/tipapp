@@ -29,7 +29,33 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
+            value: [
+              "default-src 'self'",
+              // NOTE: 'unsafe-inline' required for Next.js 16 hydration scripts
+              "script-src 'self' 'unsafe-inline'",
+              // NOTE: 'unsafe-inline' required for Tailwind v4 runtime CSS injection
+              "style-src 'self' 'unsafe-inline'",
+              // Allow images from data URIs and HTTPS
+              "img-src 'self' data: https:",
+              // Allow fonts from data URIs
+              "font-src 'self' data:",
+              // Restrict API calls to same origin
+              "connect-src 'self'",
+              // Media: same origin only
+              "media-src 'self'",
+              // Workers: same origin only
+              "worker-src 'self'",
+              // Block all plugins
+              "object-src 'none'",
+              // Prevent base tag injection
+              "base-uri 'self'",
+              // Restrict forms to same origin
+              "form-action 'self'",
+              // Prevent clickjacking
+              "frame-ancestors 'none'",
+              // Upgrade HTTP to HTTPS
+              "upgrade-insecure-requests",
+            ].join("; "),
           },
         ],
       },

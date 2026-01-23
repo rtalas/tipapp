@@ -6,6 +6,7 @@ import { format } from 'date-fns'
 import { Plus, Trash2 } from 'lucide-react'
 import { updateMatchResult, getMatchById } from '@/actions/matches'
 import { logger } from '@/lib/client-logger'
+import { SPORT_IDS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -73,7 +74,7 @@ interface Match {
 interface LeagueMatch {
   id: number
   isDoubled: boolean | null
-  League: { name: string }
+  League: { name: string; sportId: number }
   Match: Match
 }
 
@@ -113,6 +114,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
 
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
+  const sportId = match.League.sportId
 
   // Load full match data with players when dialog opens
   React.useEffect(() => {
@@ -360,21 +362,24 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
               <div className="flex items-center justify-between">
                 <h4 className="font-medium">Goal Scorers</h4>
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="noScorers"
-                      checked={!hasScorers}
-                      onCheckedChange={(checked) => {
-                        setHasScorers(!checked)
-                        if (checked) {
-                          setScorers([])
-                        }
-                      }}
-                    />
-                    <Label htmlFor="noScorers" className="text-sm font-normal cursor-pointer">
-                      No scorers (0:0 game)
-                    </Label>
-                  </div>
+                  {/* No scorers checkbox - Soccer only (hockey always has at least one goal) */}
+                  {sportId === SPORT_IDS.FOOTBALL && (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="noScorers"
+                        checked={!hasScorers}
+                        onCheckedChange={(checked) => {
+                          setHasScorers(!checked)
+                          if (checked) {
+                            setScorers([])
+                          }
+                        }}
+                      />
+                      <Label htmlFor="noScorers" className="text-sm font-normal cursor-pointer">
+                        No scorers (0:0 game)
+                      </Label>
+                    </div>
+                  )}
                   <Button
                     type="button"
                     variant="outline"

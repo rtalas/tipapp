@@ -19,7 +19,7 @@ export function useInlineEdit<T = unknown>() {
   const updateForm = useCallback((updates: Partial<T>) => {
     setForm((prev) => {
       if (!prev) return undefined
-      return { ...(prev as Record<string, unknown>), ...updates } as T
+      return Object.assign({}, prev, updates)
     })
   }, [])
 

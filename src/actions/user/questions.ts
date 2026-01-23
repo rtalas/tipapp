@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userQuestionBetSchema, type UserQuestionBetInput } from '@/lib/validation/user'
+import { nullableUniqueConstraint } from '@/lib/prisma-utils'
+import { AppError } from '@/lib/error-handler'
 
 /**
  * Fetches questions for a league with the current user's answers
@@ -95,6 +97,7 @@ export type QuestionFriendPrediction = Awaited<
 
 /**
  * Creates or updates a question answer for the current user
+ * Uses Serializable transaction for data consistency
  */
 export async function saveQuestionBet(input: UserQuestionBetInput) {
   const parsed = userQuestionBetSchema.safeParse(input)
@@ -108,47 +111,81 @@ export async function saveQuestionBet(input: UserQuestionBetInput) {
 
   const validated = parsed.data
 
-  const question = await prisma.leagueSpecialBetQuestion.findUnique({
+  // Get question leagueId for membership check (outside transaction)
+  const questionInfo = await prisma.leagueSpecialBetQuestion.findUnique({
     where: { id: validated.leagueSpecialBetQuestionId, deletedAt: null },
+    select: { leagueId: true },
   })
 
-  if (!question) {
+  if (!questionInfo) {
     return { success: false, error: 'Question not found' }
   }
 
-  const { leagueUser } = await requireLeagueMember(question.leagueId)
+  // Verify league membership (outside transaction)
+  const { leagueUser } = await requireLeagueMember(questionInfo.leagueId)
 
-  if (!isBettingOpen(question.dateTime)) {
-    return { success: false, error: 'Betting is closed for this question' }
-  }
+  // Wrap database operations in Serializable transaction
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        // Fetch question details within transaction for consistency
+        const question = await tx.leagueSpecialBetQuestion.findUnique({
+          where: { id: validated.leagueSpecialBetQuestionId, deletedAt: null },
+        })
 
-  // Atomic upsert to prevent race conditions
-  const now = new Date()
+        if (!question) {
+          throw new AppError('Question not found', 'NOT_FOUND', 404)
+        }
 
-  await prisma.userSpecialBetQuestion.upsert({
-    where: {
-      leagueSpecialBetQuestionId_leagueUserId_deletedAt: {
-        leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
-        leagueUserId: leagueUser.id,
-        deletedAt: null as any,
+        // Check betting lock
+        if (!isBettingOpen(question.dateTime)) {
+          throw new AppError(
+            'Betting is closed for this question',
+            'BETTING_CLOSED',
+            400
+          )
+        }
+
+        // Atomic upsert to prevent race conditions
+        const now = new Date()
+
+        await tx.userSpecialBetQuestion.upsert({
+          where: {
+            leagueSpecialBetQuestionId_leagueUserId_deletedAt:
+              nullableUniqueConstraint({
+                leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
+                leagueUserId: leagueUser.id,
+                deletedAt: null,
+              }),
+          },
+          update: {
+            userBet: validated.userBet,
+            updatedAt: now,
+          },
+          create: {
+            leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
+            leagueUserId: leagueUser.id,
+            userBet: validated.userBet,
+            totalPoints: 0,
+            dateTime: now,
+            createdAt: now,
+            updatedAt: now,
+          },
+        })
       },
-    },
-    update: {
-      userBet: validated.userBet,
-      updatedAt: now,
-    },
-    create: {
-      leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
-      leagueUserId: leagueUser.id,
-      userBet: validated.userBet,
-      totalPoints: 0,
-      dateTime: now,
-      createdAt: now,
-      updatedAt: now,
-    },
-  })
+      {
+        isolationLevel: 'Serializable',
+        maxWait: 5000, // 5s max wait for lock
+        timeout: 10000, // 10s max transaction time
+      }
+    )
 
-  revalidatePath(`/${question.leagueId}/questions`)
-
-  return { success: true }
+    revalidatePath(`/${questionInfo.leagueId}/questions`)
+    return { success: true }
+  } catch (error) {
+    if (error instanceof AppError) {
+      return { success: false, error: error.message }
+    }
+    throw error
+  }
 }

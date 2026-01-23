@@ -56,10 +56,10 @@ src/
 │   ├── constants.ts    # SPORT_IDS.HOCKEY, SPORT_IDS.FOOTBALL
 │   ├── auth-utils.ts   # requireAdmin()
 │   ├── user-auth-utils.ts # requireLeagueMember()
-│   ├── user-action-utils.ts # executeUserAction() wrapper (for future use)
 │   ├── league-utils.ts # validateLeagueAccess()
 │   ├── error-handler.ts # AppError, handleActionError()
 │   ├── server-action-utils.ts # executeServerAction()
+│   ├── prisma-utils.ts # nullableUniqueConstraint() for type-safe Prisma
 │   └── validation/     # Zod schemas (admin.ts, user.ts)
 └── types/              # Session + user types
 ```
@@ -143,10 +143,11 @@ src/
 - **Race conditions:** Atomic upserts prevent concurrent bet duplicates (matches, series, special bets, questions)
 - **Console.log leak:** Removed session data logging in login page
 - **Email normalization:** Case-insensitive email authentication
-- **Type safety:** Evaluator.points String → Int migration
+- **Type safety:** Evaluator.points String → Int migration, nullableUniqueConstraint helper
 - **Database indexes:** Performance optimization for user-facing queries
 - **Unique constraints:** LeagueUser and all bet tables prevent data integrity issues
-- **Error handling:** Standardized with executeUserAction wrapper (available for future use)
+- **Error handling:** AppError standardization in auth utilities
+- **Transactions:** Serializable isolation for all user betting actions
 
 **Backlog:**
 - Login/registration rate limiting

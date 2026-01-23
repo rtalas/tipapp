@@ -19,12 +19,11 @@ export default async function LeagueLayout({
     notFound()
   }
 
-  // Check authentication
+  // Auth check handled by proxy.ts
   const session = await auth()
   if (!session?.user?.id) {
     redirect('/login')
   }
-
   const userId = parseInt(session.user.id, 10)
 
   // Verify the league exists and is active
@@ -124,79 +123,81 @@ export default async function LeagueLayout({
   const now = new Date()
   const tenHoursFromNow = new Date(now.getTime() + 10 * 60 * 60 * 1000)
 
-  // Count matches without bets in next 10 hours
-  const upcomingMatchesCount = await prisma.leagueMatch.count({
-    where: {
-      leagueId,
-      deletedAt: null,
-      Match: {
+  // Parallelize badge count queries for performance
+  const [
+    upcomingMatchesCount,
+    upcomingSeriesCount,
+    upcomingSpecialBetsCount,
+    upcomingQuestionsCount,
+  ] = await Promise.all([
+    prisma.leagueMatch.count({
+      where: {
+        leagueId,
+        deletedAt: null,
+        Match: {
+          dateTime: {
+            gt: now,
+            lte: tenHoursFromNow,
+          },
+          deletedAt: null,
+        },
+        UserBet: {
+          none: {
+            leagueUserId: currentLeagueUser.id,
+            deletedAt: null,
+          },
+        },
+      },
+    }),
+    prisma.leagueSpecialBetSerie.count({
+      where: {
+        leagueId,
+        deletedAt: null,
         dateTime: {
           gt: now,
           lte: tenHoursFromNow,
         },
+        UserSpecialBetSerie: {
+          none: {
+            leagueUserId: currentLeagueUser.id,
+            deletedAt: null,
+          },
+        },
+      },
+    }),
+    prisma.leagueSpecialBetSingle.count({
+      where: {
+        leagueId,
         deletedAt: null,
-      },
-      UserBet: {
-        none: {
-          leagueUserId: currentLeagueUser.id,
-          deletedAt: null,
+        dateTime: {
+          gt: now,
+          lte: tenHoursFromNow,
+        },
+        UserSpecialBetSingle: {
+          none: {
+            leagueUserId: currentLeagueUser.id,
+            deletedAt: null,
+          },
         },
       },
-    },
-  })
-
-  // Count series without bets in next 10 hours
-  const upcomingSeriesCount = await prisma.leagueSpecialBetSerie.count({
-    where: {
-      leagueId,
-      deletedAt: null,
-      dateTime: {
-        gt: now,
-        lte: tenHoursFromNow,
-      },
-      UserSpecialBetSerie: {
-        none: {
-          leagueUserId: currentLeagueUser.id,
-          deletedAt: null,
+    }),
+    prisma.leagueSpecialBetQuestion.count({
+      where: {
+        leagueId,
+        deletedAt: null,
+        dateTime: {
+          gt: now,
+          lte: tenHoursFromNow,
+        },
+        UserSpecialBetQuestion: {
+          none: {
+            leagueUserId: currentLeagueUser.id,
+            deletedAt: null,
+          },
         },
       },
-    },
-  })
-
-  // Count special bets and questions without bets in next 10 hours
-  const upcomingSpecialBetsCount = await prisma.leagueSpecialBetSingle.count({
-    where: {
-      leagueId,
-      deletedAt: null,
-      dateTime: {
-        gt: now,
-        lte: tenHoursFromNow,
-      },
-      UserSpecialBetSingle: {
-        none: {
-          leagueUserId: currentLeagueUser.id,
-          deletedAt: null,
-        },
-      },
-    },
-  })
-
-  const upcomingQuestionsCount = await prisma.leagueSpecialBetQuestion.count({
-    where: {
-      leagueId,
-      deletedAt: null,
-      dateTime: {
-        gt: now,
-        lte: tenHoursFromNow,
-      },
-      UserSpecialBetQuestion: {
-        none: {
-          leagueUserId: currentLeagueUser.id,
-          deletedAt: null,
-        },
-      },
-    },
-  })
+    }),
+  ])
 
   // Combine special bets and questions for the special tab
   const specialTabCount = upcomingSpecialBetsCount + upcomingQuestionsCount

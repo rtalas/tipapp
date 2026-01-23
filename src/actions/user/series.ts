@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userSeriesBetSchema, type UserSeriesBetInput } from '@/lib/validation/user'
+import { nullableUniqueConstraint } from '@/lib/prisma-utils'
+import { AppError } from '@/lib/error-handler'
 
 /**
  * Fetches series for a league with the current user's bets
@@ -105,6 +107,7 @@ export type SeriesFriendPrediction = Awaited<
 
 /**
  * Creates or updates a series bet for the current user
+ * Uses Serializable transaction for data consistency
  */
 export async function saveSeriesBet(input: UserSeriesBetInput) {
   const parsed = userSeriesBetSchema.safeParse(input)
@@ -118,49 +121,84 @@ export async function saveSeriesBet(input: UserSeriesBetInput) {
 
   const validated = parsed.data
 
-  const series = await prisma.leagueSpecialBetSerie.findUnique({
+  // Get series leagueId for membership check (outside transaction)
+  const seriesInfo = await prisma.leagueSpecialBetSerie.findUnique({
     where: { id: validated.leagueSpecialBetSerieId, deletedAt: null },
+    select: { leagueId: true },
   })
 
-  if (!series) {
+  if (!seriesInfo) {
     return { success: false, error: 'Series not found' }
   }
 
-  const { leagueUser } = await requireLeagueMember(series.leagueId)
+  // Verify league membership (outside transaction)
+  const { leagueUser } = await requireLeagueMember(seriesInfo.leagueId)
 
-  if (!isBettingOpen(series.dateTime)) {
-    return { success: false, error: 'Betting is closed for this series' }
-  }
+  // Wrap database operations in Serializable transaction
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        // Fetch series details within transaction for consistency
+        const series = await tx.leagueSpecialBetSerie.findUnique({
+          where: { id: validated.leagueSpecialBetSerieId, deletedAt: null },
+        })
 
-  // Atomic upsert to prevent race conditions
-  const now = new Date()
+        if (!series) {
+          throw new AppError('Series not found', 'NOT_FOUND', 404)
+        }
 
-  await prisma.userSpecialBetSerie.upsert({
-    where: {
-      leagueSpecialBetSerieId_leagueUserId_deletedAt: {
-        leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
-        leagueUserId: leagueUser.id,
-        deletedAt: null as any,
+        // Check betting lock
+        if (!isBettingOpen(series.dateTime)) {
+          throw new AppError(
+            'Betting is closed for this series',
+            'BETTING_CLOSED',
+            400
+          )
+        }
+
+        // Atomic upsert to prevent race conditions
+        const now = new Date()
+
+        await tx.userSpecialBetSerie.upsert({
+          where: {
+            leagueSpecialBetSerieId_leagueUserId_deletedAt: nullableUniqueConstraint(
+              {
+                leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
+                leagueUserId: leagueUser.id,
+                deletedAt: null,
+              }
+            ),
+          },
+          update: {
+            homeTeamScore: validated.homeTeamScore,
+            awayTeamScore: validated.awayTeamScore,
+            updatedAt: now,
+          },
+          create: {
+            leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
+            leagueUserId: leagueUser.id,
+            homeTeamScore: validated.homeTeamScore,
+            awayTeamScore: validated.awayTeamScore,
+            totalPoints: 0,
+            dateTime: now,
+            createdAt: now,
+            updatedAt: now,
+          },
+        })
       },
-    },
-    update: {
-      homeTeamScore: validated.homeTeamScore,
-      awayTeamScore: validated.awayTeamScore,
-      updatedAt: now,
-    },
-    create: {
-      leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
-      leagueUserId: leagueUser.id,
-      homeTeamScore: validated.homeTeamScore,
-      awayTeamScore: validated.awayTeamScore,
-      totalPoints: 0,
-      dateTime: now,
-      createdAt: now,
-      updatedAt: now,
-    },
-  })
+      {
+        isolationLevel: 'Serializable',
+        maxWait: 5000, // 5s max wait for lock
+        timeout: 10000, // 10s max transaction time
+      }
+    )
 
-  revalidatePath(`/${series.leagueId}/series`)
-
-  return { success: true }
+    revalidatePath(`/${seriesInfo.leagueId}/series`)
+    return { success: true }
+  } catch (error) {
+    if (error instanceof AppError) {
+      return { success: false, error: error.message }
+    }
+    throw error
+  }
 }

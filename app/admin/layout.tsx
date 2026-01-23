@@ -8,11 +8,10 @@ export default async function AdminRootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Auth check handled by proxy.ts
   const session = await auth()
-
-  // Double-check admin access (middleware should handle this, but extra safety)
   if (!session?.user?.isSuperadmin) {
-    redirect('/')
+    redirect('/login')
   }
 
   // Fetch active leagues for sidebar and league selector

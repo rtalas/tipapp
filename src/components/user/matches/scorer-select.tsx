@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
+import { SPORT_IDS } from '@/lib/constants'
 
 interface Player {
   id: number
@@ -32,6 +33,7 @@ interface ScorerSelectProps {
   awayPlayers: Player[]
   homeTeamName: string
   awayTeamName: string
+  sportId: number
   disabled?: boolean
   className?: string
 }
@@ -74,6 +76,7 @@ export function ScorerSelect({
   awayPlayers,
   homeTeamName,
   awayTeamName,
+  sportId,
   disabled = false,
   className,
 }: ScorerSelectProps) {
@@ -156,23 +159,25 @@ export function ScorerSelect({
         </div>
         <ScrollArea className="h-[300px]">
           <div className="p-1">
-            {/* No Scorer option (intentional prediction for 0-0 game) */}
-            <button
-              type="button"
-              onClick={handleSelectNoScorer}
-              className={cn(
-                'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
-                noScorer === true && 'bg-accent'
-              )}
-            >
-              <Check
+            {/* No Scorer option (intentional prediction for 0-0 game) - Soccer only */}
+            {sportId === SPORT_IDS.FOOTBALL && (
+              <button
+                type="button"
+                onClick={handleSelectNoScorer}
                 className={cn(
-                  'mr-2 h-4 w-4',
-                  noScorer === true ? 'opacity-100' : 'opacity-0'
+                  'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                  noScorer === true && 'bg-accent'
                 )}
-              />
-              <span className="italic">No Scorer (0:0 game)</span>
-            </button>
+              >
+                <Check
+                  className={cn(
+                    'mr-2 h-4 w-4',
+                    noScorer === true ? 'opacity-100' : 'opacity-0'
+                  )}
+                />
+                <span className="italic">No Scorer (0:0 game)</span>
+              </button>
+            )}
 
             {/* Home team players */}
             {filteredHomePlayers.length > 0 && (
