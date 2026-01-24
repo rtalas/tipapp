@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { createSpecialBet } from '@/actions/special-bets'
 import { logger } from '@/lib/client-logger'
@@ -35,11 +35,11 @@ interface AddSpecialBetDialogProps {
 }
 
 export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTypes, league }: AddSpecialBetDialogProps) {
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [selectedLeagueId, setSelectedLeagueId] = React.useState<string>(league?.id.toString() || '')
-  const [selectedTypeId, setSelectedTypeId] = React.useState<string>('')
-  const [points, setPoints] = React.useState<string>('0')
-  const [dateTime, setDateTime] = React.useState<string>('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string>(league?.id.toString() || '')
+  const [selectedTypeId, setSelectedTypeId] = useState<string>('')
+  const [points, setPoints] = useState<string>('0')
+  const [dateTime, setDateTime] = useState<string>('')
 
   const effectiveLeagueId = league?.id.toString() || selectedLeagueId
 

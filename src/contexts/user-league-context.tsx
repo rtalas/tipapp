@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 
 interface League {
@@ -45,14 +45,14 @@ export function UserLeagueProvider({
 }: UserLeagueProviderProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const [leagues] = React.useState<League[]>(initialLeagues)
-  const [selectedLeagueId, setSelectedLeagueIdState] = React.useState<number | null>(
+  const [leagues] = useState<League[]>(initialLeagues)
+  const [selectedLeagueId, setSelectedLeagueIdState] = useState<number | null>(
     initialLeagueId ?? null
   )
-  const [isLoading, setIsLoading] = React.useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   // Sync with URL when on league-specific routes
-  React.useEffect(() => {
+  useEffect(() => {
     // Match routes like /1/matches, /2/series, etc.
     const leagueIdMatch = pathname.match(/^\/(\d+)/)
     if (leagueIdMatch) {
@@ -64,14 +64,14 @@ export function UserLeagueProvider({
   }, [pathname, selectedLeagueId])
 
   // Persist to localStorage
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined' && selectedLeagueId) {
       localStorage.setItem(STORAGE_KEY, String(selectedLeagueId))
     }
   }, [selectedLeagueId])
 
   // Initialize from localStorage on mount (if no initial value)
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined' && !initialLeagueId) {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
@@ -85,7 +85,7 @@ export function UserLeagueProvider({
     }
   }, [initialLeagueId, leagues, selectedLeagueId])
 
-  const setSelectedLeagueId = React.useCallback(
+  const setSelectedLeagueId = useCallback(
     (leagueId: number) => {
       setIsLoading(true)
       setSelectedLeagueIdState(leagueId)
@@ -98,12 +98,12 @@ export function UserLeagueProvider({
     [pathname, router]
   )
 
-  const selectedLeague = React.useMemo(
+  const selectedLeague = useMemo(
     () => leagues.find((l) => l.leagueId === selectedLeagueId) ?? null,
     [leagues, selectedLeagueId]
   )
 
-  const value = React.useMemo(
+  const value = useMemo(
     () => ({
       leagues,
       selectedLeagueId,

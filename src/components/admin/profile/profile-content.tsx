@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState } from 'react'
 import { format } from 'date-fns'
 import { User, Mail, Phone, Bell, Lock, Shield } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -33,12 +33,12 @@ interface ProfileContentProps {
 
 export function ProfileContent({ user }: ProfileContentProps) {
   const t = useTranslations('admin.profile')
-  const [isEditingProfile, setIsEditingProfile] = React.useState(false)
-  const [isEditingPassword, setIsEditingPassword] = React.useState(false)
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [isEditingPassword, setIsEditingPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Profile form state
-  const [profileForm, setProfileForm] = React.useState<UpdateProfileInput>({
+  const [profileForm, setProfileForm] = useState<UpdateProfileInput>({
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
@@ -47,7 +47,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
   })
 
   // Password form state
-  const [passwordForm, setPasswordForm] = React.useState<UpdatePasswordInput>({
+  const [passwordForm, setPasswordForm] = useState<UpdatePasswordInput>({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',

@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Fragment } from 'react'
 import { format } from 'date-fns'
 import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
@@ -96,17 +96,17 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
   const t = useTranslations('admin.specialBets')
   const tCommon = useTranslations('admin.common')
   const tSeries = useTranslations('admin.series')
-  const [search, setSearch] = React.useState('')
-  const [statusFilter, setStatusFilter] = React.useState<string>('all')
-  const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
-  const [userFilter, setUserFilter] = React.useState<string>('all')
-  const [typeFilter, setTypeFilter] = React.useState<string>('all')
-  const [addDialogOpen, setAddDialogOpen] = React.useState(false)
-  const [selectedSpecialBet, setSelectedSpecialBet] = React.useState<SpecialBet | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
-  const [specialBetToDelete, setSpecialBetToDelete] = React.useState<SpecialBet | null>(null)
-  const [isDeleting, setIsDeleting] = React.useState(false)
-  const [createBetSpecialBetId, setCreateBetSpecialBetId] = React.useState<number | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [leagueFilter, setLeagueFilter] = useState<string>('all')
+  const [userFilter, setUserFilter] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [selectedSpecialBet, setSelectedSpecialBet] = useState<SpecialBet | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [specialBetToDelete, setSpecialBetToDelete] = useState<SpecialBet | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [createBetSpecialBetId, setCreateBetSpecialBetId] = useState<number | null>(null)
 
   // Expandable rows
   const { isExpanded, toggleRow } = useExpandableRow()

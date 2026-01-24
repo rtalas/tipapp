@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Trash2, Users } from 'lucide-react'
@@ -84,11 +84,11 @@ export function LeagueSetupTabs({
 }: LeagueSetupTabsProps) {
   const t = useTranslations('admin.leagueSetup')
   const tCommon = useTranslations('admin.common')
-  const [selectedTeamId, setSelectedTeamId] = React.useState<string>('')
-  const [selectedLeagueTeamId, setSelectedLeagueTeamId] = React.useState<string>('')
-  const [selectedPlayerId, setSelectedPlayerId] = React.useState<string>('')
-  const [isAddingTeam, setIsAddingTeam] = React.useState(false)
-  const [isAddingPlayer, setIsAddingPlayer] = React.useState(false)
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('')
+  const [selectedLeagueTeamId, setSelectedLeagueTeamId] = useState<string>('')
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
+  const [isAddingTeam, setIsAddingTeam] = useState(false)
+  const [isAddingPlayer, setIsAddingPlayer] = useState(false)
 
   // Get players already assigned to any team in this league
   const assignedPlayerIds = new Set(

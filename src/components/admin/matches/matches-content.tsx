@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Fragment } from 'react'
 import { format } from 'date-fns'
 import { Plus, Edit, Trash2, ChevronDown, Calculator, Calendar } from 'lucide-react'
@@ -71,17 +71,17 @@ interface MatchesContentProps {
 export function MatchesContent({ matches, leagues, users, league, phases }: MatchesContentProps) {
   const t = useTranslations('admin.matches')
   const tCommon = useTranslations('admin.common')
-  const [search, setSearch] = React.useState('')
-  const [statusFilter, setStatusFilter] = React.useState<string>('all')
-  const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
-  const [userFilter, setUserFilter] = React.useState<string>('all')
-  const [addDialogOpen, setAddDialogOpen] = React.useState(false)
-  const [selectedMatch, setSelectedMatch] = React.useState<LeagueMatch | null>(null)
-  const [editMatch, setEditMatch] = React.useState<LeagueMatch | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
-  const [matchToDelete, setMatchToDelete] = React.useState<LeagueMatch | null>(null)
-  const [isDeleting, setIsDeleting] = React.useState(false)
-  const [createBetMatchId, setCreateBetMatchId] = React.useState<number | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [leagueFilter, setLeagueFilter] = useState<string>('all')
+  const [userFilter, setUserFilter] = useState<string>('all')
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [selectedMatch, setSelectedMatch] = useState<LeagueMatch | null>(null)
+  const [editMatch, setEditMatch] = useState<LeagueMatch | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [matchToDelete, setMatchToDelete] = useState<LeagueMatch | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [createBetMatchId, setCreateBetMatchId] = useState<number | null>(null)
 
   // Expandable rows
   const { isExpanded, toggleRow } = useExpandableRow()

@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
@@ -31,7 +31,7 @@ interface LeagueFormProps {
 export function LeagueForm({ sports }: LeagueFormProps) {
   const t = useTranslations('admin.leagueNew')
   const router = useRouter()
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const currentYear = new Date().getFullYear()
 

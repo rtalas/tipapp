@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Check, ChevronsUpDown, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -80,26 +80,26 @@ export function ScorerSelect({
   disabled = false,
   className,
 }: ScorerSelectProps) {
-  const [open, setOpen] = React.useState(false)
-  const [search, setSearch] = React.useState('')
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
 
-  const allPlayers = React.useMemo(
+  const allPlayers = useMemo(
     () => [...homePlayers, ...awayPlayers],
     [homePlayers, awayPlayers]
   )
 
-  const selectedPlayer = React.useMemo(
+  const selectedPlayer = useMemo(
     () => allPlayers.find((p) => p.id === value),
     [allPlayers, value]
   )
 
-  const filteredHomePlayers = React.useMemo(() => {
+  const filteredHomePlayers = useMemo(() => {
     if (!search) return homePlayers
     const searchLower = search.toLowerCase()
     return homePlayers.filter((p) => getSearchableText(p).includes(searchLower))
   }, [homePlayers, search])
 
-  const filteredAwayPlayers = React.useMemo(() => {
+  const filteredAwayPlayers = useMemo(() => {
     if (!search) return awayPlayers
     const searchLower = search.toLowerCase()
     return awayPlayers.filter((p) => getSearchableText(p).includes(searchLower))

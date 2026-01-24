@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
@@ -61,15 +61,15 @@ interface AddMatchDialogProps {
 }
 
 export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: AddMatchDialogProps) {
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [selectedLeagueId, setSelectedLeagueId] = React.useState<string>(league?.id.toString() || '')
-  const [selectedHomeTeamId, setSelectedHomeTeamId] = React.useState<string>('')
-  const [selectedAwayTeamId, setSelectedAwayTeamId] = React.useState<string>('')
-  const [dateTime, setDateTime] = React.useState<string>('')
-  const [isPlayoffGame, setIsPlayoffGame] = React.useState(false)
-  const [isDoubled, setIsDoubled] = React.useState(false)
-  const [selectedPhaseId, setSelectedPhaseId] = React.useState<string>('')
-  const [gameNumber, setGameNumber] = React.useState<string>('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string>(league?.id.toString() || '')
+  const [selectedHomeTeamId, setSelectedHomeTeamId] = useState<string>('')
+  const [selectedAwayTeamId, setSelectedAwayTeamId] = useState<string>('')
+  const [dateTime, setDateTime] = useState<string>('')
+  const [isPlayoffGame, setIsPlayoffGame] = useState(false)
+  const [isDoubled, setIsDoubled] = useState(false)
+  const [selectedPhaseId, setSelectedPhaseId] = useState<string>('')
+  const [gameNumber, setGameNumber] = useState<string>('')
 
   // Get teams for selected league (from prop or from selection)
   const effectiveLeagueId = league?.id.toString() || selectedLeagueId
@@ -138,7 +138,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
   }
 
   // Reset team selections when league changes (only for manual selection)
-  React.useEffect(() => {
+  useEffect(() => {
     if (!league) {
       setSelectedHomeTeamId('')
       setSelectedAwayTeamId('')

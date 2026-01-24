@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Fragment } from 'react'
 import { format } from 'date-fns'
 import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
@@ -65,15 +65,15 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
   const t = useTranslations('admin.questions')
   const tCommon = useTranslations('admin.common')
   const tSeries = useTranslations('admin.series')
-  const [search, setSearch] = React.useState('')
-  const [statusFilter, setStatusFilter] = React.useState<string>('all')
-  const [userFilter, setUserFilter] = React.useState<string>('all')
-  const [addDialogOpen, setAddDialogOpen] = React.useState(false)
-  const [questionToEdit, setQuestionToEdit] = React.useState<Question | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
-  const [questionToDelete, setQuestionToDelete] = React.useState<Question | null>(null)
-  const [isDeleting, setIsDeleting] = React.useState(false)
-  const [createBetQuestionId, setCreateBetQuestionId] = React.useState<number | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [userFilter, setUserFilter] = useState<string>('all')
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [questionToEdit, setQuestionToEdit] = useState<Question | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [createBetQuestionId, setCreateBetQuestionId] = useState<number | null>(null)
 
   // Expandable rows
   const { isExpanded, toggleRow } = useExpandableRow()

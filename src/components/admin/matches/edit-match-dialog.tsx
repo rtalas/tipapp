@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateMatch } from '@/actions/matches'
@@ -72,16 +72,16 @@ export function EditMatchDialog({
   onOpenChange,
   phases,
 }: EditMatchDialogProps) {
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [dateTime, setDateTime] = React.useState<string>(() => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [dateTime, setDateTime] = useState<string>(() => {
     // Convert UTC date to local datetime-local format
     const date = new Date(match.Match.dateTime)
     return format(date, "yyyy-MM-dd'T'HH:mm")
   })
-  const [selectedPhaseId, setSelectedPhaseId] = React.useState<string>(
+  const [selectedPhaseId, setSelectedPhaseId] = useState<string>(
     match.Match.matchPhaseId?.toString() || ''
   )
-  const [gameNumber, setGameNumber] = React.useState<string>(
+  const [gameNumber, setGameNumber] = useState<string>(
     match.Match.gameNumber?.toString() || ''
   )
 

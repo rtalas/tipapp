@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteLeague } from '@/actions/leagues'
@@ -22,8 +22,8 @@ interface LeagueDeleteButtonProps {
 }
 
 export function LeagueDeleteButton({ leagueId, leagueName }: LeagueDeleteButtonProps) {
-  const [open, setOpen] = React.useState(false)
-  const [isDeleting, setIsDeleting] = React.useState(false)
+  const [open, setOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async () => {
     setIsDeleting(true)

@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Trash2, Edit, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
@@ -92,9 +92,9 @@ export function SpecialBetTypesContent({
 }: SpecialBetTypesContentProps) {
   const t = useTranslations('admin.specialBetTypes')
   const tCommon = useTranslations('admin.common')
-  const [search, setSearch] = React.useState('')
-  const [sportFilter, setSportFilter] = React.useState<string>('all')
-  const [typeFilter, setTypeFilter] = React.useState<string>('all')
+  const [search, setSearch] = useState('')
+  const [sportFilter, setSportFilter] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<string>('all')
 
   const inlineEdit = useInlineEdit<EditFormData>()
   const deleteDialog = useDeleteDialog<SpecialBetType>()

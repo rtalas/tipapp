@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { format } from 'date-fns'
 import { Zap, Check, Clock, Lock, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -39,25 +39,25 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
   const sportGradient = sportId === SPORT_IDS.HOCKEY ? 'gradient-hockey' : 'gradient-football'
 
   // Form state
-  const [homeScore, setHomeScore] = React.useState(match.userBet?.homeScore ?? 0)
-  const [awayScore, setAwayScore] = React.useState(match.userBet?.awayScore ?? 0)
-  const [scorerId, setScorerId] = React.useState<number | null>(
+  const [homeScore, setHomeScore] = useState(match.userBet?.homeScore ?? 0)
+  const [awayScore, setAwayScore] = useState(match.userBet?.awayScore ?? 0)
+  const [scorerId, setScorerId] = useState<number | null>(
     match.userBet?.scorerId ?? null
   )
-  const [noScorer, setNoScorer] = React.useState<boolean | null>(
+  const [noScorer, setNoScorer] = useState<boolean | null>(
     match.userBet?.noScorer ?? null
   )
-  const [overtime, setOvertime] = React.useState(match.userBet?.overtime ?? false)
-  const [homeAdvanced, setHomeAdvanced] = React.useState<boolean | null>(
+  const [overtime, setOvertime] = useState(match.userBet?.overtime ?? false)
+  const [homeAdvanced, setHomeAdvanced] = useState<boolean | null>(
     match.userBet?.homeAdvanced ?? null
   )
-  const [isSaving, setIsSaving] = React.useState(false)
-  const [isSaved, setIsSaved] = React.useState(!!match.userBet)
-  const [showFriendsBets, setShowFriendsBets] = React.useState(false)
-  const [friendPredictions, setFriendPredictions] = React.useState<FriendPrediction[]>([])
-  const [isLoadingFriends, setIsLoadingFriends] = React.useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isSaved, setIsSaved] = useState(!!match.userBet)
+  const [showFriendsBets, setShowFriendsBets] = useState(false)
+  const [friendPredictions, setFriendPredictions] = useState<FriendPrediction[]>([])
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false)
 
-  const handleSave = React.useCallback(async () => {
+  const handleSave = useCallback(async () => {
     if (isLocked) return
 
     setIsSaving(true)

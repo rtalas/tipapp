@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateQuestion, updateQuestionResult } from '@/actions/questions'
@@ -41,18 +41,18 @@ interface EditQuestionDialogProps {
 }
 
 export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestionDialogProps) {
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [isEvaluating, setIsEvaluating] = React.useState(false)
-  const [text, setText] = React.useState(question.text)
-  const [dateTime, setDateTime] = React.useState(
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isEvaluating, setIsEvaluating] = useState(false)
+  const [text, setText] = useState(question.text)
+  const [dateTime, setDateTime] = useState(
     format(new Date(question.dateTime), "yyyy-MM-dd'T'HH:mm")
   )
-  const [result, setResult] = React.useState<string>(
+  const [result, setResult] = useState<string>(
     question.result !== null ? question.result.toString() : ''
   )
 
   // Reset form when question changes
-  React.useEffect(() => {
+  useEffect(() => {
     setText(question.text)
     setDateTime(format(new Date(question.dateTime), "yyyy-MM-dd'T'HH:mm"))
     setResult(question.result !== null ? question.result.toString() : '')

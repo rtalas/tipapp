@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { Plus, Trash2 } from 'lucide-react'
@@ -90,24 +90,24 @@ interface ResultEntryDialogProps {
 }
 
 export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDialogProps) {
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [homeRegularScore, setHomeRegularScore] = React.useState(
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [homeRegularScore, setHomeRegularScore] = useState(
     match.Match.homeRegularScore?.toString() ?? ''
   )
-  const [awayRegularScore, setAwayRegularScore] = React.useState(
+  const [awayRegularScore, setAwayRegularScore] = useState(
     match.Match.awayRegularScore?.toString() ?? ''
   )
-  const [homeFinalScore, setHomeFinalScore] = React.useState(
+  const [homeFinalScore, setHomeFinalScore] = useState(
     match.Match.homeFinalScore?.toString() ?? ''
   )
-  const [awayFinalScore, setAwayFinalScore] = React.useState(
+  const [awayFinalScore, setAwayFinalScore] = useState(
     match.Match.awayFinalScore?.toString() ?? ''
   )
-  const [isOvertime, setIsOvertime] = React.useState(match.Match.isOvertime ?? false)
-  const [isShootout, setIsShootout] = React.useState(match.Match.isShootout ?? false)
-  const [scorers, setScorers] = React.useState<Scorer[]>([])
-  const [hasScorers, setHasScorers] = React.useState(true)
-  const [players, setPlayers] = React.useState<{
+  const [isOvertime, setIsOvertime] = useState(match.Match.isOvertime ?? false)
+  const [isShootout, setIsShootout] = useState(match.Match.isShootout ?? false)
+  const [scorers, setScorers] = useState<Scorer[]>([])
+  const [hasScorers, setHasScorers] = useState(true)
+  const [players, setPlayers] = useState<{
     home: LeaguePlayer[]
     away: LeaguePlayer[]
   }>({ home: [], away: [] })
@@ -117,14 +117,14 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
   const sportId = match.League.sportId
 
   // Load full match data with players when dialog opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
       loadMatchData()
     }
   }, [open, match.Match.id])
 
   // Auto-populate final scores with regular scores when overtime is checked
-  React.useEffect(() => {
+  useEffect(() => {
     if ((isOvertime || isShootout) && homeRegularScore && awayRegularScore) {
       // Only populate if final scores are empty
       if (!homeFinalScore) {

@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Trash2, Edit } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
@@ -95,8 +95,8 @@ interface CreateFormData {
 export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
   const t = useTranslations('admin.teams')
   const tCommon = useTranslations('admin.common')
-  const [search, setSearch] = React.useState('')
-  const [sportFilter, setSportFilter] = React.useState<string>('all')
+  const [search, setSearch] = useState('')
+  const [sportFilter, setSportFilter] = useState<string>('all')
 
   const inlineEdit = useInlineEdit<EditFormData>()
   const deleteDialog = useDeleteDialog<Team>()

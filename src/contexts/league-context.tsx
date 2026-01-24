@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 
 interface LeagueContextType {
@@ -12,10 +12,10 @@ const LeagueContext = React.createContext<LeagueContextType | undefined>(undefin
 
 export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [selectedLeagueId, setSelectedLeagueIdState] = React.useState<string | null>(null)
+  const [selectedLeagueId, setSelectedLeagueIdState] = useState<string | null>(null)
 
   // Sync with URL when on league-specific routes
-  React.useEffect(() => {
+  useEffect(() => {
     const leagueIdMatch = pathname.match(/^\/admin\/(\d+)/)
     if (leagueIdMatch) {
       const urlLeagueId = leagueIdMatch[1]
@@ -24,14 +24,14 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   }, [pathname])
 
   // Optional: Persist to localStorage (only after mount to avoid hydration issues)
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined' && selectedLeagueId) {
       localStorage.setItem('tipapp_selected_league_id', selectedLeagueId)
     }
   }, [selectedLeagueId])
 
   // Optional: Initialize from localStorage on mount
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('tipapp_selected_league_id')
       if (stored && !selectedLeagueId) {

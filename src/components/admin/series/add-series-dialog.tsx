@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { createSeries } from '@/actions/series'
 import { logger } from '@/lib/client-logger'
@@ -55,12 +55,12 @@ interface AddSeriesDialogProps {
 }
 
 export function AddSeriesDialog({ open, onOpenChange, leagues, specialBetSeries, league }: AddSeriesDialogProps) {
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [selectedLeagueId, setSelectedLeagueId] = React.useState<string>(league?.id.toString() || '')
-  const [selectedSeriesTypeId, setSelectedSeriesTypeId] = React.useState<string>('')
-  const [selectedHomeTeamId, setSelectedHomeTeamId] = React.useState<string>('')
-  const [selectedAwayTeamId, setSelectedAwayTeamId] = React.useState<string>('')
-  const [dateTime, setDateTime] = React.useState<string>('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string>(league?.id.toString() || '')
+  const [selectedSeriesTypeId, setSelectedSeriesTypeId] = useState<string>('')
+  const [selectedHomeTeamId, setSelectedHomeTeamId] = useState<string>('')
+  const [selectedAwayTeamId, setSelectedAwayTeamId] = useState<string>('')
+  const [dateTime, setDateTime] = useState<string>('')
 
   // Get teams for selected league (from prop or from selection)
   const effectiveLeagueId = league?.id.toString() || selectedLeagueId
@@ -120,7 +120,7 @@ export function AddSeriesDialog({ open, onOpenChange, leagues, specialBetSeries,
   }
 
   // Reset team selections when league changes (only for manual selection)
-  React.useEffect(() => {
+  useEffect(() => {
     if (!league) {
       setSelectedHomeTeamId('')
       setSelectedAwayTeamId('')

@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Trash2, Edit, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
@@ -74,7 +74,7 @@ interface CreateFormData {
 export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
   const t = useTranslations('admin.matchPhases')
   const tCommon = useTranslations('admin.common')
-  const [search, setSearch] = React.useState('')
+  const [search, setSearch] = useState('')
 
   const inlineEdit = useInlineEdit<EditFormData>()
   const deleteDialog = useDeleteDialog<MatchPhase>()

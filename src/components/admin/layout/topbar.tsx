@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { signOut } from 'next-auth/react'
@@ -39,7 +39,7 @@ export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues, locale }:
   const { theme, setTheme } = useTheme()
   const router = useRouter()
   const pathname = usePathname()
-  const [showLanguageDialog, setShowLanguageDialog] = React.useState(false)
+  const [showLanguageDialog, setShowLanguageDialog] = useState(false)
 
   const handleSignOut = async () => {
     await signOut({ redirect: false })

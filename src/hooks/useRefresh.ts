@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 /**
@@ -10,17 +10,17 @@ import { useRouter } from 'next/navigation'
  */
 export function useRefresh() {
   const router = useRouter()
-  const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Sync refresh for button clicks
-  const refresh = React.useCallback(() => {
+  const refresh = useCallback(() => {
     setIsRefreshing(true)
     router.refresh()
     setTimeout(() => setIsRefreshing(false), 500)
   }, [router])
 
   // Async refresh for pull-to-refresh
-  const refreshAsync = React.useCallback(async () => {
+  const refreshAsync = useCallback(async () => {
     setIsRefreshing(true)
     router.refresh()
     // Wait a bit to simulate network delay and ensure UI feels responsive

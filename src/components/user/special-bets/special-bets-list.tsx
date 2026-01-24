@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
 import { Trophy, Target, HelpCircle, Check, Lock, Clock, Users, CheckCircle, XCircle } from 'lucide-react'
@@ -61,10 +61,10 @@ export function SpecialBetsList({
 }: SpecialBetsListProps) {
   const t = useTranslations('user.specialBets')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
-  const [filter, setFilter] = React.useState<FilterType>('current')
+  const [filter, setFilter] = useState<FilterType>('current')
 
   // Combine special bets and questions into unified items
-  const allItems: UnifiedItem[] = React.useMemo(() => {
+  const allItems: UnifiedItem[] = useMemo(() => {
     const betItems: UnifiedItem[] = specialBets.map((bet) => ({
       type: 'specialBet' as const,
       data: bet,
@@ -88,7 +88,7 @@ export function SpecialBetsList({
   const displayedItems = filter === 'current' ? currentItems : pastItems
 
   // Group by date
-  const groupedItems = React.useMemo(() => {
+  const groupedItems = useMemo(() => {
     const sorted = [...displayedItems].sort((a, b) => {
       if (filter === 'past') {
         return b.dateTime.getTime() - a.dateTime.getTime()
@@ -219,20 +219,20 @@ function SpecialBetCard({
   const isEvaluated = specialBet.isEvaluated
   const betType = specialBet.SpecialBetSingle.SpecialBetSingleType?.name || 'value'
 
-  const [teamId, setTeamId] = React.useState<number | null>(
+  const [teamId, setTeamId] = useState<number | null>(
     specialBet.userBet?.teamResultId ?? null
   )
-  const [playerId, setPlayerId] = React.useState<number | null>(
+  const [playerId, setPlayerId] = useState<number | null>(
     specialBet.userBet?.playerResultId ?? null
   )
-  const [value, setValue] = React.useState<number | null>(
+  const [value, setValue] = useState<number | null>(
     specialBet.userBet?.value ?? null
   )
-  const [isSaving, setIsSaving] = React.useState(false)
-  const [isSaved, setIsSaved] = React.useState(!!specialBet.userBet)
-  const [showFriendsBets, setShowFriendsBets] = React.useState(false)
-  const [friendPredictions, setFriendPredictions] = React.useState<SpecialBetFriendPrediction[]>([])
-  const [isLoadingFriends, setIsLoadingFriends] = React.useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isSaved, setIsSaved] = useState(!!specialBet.userBet)
+  const [showFriendsBets, setShowFriendsBets] = useState(false)
+  const [friendPredictions, setFriendPredictions] = useState<SpecialBetFriendPrediction[]>([])
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false)
 
   const isTeamBet = betType.toLowerCase().includes('team') || betType.toLowerCase().includes('champion')
   const isPlayerBet = betType.toLowerCase().includes('player') || betType.toLowerCase().includes('scorer')
@@ -603,14 +603,14 @@ function QuestionCard({
   const isEvaluated = question.isEvaluated
   const currentAnswer = question.userBet?.userBet
 
-  const [selectedAnswer, setSelectedAnswer] = React.useState<boolean | null>(
+  const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(
     currentAnswer ?? null
   )
-  const [isSaving, setIsSaving] = React.useState(false)
-  const [isSaved, setIsSaved] = React.useState(currentAnswer !== undefined && currentAnswer !== null)
-  const [showFriendsBets, setShowFriendsBets] = React.useState(false)
-  const [friendPredictions, setFriendPredictions] = React.useState<QuestionFriendPrediction[]>([])
-  const [isLoadingFriends, setIsLoadingFriends] = React.useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isSaved, setIsSaved] = useState(currentAnswer !== undefined && currentAnswer !== null)
+  const [showFriendsBets, setShowFriendsBets] = useState(false)
+  const [friendPredictions, setFriendPredictions] = useState<QuestionFriendPrediction[]>([])
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false)
 
   const handleOpenFriendsBets = async () => {
     setShowFriendsBets(true)

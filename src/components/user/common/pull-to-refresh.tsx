@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -15,16 +15,16 @@ export function PullToRefresh({
   onRefresh,
   className,
 }: PullToRefreshProps) {
-  const [pullDistance, setPullDistance] = React.useState(0)
-  const [isRefreshing, setIsRefreshing] = React.useState(false)
-  const containerRef = React.useRef<HTMLDivElement>(null)
-  const startY = React.useRef(0)
-  const isPulling = React.useRef(false)
+  const [pullDistance, setPullDistance] = useState(0)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const startY = useRef(0)
+  const isPulling = useRef(false)
 
   const threshold = 80
   const maxPull = 120
 
-  const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     // Only start pull if we're at the top of the scroll container
     if (containerRef.current?.scrollTop === 0) {
       startY.current = e.touches[0].clientY
@@ -32,7 +32,7 @@ export function PullToRefresh({
     }
   }, [])
 
-  const handleTouchMove = React.useCallback(
+  const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
       if (!isPulling.current || isRefreshing) return
 
@@ -49,7 +49,7 @@ export function PullToRefresh({
     [isRefreshing]
   )
 
-  const handleTouchEnd = React.useCallback(async () => {
+  const handleTouchEnd = useCallback(async () => {
     if (!isPulling.current) return
     isPulling.current = false
 

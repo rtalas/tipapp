@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Settings, Users, Trash2, Edit, Award, MessageSquare, Pause, Play } from 'lucide-react'
 import { toast } from 'sonner'
@@ -47,9 +47,9 @@ export function LeagueActions({
 }: LeagueActionsProps) {
   const t = useTranslations('admin.leagueActions')
   const tCommon = useTranslations('admin.common')
-  const [editDialogOpen, setEditDialogOpen] = React.useState(false)
-  const [isSaving, setIsSaving] = React.useState(false)
-  const [editForm, setEditForm] = React.useState({
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [editForm, setEditForm] = useState({
     name: leagueName,
     seasonFrom,
     seasonTo,
@@ -57,12 +57,12 @@ export function LeagueActions({
     isPublic,
     isChatEnabled,
   })
-  const [isChatSuspended, setIsChatSuspended] = React.useState(chatSuspendedAt !== null)
-  const [prizes, setPrizes] = React.useState<PrizeTier[]>([])
-  const [prizesLoaded, setPrizesLoaded] = React.useState(false)
+  const [isChatSuspended, setIsChatSuspended] = useState(chatSuspendedAt !== null)
+  const [prizes, setPrizes] = useState<PrizeTier[]>([])
+  const [prizesLoaded, setPrizesLoaded] = useState(false)
 
   // Fetch prizes when dialog opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (editDialogOpen && !prizesLoaded) {
       getLeaguePrizes(leagueId).then((result) => {
         if (result.success && 'prizes' in result && result.prizes) {

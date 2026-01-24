@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
@@ -59,8 +59,8 @@ interface LeagueTeamsSetupProps {
 
 export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupProps) {
   const t = useTranslations('admin.leagueTeams')
-  const [selectedTeamId, setSelectedTeamId] = React.useState<string>('')
-  const [isAddingTeam, setIsAddingTeam] = React.useState(false)
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('')
+  const [isAddingTeam, setIsAddingTeam] = useState(false)
 
   const handleAddTeam = async () => {
     if (!selectedTeamId) return

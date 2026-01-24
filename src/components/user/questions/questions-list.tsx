@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { format } from 'date-fns'
 import { HelpCircle, Check, X, Lock, Clock, Users, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -28,7 +28,7 @@ type FilterType = 'current' | 'past'
 
 export function QuestionsList({ questions }: QuestionsListProps) {
   const { isRefreshing, refresh } = useRefresh()
-  const [filter, setFilter] = React.useState<FilterType>('current')
+  const [filter, setFilter] = useState<FilterType>('current')
 
   // Filter questions
   const currentQuestions = questions.filter((q) => !q.isEvaluated)
@@ -36,7 +36,7 @@ export function QuestionsList({ questions }: QuestionsListProps) {
   const displayedQuestions = filter === 'current' ? currentQuestions : pastQuestions
 
   // Group by date
-  const groupedQuestions = React.useMemo(() => {
+  const groupedQuestions = useMemo(() => {
     const sorted = [...displayedQuestions].sort((a, b) => {
       if (filter === 'past') {
         return new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
@@ -136,11 +136,11 @@ function QuestionCard({
   const isEvaluated = question.isEvaluated
   const currentAnswer = question.userBet?.userBet
 
-  const [selectedAnswer, setSelectedAnswer] = React.useState<boolean | null>(
+  const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(
     currentAnswer ?? null
   )
-  const [isSaving, setIsSaving] = React.useState(false)
-  const [showFriendsBets, setShowFriendsBets] = React.useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [showFriendsBets, setShowFriendsBets] = useState(false)
 
   const handleAnswer = async (answer: boolean) => {
     if (isLocked) return

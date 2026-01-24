@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Trophy, Plus, Loader2, LogOut, Settings, Moon, Sun, User, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -66,7 +66,7 @@ function getSportGradient(sportId?: number): string {
 }
 
 function LeagueCard({ league, onJoinSuccess }: { league: League; onJoinSuccess: () => void }) {
-  const [isJoining, setIsJoining] = React.useState(false)
+  const [isJoining, setIsJoining] = useState(false)
 
   const handleJoin = async () => {
     setIsJoining(true)
@@ -126,10 +126,10 @@ function LeagueCard({ league, onJoinSuccess }: { league: League; onJoinSuccess: 
 export function AvailableLeaguesContent({ user }: AvailableLeaguesContentProps) {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
-  const [availableLeagues, setAvailableLeagues] = React.useState<League[]>([])
-  const [isLoading, setIsLoading] = React.useState(true)
+  const [availableLeagues, setAvailableLeagues] = useState<League[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const loadLeagues = React.useCallback(async () => {
+  const loadLeagues = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await getAllLeaguesForSelector()
@@ -141,7 +141,7 @@ export function AvailableLeaguesContent({ user }: AvailableLeaguesContentProps) 
     }
   }, [])
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadLeagues()
   }, [loadLeagues])
 
@@ -156,7 +156,7 @@ export function AvailableLeaguesContent({ user }: AvailableLeaguesContentProps) 
   }
 
   // Get user initials
-  const userInitials = React.useMemo(() => {
+  const userInitials = useMemo(() => {
     if (user.firstName && user.lastName) {
       return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
     }
@@ -164,7 +164,7 @@ export function AvailableLeaguesContent({ user }: AvailableLeaguesContentProps) 
   }, [user])
 
   // Get display name
-  const displayName = React.useMemo(() => {
+  const displayName = useMemo(() => {
     if (user.firstName && user.lastName) {
       return `${user.firstName} ${user.lastName}`
     }

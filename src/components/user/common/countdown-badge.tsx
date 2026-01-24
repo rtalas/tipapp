@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Clock, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -59,11 +59,11 @@ function formatTimeRemaining(deadline: Date): {
 }
 
 export function CountdownBadge({ deadline, className }: CountdownBadgeProps) {
-  const [timeInfo, setTimeInfo] = React.useState(() =>
+  const [timeInfo, setTimeInfo] = useState(() =>
     formatTimeRemaining(deadline)
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     const update = () => {
       setTimeInfo(formatTimeRemaining(deadline))
     }

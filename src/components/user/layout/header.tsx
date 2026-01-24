@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import {
@@ -77,7 +77,7 @@ function LeagueJoinRow({
   onJoinSuccess: () => void
 }) {
   const t = useTranslations('user.header')
-  const [isJoining, setIsJoining] = React.useState(false)
+  const [isJoining, setIsJoining] = useState(false)
 
   const handleJoin = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -126,9 +126,9 @@ export function Header({ user, locale }: HeaderProps) {
   const t = useTranslations('user.header')
   const { leagues, selectedLeagueId, selectedLeague, setSelectedLeagueId } =
     useUserLeagueContext()
-  const [showLeagueDialog, setShowLeagueDialog] = React.useState(false)
-  const [showLanguageDialog, setShowLanguageDialog] = React.useState(false)
-  const [userLeagues, setUserLeagues] = React.useState<
+  const [showLeagueDialog, setShowLeagueDialog] = useState(false)
+  const [showLanguageDialog, setShowLanguageDialog] = useState(false)
+  const [userLeagues, setUserLeagues] = useState<
     Array<{
       id: number
       name: string
@@ -139,7 +139,7 @@ export function Header({ user, locale }: HeaderProps) {
       sport: { id: number; name: string }
     }>
   >([])
-  const [pastLeagues, setPastLeagues] = React.useState<
+  const [pastLeagues, setPastLeagues] = useState<
     Array<{
       id: number
       name: string
@@ -150,7 +150,7 @@ export function Header({ user, locale }: HeaderProps) {
       sport: { id: number; name: string }
     }>
   >([])
-  const [availableLeagues, setAvailableLeagues] = React.useState<
+  const [availableLeagues, setAvailableLeagues] = useState<
     Array<{
       id: number
       name: string
@@ -160,7 +160,7 @@ export function Header({ user, locale }: HeaderProps) {
       sport: { id: number; name: string }
     }>
   >([])
-  const [isLoadingLeagues, setIsLoadingLeagues] = React.useState(false)
+  const [isLoadingLeagues, setIsLoadingLeagues] = useState(false)
 
   const loadLeagues = React.useCallback(async () => {
     setIsLoadingLeagues(true)

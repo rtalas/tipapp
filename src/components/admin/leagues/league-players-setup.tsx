@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Trash2, Users, Trophy } from 'lucide-react'
@@ -74,10 +74,10 @@ interface LeaguePlayersSetupProps {
 
 export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupProps) {
   const t = useTranslations('admin.leaguePlayers')
-  const [selectedLeagueTeamId, setSelectedLeagueTeamId] = React.useState<string>('')
-  const [selectedPlayerId, setSelectedPlayerId] = React.useState<string>('')
-  const [isAddingPlayer, setIsAddingPlayer] = React.useState(false)
-  const [openRankingPopover, setOpenRankingPopover] = React.useState<number | null>(null)
+  const [selectedLeagueTeamId, setSelectedLeagueTeamId] = useState<string>('')
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
+  const [isAddingPlayer, setIsAddingPlayer] = useState(false)
+  const [openRankingPopover, setOpenRankingPopover] = useState<number | null>(null)
 
   // Get players already assigned to any team in this league
   const assignedPlayerIds = new Set(

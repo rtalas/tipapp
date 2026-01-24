@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Trophy } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -25,7 +25,7 @@ interface LeaderboardTableProps {
 export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
   const t = useTranslations('user.leaderboard')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
-  const [selectedUser, setSelectedUser] = React.useState<LeaderboardEntry | null>(
+  const [selectedUser, setSelectedUser] = useState<LeaderboardEntry | null>(
     null
   )
 

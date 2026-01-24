@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, User, Lock, Eye, EyeOff, Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -32,22 +32,22 @@ export function ProfileContent({ profile }: ProfileContentProps) {
   const router = useRouter()
 
   // Profile form state
-  const [firstName, setFirstName] = React.useState(profile.firstName || '')
-  const [lastName, setLastName] = React.useState(profile.lastName || '')
-  const [email, setEmail] = React.useState(profile.email || '')
-  const [isUpdatingProfile, setIsUpdatingProfile] = React.useState(false)
+  const [firstName, setFirstName] = useState(profile.firstName || '')
+  const [lastName, setLastName] = useState(profile.lastName || '')
+  const [email, setEmail] = useState(profile.email || '')
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
 
   // Password form state
-  const [currentPassword, setCurrentPassword] = React.useState('')
-  const [newPassword, setNewPassword] = React.useState('')
-  const [confirmPassword, setConfirmPassword] = React.useState('')
-  const [showCurrentPassword, setShowCurrentPassword] = React.useState(false)
-  const [showNewPassword, setShowNewPassword] = React.useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
-  const [isChangingPassword, setIsChangingPassword] = React.useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
 
   // Get user initials
-  const userInitials = React.useMemo(() => {
+  const userInitials = useMemo(() => {
     if (profile.firstName && profile.lastName) {
       return `${profile.firstName[0]}${profile.lastName[0]}`.toUpperCase()
     }

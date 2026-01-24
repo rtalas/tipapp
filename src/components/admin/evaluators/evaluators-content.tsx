@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Trash2, Edit, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
@@ -76,26 +76,26 @@ export function EvaluatorsContent({
 }: EvaluatorsContentProps) {
   const t = useTranslations('admin.evaluators')
   const tCommon = useTranslations('admin.common')
-  const [search, setSearch] = React.useState('')
-  const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
-  const [editingId, setEditingId] = React.useState<number | null>(null)
-  const [editPointsValue, setEditPointsValue] = React.useState<string>('')
-  const [editNameValue, setEditNameValue] = React.useState<string>('')
-  const [isSaving, setIsSaving] = React.useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
-  const [evaluatorToDelete, setEvaluatorToDelete] = React.useState<Evaluator | null>(null)
-  const [isDeleting, setIsDeleting] = React.useState(false)
-  const [createDialogOpen, setCreateDialogOpen] = React.useState(false)
-  const [createForm, setCreateForm] = React.useState({
+  const [search, setSearch] = useState('')
+  const [leagueFilter, setLeagueFilter] = useState<string>('all')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editPointsValue, setEditPointsValue] = useState<string>('')
+  const [editNameValue, setEditNameValue] = useState<string>('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [evaluatorToDelete, setEvaluatorToDelete] = useState<Evaluator | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [createForm, setCreateForm] = useState({
     leagueId: league?.id.toString() || '',
     evaluatorTypeId: '',
     name: '',
     points: '',
   })
-  const [isCreating, setIsCreating] = React.useState(false)
+  const [isCreating, setIsCreating] = useState(false)
 
   // Update leagueId when league prop changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (league) {
       setCreateForm((prev) => ({ ...prev, leagueId: league.id.toString() }))
     }

@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { format } from 'date-fns'
 import { Check, X, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -87,12 +87,12 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
   const t = useTranslations('admin.users')
   const tCommon = useTranslations('admin.common')
   const tSeries = useTranslations('admin.series')
-  const [search, setSearch] = React.useState('')
-  const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
-  const [processingRequests, setProcessingRequests] = React.useState<Set<number>>(new Set())
-  const [removeDialogOpen, setRemoveDialogOpen] = React.useState(false)
-  const [userToRemove, setUserToRemove] = React.useState<LeagueUser | null>(null)
-  const [isRemoving, setIsRemoving] = React.useState(false)
+  const [search, setSearch] = useState('')
+  const [leagueFilter, setLeagueFilter] = useState<string>('all')
+  const [processingRequests, setProcessingRequests] = useState<Set<number>>(new Set())
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
+  const [userToRemove, setUserToRemove] = useState<LeagueUser | null>(null)
+  const [isRemoving, setIsRemoving] = useState(false)
 
   // Filter league users with optimized string search
   const filteredLeagueUsers = leagueUsers.filter((lu) => {

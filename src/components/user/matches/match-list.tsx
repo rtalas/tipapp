@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   format,
   isThisWeek,
@@ -25,10 +25,10 @@ type FilterType = 'upcoming' | 'past'
 export function MatchList({ matches }: MatchListProps) {
   const t = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
-  const [filter, setFilter] = React.useState<FilterType>('upcoming')
+  const [filter, setFilter] = useState<FilterType>('upcoming')
 
   // Extended date label for match list (includes "this week" check)
-  const getDateLabel = React.useCallback((date: Date): string => {
+  const getDateLabel = useCallback((date: Date): string => {
     const basicLabel = getBasicDateLabel(date)
     // If it's today or tomorrow, use translated label
     if (basicLabel === 'Today') {
@@ -45,7 +45,7 @@ export function MatchList({ matches }: MatchListProps) {
   }, [t])
 
   // Filter matches based on selected tab
-  const filteredMatches = React.useMemo(() => {
+  const filteredMatches = useMemo(() => {
     const now = new Date()
 
     if (filter === 'upcoming') {
@@ -55,7 +55,7 @@ export function MatchList({ matches }: MatchListProps) {
   }, [matches, filter])
 
   // Sort matches: upcoming ones ascending, past ones descending
-  const sortedMatches = React.useMemo(() => {
+  const sortedMatches = useMemo(() => {
     return [...filteredMatches].sort((a, b) => {
       const aDate = a.Match.dateTime
       const bDate = b.Match.dateTime
@@ -68,7 +68,7 @@ export function MatchList({ matches }: MatchListProps) {
   }, [filteredMatches, filter])
 
   // Group by date
-  const groupedMatches = React.useMemo(
+  const groupedMatches = useMemo(
     () => groupByDate(sortedMatches, (m) => m.Match.dateTime),
     [sortedMatches]
   )

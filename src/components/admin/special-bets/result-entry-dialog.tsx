@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateSpecialBetResult, type SpecialBetWithDetails } from '@/actions/special-bets'
@@ -40,18 +40,18 @@ interface ResultEntryDialogProps {
 }
 
 export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: ResultEntryDialogProps) {
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [isEvaluating, setIsEvaluating] = React.useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isEvaluating, setIsEvaluating] = useState(false)
 
   // Determine type from special bet definition
   const resultType = getSpecialBetType(specialBet.SpecialBetSingle.SpecialBetSingleType.id)
-  const [selectedTeamId, setSelectedTeamId] = React.useState<string>(
+  const [selectedTeamId, setSelectedTeamId] = useState<string>(
     specialBet.specialBetTeamResultId?.toString() ?? ''
   )
-  const [selectedPlayerId, setSelectedPlayerId] = React.useState<string>(
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>(
     specialBet.specialBetPlayerResultId?.toString() ?? ''
   )
-  const [valueResult, setValueResult] = React.useState<string>(
+  const [valueResult, setValueResult] = useState<string>(
     specialBet.specialBetValue?.toString() ?? ''
   )
 

@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateSeriesResult } from '@/actions/series'
@@ -59,12 +59,12 @@ interface ResultEntryDialogProps {
 }
 
 export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDialogProps) {
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [isEvaluating, setIsEvaluating] = React.useState(false)
-  const [homeTeamScore, setHomeTeamScore] = React.useState(
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isEvaluating, setIsEvaluating] = useState(false)
+  const [homeTeamScore, setHomeTeamScore] = useState(
     series.homeTeamScore?.toString() ?? ''
   )
-  const [awayTeamScore, setAwayTeamScore] = React.useState(
+  const [awayTeamScore, setAwayTeamScore] = useState(
     series.awayTeamScore?.toString() ?? ''
   )
 

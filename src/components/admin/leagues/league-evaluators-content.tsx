@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Trash2, Edit, Plus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -65,20 +65,20 @@ export function LeagueEvaluatorsContent({
   evaluatorTypes,
 }: LeagueEvaluatorsContentProps) {
   const t = useTranslations('admin.leagueEvaluators')
-  const [editingId, setEditingId] = React.useState<number | null>(null)
-  const [editPointsValue, setEditPointsValue] = React.useState<string>('')
-  const [editNameValue, setEditNameValue] = React.useState<string>('')
-  const [isSaving, setIsSaving] = React.useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
-  const [evaluatorToDelete, setEvaluatorToDelete] = React.useState<Evaluator | null>(null)
-  const [isDeleting, setIsDeleting] = React.useState(false)
-  const [createDialogOpen, setCreateDialogOpen] = React.useState(false)
-  const [createForm, setCreateForm] = React.useState({
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editPointsValue, setEditPointsValue] = useState<string>('')
+  const [editNameValue, setEditNameValue] = useState<string>('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [evaluatorToDelete, setEvaluatorToDelete] = useState<Evaluator | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [createForm, setCreateForm] = useState({
     evaluatorTypeId: '',
     name: '',
     points: '',
   })
-  const [isCreating, setIsCreating] = React.useState(false)
+  const [isCreating, setIsCreating] = useState(false)
 
   const handleStartEdit = (evaluator: Evaluator) => {
     setEditingId(evaluator.id)

@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
@@ -19,8 +19,8 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children, user, leagues, locale }: AdminLayoutProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
     <LeagueProvider>

@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
 import { Swords, Minus, Plus, Check, Lock, Clock, Users } from 'lucide-react'
@@ -34,7 +34,7 @@ type FilterType = 'current' | 'past'
 export function SeriesList({ series }: SeriesListProps) {
   const t = useTranslations('user.series')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
-  const [filter, setFilter] = React.useState<FilterType>('current')
+  const [filter, setFilter] = useState<FilterType>('current')
 
   // Filter series
   const currentSeries = series.filter((s) => !s.isEvaluated)
@@ -42,7 +42,7 @@ export function SeriesList({ series }: SeriesListProps) {
   const displayedSeries = filter === 'current' ? currentSeries : pastSeries
 
   // Group by date
-  const groupedSeries = React.useMemo(() => {
+  const groupedSeries = useMemo(() => {
     const sorted = [...displayedSeries].sort((a, b) => {
       if (filter === 'past') {
         return new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
@@ -157,13 +157,13 @@ function SeriesCard({
   const sportId = series.League?.sportId
   const sportGradient = sportId === SPORT_IDS.HOCKEY ? 'gradient-hockey' : 'gradient-football'
 
-  const [homeScore, setHomeScore] = React.useState(series.userBet?.homeTeamScore ?? 0)
-  const [awayScore, setAwayScore] = React.useState(series.userBet?.awayTeamScore ?? 0)
-  const [isSaving, setIsSaving] = React.useState(false)
-  const [isSaved, setIsSaved] = React.useState(!!series.userBet)
-  const [showFriendsBets, setShowFriendsBets] = React.useState(false)
-  const [friendPredictions, setFriendPredictions] = React.useState<SeriesFriendPrediction[]>([])
-  const [isLoadingFriends, setIsLoadingFriends] = React.useState(false)
+  const [homeScore, setHomeScore] = useState(series.userBet?.homeTeamScore ?? 0)
+  const [awayScore, setAwayScore] = useState(series.userBet?.awayTeamScore ?? 0)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isSaved, setIsSaved] = useState(!!series.userBet)
+  const [showFriendsBets, setShowFriendsBets] = useState(false)
+  const [friendPredictions, setFriendPredictions] = useState<SeriesFriendPrediction[]>([])
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false)
 
   const homeTeamName = homeTeam?.Team.shortcut || homeTeam?.Team.name || 'Home'
   const awayTeamName = awayTeam?.Team.shortcut || awayTeam?.Team.name || 'Away'
