@@ -5,6 +5,7 @@ import { Fragment } from 'react'
 import { format } from 'date-fns'
 import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { deleteSeries } from '@/actions/series'
 import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { getErrorMessage } from '@/lib/error-handler'
@@ -65,6 +66,8 @@ function getSeriesStatus(series: Series): 'scheduled' | 'finished' | 'evaluated'
 }
 
 export function SeriesContent({ series, leagues, specialBetSeries, users, league }: SeriesContentProps) {
+  const t = useTranslations('admin.series')
+  const tCommon = useTranslations('admin.common')
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
@@ -119,11 +122,11 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
     setIsDeleting(true)
     try {
       await deleteSeries(seriesToDelete.id)
-      toast.success('Series deleted successfully')
+      toast.success(t('seriesDeleted'))
       setDeleteDialogOpen(false)
       setSeriesToDelete(null)
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to delete series')
+      const message = getErrorMessage(error, t('seriesDeleteFailed'))
       toast.error(message)
       logger.error('Failed to delete series', { error, seriesId: seriesToDelete?.id })
     } finally {
@@ -139,13 +142,13 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
 
       if (result.success && 'totalUsersEvaluated' in result) {
         toast.success(
-          `Series evaluated! ${result.totalUsersEvaluated} user(s) updated.`
+          t('seriesEvaluated', { count: result.totalUsersEvaluated })
         )
       } else if (!result.success) {
-        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to evaluate series'))
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, t('seriesEvaluateFailed')))
       }
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Failed to evaluate series'))
+      toast.error(getErrorMessage(error, t('seriesEvaluateFailed')))
       logger.error('Failed to evaluate series', { error, seriesId })
     }
   }
@@ -158,29 +161,29 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-1 flex-wrap gap-2">
           <Input
-            placeholder="Search by team name..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
           />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={tCommon('status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
-              <SelectItem value="finished">Finished</SelectItem>
-              <SelectItem value="evaluated">Evaluated</SelectItem>
+              <SelectItem value="all">{t('allStatus')}</SelectItem>
+              <SelectItem value="scheduled">{t('scheduled')}</SelectItem>
+              <SelectItem value="finished">{t('finished')}</SelectItem>
+              <SelectItem value="evaluated">{t('evaluated')}</SelectItem>
             </SelectContent>
           </Select>
           {!league && (
             <Select value={leagueFilter} onValueChange={setLeagueFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="League" />
+                <SelectValue placeholder={t('league')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Leagues</SelectItem>
+                <SelectItem value="all">{t('allLeagues')}</SelectItem>
                 {leagues.map((lg) => (
                   <SelectItem key={lg.id} value={lg.id.toString()}>
                     {lg.name}
@@ -191,10 +194,10 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
           )}
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Users" />
+              <SelectValue placeholder={t('allUsers')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="all">{t('allUsers')}</SelectItem>
               {users.map((user) => (
                 <SelectItem key={user.id} value={user.id.toString()}>
                   {user.firstName} {user.lastName}
@@ -205,25 +208,25 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
         </div>
         <Button onClick={() => setAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Create Series
+          {t('createSeries')}
         </Button>
       </div>
 
       {/* Series table */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>All Series</CardTitle>
+          <CardTitle>{t('allSeries')}</CardTitle>
           <CardDescription>
-            {filteredSeries.length} series found
+            {t('seriesFound', { count: filteredSeries.length })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {filteredSeries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground mb-4">No series found</p>
+              <p className="text-muted-foreground mb-4">{t('noSeriesFound')}</p>
               <Button onClick={() => setAddDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create your first series
+                {t('createFirstSeries')}
               </Button>
             </div>
           ) : (
@@ -232,15 +235,15 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[40px]"></TableHead>
-                    <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    {!league && <TableHead>League</TableHead>}
-                    <TableHead>Type</TableHead>
-                    <TableHead>Matchup</TableHead>
-                    <TableHead className="text-center">Score</TableHead>
-                    <TableHead className="text-center">Bets</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead className="w-[80px]">{t('id')}</TableHead>
+                    <TableHead>{t('dateTime')}</TableHead>
+                    {!league && <TableHead>{t('league')}</TableHead>}
+                    <TableHead>{t('type')}</TableHead>
+                    <TableHead>{t('matchup')}</TableHead>
+                    <TableHead className="text-center">{t('score')}</TableHead>
+                    <TableHead className="text-center">{t('bets')}</TableHead>
+                    <TableHead>{tCommon('status')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -281,13 +284,13 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                           {!league && <TableCell>{s.League.name}</TableCell>}
                           <TableCell>
                             <span className="text-sm text-muted-foreground">
-                              {s.SpecialBetSerie.name} (Best of {s.SpecialBetSerie.bestOf})
+                              {s.SpecialBetSerie.name} ({t('bestOf', { count: s.SpecialBetSerie.bestOf })})
                             </span>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{homeTeam.name}</span>
-                              <span className="text-muted-foreground">vs</span>
+                              <span className="text-muted-foreground">{t('vs')}</span>
                               <span className="font-medium">{awayTeam.name}</span>
                             </div>
                           </TableCell>
@@ -319,7 +322,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                                   : 'scheduled'
                               }
                             >
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                              {t(status)}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -334,7 +337,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                                   e.stopPropagation()
                                   setSelectedSeries(s)
                                 }}
-                                aria-label={`Edit series result: ${homeTeam.name} vs ${awayTeam.name}`}
+                                aria-label={t('editSeriesResult', { matchup: `${homeTeam.name} ${t('vs')} ${awayTeam.name}` })}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
@@ -345,7 +348,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                                   e.stopPropagation()
                                   handleEvaluate(s.id)
                                 }}
-                                aria-label={`Evaluate series: ${homeTeam.name} vs ${awayTeam.name}`}
+                                aria-label={t('evaluateSeries', { matchup: `${homeTeam.name} ${t('vs')} ${awayTeam.name}` })}
                               >
                                 <Calculator className="h-4 w-4 text-blue-600" />
                               </Button>
@@ -357,7 +360,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                                   setSeriesToDelete(s)
                                   setDeleteDialogOpen(true)
                                 }}
-                                aria-label={`Delete series: ${homeTeam.name} vs ${awayTeam.name}`}
+                                aria-label={t('deleteSeries', { matchup: `${homeTeam.name} ${t('vs')} ${awayTeam.name}` })}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
@@ -372,18 +375,18 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                               <div className="p-4">
                                 {s.UserSpecialBetSerie.length === 0 ? (
                                   <div className="py-8 text-center">
-                                    <p className="text-muted-foreground">No bets yet for this series</p>
+                                    <p className="text-muted-foreground">{t('noUserBets')}</p>
                                   </div>
                                 ) : (
                                   <div className="rounded-lg border bg-background">
                                     <Table>
                                       <TableHeader>
                                         <TableRow>
-                                          <TableHead>User</TableHead>
-                                          <TableHead>Home Score</TableHead>
-                                          <TableHead>Away Score</TableHead>
-                                          <TableHead>Points</TableHead>
-                                          <TableHead className="text-right">Actions</TableHead>
+                                          <TableHead>{t('user')}</TableHead>
+                                          <TableHead>{t('homeScore')}</TableHead>
+                                          <TableHead>{t('awayScore')}</TableHead>
+                                          <TableHead>{t('points')}</TableHead>
+                                          <TableHead className="text-right">{tCommon('actions')}</TableHead>
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
@@ -408,10 +411,10 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setCreateBetSeriesId(s.id)}
-                                    aria-label="Add missing bet for this series"
+                                    aria-label={t('addMissingBetAria')}
                                   >
                                     <Plus className="mr-2 h-4 w-4" />
-                                    Add Missing Bet
+                                    {t('addMissingBet')}
                                   </Button>
                                 </div>
                               </div>
@@ -462,48 +465,48 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Series</DialogTitle>
+            <DialogTitle>{t('deleteTitle')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this series? This action cannot be undone.
+              {t('deleteConfirm')}
             </DialogDescription>
           </DialogHeader>
           {seriesToDelete && (
             <div className="rounded-lg border p-4 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Series ID:</span>
+                <span className="text-sm text-muted-foreground">{t('seriesId')}</span>
                 <span className="font-mono">#{seriesToDelete.id}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Date:</span>
+                <span className="text-sm text-muted-foreground">{t('date')}</span>
                 <span>{format(new Date(seriesToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Type:</span>
-                <span>{seriesToDelete.SpecialBetSerie.name} (Best of {seriesToDelete.SpecialBetSerie.bestOf})</span>
+                <span className="text-sm text-muted-foreground">{t('typeLabel')}</span>
+                <span>{seriesToDelete.SpecialBetSerie.name} ({t('bestOf', { count: seriesToDelete.SpecialBetSerie.bestOf })})</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Matchup:</span>
+                <span className="text-sm text-muted-foreground">{t('matchupLabel')}</span>
                 <span className="font-medium">
-                  {seriesToDelete.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team.name} vs{' '}
+                  {seriesToDelete.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team.name} {t('vs')}{' '}
                   {seriesToDelete.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team.name}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">League:</span>
+                <span className="text-sm text-muted-foreground">{t('leagueLabel')}</span>
                 <span>{seriesToDelete.League.name}</span>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? tCommon('deleting') : tCommon('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

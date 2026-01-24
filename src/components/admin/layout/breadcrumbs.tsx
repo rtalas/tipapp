@@ -3,23 +3,9 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ChevronRight, Home } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import type { League } from '@prisma/client'
-
-const routeLabels: Record<string, string> = {
-  admin: 'Admin',
-  leagues: 'Leagues',
-  matches: 'Matches',
-  results: 'Results',
-  users: 'Users',
-  new: 'New',
-  setup: 'Setup',
-  teams: 'Teams',
-  players: 'Players',
-  series: 'Series',
-  'special-bets': 'Special Bets',
-  evaluators: 'Evaluators',
-}
 
 interface BreadcrumbsProps {
   leagues?: League[]
@@ -27,7 +13,23 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ leagues = [] }: BreadcrumbsProps) {
   const pathname = usePathname()
+  const t = useTranslations('admin.breadcrumbs')
   const segments = pathname.split('/').filter(Boolean)
+
+  const routeLabels: Record<string, string> = {
+    admin: t('admin'),
+    leagues: t('leagues'),
+    matches: t('matches'),
+    results: t('results'),
+    users: t('users'),
+    new: t('new'),
+    setup: t('setup'),
+    teams: t('teams'),
+    players: t('players'),
+    series: t('series'),
+    'special-bets': t('specialBets'),
+    evaluators: t('evaluators'),
+  }
 
   // Build breadcrumb items
   const breadcrumbs = segments.map((segment, index) => {

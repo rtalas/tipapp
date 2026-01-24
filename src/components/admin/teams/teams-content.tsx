@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Trash2, Edit } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import {
   createTeam,
   updateTeam,
@@ -92,6 +93,8 @@ interface CreateFormData {
 }
 
 export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
+  const t = useTranslations('admin.teams')
+  const tCommon = useTranslations('admin.common')
   const [search, setSearch] = React.useState('')
   const [sportFilter, setSportFilter] = React.useState<string>('all')
 
@@ -157,7 +160,7 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
     })
 
     if (!validation.success) {
-      const message = getErrorMessage(validation.error, 'Validation failed')
+      const message = getErrorMessage(validation.error, t('validationFailed'))
       toast.error(message)
       return
     }
@@ -173,10 +176,10 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
         flagIcon: inlineEdit.form.flagIcon || undefined,
         flagType: (flagType as 'icon' | 'path') || undefined,
       })
-      toast.success('Team updated')
+      toast.success(t('teamUpdated'))
       inlineEdit.finishEdit()
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to update team')
+      const message = getErrorMessage(error, t('teamUpdateFailed'))
       toast.error(message)
       logger.error('Failed to update team', { error, teamId })
     } finally {
@@ -200,7 +203,7 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
     })
 
     if (!validation.success) {
-      const message = getErrorMessage(validation.error, 'Validation failed')
+      const message = getErrorMessage(validation.error, t('validationFailed'))
       toast.error(message)
       return
     }
@@ -216,10 +219,10 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
         flagType: (flagType as 'icon' | 'path') || undefined,
         externalId: createDialog.form.externalId ? parseInt(createDialog.form.externalId, 10) : undefined,
       })
-      toast.success('Team created')
+      toast.success(t('teamCreated'))
       createDialog.finishCreating()
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to create team')
+      const message = getErrorMessage(error, t('teamCreateFailed'))
       toast.error(message)
       logger.error('Failed to create team', { error })
       createDialog.cancelCreating()
@@ -232,10 +235,10 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
     deleteDialog.startDeleting()
     try {
       await deleteTeam(deleteDialog.itemToDelete.id)
-      toast.success('Team deleted')
+      toast.success(t('teamDeleted'))
       deleteDialog.finishDeleting()
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to delete team')
+      const message = getErrorMessage(error, t('teamDeleteFailed'))
       toast.error(message)
       logger.error('Failed to delete team', { error, teamId: deleteDialog.itemToDelete?.id })
       deleteDialog.cancelDeleting()
@@ -246,7 +249,7 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
     <>
       {/* Header with Create Button and Filters */}
       <ContentFilterHeader
-        searchPlaceholder="Search by name, nickname, or shortcut..."
+        searchPlaceholder={t('searchPlaceholder')}
         searchValue={search}
         onSearchChange={setSearch}
         filters={[
@@ -254,9 +257,9 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
             name: 'sport',
             value: sportFilter,
             onChange: setSportFilter,
-            placeholder: 'Sport',
+            placeholder: t('sport'),
             options: [
-              { value: 'all', label: 'All Sports' },
+              { value: 'all', label: t('allSports') },
               ...sports.map((sport) => ({
                 value: sport.id.toString(),
                 label: sport.name,
@@ -264,30 +267,30 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
             ],
           },
         ]}
-        createButtonLabel="Add Team"
+        createButtonLabel={t('addTeam')}
         onCreateClick={createDialog.openDialog}
       />
 
       {/* Teams Table */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>Teams</CardTitle>
-          <CardDescription>Manage teams across all sports</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>
           {filteredTeams.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">No teams found</p>
+              <p className="text-muted-foreground">{t('noTeamsFound')}</p>
             </div>
           ) : (
             <div className="rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Shortcut</TableHead>
-                    <TableHead>Sport</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead>{tCommon('name')}</TableHead>
+                    <TableHead>{t('shortcut')}</TableHead>
+                    <TableHead>{t('sport')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -303,11 +306,11 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ name: e.target.value })
                                 }
-                                placeholder="Team name"
+                                placeholder={t('teamName')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
                                 autoFocus
-                                aria-label="Team name"
+                                aria-label={t('teamName')}
                               />
                               <Input
                                 type="text"
@@ -315,10 +318,10 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ nickname: e.target.value })
                                 }
-                                placeholder="Nickname (optional)"
+                                placeholder={t('nicknameOptional')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Team nickname"
+                                aria-label={t('nickname')}
                               />
                               <Input
                                 type="text"
@@ -326,10 +329,10 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ shortcut: e.target.value })
                                 }
-                                placeholder="Shortcut"
+                                placeholder={t('shortcut')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Team shortcut"
+                                aria-label={t('teamShortcut')}
                               />
                               <Select
                                 value={inlineEdit.form.sportId}
@@ -337,8 +340,8 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
                                   inlineEdit.updateForm({ sportId: value })
                                 }
                               >
-                                <SelectTrigger className="h-8" aria-label="Team sport">
-                                  <SelectValue placeholder="Select sport" />
+                                <SelectTrigger className="h-8" aria-label={t('teamSport')}>
+                                  <SelectValue placeholder={t('selectSport')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {sports.map((sport) => (
@@ -354,13 +357,13 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
                                   inlineEdit.updateForm({ flagType: value })
                                 }
                               >
-                                <SelectTrigger className="h-8" aria-label="Flag type">
-                                  <SelectValue placeholder="Select flag type" />
+                                <SelectTrigger className="h-8" aria-label={t('flagType')}>
+                                  <SelectValue placeholder={t('selectFlagType')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="none">None</SelectItem>
-                                  <SelectItem value="icon">Icon (CSS class)</SelectItem>
-                                  <SelectItem value="path">Path (file path)</SelectItem>
+                                  <SelectItem value="none">{t('flagTypeNone')}</SelectItem>
+                                  <SelectItem value="icon">{t('flagTypeIcon')}</SelectItem>
+                                  <SelectItem value="path">{t('flagTypePath')}</SelectItem>
                                 </SelectContent>
                               </Select>
                               <Input
@@ -369,10 +372,10 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ flagIcon: e.target.value })
                                 }
-                                placeholder={inlineEdit.form.flagType === 'path' ? '/logos/team.png' : 'fi fi-cz'}
+                                placeholder={inlineEdit.form.flagType === 'path' ? t('flagIconPathPlaceholder') : t('flagIconPlaceholder')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Flag icon or path"
+                                aria-label={t('flagIconPath')}
                               />
                             </div>
                             <div className="flex items-center gap-2 mt-8">
@@ -380,18 +383,18 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
                                 size="sm"
                                 variant="outline"
                                 onClick={handleCancelEdit}
-                                aria-label="Cancel editing team"
+                                aria-label={t('cancelEditing')}
                               >
-                                Cancel
+                                {tCommon('cancel')}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="default"
                                 onClick={() => handleSaveEdit(team.id)}
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Save team changes"
+                                aria-label={t('saveChanges')}
                               >
-                                Save
+                                {tCommon('save')}
                               </Button>
                             </div>
                           </div>
@@ -416,7 +419,7 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleStartEdit(team)}
-                            aria-label={`Edit team: ${team.name}`}
+                            aria-label={t('editTeam', { name: team.name })}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -424,7 +427,7 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteDialog.openDialog(team)}
-                            aria-label={`Delete team: ${team.name}`}
+                            aria-label={t('deleteTeam', { name: team.name })}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -443,16 +446,14 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
       <Dialog open={deleteDialog.open} onOpenChange={deleteDialog.setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Team</DialogTitle>
+            <DialogTitle>{t('deleteTitle')}</DialogTitle>
             <DialogDescription>
               {deleteDialog.itemToDelete && (
                 <>
-                  Are you sure you want to delete "{deleteDialog.itemToDelete.name}"? This action cannot be
-                  undone.
+                  {t('deleteConfirm', { name: deleteDialog.itemToDelete.name })}
                   {deleteDialog.itemToDelete._count.LeagueTeam > 0 && (
                     <div className="mt-2 text-sm font-semibold text-amber-600">
-                      This team is assigned to {deleteDialog.itemToDelete._count.LeagueTeam} league(s). Deleting
-                      will remove these associations.
+                      {t('deleteWarning', { count: deleteDialog.itemToDelete._count.LeagueTeam })}
                     </div>
                   )}
                 </>
@@ -461,10 +462,10 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={deleteDialog.closeDialog}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteDialog.isDeleting}>
-              {deleteDialog.isDeleting ? 'Deleting...' : 'Delete'}
+              {deleteDialog.isDeleting ? tCommon('deleting') : tCommon('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -474,13 +475,13 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
       <Dialog open={createDialog.open} onOpenChange={createDialog.setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Team</DialogTitle>
-            <DialogDescription>Create a new team</DialogDescription>
+            <DialogTitle>{t('createTitle')}</DialogTitle>
+            <DialogDescription>{t('createDescription')}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Sport</label>
+              <label className="text-sm font-medium">{t('sport')}</label>
               <Select
                 value={createDialog.form.sportId}
                 onValueChange={(value) =>
@@ -488,7 +489,7 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select sport" />
+                  <SelectValue placeholder={t('selectSport')} />
                 </SelectTrigger>
                 <SelectContent>
                   {sports.map((sport) => (
@@ -501,43 +502,43 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Name</label>
+              <label className="text-sm font-medium">{tCommon('name')}</label>
               <Input
-                placeholder="e.g., Manchester United"
+                placeholder={t('nameExample')}
                 value={createDialog.form.name}
                 onChange={(e) =>
                   createDialog.updateForm({ name: e.target.value })
                 }
-                aria-label="Team name"
+                aria-label={t('teamName')}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Nickname</label>
+              <label className="text-sm font-medium">{t('nickname')}</label>
               <Input
-                placeholder="e.g., Man United"
+                placeholder={t('nicknameExample')}
                 value={createDialog.form.nickname}
                 onChange={(e) =>
                   createDialog.updateForm({ nickname: e.target.value })
                 }
-                aria-label="Team nickname"
+                aria-label={t('nickname')}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Shortcut</label>
+              <label className="text-sm font-medium">{t('shortcut')}</label>
               <Input
-                placeholder="e.g., MAN"
+                placeholder={t('shortcutExample')}
                 value={createDialog.form.shortcut}
                 onChange={(e) =>
                   createDialog.updateForm({ shortcut: e.target.value })
                 }
-                aria-label="Team shortcut"
+                aria-label={t('teamShortcut')}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Flag Type</label>
+              <label className="text-sm font-medium">{t('flagType')}</label>
               <Select
                 value={createDialog.form.flagType}
                 onValueChange={(value) =>
@@ -545,46 +546,46 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select flag type" />
+                  <SelectValue placeholder={t('selectFlagType')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="icon">Icon (CSS class for national flags)</SelectItem>
-                  <SelectItem value="path">Path (file path to team logo)</SelectItem>
+                  <SelectItem value="none">{t('flagTypeNone')}</SelectItem>
+                  <SelectItem value="icon">{t('flagTypeIconNational')}</SelectItem>
+                  <SelectItem value="path">{t('flagTypePathLogo')}</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                Choose how the flag/logo will be displayed
+                {t('chooseFlagType')}
               </p>
             </div>
 
             <div>
-              <label className="text-sm font-medium">Flag Icon / Path</label>
+              <label className="text-sm font-medium">{t('flagIconPath')}</label>
               <Input
-                placeholder={createDialog.form.flagType === 'path' ? 'e.g., /logos/team.png' : 'e.g., fi fi-cz'}
+                placeholder={createDialog.form.flagType === 'path' ? t('flagIconPathPlaceholder') : t('flagIconPlaceholder')}
                 value={createDialog.form.flagIcon}
                 onChange={(e) =>
                   createDialog.updateForm({ flagIcon: e.target.value })
                 }
-                aria-label="Flag icon or path"
+                aria-label={t('flagIconPath')}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 {createDialog.form.flagType === 'path'
-                  ? 'Enter the path to the team logo in /public folder'
-                  : 'Enter the CSS class name for the flag icon'}
+                  ? t('flagPathHelp')
+                  : t('flagIconHelp')}
               </p>
             </div>
 
             <div>
-              <label className="text-sm font-medium">External ID</label>
+              <label className="text-sm font-medium">{t('externalId')}</label>
               <Input
                 type="number"
-                placeholder="Optional external ID"
+                placeholder={t('externalIdOptional')}
                 value={createDialog.form.externalId}
                 onChange={(e) =>
                   createDialog.updateForm({ externalId: e.target.value })
                 }
-                aria-label="External ID"
+                aria-label={t('externalId')}
               />
             </div>
           </div>
@@ -595,10 +596,10 @@ export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
               onClick={createDialog.closeDialog}
               disabled={createDialog.isCreating}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button onClick={handleCreateTeam} disabled={createDialog.isCreating}>
-              {createDialog.isCreating ? 'Creating...' : 'Create'}
+              {createDialog.isCreating ? t('creating') : tCommon('create')}
             </Button>
           </DialogFooter>
         </DialogContent>

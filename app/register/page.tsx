@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, Suspense } from "react";
 import { AlertCircle, CheckCircle } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
 function RegisterForm() {
+  const t = useTranslations('auth.register');
   const router = useRouter();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -44,7 +46,7 @@ function RegisterForm() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Registration failed. Please try again.");
+        setError(data.error || t('errorRegistration'));
         setIsLoading(false);
         return;
       }
@@ -58,7 +60,7 @@ function RegisterForm() {
 
       if (!signInResult?.ok) {
         // Registration succeeded but auto-login failed, show error and redirect to login
-        setError("Account created but login failed. Please sign in manually.");
+        setError(t('errorAutoLogin'));
         setTimeout(() => {
           router.push("/login");
         }, 2000);
@@ -71,7 +73,7 @@ function RegisterForm() {
         router.push("/");
       }, 1500);
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      setError(t('errorGeneric'));
       setIsLoading(false);
     }
   };
@@ -85,10 +87,10 @@ function RegisterForm() {
               <CheckCircle className="h-12 w-12 text-green-600" />
             </div>
             <h2 className="text-lg font-semibold text-green-900 mb-2">
-              Account created successfully!
+              {t('successTitle')}
             </h2>
             <p className="text-sm text-green-700 mb-4">
-              Welcome, {formData.firstName}! You're being signed in...
+              {t('successMessage', { firstName: formData.firstName })}
             </p>
           </div>
         </div>
@@ -101,15 +103,15 @@ function RegisterForm() {
       <div className="w-full max-w-md space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Create your account
+            {t('title')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Already have an account?{" "}
+            {t('hasAccount')}{" "}
             <Link
               href="/login"
               className="font-medium text-blue-600 hover:text-blue-500"
             >
-              Sign in
+              {t('signIn')}
             </Link>
           </p>
         </div>
@@ -125,7 +127,7 @@ function RegisterForm() {
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
               <label htmlFor="firstName" className="sr-only">
-                First Name
+                {t('firstName')}
               </label>
               <input
                 id="firstName"
@@ -135,14 +137,14 @@ function RegisterForm() {
                 value={formData.firstName}
                 onChange={handleChange}
                 className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="First Name"
+                placeholder={t('firstName')}
                 disabled={isLoading}
               />
             </div>
 
             <div>
               <label htmlFor="lastName" className="sr-only">
-                Last Name
+                {t('lastName')}
               </label>
               <input
                 id="lastName"
@@ -152,14 +154,14 @@ function RegisterForm() {
                 value={formData.lastName}
                 onChange={handleChange}
                 className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="Last Name"
+                placeholder={t('lastName')}
                 disabled={isLoading}
               />
             </div>
 
             <div>
               <label htmlFor="username" className="sr-only">
-                Username
+                {t('username')}
               </label>
               <input
                 id="username"
@@ -169,14 +171,14 @@ function RegisterForm() {
                 value={formData.username}
                 onChange={handleChange}
                 className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="Username"
+                placeholder={t('username')}
                 disabled={isLoading}
               />
             </div>
 
             <div>
               <label htmlFor="email" className="sr-only">
-                Email
+                {t('email')}
               </label>
               <input
                 id="email"
@@ -186,14 +188,14 @@ function RegisterForm() {
                 value={formData.email}
                 onChange={handleChange}
                 className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="Email"
+                placeholder={t('email')}
                 disabled={isLoading}
               />
             </div>
 
             <div>
               <label htmlFor="password" className="sr-only">
-                Password
+                {t('password')}
               </label>
               <input
                 id="password"
@@ -203,14 +205,14 @@ function RegisterForm() {
                 value={formData.password}
                 onChange={handleChange}
                 className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="Password (min 8 chars, 1 uppercase, 1 number)"
+                placeholder={t('passwordHint')}
                 disabled={isLoading}
               />
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="sr-only">
-                Confirm Password
+                {t('confirmPassword')}
               </label>
               <input
                 id="confirmPassword"
@@ -220,7 +222,7 @@ function RegisterForm() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="Confirm Password"
+                placeholder={t('confirmPassword')}
                 disabled={isLoading}
               />
             </div>
@@ -231,21 +233,28 @@ function RegisterForm() {
             disabled={isLoading}
             className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Creating account..." : "Create account"}
+            {isLoading ? t('submitting') : t('submit')}
           </button>
         </form>
 
         <p className="text-center text-xs text-gray-500 mt-4">
-          By creating an account, you agree to our terms of service
+          {t('terms')}
         </p>
       </div>
     </div>
   );
 }
 
+function RegisterPageFallback() {
+  const t = useTranslations('auth.register');
+  return (
+    <div className="flex min-h-screen items-center justify-center">{t('loading')}</div>
+  );
+}
+
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<RegisterPageFallback />}>
       <RegisterForm />
     </Suspense>
   );

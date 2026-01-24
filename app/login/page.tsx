@@ -5,8 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState, Suspense } from "react";
 import { AlertCircle } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
 function LoginForm() {
+  const t = useTranslations('auth.login');
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
@@ -31,7 +33,7 @@ function LoginForm() {
 
       // Auth.js v5 bug: ok can be true even with errors
       if (result?.error || !result?.ok) {
-        setError("Invalid credentials");
+        setError(t('invalidCredentials'));
         setIsLoading(false);
         return;
       }
@@ -39,7 +41,7 @@ function LoginForm() {
       router.push(callbackUrl);
     } catch (err) {
       console.error("signIn error:", err);
-      setError("An error occurred. Please try again.");
+      setError(t('errorGeneric'));
       setIsLoading(false);
     }
   };
@@ -49,15 +51,15 @@ function LoginForm() {
       <div className="w-full max-w-md space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Sign in to your account
+            {t('title')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Don't have an account?{" "}
+            {t('noAccount')}{" "}
             <Link
               href="/register"
               className="font-medium text-blue-600 hover:text-blue-500"
             >
-              Sign up
+              {t('signUp')}
             </Link>
           </p>
         </div>
@@ -73,7 +75,7 @@ function LoginForm() {
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
               <label htmlFor="username" className="sr-only">
-                Username or Email
+                {t('username')}
               </label>
               <input
                 id="username"
@@ -81,13 +83,13 @@ function LoginForm() {
                 type="text"
                 required
                 className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="Username or Email"
+                placeholder={t('username')}
                 disabled={isLoading}
               />
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
-                Password
+                {t('password')}
               </label>
               <input
                 id="password"
@@ -95,7 +97,7 @@ function LoginForm() {
                 type="password"
                 required
                 className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="Password"
+                placeholder={t('password')}
                 disabled={isLoading}
               />
             </div>
@@ -106,7 +108,7 @@ function LoginForm() {
             disabled={isLoading}
             className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading ? t('submitting') : t('submit')}
           </button>
 
           <div className="flex items-center justify-center">
@@ -114,7 +116,7 @@ function LoginForm() {
               href="/forgot-password"
               className="text-sm font-medium text-blue-600 hover:text-blue-500"
             >
-              Forgot your password?
+              {t('forgotPassword')}
             </Link>
           </div>
         </form>
@@ -123,9 +125,16 @@ function LoginForm() {
   );
 }
 
+function LoginPageFallback() {
+  const t = useTranslations('auth.login');
+  return (
+    <div className="flex min-h-screen items-center justify-center">{t('loading')}</div>
+  );
+}
+
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<LoginPageFallback />}>
       <LoginForm />
     </Suspense>
   );

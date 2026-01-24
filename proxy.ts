@@ -1,10 +1,42 @@
 import { auth } from "@/auth";
+import { match } from '@formatjs/intl-localematcher';
+import Negotiator from 'negotiator';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Routes that don't require authentication
 const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/api/auth", "/api/register"];
 
+// Locale configuration
+const locales = ['en', 'cs'] as const;
+const defaultLocale = 'en';
+const cookieName = 'NEXT_LOCALE';
+
+function getLocale(request: NextRequest): string {
+  // 1. Check cookie first (user preference)
+  const cookieLocale = request.cookies.get(cookieName)?.value;
+  if (cookieLocale && locales.includes(cookieLocale as typeof locales[number])) {
+    return cookieLocale;
+  }
+
+  // 2. Check Accept-Language header (browser/system preference)
+  const acceptLanguage = request.headers.get('accept-language');
+  if (acceptLanguage) {
+    try {
+      const headers = { 'accept-language': acceptLanguage };
+      const languages = new Negotiator({ headers }).languages();
+      return match(languages, [...locales], defaultLocale);
+    } catch {
+      // If matching fails, fall through to default
+    }
+  }
+
+  // 3. Default to English
+  return defaultLocale;
+}
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
+
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
   // Protect admin routes - only superadmins can access /admin/*
@@ -87,6 +119,34 @@ export default auth((req) => {
       }
     }
   }
+
+  // ===== LOCALE DETECTION =====
+  // Detect user's preferred locale
+  const locale = getLocale(req as unknown as NextRequest);
+
+  // Set locale in request headers for Server Components to access
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set('x-locale', locale);
+
+  // Create response with modified headers
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  // Set locale cookie if not already set or different
+  const currentCookie = req.cookies.get(cookieName)?.value;
+  if (currentCookie !== locale) {
+    response.cookies.set(cookieName, locale, {
+      maxAge: 365 * 24 * 60 * 60, // 1 year
+      path: '/',
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+  }
+
+  return response;
 });
 
 export const config = {

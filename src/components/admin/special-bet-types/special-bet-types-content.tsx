@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Trash2, Edit, Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import {
   createSpecialBetType,
   updateSpecialBetType,
@@ -89,6 +90,8 @@ export function SpecialBetTypesContent({
   sports,
   betTypes,
 }: SpecialBetTypesContentProps) {
+  const t = useTranslations('admin.specialBetTypes')
+  const tCommon = useTranslations('admin.common')
   const [search, setSearch] = React.useState('')
   const [sportFilter, setSportFilter] = React.useState<string>('all')
   const [typeFilter, setTypeFilter] = React.useState<string>('all')
@@ -145,7 +148,7 @@ export function SpecialBetTypesContent({
         sportId: parseInt(inlineEdit.form.sportId, 10),
         specialBetSingleTypeId: parseInt(inlineEdit.form.specialBetSingleTypeId, 10),
       })
-      toast.success('Special bet type updated')
+      toast.success(t('toast.updated'))
       inlineEdit.finishEdit()
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to update special bet type')
@@ -158,7 +161,7 @@ export function SpecialBetTypesContent({
 
   const handleCreateSpecialBetType = async () => {
     if (!createDialog.form.name || !createDialog.form.sportId || !createDialog.form.specialBetSingleTypeId) {
-      toast.error('Please fill in all required fields')
+      toast.error(t('validation.requiredFields'))
       return
     }
 
@@ -169,7 +172,7 @@ export function SpecialBetTypesContent({
         sportId: parseInt(createDialog.form.sportId, 10),
         specialBetSingleTypeId: parseInt(createDialog.form.specialBetSingleTypeId, 10),
       })
-      toast.success('Special bet type created')
+      toast.success(t('toast.created'))
       createDialog.finishCreating()
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to create special bet type')
@@ -185,7 +188,7 @@ export function SpecialBetTypesContent({
     deleteDialog.startDeleting()
     try {
       await deleteSpecialBetType(deleteDialog.itemToDelete.id)
-      toast.success('Special bet type deleted')
+      toast.success(t('toast.deleted'))
       deleteDialog.finishDeleting()
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete special bet type')
@@ -201,17 +204,17 @@ export function SpecialBetTypesContent({
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-4 md:flex-row">
           <Input
-            placeholder="Search by name..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
           />
           <Select value={sportFilter} onValueChange={setSportFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Sport" />
+              <SelectValue placeholder={t('filters.sport')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Sports</SelectItem>
+              <SelectItem value="all">{t('filters.allSports')}</SelectItem>
               {sports.map((sport) => (
                 <SelectItem key={sport.id} value={sport.id.toString()}>
                   {sport.name}
@@ -221,10 +224,10 @@ export function SpecialBetTypesContent({
           </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder={t('filters.type')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="all">{t('filters.allTypes')}</SelectItem>
               {betTypes.map((type) => (
                 <SelectItem key={type.id} value={type.id.toString()}>
                   {type.name}
@@ -235,30 +238,30 @@ export function SpecialBetTypesContent({
         </div>
         <Button onClick={createDialog.openDialog}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Special Bet Type
+          {t('addButton')}
         </Button>
       </div>
 
       {/* Special Bet Types Table */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>Special Bet Types</CardTitle>
-          <CardDescription>Manage special bet templates across all sports</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>
           {filteredSpecialBetTypes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">No special bet types found</p>
+              <p className="text-muted-foreground">{t('emptyState')}</p>
             </div>
           ) : (
             <div className="rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Sport</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead>{t('table.name')}</TableHead>
+                    <TableHead>{t('table.sport')}</TableHead>
+                    <TableHead>{t('table.type')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('table.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -274,11 +277,11 @@ export function SpecialBetTypesContent({
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ name: e.target.value })
                                 }
-                                placeholder="Special bet name"
+                                placeholder={t('form.namePlaceholder')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
                                 autoFocus
-                                aria-label="Special bet name"
+                                aria-label={t('form.nameLabel')}
                               />
                               <Select
                                 value={inlineEdit.form.sportId}
@@ -286,8 +289,8 @@ export function SpecialBetTypesContent({
                                   inlineEdit.updateForm({ sportId: value })
                                 }
                               >
-                                <SelectTrigger className="h-8" aria-label="Sport">
-                                  <SelectValue placeholder="Select sport" />
+                                <SelectTrigger className="h-8" aria-label={t('form.sportLabel')}>
+                                  <SelectValue placeholder={t('form.selectSport')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {sports.map((sport) => (
@@ -303,8 +306,8 @@ export function SpecialBetTypesContent({
                                   inlineEdit.updateForm({ specialBetSingleTypeId: value })
                                 }
                               >
-                                <SelectTrigger className="h-8" aria-label="Type">
-                                  <SelectValue placeholder="Select type" />
+                                <SelectTrigger className="h-8" aria-label={t('form.typeLabel')}>
+                                  <SelectValue placeholder={t('form.selectType')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {betTypes.map((type) => (
@@ -320,18 +323,18 @@ export function SpecialBetTypesContent({
                                 size="sm"
                                 variant="outline"
                                 onClick={handleCancelEdit}
-                                aria-label="Cancel editing special bet type"
+                                aria-label={t('form.cancelLabel')}
                               >
-                                Cancel
+                                {tCommon('button.cancel')}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="default"
                                 onClick={() => handleSaveEdit(item.id)}
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Save special bet type changes"
+                                aria-label={t('form.saveLabel')}
                               >
-                                Save
+                                {tCommon('button.save')}
                               </Button>
                             </div>
                           </div>
@@ -378,17 +381,14 @@ export function SpecialBetTypesContent({
       <Dialog open={deleteDialog.open} onOpenChange={deleteDialog.setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Special Bet Type</DialogTitle>
+            <DialogTitle>{t('dialog.deleteTitle')}</DialogTitle>
             <DialogDescription>
               {deleteDialog.itemToDelete && (
                 <>
-                  Are you sure you want to delete "{deleteDialog.itemToDelete.name}"? This action cannot be
-                  undone.
+                  {t('dialog.deleteConfirm', { name: deleteDialog.itemToDelete.name })}
                   {deleteDialog.itemToDelete._count.LeagueSpecialBetSingle > 0 && (
                     <div className="mt-2 text-sm font-semibold text-amber-600">
-                      This special bet type is used in {deleteDialog.itemToDelete._count.LeagueSpecialBetSingle}{' '}
-                      league{deleteDialog.itemToDelete._count.LeagueSpecialBetSingle !== 1 ? 's' : ''}. Deleting
-                      will remove these associations.
+                      {t('dialog.deleteWarning', { count: deleteDialog.itemToDelete._count.LeagueSpecialBetSingle })}
                     </div>
                   )}
                 </>
@@ -397,10 +397,10 @@ export function SpecialBetTypesContent({
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={deleteDialog.closeDialog}>
-              Cancel
+              {tCommon('button.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteDialog.isDeleting}>
-              {deleteDialog.isDeleting ? 'Deleting...' : 'Delete'}
+              {deleteDialog.isDeleting ? t('dialog.deleting') : t('dialog.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -410,25 +410,25 @@ export function SpecialBetTypesContent({
       <Dialog open={createDialog.open} onOpenChange={createDialog.setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Special Bet Type</DialogTitle>
-            <DialogDescription>Create a new special bet template</DialogDescription>
+            <DialogTitle>{t('dialog.createTitle')}</DialogTitle>
+            <DialogDescription>{t('dialog.createDescription')}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Name</label>
+              <label className="text-sm font-medium">{t('form.nameLabel')}</label>
               <Input
-                placeholder="e.g., Tournament Winner"
+                placeholder={t('form.namePlaceholder')}
                 value={createDialog.form.name}
                 onChange={(e) =>
                   createDialog.updateForm({ name: e.target.value })
                 }
-                aria-label="Special bet type name"
+                aria-label={t('form.nameLabel')}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Sport</label>
+              <label className="text-sm font-medium">{t('form.sportLabel')}</label>
               <Select
                 value={createDialog.form.sportId}
                 onValueChange={(value) =>
@@ -436,7 +436,7 @@ export function SpecialBetTypesContent({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select sport" />
+                  <SelectValue placeholder={t('form.selectSport')} />
                 </SelectTrigger>
                 <SelectContent>
                   {sports.map((sport) => (
@@ -449,7 +449,7 @@ export function SpecialBetTypesContent({
             </div>
 
             <div>
-              <label className="text-sm font-medium">Type</label>
+              <label className="text-sm font-medium">{t('form.typeLabel')}</label>
               <Select
                 value={createDialog.form.specialBetSingleTypeId}
                 onValueChange={(value) =>
@@ -457,7 +457,7 @@ export function SpecialBetTypesContent({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder={t('form.selectType')} />
                 </SelectTrigger>
                 <SelectContent>
                   {betTypes.map((type) => (
@@ -468,7 +468,7 @@ export function SpecialBetTypesContent({
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                Choose the evaluation type for this special bet
+                {t('form.typeHint')}
               </p>
             </div>
           </div>
@@ -479,10 +479,10 @@ export function SpecialBetTypesContent({
               onClick={createDialog.closeDialog}
               disabled={createDialog.isCreating}
             >
-              Cancel
+              {tCommon('button.cancel')}
             </Button>
             <Button onClick={handleCreateSpecialBetType} disabled={createDialog.isCreating}>
-              {createDialog.isCreating ? 'Creating...' : 'Create'}
+              {createDialog.isCreating ? t('dialog.creating') : t('dialog.create')}
             </Button>
           </DialogFooter>
         </DialogContent>

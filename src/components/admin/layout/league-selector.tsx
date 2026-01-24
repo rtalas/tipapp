@@ -3,6 +3,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useRouter, usePathname } from 'next/navigation'
 import { useLeagueContext } from '@/contexts/league-context'
+import { useTranslations } from 'next-intl'
 import type { League } from '@prisma/client'
 
 interface LeagueSelectorProps {
@@ -11,6 +12,7 @@ interface LeagueSelectorProps {
 }
 
 export function LeagueSelector({ leagues, currentLeagueId }: LeagueSelectorProps) {
+  const t = useTranslations('admin.common')
   const router = useRouter()
   const pathname = usePathname()
   const { selectedLeagueId, setSelectedLeagueId } = useLeagueContext()
@@ -38,7 +40,7 @@ export function LeagueSelector({ leagues, currentLeagueId }: LeagueSelectorProps
   if (leagues.length === 0) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span>No leagues available</span>
+        <span>{t('noLeaguesAvailable')}</span>
       </div>
     )
   }
@@ -49,8 +51,8 @@ export function LeagueSelector({ leagues, currentLeagueId }: LeagueSelectorProps
       onValueChange={handleChange}
       disabled={leagues.length === 0}
     >
-      <SelectTrigger className="w-[280px]" aria-label="Select league">
-        <SelectValue placeholder="Select league" />
+      <SelectTrigger className="w-[280px]" aria-label={t('selectLeague')}>
+        <SelectValue placeholder={t('selectLeague')} />
       </SelectTrigger>
       <SelectContent>
         {leagues.map((league) => (

@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Trash2, Users } from 'lucide-react'
 import {
@@ -81,6 +82,8 @@ export function LeagueSetupTabs({
   availableTeams,
   allPlayers,
 }: LeagueSetupTabsProps) {
+  const t = useTranslations('admin.leagueSetup')
+  const tCommon = useTranslations('admin.common')
   const [selectedTeamId, setSelectedTeamId] = React.useState<string>('')
   const [selectedLeagueTeamId, setSelectedLeagueTeamId] = React.useState<string>('')
   const [selectedPlayerId, setSelectedPlayerId] = React.useState<string>('')
@@ -102,10 +105,10 @@ export function LeagueSetupTabs({
         leagueId: league.id,
         teamId: parseInt(selectedTeamId, 10),
       })
-      toast.success('Team added to league')
+      toast.success(t('teamAdded'))
       setSelectedTeamId('')
     } catch (error) {
-      toast.error('Failed to add team')
+      toast.error(t('teamAddFailed'))
       logger.error('Failed to add team to league', { error, leagueId: league.id, teamId: selectedTeamId })
     } finally {
       setIsAddingTeam(false)
@@ -115,9 +118,9 @@ export function LeagueSetupTabs({
   const handleRemoveTeam = async (leagueTeamId: number) => {
     try {
       await removeTeamFromLeague({ id: leagueTeamId })
-      toast.success('Team removed from league')
+      toast.success(t('teamRemoved'))
     } catch (error) {
-      toast.error('Failed to remove team')
+      toast.error(t('teamRemoveFailed'))
       logger.error('Failed to remove team from league', { error, leagueTeamId })
     }
   }
@@ -131,10 +134,10 @@ export function LeagueSetupTabs({
         leagueTeamId: parseInt(selectedLeagueTeamId, 10),
         playerId: parseInt(selectedPlayerId, 10),
       })
-      toast.success('Player added to team')
+      toast.success(t('playerAdded'))
       setSelectedPlayerId('')
     } catch (error) {
-      toast.error('Failed to add player')
+      toast.error(t('playerAddFailed'))
       logger.error('Failed to add player to team', { error, leagueTeamId: selectedLeagueTeamId, playerId: selectedPlayerId })
     } finally {
       setIsAddingPlayer(false)
@@ -144,9 +147,9 @@ export function LeagueSetupTabs({
   const handleRemovePlayer = async (leaguePlayerId: number) => {
     try {
       await removePlayerFromLeagueTeam({ id: leaguePlayerId })
-      toast.success('Player removed from team')
+      toast.success(t('playerRemoved'))
     } catch (error) {
-      toast.error('Failed to remove player')
+      toast.error(t('playerRemoveFailed'))
       logger.error('Failed to remove player from team', { error, leaguePlayerId })
     }
   }
@@ -156,9 +159,9 @@ export function LeagueSetupTabs({
       {/* Teams Section */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>Teams</CardTitle>
+          <CardTitle>{t('teamsSection')}</CardTitle>
           <CardDescription>
-            Add teams participating in this league
+            {t('teamsDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -166,12 +169,12 @@ export function LeagueSetupTabs({
           <div className="flex gap-4">
             <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
               <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select a team to add" />
+                <SelectValue placeholder={t('selectTeam')} />
               </SelectTrigger>
               <SelectContent>
                 {availableTeams.length === 0 ? (
                   <SelectItem value="none" disabled>
-                    No teams available
+                    {t('noTeamsAvailable')}
                   </SelectItem>
                 ) : (
                   availableTeams.map((team) => (
@@ -187,7 +190,7 @@ export function LeagueSetupTabs({
               disabled={!selectedTeamId || isAddingTeam}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Team
+              {t('addTeam')}
             </Button>
           </div>
 
@@ -197,10 +200,10 @@ export function LeagueSetupTabs({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Team</TableHead>
-                    <TableHead>Group</TableHead>
-                    <TableHead>Players</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead>{t('team')}</TableHead>
+                    <TableHead>{t('group')}</TableHead>
+                    <TableHead>{t('players')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -243,7 +246,7 @@ export function LeagueSetupTabs({
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              No teams added yet. Add teams above to get started.
+              {t('noTeamsAdded')}
             </div>
           )}
         </CardContent>
@@ -254,9 +257,9 @@ export function LeagueSetupTabs({
       {/* Players Section */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>Players</CardTitle>
+          <CardTitle>{t('playersSection')}</CardTitle>
           <CardDescription>
-            Assign players to teams for scorer predictions
+            {t('playersDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -268,7 +271,7 @@ export function LeagueSetupTabs({
                 onValueChange={setSelectedLeagueTeamId}
               >
                 <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Select team" />
+                  <SelectValue placeholder={t('selectTeamFirst')} />
                 </SelectTrigger>
                 <SelectContent>
                   {league.LeagueTeam.map((lt) => (
@@ -285,12 +288,12 @@ export function LeagueSetupTabs({
                 disabled={!selectedLeagueTeamId}
               >
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select a player to add" />
+                  <SelectValue placeholder={t('selectPlayer')} />
                 </SelectTrigger>
                 <SelectContent>
                   {unassignedPlayers.length === 0 ? (
                     <SelectItem value="none" disabled>
-                      No players available
+                      {t('noPlayersAvailable')}
                     </SelectItem>
                   ) : (
                     unassignedPlayers.map((player) => (
@@ -314,12 +317,12 @@ export function LeagueSetupTabs({
                 }
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add Player
+                {t('addPlayer')}
               </Button>
             </div>
           ) : (
             <p className="text-muted-foreground">
-              Add teams first before assigning players.
+              {t('addTeamFirst')}
             </p>
           )}
 
@@ -335,9 +338,9 @@ export function LeagueSetupTabs({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Player</TableHead>
-                        <TableHead>Position</TableHead>
-                        <TableHead className="w-[80px]">Actions</TableHead>
+                        <TableHead>{t('player')}</TableHead>
+                        <TableHead>{t('position')}</TableHead>
+                        <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -371,7 +374,7 @@ export function LeagueSetupTabs({
           {league.LeagueTeam.length > 0 &&
             league.LeagueTeam.every((lt) => lt.LeaguePlayer.length === 0) && (
               <div className="text-center py-8 text-muted-foreground">
-                No players assigned yet. Select a team and add players above.
+                {t('noPlayersAssigned')}
               </div>
             )}
         </CardContent>

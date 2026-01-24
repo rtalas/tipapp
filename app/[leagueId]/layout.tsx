@@ -1,6 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { getLocale } from 'next-intl/server'
 import { UserLayout } from '@/components/user/layout/user-layout'
 
 interface LeagueLayoutProps {
@@ -202,6 +203,9 @@ export default async function LeagueLayout({
   // Combine special bets and questions for the special tab
   const specialTabCount = upcomingSpecialBetsCount + upcomingQuestionsCount
 
+  // Get current locale for i18n
+  const locale = await getLocale()
+
   return (
     <UserLayout
       user={{
@@ -218,6 +222,7 @@ export default async function LeagueLayout({
         series: upcomingSeriesCount || undefined,
         special: specialTabCount || undefined,
       }}
+      locale={locale}
     >
       {children}
     </UserLayout>

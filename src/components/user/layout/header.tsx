@@ -16,6 +16,7 @@ import {
   Trophy,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { useTranslations } from 'next-intl'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,7 @@ import { useUserLeagueContext } from '@/contexts/user-league-context'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { getAllLeaguesForSelector, joinLeague } from '@/actions/user/leagues'
+import { LanguageSwitcher } from './language-switcher'
 
 interface HeaderProps {
   user: {
@@ -45,6 +47,7 @@ interface HeaderProps {
     lastName?: string | null
     isSuperadmin?: boolean
   }
+  locale?: string
 }
 
 // Helper to get sport emoji
@@ -73,6 +76,7 @@ function LeagueJoinRow({
   }
   onJoinSuccess: () => void
 }) {
+  const t = useTranslations('user.header')
   const [isJoining, setIsJoining] = React.useState(false)
 
   const handleJoin = async (e: React.MouseEvent) => {
@@ -108,7 +112,7 @@ function LeagueJoinRow({
         ) : (
           <>
             <Plus className="h-3 w-3 mr-1" />
-            Join
+            {t('join')}
           </>
         )}
       </Button>
@@ -116,12 +120,14 @@ function LeagueJoinRow({
   )
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user, locale }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const router = useRouter()
+  const t = useTranslations('user.header')
   const { leagues, selectedLeagueId, selectedLeague, setSelectedLeagueId } =
     useUserLeagueContext()
   const [showLeagueDialog, setShowLeagueDialog] = React.useState(false)
+  const [showLanguageDialog, setShowLanguageDialog] = React.useState(false)
   const [userLeagues, setUserLeagues] = React.useState<
     Array<{
       id: number
@@ -266,18 +272,25 @@ export function Header({ user }: HeaderProps) {
                   ) : (
                     <Moon className="mr-2 h-4 w-4" />
                   )}
-                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                  {theme === 'dark' ? t('lightMode') : t('darkMode')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowLanguageDialog(true)}>
+                  <LanguageSwitcher
+                    currentLocale={locale || 'en'}
+                    open={showLanguageDialog}
+                    onOpenChange={setShowLanguageDialog}
+                  />
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push('/profile')}>
                   <User className="mr-2 h-4 w-4" />
-                  Profile
+                  {t('profile')}
                 </DropdownMenuItem>
                 {user.isSuperadmin && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => router.push('/admin')}>
                       <Settings className="mr-2 h-4 w-4" />
-                      Admin Dashboard
+                      {t('adminDashboard')}
                     </DropdownMenuItem>
                   </>
                 )}
@@ -287,7 +300,7 @@ export function Header({ user }: HeaderProps) {
                   className="text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
+                  {t('signOut')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -299,12 +312,12 @@ export function Header({ user }: HeaderProps) {
       <Dialog open={showLeagueDialog} onOpenChange={setShowLeagueDialog}>
         <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Your Leagues</DialogTitle>
+            <DialogTitle>{t('yourLeagues')}</DialogTitle>
           </DialogHeader>
 
           {isLoadingLeagues ? (
             <div className="py-8 text-center text-muted-foreground">
-              Loading leagues...
+              {t('loadingLeagues')}
             </div>
           ) : (
             <>
@@ -345,7 +358,7 @@ export function Header({ user }: HeaderProps) {
                   <div className="mt-6 mb-3 flex items-center gap-2">
                     <div className="h-px flex-1 bg-border" />
                     <span className="text-xs font-semibold text-muted-foreground uppercase">
-                      Past Leagues
+                      {t('pastLeagues')}
                     </span>
                     <div className="h-px flex-1 bg-border" />
                   </div>
@@ -386,7 +399,7 @@ export function Header({ user }: HeaderProps) {
                   <div className="mt-6 mb-3 flex items-center gap-2">
                     <div className="h-px flex-1 bg-border" />
                     <span className="text-xs font-semibold text-muted-foreground uppercase">
-                      Available to Join
+                      {t('availableToJoin')}
                     </span>
                     <div className="h-px flex-1 bg-border" />
                   </div>
@@ -409,7 +422,7 @@ export function Header({ user }: HeaderProps) {
                 availableLeagues.length === 0 && (
                   <div className="py-8 text-center">
                     <Trophy className="w-12 h-12 text-muted-foreground opacity-20 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">No leagues available</p>
+                    <p className="text-sm text-muted-foreground">{t('noLeaguesAvailable')}</p>
                   </div>
                 )}
             </>

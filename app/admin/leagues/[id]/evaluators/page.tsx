@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
 import { ChevronLeft } from 'lucide-react'
 import { getLeagueEvaluators } from '@/actions/evaluators'
 import { getLeagueById } from '@/actions/leagues'
@@ -14,6 +15,7 @@ interface LeagueEvaluatorsPageProps {
 }
 
 export default async function LeagueEvaluatorsPage({ params }: LeagueEvaluatorsPageProps) {
+  const t = await getTranslations('admin.leagueEvaluators')
   const { id } = await params
   const leagueId = parseInt(id, 10)
 
@@ -37,12 +39,12 @@ export default async function LeagueEvaluatorsPage({ params }: LeagueEvaluatorsP
         <Button variant="ghost" size="icon" asChild>
           <Link href="/admin/leagues">
             <ChevronLeft className="h-4 w-4" />
-            <span className="sr-only">Back to leagues</span>
+            <span className="sr-only">{t('backToLeagues')}</span>
           </Link>
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{league.name}</h1>
-          <p className="text-muted-foreground">Manage scoring rules for this league</p>
+          <p className="text-muted-foreground">{t('description')}</p>
         </div>
       </div>
 

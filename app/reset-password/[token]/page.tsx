@@ -6,8 +6,10 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ResetPasswordPage() {
+  const t = useTranslations('auth.resetPassword');
   const router = useRouter();
   const params = useParams();
   const token = (params?.token as string) || '';
@@ -24,12 +26,12 @@ export default function ResetPasswordPage() {
   // Validate token format on mount (allow both uppercase and lowercase hex)
   useEffect(() => {
     if (!token || !/^[a-f0-9A-F0-9]{64}$/.test(token)) {
-      setError('Invalid reset link. Please request a new password reset.');
+      setError(t('invalidToken'));
     } else {
       // Clear error if token format is valid (it will be set again on server error)
       setError('');
     }
-  }, [token]);
+  }, [token, t]);
 
   // Check password requirements in real-time
   const getPasswordRequirements = (pwd: string) => {
@@ -82,11 +84,11 @@ export default function ResetPasswordPage() {
           router.push('/login');
         }, 3000);
       } else {
-        setError(result.error || 'Failed to reset password. Please try again.');
+        setError(result.error || t('errorFailed'));
       }
     } catch (err) {
       console.error('Error in reset password submission:', err);
-      setError('An error occurred. Please try again.');
+      setError(t('errorGeneric'));
     } finally {
       setIsLoading(false);
     }
@@ -103,10 +105,10 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Set new password
+            {t('title')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Enter a new password to regain access to your account.
+            {t('description')}
           </p>
         </div>
 
@@ -122,9 +124,9 @@ export default function ResetPasswordPage() {
             <div className="rounded-md bg-green-50 p-4 flex gap-3">
               <CheckCircle className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-green-800">Password reset successfully!</p>
+                <p className="text-sm font-medium text-green-800">{t('successTitle')}</p>
                 <p className="text-xs text-green-700 mt-1">
-                  Redirecting to login page in a moment...
+                  {t('successMessage')}
                 </p>
               </div>
             </div>
@@ -134,7 +136,7 @@ export default function ResetPasswordPage() {
             {/* Password Input */}
             <div>
               <label htmlFor="password" className="sr-only">
-                New Password
+                {t('password')}
               </label>
               <div className="relative">
                 <input
@@ -143,11 +145,11 @@ export default function ResetPasswordPage() {
                   type={showPassword ? 'text' : 'password'}
                   required
                   className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 pr-10 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                  placeholder="New password"
+                  placeholder={t('password')}
                   disabled={isLoading || success}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  aria-label="New password"
+                  aria-label={t('password')}
                 />
                 <button
                   type="button"
@@ -219,7 +221,7 @@ export default function ResetPasswordPage() {
             {/* Confirm Password Input */}
             <div>
               <label htmlFor="confirmPassword" className="sr-only">
-                Confirm Password
+                {t('confirmPassword')}
               </label>
               <div className="relative">
                 <input
@@ -228,11 +230,11 @@ export default function ResetPasswordPage() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   required
                   className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 pr-10 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                  placeholder="Confirm password"
+                  placeholder={t('confirmPassword')}
                   disabled={isLoading || success}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  aria-label="Confirm password"
+                  aria-label={t('confirmPassword')}
                 />
                 <button
                   type="button"
@@ -261,13 +263,13 @@ export default function ResetPasswordPage() {
             disabled={!isFormValid}
             className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Resetting password...' : success ? 'Password reset!' : 'Reset password'}
+            {isLoading ? t('submitting') : success ? t('submitSuccess') : t('submit')}
           </button>
 
           <div className="flex items-center justify-center">
             <div className="text-sm">
               <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                Back to sign in
+                {t('backToSignIn')}
               </Link>
             </div>
           </div>

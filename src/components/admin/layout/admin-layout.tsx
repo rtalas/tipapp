@@ -15,9 +15,10 @@ interface AdminLayoutProps {
     isSuperadmin: boolean
   }
   leagues: League[]
+  locale?: string
 }
 
-export function AdminLayout({ children, user, leagues }: AdminLayoutProps) {
+export function AdminLayout({ children, user, leagues, locale }: AdminLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
 
@@ -56,6 +57,7 @@ export function AdminLayout({ children, user, leagues }: AdminLayoutProps) {
             onMenuClick={() => setMobileMenuOpen(true)}
             user={user}
             leagues={leagues}
+            locale={locale}
           />
 
           {/* Main content */}

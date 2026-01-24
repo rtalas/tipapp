@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Trash2, Users, Trophy } from 'lucide-react'
 import { assignPlayerToLeagueTeam, removePlayerFromLeagueTeam, updateTopScorerRanking } from '@/actions/leagues'
@@ -72,6 +73,7 @@ interface LeaguePlayersSetupProps {
 }
 
 export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupProps) {
+  const t = useTranslations('admin.leaguePlayers')
   const [selectedLeagueTeamId, setSelectedLeagueTeamId] = React.useState<string>('')
   const [selectedPlayerId, setSelectedPlayerId] = React.useState<string>('')
   const [isAddingPlayer, setIsAddingPlayer] = React.useState(false)
@@ -92,10 +94,10 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
         leagueTeamId: parseInt(selectedLeagueTeamId, 10),
         playerId: parseInt(selectedPlayerId, 10),
       })
-      toast.success('Player added to team')
+      toast.success(t('addSuccess'))
       setSelectedPlayerId('')
     } catch (error) {
-      toast.error('Failed to add player')
+      toast.error(t('addError'))
       logger.error('Failed to add player to team', { error, leagueTeamId: selectedLeagueTeamId, playerId: selectedPlayerId })
     } finally {
       setIsAddingPlayer(false)
@@ -105,9 +107,9 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
   const handleRemovePlayer = async (leaguePlayerId: number) => {
     try {
       await removePlayerFromLeagueTeam({ id: leaguePlayerId })
-      toast.success('Player removed from team')
+      toast.success(t('removeSuccess'))
     } catch (error) {
-      toast.error('Failed to remove player')
+      toast.error(t('removeError'))
       logger.error('Failed to remove player from team', { error, leaguePlayerId })
     }
   }
@@ -119,10 +121,10 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
         leaguePlayerId,
         topScorerRanking: rankingValue,
       })
-      toast.success('Ranking updated')
+      toast.success(t('rankingUpdateSuccess'))
       setOpenRankingPopover(null)
     } catch (error) {
-      toast.error('Failed to update ranking')
+      toast.error(t('rankingUpdateError'))
       logger.error('Failed to update top scorer ranking', { error, leaguePlayerId, ranking })
     }
   }
@@ -140,8 +142,8 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
   return (
     <Card className="card-shadow">
       <CardHeader>
-        <CardTitle>Players</CardTitle>
-        <CardDescription>Assign players to teams for scorer predictions</CardDescription>
+        <CardTitle>{t('title')}</CardTitle>
+        <CardDescription>{t('description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Add player form */}
@@ -149,7 +151,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
           <div className="flex gap-4">
             <Select value={selectedLeagueTeamId} onValueChange={setSelectedLeagueTeamId}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select team" />
+                <SelectValue placeholder={t('teamSelectPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {league.LeagueTeam.map((lt) => (
@@ -166,12 +168,12 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
               disabled={!selectedLeagueTeamId}
             >
               <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select a player to add" />
+                <SelectValue placeholder={t('playerSelectPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {unassignedPlayers.length === 0 ? (
                   <SelectItem value="none" disabled>
-                    No players available
+                    {t('noPlayersAvailable')}
                   </SelectItem>
                 ) : (
                   unassignedPlayers.map((player) => (
@@ -191,11 +193,11 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
               disabled={!selectedLeagueTeamId || !selectedPlayerId || isAddingPlayer}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Player
+              {t('addButton')}
             </Button>
           </div>
         ) : (
-          <p className="text-muted-foreground">Add teams first before assigning players.</p>
+          <p className="text-muted-foreground">{t('addFirstTeam')}</p>
         )}
 
         {/* Players by team */}
@@ -209,9 +211,9 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Player</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead className="w-[120px]">Actions</TableHead>
+                    <TableHead>{t('playerColumn')}</TableHead>
+                    <TableHead>{t('positionColumn')}</TableHead>
+                    <TableHead className="w-[120px]">{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -246,7 +248,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                             </PopoverTrigger>
                             <PopoverContent className="w-48" align="end">
                               <div className="space-y-2">
-                                <h4 className="font-medium text-sm">Top Scorer Ranking</h4>
+                                <h4 className="font-medium text-sm">{t('topScorerRanking')}</h4>
                                 <div className="space-y-1">
                                   <Button
                                     variant={lp.topScorerRanking === null ? 'secondary' : 'ghost'}
@@ -254,7 +256,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                                     className="w-full justify-start"
                                     onClick={() => handleUpdateRanking(lp.id, 'none')}
                                   >
-                                    No ranking
+                                    {t('noRanking')}
                                   </Button>
                                   <Button
                                     variant={lp.topScorerRanking === 1 ? 'secondary' : 'ghost'}
@@ -262,7 +264,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                                     className="w-full justify-start"
                                     onClick={() => handleUpdateRanking(lp.id, '1')}
                                   >
-                                    ⭐ 1st Best
+                                    {t('firstBest')}
                                   </Button>
                                   <Button
                                     variant={lp.topScorerRanking === 2 ? 'secondary' : 'ghost'}
@@ -270,7 +272,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                                     className="w-full justify-start"
                                     onClick={() => handleUpdateRanking(lp.id, '2')}
                                   >
-                                    ⭐⭐ 2nd Best
+                                    {t('secondBest')}
                                   </Button>
                                   <Button
                                     variant={lp.topScorerRanking === 3 ? 'secondary' : 'ghost'}
@@ -278,7 +280,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                                     className="w-full justify-start"
                                     onClick={() => handleUpdateRanking(lp.id, '3')}
                                   >
-                                    ⭐⭐⭐ 3rd Best
+                                    {t('thirdBest')}
                                   </Button>
                                   <Button
                                     variant={lp.topScorerRanking === 4 ? 'secondary' : 'ghost'}
@@ -286,7 +288,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                                     className="w-full justify-start"
                                     onClick={() => handleUpdateRanking(lp.id, '4')}
                                   >
-                                    ⭐⭐⭐⭐ 4th Best
+                                    {t('fourthBest')}
                                   </Button>
                                 </div>
                               </div>
@@ -314,7 +316,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
         {league.LeagueTeam.length > 0 &&
           league.LeagueTeam.every((lt) => lt.LeaguePlayer.length === 0) && (
             <div className="text-center py-8 text-muted-foreground">
-              No players assigned yet. Select a team and add players above.
+              {t('emptyState')}
             </div>
           )}
       </CardContent>

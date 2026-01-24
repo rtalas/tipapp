@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Trash2, Edit, Plus, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import {
   createPlayer,
   updatePlayer,
@@ -83,6 +84,8 @@ interface CreateFormData {
 }
 
 export function PlayersContent({ players, league }: PlayersContentProps) {
+  const t = useTranslations('admin.players')
+  const tCommon = useTranslations('admin.common')
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
 
@@ -142,7 +145,7 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
     })
 
     if (!validation.success) {
-      const message = getErrorMessage(validation.error, 'Validation failed')
+      const message = getErrorMessage(validation.error, t('validationFailed'))
       toast.error(message)
       return
     }
@@ -155,10 +158,10 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
         lastName: inlineEdit.form.lastName || undefined,
         position: inlineEdit.form.position || undefined,
       })
-      toast.success('Player updated')
+      toast.success(t('playerUpdated'))
       inlineEdit.finishEdit()
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to update player')
+      const message = getErrorMessage(error, t('playerUpdateFailed'))
       toast.error(message)
       logger.error('Failed to update player', { error, playerId })
     } finally {
@@ -194,7 +197,7 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
     })
 
     if (!validation.success) {
-      const message = getErrorMessage(validation.error, 'Validation failed')
+      const message = getErrorMessage(validation.error, t('validationFailed'))
       toast.error(message)
       return
     }
@@ -208,10 +211,10 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
         isActive: createDialog.form.isActive,
         externalId: createDialog.form.externalId ? parseInt(createDialog.form.externalId, 10) : undefined,
       })
-      toast.success('Player created')
+      toast.success(t('playerCreated'))
       createDialog.finishCreating()
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to create player')
+      const message = getErrorMessage(error, t('playerCreateFailed'))
       toast.error(message)
       logger.error('Failed to create player', { error })
       createDialog.cancelCreating()
@@ -224,10 +227,10 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
     deleteDialog.startDeleting()
     try {
       await deletePlayer(deleteDialog.itemToDelete.id)
-      toast.success('Player deleted')
+      toast.success(t('playerDeleted'))
       deleteDialog.finishDeleting()
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to delete player')
+      const message = getErrorMessage(error, t('playerDeleteFailed'))
       toast.error(message)
       logger.error('Failed to delete player', { error, playerId: deleteDialog.itemToDelete?.id })
       deleteDialog.cancelDeleting()
@@ -240,48 +243,48 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-4 md:flex-row">
           <Input
-            placeholder="Search by player name..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
           />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={tCommon('status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Players</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="all">{t('allPlayers')}</SelectItem>
+              <SelectItem value="active">{t('active')}</SelectItem>
+              <SelectItem value="inactive">{t('inactive')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <Button onClick={createDialog.openDialog}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Player
+          {t('addPlayer')}
         </Button>
       </div>
 
       {/* Players Table */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>Players</CardTitle>
-          <CardDescription>Manage players across all leagues</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>
           {filteredPlayers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">No players found</p>
+              <p className="text-muted-foreground">{t('noPlayersFound')}</p>
             </div>
           ) : (
             <div className="rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead>{tCommon('name')}</TableHead>
+                    <TableHead>{t('position')}</TableHead>
+                    <TableHead>{tCommon('status')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -297,11 +300,11 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ firstName: e.target.value })
                                 }
-                                placeholder="First name"
+                                placeholder={t('firstName')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
                                 autoFocus
-                                aria-label="First name"
+                                aria-label={t('firstName')}
                               />
                               <Input
                                 type="text"
@@ -309,10 +312,10 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ lastName: e.target.value })
                                 }
-                                placeholder="Last name"
+                                placeholder={t('lastName')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Last name"
+                                aria-label={t('lastName')}
                               />
                               <Input
                                 type="text"
@@ -320,10 +323,10 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ position: e.target.value })
                                 }
-                                placeholder="Position (optional)"
+                                placeholder={t('positionOptional')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Position"
+                                aria-label={t('position')}
                               />
                             </div>
                             <div className="flex items-center gap-2">
@@ -331,18 +334,18 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
                                 size="sm"
                                 variant="outline"
                                 onClick={handleCancelEdit}
-                                aria-label="Cancel editing player"
+                                aria-label={t('cancelEditing')}
                               >
-                                Cancel
+                                {tCommon('cancel')}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="default"
                                 onClick={() => handleSaveEdit(player.id)}
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Save player changes"
+                                aria-label={tCommon('save')}
                               >
-                                Save
+                                {tCommon('save')}
                               </Button>
                             </div>
                           </div>
@@ -351,7 +354,7 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
                             <div className="font-medium">{getPlayerName(player)}</div>
                             {!player.isActive && (
                               <Badge variant="outline" className="mt-1">
-                                Inactive
+                                {t('inactive')}
                               </Badge>
                             )}
                           </div>
@@ -364,9 +367,9 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
                       </TableCell>
                       <TableCell>
                         {player.isActive ? (
-                          <Badge variant="success">Active</Badge>
+                          <Badge variant="success">{t('active')}</Badge>
                         ) : (
-                          <Badge variant="secondary">Inactive</Badge>
+                          <Badge variant="secondary">{t('inactive')}</Badge>
                         )}
                       </TableCell>
                       <TableCell>
@@ -375,7 +378,7 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleStartEdit(player)}
-                            aria-label={`Edit player: ${getPlayerName(player)}`}
+                            aria-label={t('editPlayer', { name: getPlayerName(player) })}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -395,7 +398,7 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteDialog.openDialog(player)}
-                            aria-label={`Delete player: ${getPlayerName(player)}`}
+                            aria-label={t('deletePlayer', { name: getPlayerName(player) })}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -414,28 +417,21 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
       <Dialog open={deleteDialog.open} onOpenChange={deleteDialog.setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Player</DialogTitle>
+            <DialogTitle>{t('deleteTitle')}</DialogTitle>
             <DialogDescription>
               {deleteDialog.itemToDelete && (
                 <>
-                  Are you sure you want to delete "{getPlayerName(deleteDialog.itemToDelete)}"? This action
-                  cannot be undone.
-                  {deleteDialog.itemToDelete._count.LeaguePlayer > 0 && (
-                    <div className="mt-2 text-sm font-semibold text-amber-600">
-                      This player is assigned to {deleteDialog.itemToDelete._count.LeaguePlayer} league(s).
-                      Deleting will remove these associations.
-                    </div>
-                  )}
+                  {t('deleteConfirm', { name: getPlayerName(deleteDialog.itemToDelete) })}
                 </>
               )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={deleteDialog.closeDialog}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteDialog.isDeleting}>
-              {deleteDialog.isDeleting ? 'Deleting...' : 'Delete'}
+              {deleteDialog.isDeleting ? tCommon('deleting') : tCommon('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -445,55 +441,55 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
       <Dialog open={createDialog.open} onOpenChange={createDialog.setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Player</DialogTitle>
-            <DialogDescription>Create a new player</DialogDescription>
+            <DialogTitle>{t('createTitle')}</DialogTitle>
+            <DialogDescription>{t('createDescription')}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">First Name</label>
+              <label className="text-sm font-medium">{t('firstName')}</label>
               <Input
                 placeholder="e.g., Cristiano"
                 value={createDialog.form.firstName}
                 onChange={(e) =>
                   createDialog.updateForm({ firstName: e.target.value })
                 }
-                aria-label="First name"
+                aria-label={t('firstName')}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Last Name</label>
+              <label className="text-sm font-medium">{t('lastName')}</label>
               <Input
                 placeholder="e.g., Ronaldo"
                 value={createDialog.form.lastName}
                 onChange={(e) =>
                   createDialog.updateForm({ lastName: e.target.value })
                 }
-                aria-label="Last name"
+                aria-label={t('lastName')}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Position</label>
+              <label className="text-sm font-medium">{t('position')}</label>
               <Input
                 placeholder="e.g., Forward"
                 value={createDialog.form.position}
                 onChange={(e) =>
                   createDialog.updateForm({ position: e.target.value })
                 }
-                aria-label="Position"
+                aria-label={t('position')}
               />
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Active</label>
+              <label className="text-sm font-medium">{t('active')}</label>
               <Switch
                 checked={createDialog.form.isActive}
                 onCheckedChange={(checked) =>
                   createDialog.updateForm({ isActive: checked })
                 }
-                aria-label="Player active status"
+                aria-label={t('active')}
               />
             </div>
 
@@ -517,10 +513,10 @@ export function PlayersContent({ players, league }: PlayersContentProps) {
               onClick={createDialog.closeDialog}
               disabled={createDialog.isCreating}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button onClick={handleCreatePlayer} disabled={createDialog.isCreating}>
-              {createDialog.isCreating ? 'Creating...' : 'Create'}
+              {createDialog.isCreating ? tCommon('creating') : tCommon('create')}
             </Button>
           </DialogFooter>
         </DialogContent>

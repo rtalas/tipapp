@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
 import { assignTeamToLeague, removeTeamFromLeague } from '@/actions/leagues'
@@ -57,6 +58,7 @@ interface LeagueTeamsSetupProps {
 }
 
 export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupProps) {
+  const t = useTranslations('admin.leagueTeams')
   const [selectedTeamId, setSelectedTeamId] = React.useState<string>('')
   const [isAddingTeam, setIsAddingTeam] = React.useState(false)
 
@@ -69,10 +71,10 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
         leagueId: league.id,
         teamId: parseInt(selectedTeamId, 10),
       })
-      toast.success('Team added to league')
+      toast.success(t('addSuccess'))
       setSelectedTeamId('')
     } catch (error) {
-      toast.error('Failed to add team')
+      toast.error(t('addError'))
       logger.error('Failed to add team to league', { error, leagueId: league.id, teamId: selectedTeamId })
     } finally {
       setIsAddingTeam(false)
@@ -82,9 +84,9 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
   const handleRemoveTeam = async (leagueTeamId: number) => {
     try {
       await removeTeamFromLeague({ id: leagueTeamId })
-      toast.success('Team removed from league')
+      toast.success(t('removeSuccess'))
     } catch (error) {
-      toast.error('Failed to remove team')
+      toast.error(t('removeError'))
       logger.error('Failed to remove team from league', { error, leagueTeamId })
     }
   }
@@ -92,20 +94,20 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
   return (
     <Card className="card-shadow">
       <CardHeader>
-        <CardTitle>Teams</CardTitle>
-        <CardDescription>Add and manage teams participating in this league</CardDescription>
+        <CardTitle>{t('title')}</CardTitle>
+        <CardDescription>{t('description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Add team form */}
         <div className="flex gap-4">
           <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
             <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Select a team to add" />
+              <SelectValue placeholder={t('selectPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {availableTeams.length === 0 ? (
                 <SelectItem value="none" disabled>
-                  No teams available
+                  {t('noTeamsAvailable')}
                 </SelectItem>
               ) : (
                 availableTeams.map((team) => (
@@ -118,7 +120,7 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
           </Select>
           <Button onClick={handleAddTeam} disabled={!selectedTeamId || isAddingTeam}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Team
+            {t('addButton')}
           </Button>
         </div>
 
@@ -128,10 +130,10 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Team</TableHead>
-                  <TableHead>Group</TableHead>
-                  <TableHead>Players</TableHead>
-                  <TableHead className="w-[80px]">Actions</TableHead>
+                  <TableHead>{t('teamColumn')}</TableHead>
+                  <TableHead>{t('groupColumn')}</TableHead>
+                  <TableHead>{t('playersColumn')}</TableHead>
+                  <TableHead className="w-[80px]">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -147,7 +149,7 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
                       {lt.group ? <Badge variant="outline">{lt.group}</Badge> : '-'}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{lt.LeaguePlayer.length} players</Badge>
+                      <Badge variant="secondary">{lt.LeaguePlayer.length} {t('playersLabel')}</Badge>
                     </TableCell>
                     <TableCell>
                       <Button
@@ -167,7 +169,7 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
-            No teams added yet. Select a team from the dropdown above to get started.
+            {t('emptyState')}
           </div>
         )}
       </CardContent>

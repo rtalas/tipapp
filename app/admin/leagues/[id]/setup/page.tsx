@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { getLeagueById } from '@/actions/leagues'
 import { getTeamsBySport, getAllPlayers } from '@/actions/shared-queries'
 import { LeagueSetupTabs } from '@/components/admin/leagues/league-setup-tabs'
@@ -8,6 +9,7 @@ interface LeagueSetupPageProps {
 }
 
 export default async function LeagueSetupPage({ params }: LeagueSetupPageProps) {
+  const t = await getTranslations('admin.leagueSetup')
   const { id } = await params
   const leagueId = parseInt(id, 10)
 
@@ -34,7 +36,7 @@ export default async function LeagueSetupPage({ params }: LeagueSetupPageProps) 
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{league.name}</h1>
         <p className="text-muted-foreground">
-          Configure teams and players for this league
+          {t('description')}
         </p>
       </div>
 

@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 import { getLeagues } from '@/actions/leagues'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -17,16 +18,19 @@ import { Input } from '@/components/ui/input'
 import { LeagueActions } from '@/components/admin/leagues/league-actions'
 
 async function LeaguesTable() {
+  const t = await getTranslations('admin.leagues')
+  const tPlayers = await getTranslations('admin.players')
+  const tCommon = await getTranslations('admin.common')
   const leagues = await getLeagues()
 
   if (leagues.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-muted-foreground mb-4">No leagues found</p>
+        <p className="text-muted-foreground mb-4">{t('noLeaguesFound')}</p>
         <Button asChild>
           <Link href="/admin/leagues/new">
             <Plus className="mr-2 h-4 w-4" />
-            Create your first league
+            {t('createFirst')}
           </Link>
         </Button>
       </div>
@@ -38,13 +42,13 @@ async function LeaguesTable() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Sport</TableHead>
-            <TableHead>Season</TableHead>
-            <TableHead>Teams</TableHead>
-            <TableHead>Users</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-[80px]">Actions</TableHead>
+            <TableHead>{tCommon('name')}</TableHead>
+            <TableHead>{t('sport')}</TableHead>
+            <TableHead>{t('season')}</TableHead>
+            <TableHead>{t('teams')}</TableHead>
+            <TableHead>{t('users')}</TableHead>
+            <TableHead>{tCommon('status')}</TableHead>
+            <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -59,9 +63,9 @@ async function LeaguesTable() {
               <TableCell>{league._count.LeagueUser}</TableCell>
               <TableCell>
                 {league.isActive ? (
-                  <Badge variant="success">Active</Badge>
+                  <Badge variant="success">{tPlayers('active')}</Badge>
                 ) : (
-                  <Badge variant="secondary">Inactive</Badge>
+                  <Badge variant="secondary">{tPlayers('inactive')}</Badge>
                 )}
               </TableCell>
               <TableCell>
@@ -84,19 +88,21 @@ async function LeaguesTable() {
   )
 }
 
-function LeaguesTableLoading() {
+async function LeaguesTableLoading() {
+  const t = await getTranslations('admin.leagues')
+  const tCommon = await getTranslations('admin.common')
   return (
     <div className="rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Sport</TableHead>
-            <TableHead>Season</TableHead>
-            <TableHead>Teams</TableHead>
-            <TableHead>Users</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-[80px]">Actions</TableHead>
+            <TableHead>{tCommon('name')}</TableHead>
+            <TableHead>{t('sport')}</TableHead>
+            <TableHead>{t('season')}</TableHead>
+            <TableHead>{t('teams')}</TableHead>
+            <TableHead>{t('users')}</TableHead>
+            <TableHead>{tCommon('status')}</TableHead>
+            <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -117,20 +123,21 @@ function LeaguesTableLoading() {
   )
 }
 
-export default function LeaguesPage() {
+export default async function LeaguesPage() {
+  const t = await getTranslations('admin.leagues')
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Leagues</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-muted-foreground">
-            Manage prediction leagues and their settings
+            {t('description')}
           </p>
         </div>
         <Button asChild>
           <Link href="/admin/leagues/new">
             <Plus className="mr-2 h-4 w-4" />
-            Create League
+            {t('createLeague')}
           </Link>
         </Button>
       </div>
@@ -138,15 +145,15 @@ export default function LeaguesPage() {
       {/* Search and filters */}
       <div className="flex items-center gap-4">
         <Input
-          placeholder="Search leagues..."
+          placeholder={t('searchPlaceholder')}
           className="max-w-sm"
         />
       </div>
 
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>All Leagues</CardTitle>
-          <CardDescription>View and manage all prediction leagues</CardDescription>
+          <CardTitle>{t('allLeagues')}</CardTitle>
+          <CardDescription>{t('viewAndManage')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Suspense fallback={<LeaguesTableLoading />}>

@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { format } from 'date-fns'
 import { User, Mail, Phone, Bell, Lock, Shield } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { updateProfile, updatePassword, type UpdateProfileInput, type UpdatePasswordInput } from '@/actions/profile'
 import { getErrorMessage } from '@/lib/error-handler'
@@ -31,6 +32,7 @@ interface ProfileContentProps {
 }
 
 export function ProfileContent({ user }: ProfileContentProps) {
+  const t = useTranslations('admin.profile')
   const [isEditingProfile, setIsEditingProfile] = React.useState(false)
   const [isEditingPassword, setIsEditingPassword] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -61,13 +63,13 @@ export function ProfileContent({ user }: ProfileContentProps) {
       const result = await updateProfile(profileForm)
 
       if (result.success) {
-        toast.success('Profile updated successfully')
+        toast.success(t('profileUpdated'))
         setIsEditingProfile(false)
       } else {
-        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to update profile'))
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, t('profileUpdateFailed')))
       }
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Failed to update profile'))
+      toast.error(getErrorMessage(error, t('profileUpdateFailed')))
       logger.error('Failed to update profile', { error })
     } finally {
       setIsSubmitting(false)
@@ -78,7 +80,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
     e.preventDefault()
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('Passwords do not match')
+      toast.error(t('passwordMismatch'))
       return
     }
 
@@ -88,7 +90,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
       const result = await updatePassword(passwordForm)
 
       if (result.success) {
-        toast.success('Password updated successfully')
+        toast.success(t('passwordUpdated'))
         setIsEditingPassword(false)
         setPasswordForm({
           currentPassword: '',
@@ -96,10 +98,10 @@ export function ProfileContent({ user }: ProfileContentProps) {
           confirmPassword: '',
         })
       } else {
-        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to update password'))
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, t('passwordUpdateFailed')))
       }
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Failed to update password'))
+      toast.error(getErrorMessage(error, t('passwordUpdateFailed')))
       logger.error('Failed to update password', { error })
     } finally {
       setIsSubmitting(false)
@@ -130,9 +132,9 @@ export function ProfileContent({ user }: ProfileContentProps) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Manage your account settings and preferences
+          {t('description')}
         </p>
       </div>
 
@@ -151,13 +153,13 @@ export function ProfileContent({ user }: ProfileContentProps) {
                 {user.isSuperadmin && (
                   <Badge variant="admin" className="ml-2">
                     <Shield className="mr-1 h-3 w-3" />
-                    Superadmin
+                    {t('superadmin')}
                   </Badge>
                 )}
               </CardTitle>
               <CardDescription>@{user.username}</CardDescription>
               <p className="text-sm text-muted-foreground mt-1">
-                Member since {format(new Date(user.createdAt), 'MMMM yyyy')}
+                {t('memberSince', { date: format(new Date(user.createdAt), 'MMMM yyyy') })}
               </p>
             </div>
           </div>
@@ -169,15 +171,15 @@ export function ProfileContent({ user }: ProfileContentProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>Update your personal details</CardDescription>
+              <CardTitle>{t('profileInformation')}</CardTitle>
+              <CardDescription>{t('updatePersonalDetails')}</CardDescription>
             </div>
             {!isEditingProfile && (
               <Button
                 variant="outline"
                 onClick={() => setIsEditingProfile(true)}
               >
-                Edit Profile
+                {t('editProfile')}
               </Button>
             )}
           </div>
@@ -189,7 +191,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
               <div className="space-y-2">
                 <Label htmlFor="firstName">
                   <User className="mr-2 inline h-4 w-4" />
-                  First Name
+                  {t('firstName')}
                 </Label>
                 <Input
                   id="firstName"
@@ -206,7 +208,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
               <div className="space-y-2">
                 <Label htmlFor="lastName">
                   <User className="mr-2 inline h-4 w-4" />
-                  Last Name
+                  {t('lastName')}
                 </Label>
                 <Input
                   id="lastName"
@@ -222,7 +224,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
 
             {/* Username (read-only) */}
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">{t('username')}</Label>
               <Input
                 id="username"
                 value={user.username}
@@ -230,7 +232,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
                 className="bg-muted"
               />
               <p className="text-xs text-muted-foreground">
-                Username cannot be changed
+                {t('usernameReadonly')}
               </p>
             </div>
 
@@ -238,7 +240,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
             <div className="space-y-2">
               <Label htmlFor="email">
                 <Mail className="mr-2 inline h-4 w-4" />
-                Email
+                {t('email')}
               </Label>
               <Input
                 id="email"
@@ -256,7 +258,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
             <div className="space-y-2">
               <Label htmlFor="mobileNumber">
                 <Phone className="mr-2 inline h-4 w-4" />
-                Mobile Number
+                {t('mobileNumber')}
               </Label>
               <Input
                 id="mobileNumber"
@@ -265,7 +267,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
                   setProfileForm({ ...profileForm, mobileNumber: e.target.value })
                 }
                 disabled={!isEditingProfile || isSubmitting}
-                placeholder="Optional"
+                placeholder={t('mobileOptional')}
               />
             </div>
 
@@ -273,7 +275,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
             <div className="space-y-2">
               <Label htmlFor="notifyHours">
                 <Bell className="mr-2 inline h-4 w-4" />
-                Notification Time (hours before match)
+                {t('notificationTime')}
               </Label>
               <Input
                 id="notifyHours"
@@ -290,14 +292,14 @@ export function ProfileContent({ user }: ProfileContentProps) {
                 disabled={!isEditingProfile || isSubmitting}
               />
               <p className="text-xs text-muted-foreground">
-                Receive notifications {profileForm.notifyHours} hour(s) before matches start
+                {t('notificationHelper', { hours: profileForm.notifyHours })}
               </p>
             </div>
 
             {isEditingProfile && (
               <div className="flex gap-2">
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                  {isSubmitting ? t('saving') : t('saveChanges')}
                 </Button>
                 <Button
                   type="button"
@@ -320,16 +322,16 @@ export function ProfileContent({ user }: ProfileContentProps) {
             <div>
               <CardTitle>
                 <Lock className="mr-2 inline h-5 w-5" />
-                Password
+                {t('password')}
               </CardTitle>
-              <CardDescription>Change your password</CardDescription>
+              <CardDescription>{t('changePassword')}</CardDescription>
             </div>
             {!isEditingPassword && (
               <Button
                 variant="outline"
                 onClick={() => setIsEditingPassword(true)}
               >
-                Change Password
+                {t('changePasswordButton')}
               </Button>
             )}
           </div>
@@ -339,7 +341,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               {/* Current Password */}
               <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
+                <Label htmlFor="currentPassword">{t('currentPassword')}</Label>
                 <Input
                   id="currentPassword"
                   type="password"
@@ -360,7 +362,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
 
               {/* New Password */}
               <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
+                <Label htmlFor="newPassword">{t('newPassword')}</Label>
                 <Input
                   id="newPassword"
                   type="password"
@@ -377,13 +379,13 @@ export function ProfileContent({ user }: ProfileContentProps) {
                   autoComplete="new-password"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Must be at least 8 characters
+                  {t('passwordHelper')}
                 </p>
               </div>
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -402,7 +404,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
 
               <div className="flex gap-2">
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Updating...' : 'Update Password'}
+                  {isSubmitting ? t('updating') : t('updatePasswordButton')}
                 </Button>
                 <Button
                   type="button"
@@ -421,30 +423,30 @@ export function ProfileContent({ user }: ProfileContentProps) {
       {/* Account Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Account Details</CardTitle>
-          <CardDescription>Read-only information</CardDescription>
+          <CardTitle>{t('accountDetails')}</CardTitle>
+          <CardDescription>{t('accountDetailsDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">User ID:</span>
+            <span className="text-sm text-muted-foreground">{t('userId')}</span>
             <span className="text-sm font-mono">{user.id}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Created:</span>
+            <span className="text-sm text-muted-foreground">{t('created')}</span>
             <span className="text-sm">
               {format(new Date(user.createdAt), 'PPP')}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Last Updated:</span>
+            <span className="text-sm text-muted-foreground">{t('lastUpdated')}</span>
             <span className="text-sm">
               {format(new Date(user.updatedAt), 'PPP')}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Role:</span>
+            <span className="text-sm text-muted-foreground">{t('role')}</span>
             <span className="text-sm">
-              {user.isSuperadmin ? 'Superadmin' : 'User'}
+              {user.isSuperadmin ? t('roleValue') : 'User'}
             </span>
           </div>
         </CardContent>

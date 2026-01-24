@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { createLeague } from '@/actions/leagues'
 import { logger } from '@/lib/client-logger'
@@ -28,6 +29,7 @@ interface LeagueFormProps {
 }
 
 export function LeagueForm({ sports }: LeagueFormProps) {
+  const t = useTranslations('admin.leagueNew')
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
@@ -50,14 +52,14 @@ export function LeagueForm({ sports }: LeagueFormProps) {
       })
 
       if (result.success && 'leagueId' in result) {
-        toast.success('League created successfully')
+        toast.success(t('leagueCreated'))
         router.push(`/admin/leagues/${result.leagueId}/setup`)
       }
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error('Failed to create league')
+        toast.error(t('leagueCreateFailed'))
       }
       logger.error('Failed to create league', { error })
     } finally {
@@ -69,28 +71,28 @@ export function LeagueForm({ sports }: LeagueFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>League Details</CardTitle>
+          <CardTitle>{t('leagueDetails')}</CardTitle>
           <CardDescription>
-            Basic information about the prediction league
+            {t('leagueDetailsDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">League Name</Label>
+            <Label htmlFor="name">{t('leagueName')}</Label>
             <Input
               id="name"
               name="name"
-              placeholder="e.g., Euro 2024, NHL 2024/25"
+              placeholder={t('leagueNameExample')}
               required
               maxLength={255}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="sportId">Sport</Label>
+            <Label htmlFor="sportId">{t('sport')}</Label>
             <Select name="sportId" required>
               <SelectTrigger>
-                <SelectValue placeholder="Select a sport" />
+                <SelectValue placeholder={t('selectSport')} />
               </SelectTrigger>
               <SelectContent>
                 {sports.map((sport) => (
@@ -104,7 +106,7 @@ export function LeagueForm({ sports }: LeagueFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="seasonFrom">Season Start Year</Label>
+              <Label htmlFor="seasonFrom">{t('seasonFrom')}</Label>
               <Input
                 id="seasonFrom"
                 name="seasonFrom"
@@ -116,7 +118,7 @@ export function LeagueForm({ sports }: LeagueFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="seasonTo">Season End Year</Label>
+              <Label htmlFor="seasonTo">{t('seasonTo')}</Label>
               <Input
                 id="seasonTo"
                 name="seasonTo"
@@ -133,17 +135,17 @@ export function LeagueForm({ sports }: LeagueFormProps) {
 
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>Settings</CardTitle>
+          <CardTitle>{t('settings')}</CardTitle>
           <CardDescription>
-            Configure league visibility and status
+            {t('settingsDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="isActive">Active</Label>
+              <Label htmlFor="isActive">{t('active')}</Label>
               <p className="text-sm text-muted-foreground">
-                Allow users to submit predictions
+                {t('activeHelper')}
               </p>
             </div>
             <Switch id="isActive" name="isActive" defaultChecked />
@@ -151,9 +153,9 @@ export function LeagueForm({ sports }: LeagueFormProps) {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="isPublic">Public</Label>
+              <Label htmlFor="isPublic">{t('public')}</Label>
               <p className="text-sm text-muted-foreground">
-                Visible to all users (they can request to join)
+                {t('publicHelper')}
               </p>
             </div>
             <Switch id="isPublic" name="isPublic" defaultChecked />
@@ -163,31 +165,31 @@ export function LeagueForm({ sports }: LeagueFormProps) {
 
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>Scoring Rules</CardTitle>
+          <CardTitle>{t('scoringRules')}</CardTitle>
           <CardDescription>
-            Default scoring rules will be created automatically. You can customize them after creating the league.
+            {t('scoringRulesDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">Exact Score</span>
+              <span className="text-sm">{t('exactScore')}</span>
               <span className="font-mono text-sm font-medium">5 pts</span>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">Goal Difference</span>
+              <span className="text-sm">{t('scoreDifference')}</span>
               <span className="font-mono text-sm font-medium">3 pts</span>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">Correct Winner</span>
+              <span className="text-sm">{t('correctWinner')}</span>
               <span className="font-mono text-sm font-medium">2 pts</span>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">Total Goals</span>
+              <span className="text-sm">{t('totalGoals')}</span>
               <span className="font-mono text-sm font-medium">1 pt</span>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">Correct Scorer</span>
+              <span className="text-sm">{t('correctScorer')}</span>
               <span className="font-mono text-sm font-medium">2 pts</span>
             </div>
           </div>
@@ -204,7 +206,7 @@ export function LeagueForm({ sports }: LeagueFormProps) {
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating...' : 'Create League'}
+          {isSubmitting ? t('creating') : t('create')}
         </Button>
       </div>
     </form>

@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Trash2, Edit, Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import {
   createSeriesType,
   updateSeriesType,
@@ -61,6 +62,8 @@ interface CreateFormData {
 }
 
 export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
+  const t = useTranslations('admin.seriesTypes')
+  const tCommon = useTranslations('admin.common')
   const [search, setSearch] = React.useState('')
 
   const inlineEdit = useInlineEdit<EditFormData>()
@@ -95,7 +98,7 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
 
     const bestOf = parseInt(inlineEdit.form.bestOf, 10)
     if (isNaN(bestOf) || bestOf < 1 || bestOf > 7) {
-      toast.error('Best of must be between 1 and 7')
+      toast.error(t('validation.bestOfRange'))
       return
     }
 
@@ -106,7 +109,7 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
         name: inlineEdit.form.name,
         bestOf,
       })
-      toast.success('Series type updated')
+      toast.success(t('toast.updated'))
       inlineEdit.finishEdit()
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to update series type')
@@ -119,13 +122,13 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
 
   const handleCreateSeriesType = async () => {
     if (!createDialog.form.name || !createDialog.form.bestOf) {
-      toast.error('Please fill in all required fields')
+      toast.error(t('validation.requiredFields'))
       return
     }
 
     const bestOf = parseInt(createDialog.form.bestOf, 10)
     if (isNaN(bestOf) || bestOf < 1 || bestOf > 7) {
-      toast.error('Best of must be between 1 and 7')
+      toast.error(t('validation.bestOfRange'))
       return
     }
 
@@ -135,7 +138,7 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
         name: createDialog.form.name,
         bestOf,
       })
-      toast.success('Series type created')
+      toast.success(t('toast.created'))
       createDialog.finishCreating()
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to create series type')
@@ -151,7 +154,7 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
     deleteDialog.startDeleting()
     try {
       await deleteSeriesType(deleteDialog.itemToDelete.id)
-      toast.success('Series type deleted')
+      toast.success(t('toast.deleted'))
       deleteDialog.finishDeleting()
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete series type')
@@ -167,7 +170,7 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-4 md:flex-row">
           <Input
-            placeholder="Search by name..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
@@ -175,29 +178,29 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
         </div>
         <Button onClick={createDialog.openDialog}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Series Type
+          {t('addButton')}
         </Button>
       </div>
 
       {/* Series Types Table */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>Series Types</CardTitle>
-          <CardDescription>Manage global series templates (e.g., Best of 7, Best of 5)</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>
           {filteredSeriesTypes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">No series types found</p>
+              <p className="text-muted-foreground">{t('emptyState')}</p>
             </div>
           ) : (
             <div className="rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Best Of</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead>{t('table.name')}</TableHead>
+                    <TableHead>{t('table.bestOf')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('table.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -213,11 +216,11 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ name: e.target.value })
                                 }
-                                placeholder="Series name"
+                                placeholder={t('form.namePlaceholder')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
                                 autoFocus
-                                aria-label="Series name"
+                                aria-label={t('form.nameLabel')}
                               />
                               <Input
                                 type="number"
@@ -227,10 +230,10 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ bestOf: e.target.value })
                                 }
-                                placeholder="Best of (1-7)"
+                                placeholder={t('form.bestOfPlaceholder')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Best of"
+                                aria-label={t('form.bestOfLabel')}
                               />
                             </div>
                             <div className="flex items-center gap-2 mt-8">
@@ -238,18 +241,18 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
                                 size="sm"
                                 variant="outline"
                                 onClick={handleCancelEdit}
-                                aria-label="Cancel editing series type"
+                                aria-label={t('form.cancelLabel')}
                               >
-                                Cancel
+                                {tCommon('button.cancel')}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="default"
                                 onClick={() => handleSaveEdit(item.id)}
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Save series type changes"
+                                aria-label={t('form.saveLabel')}
                               >
-                                Save
+                                {tCommon('button.save')}
                               </Button>
                             </div>
                           </div>
@@ -258,7 +261,7 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">Best of {item.bestOf}</Badge>
+                        <Badge variant="secondary">{t('bestOf', { count: item.bestOf })}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -293,17 +296,14 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
       <Dialog open={deleteDialog.open} onOpenChange={deleteDialog.setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Series Type</DialogTitle>
+            <DialogTitle>{t('dialog.deleteTitle')}</DialogTitle>
             <DialogDescription>
               {deleteDialog.itemToDelete && (
                 <>
-                  Are you sure you want to delete "{deleteDialog.itemToDelete.name}"? This action cannot be
-                  undone.
+                  {t('dialog.deleteConfirm', { name: deleteDialog.itemToDelete.name })}
                   {deleteDialog.itemToDelete._count.LeagueSpecialBetSerie > 0 && (
                     <div className="mt-2 text-sm font-semibold text-amber-600">
-                      This series type is used in {deleteDialog.itemToDelete._count.LeagueSpecialBetSerie}{' '}
-                      league{deleteDialog.itemToDelete._count.LeagueSpecialBetSerie !== 1 ? 's' : ''}. Deleting
-                      will remove these associations.
+                      {t('dialog.deleteWarning', { count: deleteDialog.itemToDelete._count.LeagueSpecialBetSerie })}
                     </div>
                   )}
                 </>
@@ -312,10 +312,10 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={deleteDialog.closeDialog}>
-              Cancel
+              {tCommon('button.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteDialog.isDeleting}>
-              {deleteDialog.isDeleting ? 'Deleting...' : 'Delete'}
+              {deleteDialog.isDeleting ? t('dialog.deleting') : t('dialog.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -325,38 +325,38 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
       <Dialog open={createDialog.open} onOpenChange={createDialog.setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Series Type</DialogTitle>
-            <DialogDescription>Create a new series template</DialogDescription>
+            <DialogTitle>{t('dialog.createTitle')}</DialogTitle>
+            <DialogDescription>{t('dialog.createDescription')}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Name</label>
+              <label className="text-sm font-medium">{t('form.nameLabel')}</label>
               <Input
-                placeholder="e.g., Stanley Cup Playoff Series"
+                placeholder={t('form.namePlaceholder')}
                 value={createDialog.form.name}
                 onChange={(e) =>
                   createDialog.updateForm({ name: e.target.value })
                 }
-                aria-label="Series type name"
+                aria-label={t('form.nameLabel')}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Best Of</label>
+              <label className="text-sm font-medium">{t('form.bestOfLabel')}</label>
               <Input
                 type="number"
                 min="1"
                 max="7"
-                placeholder="e.g., 7 for best-of-7"
+                placeholder={t('form.bestOfPlaceholder')}
                 value={createDialog.form.bestOf}
                 onChange={(e) =>
                   createDialog.updateForm({ bestOf: e.target.value })
                 }
-                aria-label="Best of"
+                aria-label={t('form.bestOfLabel')}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                How many games needed to win the series (1-7)
+                {t('form.bestOfHint')}
               </p>
             </div>
           </div>
@@ -367,10 +367,10 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
               onClick={createDialog.closeDialog}
               disabled={createDialog.isCreating}
             >
-              Cancel
+              {tCommon('button.cancel')}
             </Button>
             <Button onClick={handleCreateSeriesType} disabled={createDialog.isCreating}>
-              {createDialog.isCreating ? 'Creating...' : 'Create'}
+              {createDialog.isCreating ? t('dialog.creating') : t('dialog.create')}
             </Button>
           </DialogFooter>
         </DialogContent>

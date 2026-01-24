@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Trash2, Edit, Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import {
   createMatchPhase,
   updateMatchPhase,
@@ -71,6 +72,8 @@ interface CreateFormData {
 }
 
 export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
+  const t = useTranslations('admin.matchPhases')
+  const tCommon = useTranslations('admin.common')
   const [search, setSearch] = React.useState('')
 
   const inlineEdit = useInlineEdit<EditFormData>()
@@ -107,7 +110,7 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
 
     const rank = parseInt(inlineEdit.form.rank, 10)
     if (isNaN(rank) || rank < 0) {
-      toast.error('Rank must be a non-negative number')
+      toast.error(t('validation.rankNegative'))
       return
     }
 
@@ -115,7 +118,7 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
     if (inlineEdit.form.bestOf) {
       bestOf = parseInt(inlineEdit.form.bestOf, 10)
       if (isNaN(bestOf) || bestOf < 1 || bestOf > 7) {
-        toast.error('Best of must be between 1 and 7')
+        toast.error(t('validation.bestOfRange'))
         return
       }
     }
@@ -128,7 +131,7 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
         rank,
         bestOf,
       })
-      toast.success('Match phase updated')
+      toast.success(t('toast.updated'))
       inlineEdit.finishEdit()
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to update match phase')
@@ -141,13 +144,13 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
 
   const handleCreateMatchPhase = async () => {
     if (!createDialog.form.name) {
-      toast.error('Please fill in the name field')
+      toast.error(t('validation.nameRequired'))
       return
     }
 
     const rank = parseInt(createDialog.form.rank, 10)
     if (isNaN(rank) || rank < 0) {
-      toast.error('Rank must be a non-negative number')
+      toast.error(t('validation.rankNegative'))
       return
     }
 
@@ -155,7 +158,7 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
     if (createDialog.form.bestOf) {
       bestOf = parseInt(createDialog.form.bestOf, 10)
       if (isNaN(bestOf) || bestOf < 1 || bestOf > 7) {
-        toast.error('Best of must be between 1 and 7')
+        toast.error(t('validation.bestOfRange'))
         return
       }
     }
@@ -167,7 +170,7 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
         rank,
         bestOf,
       })
-      toast.success('Match phase created')
+      toast.success(t('toast.created'))
       createDialog.finishCreating()
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to create match phase')
@@ -183,7 +186,7 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
     deleteDialog.startDeleting()
     try {
       await deleteMatchPhase(deleteDialog.itemToDelete.id)
-      toast.success('Match phase deleted')
+      toast.success(t('toast.deleted'))
       deleteDialog.finishDeleting()
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to delete match phase')
@@ -195,9 +198,9 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
 
   const getBestOfDisplay = (bestOf: number | null) => {
     if (bestOf === null) {
-      return 'Single Game'
+      return t('bestOf.single')
     }
-    return `Best of ${bestOf}`
+    return t('bestOf.multiple', { count: bestOf })
   }
 
   return (
@@ -206,7 +209,7 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-4 md:flex-row">
           <Input
-            placeholder="Search by name..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
@@ -214,31 +217,31 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
         </div>
         <Button onClick={createDialog.openDialog}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Match Phase
+          {t('addButton')}
         </Button>
       </div>
 
       {/* Match Phases Table */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>Match Phases</CardTitle>
-          <CardDescription>Manage tournament phases like Group A, Semifinals, Finals</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>
           {filteredPhases.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">No match phases found</p>
+              <p className="text-muted-foreground">{t('emptyState')}</p>
             </div>
           ) : (
             <div className="rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Rank</TableHead>
-                    <TableHead>Best Of</TableHead>
-                    <TableHead>Usage</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead>{t('table.name')}</TableHead>
+                    <TableHead>{t('table.rank')}</TableHead>
+                    <TableHead>{t('table.bestOf')}</TableHead>
+                    <TableHead>{t('table.usage')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('table.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -254,11 +257,11 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ name: e.target.value })
                                 }
-                                placeholder="Phase name"
+                                placeholder={t('form.namePlaceholder')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
                                 autoFocus
-                                aria-label="Phase name"
+                                aria-label={t('form.nameLabel')}
                               />
                               <Input
                                 type="number"
@@ -267,10 +270,10 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
                                 onChange={(e) =>
                                   inlineEdit.updateForm({ rank: e.target.value })
                                 }
-                                placeholder="Rank (0-100)"
+                                placeholder={t('form.rankPlaceholder')}
                                 className="h-8"
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Rank"
+                                aria-label={t('form.rankLabel')}
                               />
                               <Select
                                 value={inlineEdit.form.bestOf || undefined}
@@ -280,13 +283,13 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
                                 disabled={inlineEdit.isSaving}
                               >
                                 <SelectTrigger className="h-8">
-                                  <SelectValue placeholder="Single Game" />
+                                  <SelectValue placeholder={t('bestOf.single')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="1">Best of 1</SelectItem>
-                                  <SelectItem value="3">Best of 3</SelectItem>
-                                  <SelectItem value="5">Best of 5</SelectItem>
-                                  <SelectItem value="7">Best of 7</SelectItem>
+                                  <SelectItem value="1">{t('bestOf.option1')}</SelectItem>
+                                  <SelectItem value="3">{t('bestOf.option3')}</SelectItem>
+                                  <SelectItem value="5">{t('bestOf.option5')}</SelectItem>
+                                  <SelectItem value="7">{t('bestOf.option7')}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -295,18 +298,18 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
                                 size="sm"
                                 variant="outline"
                                 onClick={handleCancelEdit}
-                                aria-label="Cancel editing match phase"
+                                aria-label={t('form.cancelLabel')}
                               >
-                                Cancel
+                                {tCommon('button.cancel')}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="default"
                                 onClick={() => handleSaveEdit(item.id)}
                                 disabled={inlineEdit.isSaving}
-                                aria-label="Save match phase changes"
+                                aria-label={t('form.saveLabel')}
                               >
-                                Save
+                                {tCommon('button.save')}
                               </Button>
                             </div>
                           </div>
@@ -322,7 +325,7 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {item._count.Match} {item._count.Match === 1 ? 'match' : 'matches'}
+                          {t('usage', { count: item._count.Match })}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -358,17 +361,14 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
       <Dialog open={deleteDialog.open} onOpenChange={deleteDialog.setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Match Phase</DialogTitle>
+            <DialogTitle>{t('dialog.deleteTitle')}</DialogTitle>
             <DialogDescription>
               {deleteDialog.itemToDelete && (
                 <>
-                  Are you sure you want to delete "{deleteDialog.itemToDelete.name}"? This action cannot be
-                  undone.
+                  {t('dialog.deleteConfirm', { name: deleteDialog.itemToDelete.name })}
                   {deleteDialog.itemToDelete._count.Match > 0 && (
                     <div className="mt-2 text-sm font-semibold text-amber-600">
-                      This phase is used in {deleteDialog.itemToDelete._count.Match}{' '}
-                      {deleteDialog.itemToDelete._count.Match !== 1 ? 'matches' : 'match'}. Deleting
-                      will unlink these matches from this phase.
+                      {t('dialog.deleteWarning', { count: deleteDialog.itemToDelete._count.Match })}
                     </div>
                   )}
                 </>
@@ -377,10 +377,10 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={deleteDialog.closeDialog}>
-              Cancel
+              {tCommon('button.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteDialog.isDeleting}>
-              {deleteDialog.isDeleting ? 'Deleting...' : 'Delete'}
+              {deleteDialog.isDeleting ? t('dialog.deleting') : t('dialog.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -390,42 +390,42 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
       <Dialog open={createDialog.open} onOpenChange={createDialog.setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Match Phase</DialogTitle>
-            <DialogDescription>Create a new tournament phase or round</DialogDescription>
+            <DialogTitle>{t('dialog.createTitle')}</DialogTitle>
+            <DialogDescription>{t('dialog.createDescription')}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Name</label>
+              <label className="text-sm font-medium">{t('form.nameLabel')}</label>
               <Input
-                placeholder="e.g., Group A, Semifinals, Final"
+                placeholder={t('form.namePlaceholder')}
                 value={createDialog.form.name}
                 onChange={(e) =>
                   createDialog.updateForm({ name: e.target.value })
                 }
-                aria-label="Phase name"
+                aria-label={t('form.nameLabel')}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Rank</label>
+              <label className="text-sm font-medium">{t('form.rankLabel')}</label>
               <Input
                 type="number"
                 min="0"
-                placeholder="0 for earliest phase"
+                placeholder={t('form.rankPlaceholder')}
                 value={createDialog.form.rank}
                 onChange={(e) =>
                   createDialog.updateForm({ rank: e.target.value })
                 }
-                aria-label="Rank"
+                aria-label={t('form.rankLabel')}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Used for ordering phases (0 = earliest, higher = later)
+                {t('form.rankHint')}
               </p>
             </div>
 
             <div>
-              <label className="text-sm font-medium">Best Of (Optional)</label>
+              <label className="text-sm font-medium">{t('form.bestOfLabel')}</label>
               <Select
                 value={createDialog.form.bestOf || undefined}
                 onValueChange={(value) =>
@@ -433,17 +433,17 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Single Game" />
+                  <SelectValue placeholder={t('bestOf.single')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Best of 1</SelectItem>
-                  <SelectItem value="3">Best of 3</SelectItem>
-                  <SelectItem value="5">Best of 5</SelectItem>
-                  <SelectItem value="7">Best of 7</SelectItem>
+                  <SelectItem value="1">{t('bestOf.option1')}</SelectItem>
+                  <SelectItem value="3">{t('bestOf.option3')}</SelectItem>
+                  <SelectItem value="5">{t('bestOf.option5')}</SelectItem>
+                  <SelectItem value="7">{t('bestOf.option7')}</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                Leave empty for single-game phases, or select for multi-game series
+                {t('form.bestOfHint')}
               </p>
             </div>
           </div>
@@ -454,10 +454,10 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
               onClick={createDialog.closeDialog}
               disabled={createDialog.isCreating}
             >
-              Cancel
+              {tCommon('button.cancel')}
             </Button>
             <Button onClick={handleCreateMatchPhase} disabled={createDialog.isCreating}>
-              {createDialog.isCreating ? 'Creating...' : 'Create'}
+              {createDialog.isCreating ? t('dialog.creating') : t('dialog.create')}
             </Button>
           </DialogFooter>
         </DialogContent>

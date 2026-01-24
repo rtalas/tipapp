@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Trash2, Edit, Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import {
   createEvaluator,
   updateEvaluatorPoints,
@@ -73,6 +74,8 @@ export function EvaluatorsContent({
   evaluatorTypes,
   league,
 }: EvaluatorsContentProps) {
+  const t = useTranslations('admin.evaluators')
+  const tCommon = useTranslations('admin.common')
   const [search, setSearch] = React.useState('')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
   const [editingId, setEditingId] = React.useState<number | null>(null)
@@ -135,20 +138,20 @@ export function EvaluatorsContent({
 
   const handleSavePoints = async (evaluatorId: number) => {
     if (!editPointsValue || isNaN(Number(editPointsValue))) {
-      toast.error('Please enter a valid number')
+      toast.error(t('validation.invalidNumber'))
       return
     }
 
     setIsSaving(true)
     try {
       await updateEvaluatorPoints({ evaluatorId, points: parseInt(editPointsValue, 10) })
-      toast.success('Points updated')
+      toast.success(t('toast.pointsUpdated'))
       setEditingId(null)
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error('Failed to update points')
+        toast.error(t('toast.pointsUpdateFailed'))
       }
       logger.error('Failed to update evaluator points', { error, evaluatorId })
     } finally {
@@ -158,20 +161,20 @@ export function EvaluatorsContent({
 
   const handleSaveName = async (evaluatorId: number) => {
     if (!editNameValue.trim()) {
-      toast.error('Name cannot be empty')
+      toast.error(t('validation.nameRequired'))
       return
     }
 
     setIsSaving(true)
     try {
       await updateEvaluatorName({ evaluatorId, name: editNameValue })
-      toast.success('Name updated')
+      toast.success(t('toast.nameUpdated'))
       setEditingId(null)
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error('Failed to update name')
+        toast.error(t('toast.nameUpdateFailed'))
       }
       logger.error('Failed to update evaluator name', { error, evaluatorId })
     } finally {
@@ -181,12 +184,12 @@ export function EvaluatorsContent({
 
   const handleCreateEvaluator = async () => {
     if (!createForm.leagueId || !createForm.evaluatorTypeId || !createForm.name || !createForm.points) {
-      toast.error('Please fill in all fields')
+      toast.error(t('validation.requiredFields'))
       return
     }
 
     if (isNaN(Number(createForm.points))) {
-      toast.error('Points must be a valid number')
+      toast.error(t('validation.pointsInvalid'))
       return
     }
 
@@ -198,7 +201,7 @@ export function EvaluatorsContent({
         name: createForm.name,
         points: parseInt(createForm.points, 10),
       })
-      toast.success('Evaluator created')
+      toast.success(t('toast.created'))
       setCreateDialogOpen(false)
       setCreateForm({
         leagueId: league?.id.toString() || '',
@@ -210,7 +213,7 @@ export function EvaluatorsContent({
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error('Failed to create evaluator')
+        toast.error(t('toast.createFailed'))
       }
       logger.error('Failed to create evaluator', { error })
     } finally {
@@ -223,11 +226,11 @@ export function EvaluatorsContent({
     setIsDeleting(true)
     try {
       await deleteEvaluator({ id: evaluatorToDelete.id })
-      toast.success('Evaluator deleted')
+      toast.success(t('toast.deleted'))
       setDeleteDialogOpen(false)
       setEvaluatorToDelete(null)
     } catch (error) {
-      toast.error('Failed to delete evaluator')
+      toast.error(t('toast.deleteFailed'))
       logger.error('Failed to delete evaluator', { error, evaluatorId: evaluatorToDelete?.id })
     } finally {
       setIsDeleting(false)
@@ -240,7 +243,7 @@ export function EvaluatorsContent({
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-4 md:flex-row">
           <Input
-            placeholder={league ? "Search by name or type..." : "Search by name or league..."}
+            placeholder={league ? t('searchPlaceholderLeague') : t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
@@ -248,10 +251,10 @@ export function EvaluatorsContent({
           {!league && (
             <Select value={leagueFilter} onValueChange={setLeagueFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="League" />
+                <SelectValue placeholder={t('table.league')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Leagues</SelectItem>
+                <SelectItem value="all">{t('allLeagues')}</SelectItem>
                 {leagues.map((lg) => (
                   <SelectItem key={lg.id} value={lg.id.toString()}>
                     {lg.name}
@@ -263,35 +266,35 @@ export function EvaluatorsContent({
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Evaluator
+          {t('addButton')}
         </Button>
       </div>
 
       {/* Evaluators Table */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>Scoring Rules</CardTitle>
+          <CardTitle>{t('title')}</CardTitle>
           <CardDescription>
             {league
-              ? `Manage evaluator points for ${league.name}`
-              : 'Manage evaluator points for all leagues'}
+              ? t('descriptionLeague', { leagueName: league.name })
+              : t('description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {filteredEvaluators.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">No evaluators found</p>
+              <p className="text-muted-foreground">{t('noEvaluatorsFound')}</p>
             </div>
           ) : (
             <div className="rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {!league && <TableHead>League</TableHead>}
-                    <TableHead>Rule Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-center">Points</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    {!league && <TableHead>{t('table.league')}</TableHead>}
+                    <TableHead>{t('table.ruleName')}</TableHead>
+                    <TableHead>{t('table.type')}</TableHead>
+                    <TableHead className="text-center">{t('table.points')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -321,7 +324,7 @@ export function EvaluatorsContent({
                                 onClick={handleCancelEditName}
                                 aria-label="Cancel editing name"
                               >
-                                Cancel
+                                {tCommon('button.cancel')}
                               </Button>
                               <Button
                                 size="sm"
@@ -330,7 +333,7 @@ export function EvaluatorsContent({
                                 disabled={isSaving}
                                 aria-label="Save name"
                               >
-                                Save
+                                {tCommon('button.save')}
                               </Button>
                             </div>
                           </div>
@@ -362,7 +365,7 @@ export function EvaluatorsContent({
                                 onClick={handleCancelEditPoints}
                                 aria-label="Cancel editing points"
                               >
-                                Cancel
+                                {tCommon('button.cancel')}
                               </Button>
                               <Button
                                 size="sm"
@@ -371,7 +374,7 @@ export function EvaluatorsContent({
                                 disabled={isSaving}
                                 aria-label="Save points"
                               >
-                                Save
+                                {tCommon('button.save')}
                               </Button>
                             </div>
                           </div>
@@ -382,7 +385,7 @@ export function EvaluatorsContent({
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {editingId === evaluator.id ? (
-                            <span className="text-sm text-muted-foreground">Editing...</span>
+                            <span className="text-sm text-muted-foreground">{t('button.editing')}</span>
                           ) : (
                             <Button
                               variant="ghost"
@@ -419,7 +422,7 @@ export function EvaluatorsContent({
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Evaluator</DialogTitle>
+            <DialogTitle>{t('dialog.deleteTitle')}</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete "{evaluatorToDelete?.name}"
               {!league && ` from ${evaluatorToDelete?.League.name}`}? This action cannot be undone.
@@ -427,10 +430,10 @@ export function EvaluatorsContent({
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
+              {tCommon('button.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? tCommon('deleting') : tCommon('button.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -440,18 +443,18 @@ export function EvaluatorsContent({
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add New Evaluator</DialogTitle>
+            <DialogTitle>{t('dialog.createTitle')}</DialogTitle>
             <DialogDescription>
               {league
-                ? `Create a new scoring rule for ${league.name}`
-                : 'Create a new scoring rule for a league'}
+                ? t('descriptionLeague', { leagueName: league.name })
+                : t('dialog.createDescription')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {!league && (
               <div>
-                <label className="text-sm font-medium">League</label>
+                <label className="text-sm font-medium">{t('form.leagueLabel')}</label>
                 <Select
                   value={createForm.leagueId}
                   onValueChange={(value) =>
@@ -459,7 +462,7 @@ export function EvaluatorsContent({
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select league" />
+                    <SelectValue placeholder={t('form.selectLeague')} />
                   </SelectTrigger>
                   <SelectContent>
                     {leagues.map((lg) => (
@@ -473,7 +476,7 @@ export function EvaluatorsContent({
             )}
 
             <div>
-              <label className="text-sm font-medium">Evaluator Type</label>
+              <label className="text-sm font-medium">{t('form.typeLabel')}</label>
               <Select
                 value={createForm.evaluatorTypeId}
                 onValueChange={(value) =>
@@ -481,7 +484,7 @@ export function EvaluatorsContent({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder={t('form.selectType')} />
                 </SelectTrigger>
                 <SelectContent>
                   {evaluatorTypes.map((type) => (
@@ -494,9 +497,9 @@ export function EvaluatorsContent({
             </div>
 
             <div>
-              <label className="text-sm font-medium">Name</label>
+              <label className="text-sm font-medium">{t('form.nameLabel')}</label>
               <Input
-                placeholder="e.g., Exact Score"
+                placeholder={t('form.nameExample')}
                 value={createForm.name}
                 onChange={(e) =>
                   setCreateForm({ ...createForm, name: e.target.value })
@@ -505,11 +508,11 @@ export function EvaluatorsContent({
             </div>
 
             <div>
-              <label className="text-sm font-medium">Points</label>
+              <label className="text-sm font-medium">{t('form.pointsLabel')}</label>
               <Input
                 type="number"
                 min="0"
-                placeholder="e.g., 5"
+                placeholder={t('form.pointsExample')}
                 value={createForm.points}
                 onChange={(e) =>
                   setCreateForm({ ...createForm, points: e.target.value })
@@ -524,10 +527,10 @@ export function EvaluatorsContent({
               onClick={() => setCreateDialogOpen(false)}
               disabled={isCreating}
             >
-              Cancel
+              {tCommon('button.cancel')}
             </Button>
             <Button onClick={handleCreateEvaluator} disabled={isCreating}>
-              {isCreating ? 'Creating...' : 'Create'}
+              {isCreating ? tCommon('creating') : tCommon('button.create')}
             </Button>
           </DialogFooter>
         </DialogContent>

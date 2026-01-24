@@ -4,6 +4,7 @@ import * as React from 'react'
 import { format } from 'date-fns'
 import { Check, X, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import {
   approveRequest,
   rejectRequest,
@@ -83,6 +84,9 @@ interface UsersContentProps {
 }
 
 export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: UsersContentProps) {
+  const t = useTranslations('admin.users')
+  const tCommon = useTranslations('admin.common')
+  const tSeries = useTranslations('admin.series')
   const [search, setSearch] = React.useState('')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
   const [processingRequests, setProcessingRequests] = React.useState<Set<number>>(new Set())
@@ -114,12 +118,12 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
     setProcessingRequests((prev) => new Set(prev).add(requestId))
     try {
       await approveRequest(requestId)
-      toast.success('Request approved')
+      toast.success(t('requestApproved'))
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error('Failed to approve request')
+        toast.error(t('requestApprovedFailed'))
       }
       logger.error('Failed to approve user request', { error, requestId })
     } finally {
@@ -135,12 +139,12 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
     setProcessingRequests((prev) => new Set(prev).add(requestId))
     try {
       await rejectRequest(requestId)
-      toast.success('Request rejected')
+      toast.success(t('requestRejected'))
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error('Failed to reject request')
+        toast.error(t('requestRejectedFailed'))
       }
       logger.error('Failed to reject user request', { error, requestId })
     } finally {
@@ -155,9 +159,9 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
   const handleToggleAdmin = async (leagueUserId: number, currentValue: boolean) => {
     try {
       await updateLeagueUserAdmin(leagueUserId, !currentValue)
-      toast.success(currentValue ? 'Admin role removed' : 'Admin role granted')
+      toast.success(currentValue ? t('adminRoleRemoved') : t('adminRoleGranted'))
     } catch (error) {
-      toast.error('Failed to update admin status')
+      toast.error(t('adminUpdateFailed'))
       logger.error('Failed to toggle admin status', { error, leagueUserId })
     }
   }
@@ -165,9 +169,9 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
   const handleToggleActive = async (leagueUserId: number, currentValue: boolean) => {
     try {
       await updateLeagueUserActive(leagueUserId, !currentValue)
-      toast.success(currentValue ? 'User deactivated' : 'User activated')
+      toast.success(currentValue ? t('userDeactivated') : t('userActivated'))
     } catch (error) {
-      toast.error('Failed to update active status')
+      toast.error(t('activeUpdateFailed'))
       logger.error('Failed to toggle active status', { error, leagueUserId })
     }
   }
@@ -175,9 +179,9 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
   const handleTogglePaid = async (leagueUserId: number, currentValue: boolean) => {
     try {
       await updateLeagueUserPaid(leagueUserId, !currentValue)
-      toast.success(currentValue ? 'Marked as unpaid' : 'Marked as paid')
+      toast.success(currentValue ? t('markedAsUnpaid') : t('markedAsPaid'))
     } catch (error) {
-      toast.error('Failed to update paid status')
+      toast.error(t('paidUpdateFailed'))
       logger.error('Failed to toggle paid status', { error, leagueUserId })
     }
   }
@@ -187,11 +191,11 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
     setIsRemoving(true)
     try {
       await removeLeagueUser(userToRemove.id)
-      toast.success('User removed from league')
+      toast.success(t('userRemoved'))
       setRemoveDialogOpen(false)
       setUserToRemove(null)
     } catch (error) {
-      toast.error('Failed to remove user')
+      toast.error(t('userRemoveFailed'))
       logger.error('Failed to remove user from league', { error, leagueUserId: userToRemove?.id })
     } finally {
       setIsRemoving(false)
@@ -205,14 +209,14 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Pending Requests</CardTitle>
+              <CardTitle>{t('pendingRequests')}</CardTitle>
               <CardDescription>
-                Users waiting for league access approval
+                {t('pendingRequestsDescription')}
               </CardDescription>
             </div>
             {pendingRequests.length > 0 && (
               <Badge variant="warning" className="text-sm">
-                {pendingRequests.length} Pending
+                {t('pending', { count: pendingRequests.length })}
               </Badge>
             )}
           </div>
@@ -220,9 +224,9 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
         <CardContent>
           {pendingRequests.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">No pending requests</p>
+              <p className="text-muted-foreground">{t('noPendingRequests')}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                All user requests have been processed
+                {t('allRequestsProcessed')}
               </p>
             </div>
           ) : (
@@ -230,11 +234,11 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Requested League</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="w-[120px]">Actions</TableHead>
+                    <TableHead>{t('user')}</TableHead>
+                    <TableHead>{t('email')}</TableHead>
+                    <TableHead>{t('requestedLeague')}</TableHead>
+                    <TableHead>{t('date')}</TableHead>
+                    <TableHead className="w-[120px]">{tCommon('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -267,7 +271,7 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
                             disabled={processingRequests.has(request.id)}
                           >
                             <Check className="h-4 w-4" />
-                            <span className="sr-only">Approve</span>
+                            <span className="sr-only">{t('approve')}</span>
                           </Button>
                           <Button
                             variant="ghost"
@@ -277,7 +281,7 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
                             disabled={processingRequests.has(request.id)}
                           >
                             <X className="h-4 w-4" />
-                            <span className="sr-only">Reject</span>
+                            <span className="sr-only">{t('reject')}</span>
                           </Button>
                         </div>
                       </TableCell>
@@ -293,16 +297,16 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
       {/* League Users */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>League Users</CardTitle>
+          <CardTitle>{t('leagueUsers')}</CardTitle>
           <CardDescription>
-            Manage user access and permissions across leagues
+            {t('leagueUsersDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Filters */}
           <div className="flex gap-4">
             <Input
-              placeholder="Search by name or email..."
+              placeholder={t('searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-sm"
@@ -310,10 +314,10 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
             {!league && (
               <Select value={leagueFilter} onValueChange={setLeagueFilter}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="League" />
+                  <SelectValue placeholder={t('league')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Leagues</SelectItem>
+                  <SelectItem value="all">{tSeries('allLeagues')}</SelectItem>
                   {leagues.map((lg) => (
                     <SelectItem key={lg.id} value={lg.id.toString()}>
                       {lg.name}
@@ -326,19 +330,19 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
 
           {filteredLeagueUsers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">No users found</p>
+              <p className="text-muted-foreground">{t('noUsersFound')}</p>
             </div>
           ) : (
             <div className="rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>League</TableHead>
-                    <TableHead className="text-center">Admin</TableHead>
-                    <TableHead className="text-center">Active</TableHead>
-                    <TableHead className="text-center">Paid</TableHead>
-                    <TableHead className="w-[60px]">Actions</TableHead>
+                    <TableHead>{t('user')}</TableHead>
+                    <TableHead>{t('league')}</TableHead>
+                    <TableHead className="text-center">{t('admin')}</TableHead>
+                    <TableHead className="text-center">{t('active')}</TableHead>
+                    <TableHead className="text-center">{t('paid')}</TableHead>
+                    <TableHead className="w-[60px]">{tCommon('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -398,19 +402,21 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
       <Dialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remove User from League</DialogTitle>
+            <DialogTitle>{t('removeTitle')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove {userToRemove?.User.firstName}{' '}
-              {userToRemove?.User.lastName} from {userToRemove?.League.name}? This action cannot be
-              undone.
+              {t('removeConfirm', {
+                firstName: userToRemove?.User.firstName ?? '',
+                lastName: userToRemove?.User.lastName ?? '',
+                leagueName: userToRemove?.League.name ?? ''
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRemoveDialogOpen(false)}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleRemove} disabled={isRemoving}>
-              {isRemoving ? 'Removing...' : 'Remove'}
+              {isRemoving ? t('removing') : t('remove')}
             </Button>
           </DialogFooter>
         </DialogContent>

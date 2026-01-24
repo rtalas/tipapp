@@ -7,7 +7,60 @@
 - **Admin:** Manual league, team, match, and result management.
 
 ## Tech Stack
-Next.js 16 (App Router) • Auth.js v5 (CredentialsProvider + JWT) • PostgreSQL (Supabase) • Prisma ORM • Zod • Vitest + Testing Library • Tailwind CSS v4 • Lucide Icons
+Next.js 16 (App Router) • Auth.js v5 (CredentialsProvider + JWT) • PostgreSQL (Supabase) • Prisma ORM • Zod • Vitest + Testing Library • Tailwind CSS v4 • Lucide Icons • next-intl v4 (i18n)
+
+## Internationalization (i18n)
+**Supported Languages:** English (en), Czech (cs)
+**Library:** next-intl v4.x for Next.js 16 App Router
+**Locale Storage:** Cookie-based (`NEXT_LOCALE`, 1-year expiry) - no URL routing changes
+**Translation Files:** `/messages/en.json`, `/messages/cs.json`
+
+### Key Features
+- **Language Switcher:** Available in user menu dropdown (top-right header) and admin topbar
+- **Locale Detection:** Cookie → Accept-Language header → Default 'en'
+- **Cookie Management:** Integrated into `proxy.ts` (Next.js 16 requires proxy.ts, not middleware.ts)
+- **Server Components:** Use `await getTranslations('namespace')`
+- **Client Components:** Use `useTranslations('namespace')` hook
+- **Date/Time Formatting:** Uses Intl API via next-intl (automatic locale-aware formatting)
+
+### Translation Structure
+Nested JSON organized by namespaces:
+```json
+{
+  "common": { "save": "Save", "cancel": "Cancel" },
+  "auth": {
+    "login": { "title": "Sign in", "username": "Username" }
+  },
+  "user": {
+    "matches": { "title": "Matches" },
+    "leaderboard": { "title": "Leaderboard" }
+  },
+  "admin": {
+    "common": { "profile": "Profile", "signOut": "Sign out" }
+  }
+}
+```
+
+### Implementation Status
+✅ **Infrastructure:** next-intl installed, proxy.ts integration, locale resolution
+✅ **Language Switcher:** User header + admin topbar with language selection dialog
+✅ **Authentication Pages:** Login, register, password reset, profile (100% translated)
+✅ **User Interface:** Matches, leaderboard, series, special bets, questions, chat (100% translated)
+✅ **Admin Interface:** Topbar, common UI elements (core components translated)
+⚠️ **Admin Pages:** Foundation established, individual admin pages can be translated as needed
+⚠️ **Validation Messages:** Translation keys available, Zod schemas can be extended
+
+### Adding New Translations
+1. Add English key to `/messages/en.json` in appropriate namespace
+2. Add Czech translation to `/messages/cs.json` (same path)
+3. Use in component:
+   - Server Component: `const t = await getTranslations('namespace')` then `{t('key')}`
+   - Client Component: `const t = useTranslations('namespace')` then `{t('key')}`
+4. For interpolation: `{t('message', { name: userName })}`
+
+### Translation Guidelines
+- **DO translate:** UI labels, messages, error text, placeholders
+- **DON'T translate:** Database values (SPORT_IDS, evaluator keys), proper nouns (team/player names), user-generated content
 
 ## Commands
 - `npm run dev` - Start dev server

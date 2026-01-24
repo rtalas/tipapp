@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { getLeagueById } from '@/actions/leagues'
 import { getTeamsBySport } from '@/actions/shared-queries'
 import { LeagueTeamsSetup } from '@/components/admin/leagues/league-teams-setup'
@@ -8,6 +9,7 @@ export default async function LeagueTeamsPage({
 }: {
   params: Promise<{ leagueId: string }>
 }) {
+  const t = await getTranslations('admin.teams')
   const { leagueId } = await params
   const id = parseInt(leagueId, 10)
 
@@ -31,9 +33,12 @@ export default async function LeagueTeamsPage({
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Manage teams for {league.name} {league.seasonFrom}/{league.seasonTo}
+          {t('descriptionLeague', {
+            leagueName: league.name,
+            season: `${league.seasonFrom}/${league.seasonTo}`
+          })}
         </p>
       </div>
 

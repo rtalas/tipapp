@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
 import { Trophy, Target, HelpCircle, Check, Lock, Clock, Users, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -58,6 +59,7 @@ export function SpecialBetsList({
   players,
   questions,
 }: SpecialBetsListProps) {
+  const t = useTranslations('user.specialBets')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
   const [filter, setFilter] = React.useState<FilterType>('current')
 
@@ -100,9 +102,9 @@ export function SpecialBetsList({
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Trophy className="mb-4 h-12 w-12 text-muted-foreground opacity-30" />
-        <h3 className="text-lg font-medium">No special bets</h3>
+        <h3 className="text-lg font-medium">{t('noSpecialBets')}</h3>
         <p className="text-sm text-muted-foreground">
-          Special bets will appear here
+          {t('specialBetsWillAppear')}
         </p>
       </div>
     )
@@ -117,7 +119,7 @@ export function SpecialBetsList({
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-bold text-foreground">
-              Long-Term Predictions
+              {t('longTermPredictions')}
             </h2>
           </div>
 
@@ -130,10 +132,10 @@ export function SpecialBetsList({
             >
               <TabsList className="grid w-full grid-cols-2 bg-secondary/50">
                 <TabsTrigger value="current" className="data-[state=active]:bg-card">
-                  Current
+                  {t('current')}
                 </TabsTrigger>
                 <TabsTrigger value="past" className="data-[state=active]:bg-card">
-                  Past
+                  {t('past')}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -152,12 +154,12 @@ export function SpecialBetsList({
           <div className="text-center py-12 text-muted-foreground">
             <Trophy className="w-12 h-12 mx-auto mb-4 opacity-30" />
             <p className="font-medium">
-              No {filter === 'current' ? 'upcoming' : 'past'} bets
+              {filter === 'current' ? t('noUpcomingBets') : t('noPastBets')}
             </p>
             <p className="text-sm">
               {filter === 'current'
-                ? 'Special bets will appear here'
-                : 'No completed bets yet'}
+                ? t('specialBetsWillAppear')
+                : t('noCompletedBets')}
             </p>
           </div>
         ) : (
@@ -212,6 +214,7 @@ function SpecialBetCard({
   players: SpecialBetsListProps['players']
   onSaved: () => void
 }) {
+  const t = useTranslations('user.specialBets')
   const isLocked = !specialBet.isBettingOpen
   const isEvaluated = specialBet.isEvaluated
   const betType = specialBet.SpecialBetSingle.SpecialBetSingleType?.name || 'value'
@@ -247,14 +250,14 @@ function SpecialBetCard({
       })
 
       if (!result.success) {
-        toast.error(result.error || 'Failed to save')
+        toast.error(result.error || t('saveError'))
         setIsSaved(false)
       } else {
         setIsSaved(true)
         onSaved()
       }
     } catch {
-      toast.error('Failed to save')
+      toast.error(t('saveError'))
       setIsSaved(false)
     } finally {
       setIsSaving(false)
@@ -348,7 +351,7 @@ function SpecialBetCard({
                 {isLocked && !isEvaluated && (
                   <span className="badge-locked flex items-center gap-0.5 text-[9px] sm:text-[10px]">
                     <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    <span className="hidden xs:inline">Locked</span>
+                    <span className="hidden xs:inline">{t('locked')}</span>
                   </span>
                 )}
                 {!isLocked && <CountdownBadge deadline={specialBet.dateTime} />}
@@ -381,14 +384,14 @@ function SpecialBetCard({
             <div className="p-3 rounded-lg bg-secondary/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Your pick:</span>
+                  <span className="text-xs text-muted-foreground">{t('yourPick')}</span>
                   <span
                     className={cn(
                       'text-sm font-medium',
                       isCorrect ? 'text-primary' : 'text-foreground'
                     )}
                   >
-                    {userSelection || 'No selection'}
+                    {userSelection || t('noSelection')}
                   </span>
                   {isCorrect && (
                     <CheckCircle className="w-4 h-4 text-primary fill-primary/20" />
@@ -400,7 +403,7 @@ function SpecialBetCard({
             {actualResult && (
               <div className="p-3 rounded-lg bg-primary/10">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Winner:</span>
+                  <span className="text-xs text-muted-foreground">{t('winner')}</span>
                   <span className="text-sm font-semibold text-primary">
                     {actualResult}
                   </span>
@@ -418,10 +421,10 @@ function SpecialBetCard({
                 disabled={isLocked}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select team..." />
+                  <SelectValue placeholder={t('selectTeam')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No selection</SelectItem>
+                  <SelectItem value="none">{t('noSelection')}</SelectItem>
                   {teams.map((t) => (
                     <SelectItem key={t.id} value={t.id.toString()}>
                       {t.Team.name}
@@ -439,10 +442,10 @@ function SpecialBetCard({
                 disabled={isLocked}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select player..." />
+                  <SelectValue placeholder={t('selectPlayer')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No selection</SelectItem>
+                  <SelectItem value="none">{t('noSelection')}</SelectItem>
                   {players.map((p) => (
                     <SelectItem key={p.id} value={p.id.toString()}>
                       {p.Player.firstName} {p.Player.lastName} ({p.LeagueTeam.Team.shortcut})
@@ -456,14 +459,14 @@ function SpecialBetCard({
             {!isTeamBet && !isPlayerBet && (
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">
-                  Enter Value
+                  {t('enterValue')}
                 </Label>
                 <Input
                   type="number"
                   value={value ?? ''}
                   onChange={handleValueChange}
                   disabled={isLocked}
-                  placeholder="Enter your prediction"
+                  placeholder={t('enterPrediction')}
                 />
               </div>
             )}
@@ -480,16 +483,16 @@ function SpecialBetCard({
               onClick={handleSave}
             >
               {isSaving ? (
-                <span className="animate-pulse">Saving...</span>
+                <span className="animate-pulse">{t('saving')}</span>
               ) : isSaved ? (
                 <>
                   <Check className="w-4 h-4 mr-2" />
-                  Saved
+                  {t('saved')}
                 </>
               ) : (
                 <>
                   <Check className="w-4 h-4 mr-2" />
-                  Save
+                  {t('save')}
                 </>
               )}
             </Button>
@@ -504,7 +507,7 @@ function SpecialBetCard({
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Friends' picks</span>
+              <span>{t('friendsPicks')}</span>
             </button>
           </div>
         )}
@@ -517,27 +520,27 @@ function SpecialBetCard({
             <DialogTitle>{specialBet.SpecialBetSingle.name}</DialogTitle>
             {actualResult && (
               <p className="text-sm text-muted-foreground">
-                Winner: {actualResult}
+                {t('winner')} {actualResult}
               </p>
             )}
           </DialogHeader>
           <div className="mt-4">
             <div className="flex items-center gap-2 mb-3">
               <Users className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Friends' Predictions</span>
+              <span className="font-medium text-sm">{t('friendsPredictions')}</span>
             </div>
             <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {!isLocked ? (
                 <p className="text-center text-muted-foreground text-sm py-4">
-                  Friends' picks will be visible after betting closes
+                  {t('friendsPicksLater')}
                 </p>
               ) : isLoadingFriends ? (
                 <p className="text-center text-muted-foreground text-sm py-4 animate-pulse">
-                  Loading...
+                  {t('loading')}
                 </p>
               ) : friendPredictions.length === 0 ? (
                 <p className="text-center text-muted-foreground text-sm py-4">
-                  No friends' predictions yet
+                  {t('noFriendsPredictions')}
                 </p>
               ) : (
                 friendPredictions.map((prediction) => {
@@ -595,6 +598,7 @@ function QuestionCard({
   question: UserQuestion
   onSaved: () => void
 }) {
+  const t = useTranslations('user.questions')
   const isLocked = !question.isBettingOpen
   const isEvaluated = question.isEvaluated
   const currentAnswer = question.userBet?.userBet
@@ -642,13 +646,13 @@ function QuestionCard({
       })
 
       if (!result.success) {
-        toast.error(result.error || 'Failed to save')
+        toast.error(result.error || t('saveError'))
       } else {
         setIsSaved(true)
         onSaved()
       }
     } catch {
-      toast.error('Failed to save')
+      toast.error(t('saveError'))
     } finally {
       setIsSaving(false)
     }
@@ -677,7 +681,7 @@ function QuestionCard({
                 {isLocked && !isEvaluated && (
                   <span className="badge-locked flex items-center gap-0.5 text-[9px] sm:text-[10px]">
                     <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    <span className="hidden xs:inline">Locked</span>
+                    <span className="hidden xs:inline">{t('locked')}</span>
                   </span>
                 )}
                 {!isLocked && <CountdownBadge deadline={question.dateTime} />}
@@ -713,7 +717,7 @@ function QuestionCard({
             <div className="p-3 rounded-lg bg-secondary/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Your answer:</span>
+                  <span className="text-xs text-muted-foreground">{t('yourAnswer')}</span>
                   <span
                     className={cn(
                       'text-sm font-medium',
@@ -721,10 +725,10 @@ function QuestionCard({
                     )}
                   >
                     {selectedAnswer === true
-                      ? 'Yes'
+                      ? t('yes')
                       : selectedAnswer === false
-                        ? 'No'
-                        : 'No answer'}
+                        ? t('no')
+                        : t('noAnswer')}
                   </span>
                   {isEvaluated &&
                     selectedAnswer !== null &&
@@ -741,9 +745,9 @@ function QuestionCard({
             {isEvaluated && question.result !== null && (
               <div className="p-3 rounded-lg bg-primary/10">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Correct answer:</span>
+                  <span className="text-xs text-muted-foreground">{t('correctAnswer')}</span>
                   <span className="text-sm font-semibold text-primary">
-                    {question.result ? 'Yes' : 'No'}
+                    {question.result ? t('yes') : t('no')}
                   </span>
                 </div>
               </div>
@@ -762,7 +766,7 @@ function QuestionCard({
                 )}
                 onClick={() => handleAnswer(true)}
               >
-                Yes
+                {t('yes')}
               </Button>
               <Button
                 variant={selectedAnswer === false ? 'default' : 'outline'}
@@ -773,7 +777,7 @@ function QuestionCard({
                 )}
                 onClick={() => handleAnswer(false)}
               >
-                No
+                {t('no')}
               </Button>
               <Button
                 variant={selectedAnswer === null ? 'default' : 'outline'}
@@ -784,7 +788,7 @@ function QuestionCard({
                 )}
                 onClick={() => handleAnswer(null)}
               >
-                No Answer
+                {t('noAnswer')}
               </Button>
             </div>
             <Button
@@ -799,16 +803,16 @@ function QuestionCard({
               onClick={handleSave}
             >
               {isSaving ? (
-                <span className="animate-pulse">Saving...</span>
+                <span className="animate-pulse">{t('saving')}</span>
               ) : isSaved ? (
                 <>
                   <Check className="w-4 h-4 mr-2" />
-                  Saved
+                  {t('saved')}
                 </>
               ) : (
                 <>
                   <Check className="w-4 h-4 mr-2" />
-                  Save
+                  {t('save')}
                 </>
               )}
             </Button>
@@ -823,7 +827,7 @@ function QuestionCard({
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Friends' picks</span>
+              <span>{t('friendsPicks')}</span>
             </button>
           </div>
         )}
@@ -836,27 +840,27 @@ function QuestionCard({
             <DialogTitle>{question.text}</DialogTitle>
             {isEvaluated && question.result !== null && (
               <p className="text-sm text-muted-foreground">
-                Correct answer: {question.result ? 'Yes' : 'No'}
+                {t('correctAnswer')} {question.result ? t('yes') : t('no')}
               </p>
             )}
           </DialogHeader>
           <div className="mt-4">
             <div className="flex items-center gap-2 mb-3">
               <Users className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Friends' Answers</span>
+              <span className="font-medium text-sm">{t('friendsAnswers')}</span>
             </div>
             <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {!isLocked ? (
                 <p className="text-center text-muted-foreground text-sm py-4">
-                  Friends' picks will be visible after betting closes
+                  {t('friendsPicksLater')}
                 </p>
               ) : isLoadingFriends ? (
                 <p className="text-center text-muted-foreground text-sm py-4 animate-pulse">
-                  Loading...
+                  {t('loading')}
                 </p>
               ) : friendPredictions.length === 0 ? (
                 <p className="text-center text-muted-foreground text-sm py-4">
-                  No friends' answers yet
+                  {t('noFriendsAnswers')}
                 </p>
               ) : (
                 friendPredictions.map((prediction) => {
@@ -865,10 +869,10 @@ function QuestionCard({
                   const initials = getUserInitials(user)
 
                   const answerDisplay = prediction.userBet === true
-                    ? 'Yes'
+                    ? t('yes')
                     : prediction.userBet === false
-                      ? 'No'
-                      : 'No answer'
+                      ? t('no')
+                      : t('noAnswer')
 
                   const isCorrect = isEvaluated && question.result !== null && prediction.userBet === question.result
 

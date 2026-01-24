@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { getTranslations } from 'next-intl/server'
 import { validateLeagueAccess } from '@/lib/league-utils'
 import { getMatches } from '@/actions/matches'
 import { getLeaguesWithTeams } from '@/actions/shared-queries'
@@ -26,25 +27,27 @@ async function MatchesData({ league }: { league: { id: number; name: string } })
   return <MatchesContent matches={matches} leagues={leagues} users={users} league={league} phases={phases} />
 }
 
-function MatchesLoading() {
+async function MatchesLoading() {
+  const t = await getTranslations('admin.matches')
+  const tCommon = await getTranslations('admin.common')
   return (
     <Card className="card-shadow">
       <CardHeader>
-        <CardTitle>Matches</CardTitle>
-        <CardDescription>Loading matches...</CardDescription>
+        <CardTitle>{t('title')}</CardTitle>
+        <CardDescription>{t('loadingMatches')}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">ID</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>League</TableHead>
-                <TableHead>Matchup</TableHead>
-                <TableHead className="text-center">Score</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-[80px]">Actions</TableHead>
+                <TableHead className="w-[80px]">{t('id')}</TableHead>
+                <TableHead>{t('dateTime')}</TableHead>
+                <TableHead>{t('league')}</TableHead>
+                <TableHead>{t('matchup')}</TableHead>
+                <TableHead className="text-center">{t('score')}</TableHead>
+                <TableHead>{t('status')}</TableHead>
+                <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -72,15 +75,19 @@ export default async function LeagueMatchesPage({
 }: {
   params: Promise<{ leagueId: string }>
 }) {
+  const t = await getTranslations('admin.matches')
   const { leagueId } = await params
   const league = await validateLeagueAccess(leagueId)
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Matches</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Matches in {league.name} {league.seasonFrom}/{league.seasonTo}
+          {t('description', {
+            leagueName: league.name,
+            season: `${league.seasonFrom}/${league.seasonTo}`
+          })}
         </p>
       </div>
 

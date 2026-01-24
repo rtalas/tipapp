@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import { validateLeagueAccess } from '@/lib/league-utils'
 import { getSpecialBetsWithUserBets } from '@/actions/special-bet-bets'
 import { getUsers } from '@/actions/users'
@@ -9,6 +10,7 @@ export default async function LeagueSpecialBetsPage({
 }: {
   params: Promise<{ leagueId: string }>
 }) {
+  const t = await getTranslations('admin.specialBets')
   const { leagueId } = await params
   const league = await validateLeagueAccess(leagueId)
 
@@ -40,9 +42,12 @@ export default async function LeagueSpecialBetsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Special Bets</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Special bets in {league.name} {league.seasonFrom}/{league.seasonTo}
+          {t('description', {
+            leagueName: league.name,
+            season: `${league.seasonFrom}/${league.seasonTo}`
+          })}
         </p>
       </div>
 

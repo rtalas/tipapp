@@ -38,6 +38,7 @@ interface UserLayoutProps {
     special?: number
     chat?: number
   }
+  locale?: string
 }
 
 export function UserLayout({
@@ -46,12 +47,13 @@ export function UserLayout({
   leagues,
   currentLeagueId,
   badges,
+  locale,
 }: UserLayoutProps) {
   return (
     <UserLeagueProvider initialLeagues={leagues} initialLeagueId={currentLeagueId}>
       <div className="flex min-h-screen flex-col">
         {/* Header */}
-        <Header user={user} />
+        <Header user={user} locale={locale} />
 
         {/* Main content area with padding for header and bottom nav */}
         <main className="flex-1 pt-14 pb-20">

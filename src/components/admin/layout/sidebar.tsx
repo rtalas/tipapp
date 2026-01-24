@@ -3,6 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import {
   Trophy,
   Calendar,
@@ -38,6 +39,7 @@ interface SidebarProps {
 export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
   const pathname = usePathname()
   const { selectedLeagueId } = useLeagueContext()
+  const t = useTranslations('admin.sidebar')
 
   // Use selected league from context (persists across all pages)
   const leagueId = selectedLeagueId
@@ -46,31 +48,33 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
   // Build league-specific items with dynamic URLs
   const leagueSpecificItems = leagueId
     ? [
-        { label: 'Matches', href: `/admin/${leagueId}/matches`, icon: Calendar },
-        { label: 'Special Bets', href: `/admin/${leagueId}/special-bets`, icon: Target },
-        { label: 'Series', href: `/admin/${leagueId}/series`, icon: ListChecks },
-        { label: 'Questions', href: `/admin/${leagueId}/questions`, icon: MessageSquare },
-        { label: 'Teams', href: `/admin/${leagueId}/teams`, icon: Shield },
-        { label: 'Players', href: `/admin/${leagueId}/players`, icon: User },
-        { label: 'Users', href: `/admin/${leagueId}/users`, icon: Users },
-        { label: 'Evaluators', href: `/admin/${leagueId}/evaluators`, icon: Award },
+        { key: 'matches', href: `/admin/${leagueId}/matches`, icon: Calendar },
+        { key: 'specialBets', href: `/admin/${leagueId}/special-bets`, icon: Target },
+        { key: 'series', href: `/admin/${leagueId}/series`, icon: ListChecks },
+        { key: 'questions', href: `/admin/${leagueId}/questions`, icon: MessageSquare },
+        { key: 'teams', href: `/admin/${leagueId}/teams`, icon: Shield },
+        { key: 'players', href: `/admin/${leagueId}/players`, icon: User },
+        { key: 'users', href: `/admin/${leagueId}/users`, icon: Users },
+        { key: 'evaluators', href: `/admin/${leagueId}/evaluators`, icon: Award },
       ]
     : []
 
   const generalAdminItems = [
-    { label: 'Leagues', href: '/admin/leagues', icon: Trophy },
-    { label: 'Teams (Global)', href: '/admin/teams', icon: Shield },
-    { label: 'Players (Global)', href: '/admin/players', icon: User },
-    { label: 'Users (Global)', href: '/admin/users', icon: Users },
-    { label: 'Special Bet Types', href: '/admin/special-bet-types', icon: Target },
-    { label: 'Series Types', href: '/admin/series-types', icon: ListChecks },
-    { label: 'Match Phases', href: '/admin/match-phases', icon: Layers },
+    { key: 'leagues', href: '/admin/leagues', icon: Trophy },
+    { key: 'teamsGlobal', href: '/admin/teams', icon: Shield },
+    { key: 'playersGlobal', href: '/admin/players', icon: User },
+    { key: 'usersGlobal', href: '/admin/users', icon: Users },
+    { key: 'specialBetTypes', href: '/admin/special-bet-types', icon: Target },
+    { key: 'seriesTypes', href: '/admin/series-types', icon: ListChecks },
+    { key: 'matchPhases', href: '/admin/match-phases', icon: Layers },
   ]
 
-  const renderNavItem = (item: { label: string; href: string; icon: React.ElementType }) => {
+  const renderNavItem = (item: { key: string; href: string; icon: React.ElementType }) => {
     const isActive =
       pathname === item.href ||
       (item.href !== '/admin' && pathname.startsWith(item.href + '/'))
+
+    const label = t(item.key)
 
     const link = (
       <Link
@@ -85,7 +89,7 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
         )}
       >
         <item.icon className="h-5 w-5 shrink-0" />
-        {!collapsed && <span>{item.label}</span>}
+        {!collapsed && <span>{label}</span>}
       </Link>
     )
 
@@ -94,7 +98,7 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
         <Tooltip key={item.href}>
           <TooltipTrigger asChild>{link}</TooltipTrigger>
           <TooltipContent side="right" sideOffset={10}>
-            {item.label}
+            {label}
           </TooltipContent>
         </Tooltip>
       )
@@ -118,7 +122,7 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
               <Zap className="h-5 w-5 text-primary-foreground" />
             </div>
             {!collapsed && (
-              <span className="font-semibold text-lg">TipApp Admin</span>
+              <span className="font-semibold text-lg">{t('appName')}</span>
             )}
           </Link>
         </div>
@@ -154,7 +158,7 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
             {!collapsed && (
               <div className="px-3 py-2">
                 <p className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider">
-                  General Admin
+                  {t('generalAdminSection')}
                 </p>
               </div>
             )}
@@ -179,7 +183,7 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
                 collapsed && 'rotate-180'
               )}
             />
-            {!collapsed && <span className="ml-2">Collapse</span>}
+            {!collapsed && <span className="ml-2">{t('collapse')}</span>}
           </Button>
         </div>
       </aside>

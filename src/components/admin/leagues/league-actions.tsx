@@ -4,6 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { Settings, Users, Trash2, Edit, Award, MessageSquare, Pause, Play } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { updateLeague, updateLeagueChatSettings } from '@/actions/leagues'
 import { getLeaguePrizes, updateLeaguePrizes } from '@/actions/league-prizes'
 import { logger } from '@/lib/client-logger'
@@ -44,6 +45,8 @@ export function LeagueActions({
   isChatEnabled,
   chatSuspendedAt,
 }: LeagueActionsProps) {
+  const t = useTranslations('admin.leagueActions')
+  const tCommon = useTranslations('admin.common')
   const [editDialogOpen, setEditDialogOpen] = React.useState(false)
   const [isSaving, setIsSaving] = React.useState(false)
   const [editForm, setEditForm] = React.useState({
@@ -82,12 +85,12 @@ export function LeagueActions({
 
   const handleSave = async () => {
     if (!editForm.name.trim()) {
-      toast.error('League name cannot be empty')
+      toast.error(t('validation.nameRequired'))
       return
     }
 
     if (editForm.seasonTo < editForm.seasonFrom) {
-      toast.error('Season end must be greater than or equal to season start')
+      toast.error(t('validation.seasonEndGreater'))
       return
     }
 
@@ -117,14 +120,14 @@ export function LeagueActions({
         prizes,
       })
 
-      toast.success('League updated successfully')
+      toast.success(t('toast.updated'))
       setEditDialogOpen(false)
       setPrizesLoaded(false) // Reset to reload on next open
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error('Failed to update league')
+        toast.error(t('toast.updateFailed'))
       }
       logger.error('Failed to update league', { error, leagueId })
     } finally {
@@ -142,13 +145,13 @@ export function LeagueActions({
 
       if (result.success) {
         setIsChatSuspended(!isChatSuspended)
-        toast.success(isChatSuspended ? 'Chat resumed' : 'Chat suspended')
+        toast.success(isChatSuspended ? t('toast.chatResumed') : t('toast.chatSuspended'))
       } else {
-        const errorMessage = 'error' in result ? result.error : 'Failed to update chat status'
+        const errorMessage = 'error' in result ? result.error : t('toast.chatStatusFailed')
         toast.error(errorMessage)
       }
     } catch (error) {
-      toast.error('Failed to update chat status')
+      toast.error(t('toast.chatStatusFailed'))
       logger.error('Failed to suspend/resume chat', { error, leagueId })
     } finally {
       setIsSaving(false)
@@ -203,13 +206,13 @@ export function LeagueActions({
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit League</DialogTitle>
-            <DialogDescription>Update league details and settings</DialogDescription>
+            <DialogTitle>{t('editTitle')}</DialogTitle>
+            <DialogDescription>{t('editDescription')}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">League Name</Label>
+              <Label htmlFor="name">{t('leagueName')}</Label>
               <Input
                 id="name"
                 value={editForm.name}
@@ -219,7 +222,7 @@ export function LeagueActions({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="seasonFrom">Season From</Label>
+                <Label htmlFor="seasonFrom">{t('seasonFrom')}</Label>
                 <Input
                   id="seasonFrom"
                   type="number"
@@ -232,7 +235,7 @@ export function LeagueActions({
                 />
               </div>
               <div>
-                <Label htmlFor="seasonTo">Season To</Label>
+                <Label htmlFor="seasonTo">{t('seasonTo')}</Label>
                 <Input
                   id="seasonTo"
                   type="number"
@@ -247,7 +250,7 @@ export function LeagueActions({
             </div>
 
             <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">Active</Label>
+              <Label htmlFor="isActive">{t('active')}</Label>
               <Switch
                 id="isActive"
                 checked={editForm.isActive}
@@ -258,7 +261,7 @@ export function LeagueActions({
             </div>
 
             <div className="flex items-center justify-between">
-              <Label htmlFor="isPublic">Public</Label>
+              <Label htmlFor="isPublic">{t('public')}</Label>
               <Switch
                 id="isPublic"
                 checked={editForm.isPublic}
@@ -271,13 +274,13 @@ export function LeagueActions({
             <div className="border-t pt-4 mt-4">
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
-                Chat Settings
+                {t('chatSettings')}
               </h4>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="isChatEnabled">Enable Chat</Label>
-                  <p className="text-xs text-muted-foreground">Allow users to chat in this league</p>
+                  <Label htmlFor="isChatEnabled">{t('enableChat')}</Label>
+                  <p className="text-xs text-muted-foreground">{t('enableChatHelper')}</p>
                 </div>
                 <Switch
                   id="isChatEnabled"
@@ -292,11 +295,14 @@ export function LeagueActions({
                 <div className="flex items-center justify-between mt-3 p-3 bg-muted/50 rounded-md">
                   <div>
                     <span className="text-sm">
-                      {isChatSuspended ? 'Chat is suspended' : 'Chat is active'}
+                      {isChatSuspended
+                        ? t('chatStatus', { status: t('chatStatusSuspended') })
+                        : t('chatStatus', { status: t('chatStatusActive') })
+                      }
                     </span>
                     {isChatSuspended && chatSuspendedAt && (
                       <p className="text-xs text-muted-foreground">
-                        Since {new Date(chatSuspendedAt).toLocaleString()}
+                        {t('chatSuspendedSince', { date: new Date(chatSuspendedAt).toLocaleString() })}
                       </p>
                     )}
                   </div>
@@ -309,11 +315,11 @@ export function LeagueActions({
                   >
                     {isChatSuspended ? (
                       <>
-                        <Play className="h-3 w-3 mr-1" /> Resume
+                        <Play className="h-3 w-3 mr-1" /> {t('chatResume')}
                       </>
                     ) : (
                       <>
-                        <Pause className="h-3 w-3 mr-1" /> Suspend
+                        <Pause className="h-3 w-3 mr-1" /> {t('chatSuspend')}
                       </>
                     )}
                   </Button>
@@ -332,10 +338,10 @@ export function LeagueActions({
               onClick={() => setEditDialogOpen(false)}
               disabled={isSaving}
             >
-              Cancel
+              {tCommon('button.cancel')}
             </Button>
             <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? tCommon('saving') : tCommon('button.save')}
             </Button>
           </DialogFooter>
         </DialogContent>

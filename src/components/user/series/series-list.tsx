@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
 import { Swords, Minus, Plus, Check, Lock, Clock, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -31,6 +32,7 @@ interface SeriesListProps {
 type FilterType = 'current' | 'past'
 
 export function SeriesList({ series }: SeriesListProps) {
+  const t = useTranslations('user.series')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
   const [filter, setFilter] = React.useState<FilterType>('current')
 
@@ -54,9 +56,9 @@ export function SeriesList({ series }: SeriesListProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Swords className="mb-4 h-12 w-12 text-muted-foreground opacity-30" />
-        <h3 className="text-lg font-medium">No series bets</h3>
+        <h3 className="text-lg font-medium">{t('noSeriesBets')}</h3>
         <p className="text-sm text-muted-foreground">
-          Series will appear here during playoffs
+          {t('seriesPlayoffsDescription')}
         </p>
       </div>
     )
@@ -70,7 +72,7 @@ export function SeriesList({ series }: SeriesListProps) {
           {/* Title */}
           <div className="flex items-center gap-2">
             <Swords className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">Series</h2>
+            <h2 className="text-lg font-bold text-foreground">{t('title')}</h2>
           </div>
 
           {/* Filter tabs and refresh */}
@@ -82,10 +84,10 @@ export function SeriesList({ series }: SeriesListProps) {
             >
               <TabsList className="grid w-full grid-cols-2 bg-secondary/50">
                 <TabsTrigger value="current" className="data-[state=active]:bg-card">
-                  Current
+                  {t('current')}
                 </TabsTrigger>
                 <TabsTrigger value="past" className="data-[state=active]:bg-card">
-                  Past
+                  {t('past')}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -103,12 +105,12 @@ export function SeriesList({ series }: SeriesListProps) {
           <div className="text-center py-12 text-muted-foreground">
             <Swords className="w-12 h-12 mx-auto mb-4 opacity-30" />
             <p className="font-medium">
-              No {filter === 'current' ? 'upcoming' : 'past'} series
+              {filter === 'current' ? t('noUpcoming') : t('noPast')}
             </p>
             <p className="text-sm">
               {filter === 'current'
-                ? 'Series will appear here during playoffs'
-                : 'No completed series yet'}
+                ? t('noCurrentSeries')
+                : t('noCompletedSeries')}
             </p>
           </div>
         ) : (
@@ -145,6 +147,7 @@ function SeriesCard({
   series: UserSeries
   onSaved: () => void
 }) {
+  const t = useTranslations('user.series')
   const homeTeam = series.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam
   const awayTeam = series.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam
   const isLocked = !series.isBettingOpen
@@ -178,14 +181,14 @@ function SeriesCard({
       })
 
       if (!result.success) {
-        toast.error(result.error || 'Failed to save')
+        toast.error(result.error || t('saveError'))
         setIsSaved(false)
       } else {
         setIsSaved(true)
         onSaved()
       }
     } catch {
-      toast.error('Failed to save')
+      toast.error(t('saveError'))
       setIsSaved(false)
     } finally {
       setIsSaving(false)
@@ -249,7 +252,7 @@ function SeriesCard({
             </div>
             <div>
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Best of {bestOf}
+                {t('bestOf', { count: bestOf })}
               </span>
             </div>
           </div>
@@ -257,7 +260,7 @@ function SeriesCard({
             {isLocked && (
               <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-muted-foreground text-[10px] font-medium">
                 <Lock className="w-3 h-3" />
-                Locked
+                {t('locked')}
               </span>
             )}
             {!isLocked && <CountdownBadge deadline={series.dateTime} />}
@@ -276,7 +279,7 @@ function SeriesCard({
                     : 'bg-secondary text-muted-foreground'
                 )}
               >
-                +{series.userBet.totalPoints} pts
+                +{series.userBet.totalPoints} {t('pointsShort')}
               </span>
             )}
           </div>
@@ -296,7 +299,7 @@ function SeriesCard({
             {isLocked ? (
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] text-muted-foreground uppercase">
-                  Result
+                  {t('result')}
                 </span>
                 {series.homeTeamScore !== null && series.awayTeamScore !== null && (
                   <span className="text-lg font-black text-foreground">
@@ -306,7 +309,7 @@ function SeriesCard({
                 {series.userBet && (
                   <div className="flex items-center gap-1">
                     <span className="text-[10px] text-muted-foreground">
-                      Your bet:
+                      {t('yourBet')}
                     </span>
                     <span className="text-xs font-semibold text-primary">
                       {series.userBet.homeTeamScore}:{series.userBet.awayTeamScore}
@@ -393,16 +396,16 @@ function SeriesCard({
             onClick={handleSave}
           >
             {isSaving ? (
-              <span className="animate-pulse">Saving...</span>
+              <span className="animate-pulse">{t('saving')}</span>
             ) : isSaved ? (
               <>
                 <Check className="w-4 h-4 mr-2" />
-                Saved
+                {t('saved')}
               </>
             ) : (
               <>
                 <Check className="w-4 h-4 mr-2" />
-                Save Prediction
+                {t('savePrediction')}
               </>
             )}
           </Button>
@@ -416,7 +419,7 @@ function SeriesCard({
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Friends' picks</span>
+              <span>{t('friendsPicks')}</span>
             </button>
           </div>
         )}
@@ -433,27 +436,27 @@ function SeriesCard({
             </DialogTitle>
             {series.homeTeamScore !== null && series.awayTeamScore !== null && (
               <p className="text-sm text-muted-foreground">
-                Final: {series.homeTeamScore} - {series.awayTeamScore}
+                {t('final')} {series.homeTeamScore} - {series.awayTeamScore}
               </p>
             )}
           </DialogHeader>
           <div className="mt-4">
             <div className="flex items-center gap-2 mb-3">
               <Users className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Friends' Predictions</span>
+              <span className="font-medium text-sm">{t('friendsPredictions')}</span>
             </div>
             <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {!isLocked ? (
                 <p className="text-center text-muted-foreground text-sm py-4">
-                  Friends' picks will be visible after betting closes
+                  {t('friendsPicksLater')}
                 </p>
               ) : isLoadingFriends ? (
                 <p className="text-center text-muted-foreground text-sm py-4 animate-pulse">
-                  Loading...
+                  {t('loading')}
                 </p>
               ) : friendPredictions.length === 0 ? (
                 <p className="text-center text-muted-foreground text-sm py-4">
-                  No friends' predictions yet
+                  {t('noFriendsPredictions')}
                 </p>
               ) : (
                 friendPredictions.map((prediction) => {

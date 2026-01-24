@@ -7,6 +7,7 @@ import {
   compareAsc,
 } from 'date-fns'
 import { Calendar } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { groupByDate, getDateLabel as getBasicDateLabel } from '@/lib/date-grouping-utils'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MatchCard } from './match-card'
@@ -21,23 +22,27 @@ interface MatchListProps {
 
 type FilterType = 'upcoming' | 'past'
 
-// Extended date label for match list (includes "this week" check)
-function getDateLabel(date: Date): string {
-  const basicLabel = getBasicDateLabel(date)
-  // If it's today or tomorrow, use basic label
-  if (basicLabel === 'Today' || basicLabel === 'Tomorrow') {
-    return basicLabel
-  }
-  // For this week, show just the day name
-  if (isThisWeek(date)) {
-    return format(date, 'EEEE') // Day name
-  }
-  return basicLabel
-}
-
 export function MatchList({ matches }: MatchListProps) {
+  const t = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
   const [filter, setFilter] = React.useState<FilterType>('upcoming')
+
+  // Extended date label for match list (includes "this week" check)
+  const getDateLabel = React.useCallback((date: Date): string => {
+    const basicLabel = getBasicDateLabel(date)
+    // If it's today or tomorrow, use translated label
+    if (basicLabel === 'Today') {
+      return t('today')
+    }
+    if (basicLabel === 'Tomorrow') {
+      return t('tomorrow')
+    }
+    // For this week, show just the day name
+    if (isThisWeek(date)) {
+      return format(date, 'EEEE') // Day name
+    }
+    return basicLabel
+  }, [t])
 
   // Filter matches based on selected tab
   const filteredMatches = React.useMemo(() => {
@@ -76,7 +81,7 @@ export function MatchList({ matches }: MatchListProps) {
           {/* Title */}
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">Matches</h2>
+            <h2 className="text-lg font-bold text-foreground">{t('title')}</h2>
           </div>
 
           {/* Filter tabs and refresh */}
@@ -88,10 +93,10 @@ export function MatchList({ matches }: MatchListProps) {
             >
               <TabsList className="grid w-full grid-cols-2 bg-secondary/50">
                 <TabsTrigger value="upcoming" className="relative data-[state=active]:bg-card">
-                  Current & Upcoming
+                  {t('upcoming')}
                 </TabsTrigger>
                 <TabsTrigger value="past" className="data-[state=active]:bg-card">
-                  Past
+                  {t('past')}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -108,11 +113,9 @@ export function MatchList({ matches }: MatchListProps) {
         {sortedMatches.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Calendar className="mb-4 h-12 w-12 text-muted-foreground opacity-30" />
-            <h3 className="text-lg font-medium">No matches found</h3>
+            <h3 className="text-lg font-medium">{t('noMatches')}</h3>
             <p className="text-sm text-muted-foreground">
-              {filter === 'upcoming'
-                ? 'No upcoming matches to bet on'
-                : 'No past matches'}
+              {filter === 'upcoming' ? t('noUpcoming') : t('noPast')}
             </p>
           </div>
         ) : (

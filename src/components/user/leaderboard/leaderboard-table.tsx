@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Trophy } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -22,6 +23,7 @@ interface LeaderboardTableProps {
 }
 
 export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
+  const t = useTranslations('user.leaderboard')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
   const [selectedUser, setSelectedUser] = React.useState<LeaderboardEntry | null>(
     null
@@ -31,9 +33,9 @@ export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Trophy className="mb-4 h-12 w-12 text-muted-foreground opacity-30" />
-        <h3 className="text-lg font-medium">No rankings yet</h3>
+        <h3 className="text-lg font-medium">{t('noRankings')}</h3>
         <p className="text-sm text-muted-foreground">
-          Rankings will appear once users start betting
+          {t('description')}
         </p>
       </div>
     )
@@ -51,7 +53,7 @@ export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-bold text-foreground">Leaderboard</h2>
+                <h2 className="text-lg font-bold text-foreground">{t('title')}</h2>
               </div>
               <RefreshButton isRefreshing={isRefreshing} onRefresh={refresh} />
             </div>
@@ -117,7 +119,7 @@ export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
                       )}
                     </DialogTitle>
                     <p className="text-sm text-muted-foreground">
-                      {selectedUser.totalPoints} points · Rank #{selectedUser.rank}
+                      {selectedUser.totalPoints} {t('points')} · {t('rankNumber', { rank: selectedUser.rank })}
                     </p>
                   </div>
                 </>
@@ -133,10 +135,10 @@ export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
                     <div className="p-3 rounded-lg bg-secondary/30">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-foreground">
-                          Match Predictions
+                          {t('matchPredictions')}
                         </span>
                         <span className="text-sm font-bold text-primary">
-                          +{selectedUser.matchPoints} pts
+                          +{selectedUser.matchPoints} {t('pointsShort')}
                         </span>
                       </div>
                     </div>
@@ -146,10 +148,10 @@ export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
                     <div className="p-3 rounded-lg bg-secondary/30">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-foreground">
-                          Series Predictions
+                          {t('seriesPredictions')}
                         </span>
                         <span className="text-sm font-bold text-primary">
-                          +{selectedUser.seriesPoints} pts
+                          +{selectedUser.seriesPoints} {t('pointsShort')}
                         </span>
                       </div>
                     </div>
@@ -159,10 +161,10 @@ export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
                     <div className="p-3 rounded-lg bg-secondary/30">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-foreground">
-                          Special Bets
+                          {t('specialBets')}
                         </span>
                         <span className="text-sm font-bold text-primary">
-                          +{selectedUser.specialBetPoints} pts
+                          +{selectedUser.specialBetPoints} {t('pointsShort')}
                         </span>
                       </div>
                     </div>
@@ -172,17 +174,17 @@ export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
                     <div className="p-3 rounded-lg bg-secondary/30">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-foreground">
-                          Questions
+                          {t('questions')}
                         </span>
                         <span className="text-sm font-bold text-primary">
-                          +{selectedUser.questionPoints} pts
+                          +{selectedUser.questionPoints} {t('pointsShort')}
                         </span>
                       </div>
                     </div>
                   )}
                   {selectedUser.totalPoints === 0 && (
                     <p className="text-center text-muted-foreground py-8 text-sm">
-                      No points earned yet
+                      {t('noPointsYet')}
                     </p>
                   )}
                 </div>
@@ -203,6 +205,7 @@ interface RankingRowProps {
 }
 
 function RankingRow({ entry, index, prizes, onClick }: RankingRowProps) {
+  const t = useTranslations('user.leaderboard')
   const initials = getInitials(entry.firstName, entry.lastName, entry.username)
   const displayName = getDisplayName(
     entry.firstName,
@@ -258,7 +261,7 @@ function RankingRow({ entry, index, prizes, onClick }: RankingRowProps) {
       >
         {displayName}
         {entry.isCurrentUser && (
-          <span className="ml-1 text-[10px] text-muted-foreground">(You)</span>
+          <span className="ml-1 text-[10px] text-muted-foreground">{t('you')}</span>
         )}
       </span>
 

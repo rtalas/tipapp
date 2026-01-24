@@ -1,4 +1,5 @@
 import { redirect, notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { ChatView } from '@/components/chat/ChatView'
@@ -11,6 +12,7 @@ interface ChatPageProps {
 export default async function ChatPage({ params }: ChatPageProps) {
   const { leagueId: leagueIdParam } = await params
   const leagueId = parseInt(leagueIdParam, 10)
+  const t = await getTranslations('user.chat')
 
   if (isNaN(leagueId)) {
     notFound()
@@ -43,9 +45,9 @@ export default async function ChatPage({ params }: ChatPageProps) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Chat Disabled</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('chatDisabled')}</h1>
           <p className="text-muted-foreground">
-            Chat is not enabled for this league.
+            {t('chatDisabledDescription')}
           </p>
         </div>
       </div>
@@ -66,9 +68,9 @@ export default async function ChatPage({ params }: ChatPageProps) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('accessDenied')}</h1>
           <p className="text-muted-foreground">
-            You are not a member of this league.
+            {t('accessDeniedDescription')}
           </p>
         </div>
       </div>

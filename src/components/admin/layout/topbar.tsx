@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { signOut } from 'next-auth/react'
 import { Menu, Moon, Sun, LogOut, User } from 'lucide-react'
 import { useTheme } from 'next-themes'
@@ -18,6 +19,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Breadcrumbs } from './breadcrumbs'
 import { LeagueSelector } from './league-selector'
+import { LanguageSwitcher } from '@/components/user/layout/language-switcher'
 import { cn } from '@/lib/utils'
 import type { League } from '@prisma/client'
 
@@ -29,12 +31,15 @@ interface TopbarProps {
     isSuperadmin: boolean
   }
   leagues: League[]
+  locale?: string
 }
 
-export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues }: TopbarProps) {
+export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues, locale }: TopbarProps) {
+  const t = useTranslations('admin.common')
   const { theme, setTheme } = useTheme()
   const router = useRouter()
   const pathname = usePathname()
+  const [showLanguageDialog, setShowLanguageDialog] = React.useState(false)
 
   const handleSignOut = async () => {
     await signOut({ redirect: false })
@@ -69,7 +74,7 @@ export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues }: TopbarP
           onClick={onMenuClick}
         >
           <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle menu</span>
+          <span className="sr-only">{t('toggleMenu')}</span>
         </Button>
         <Breadcrumbs leagues={leagues} />
       </div>
@@ -86,11 +91,11 @@ export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues }: TopbarP
           variant="ghost"
           size="icon"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          aria-label="Toggle theme"
+          aria-label={t('toggleTheme')}
         >
           <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
+          <span className="sr-only">{t('toggleTheme')}</span>
         </Button>
 
         {/* User dropdown */}
@@ -104,22 +109,29 @@ export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues }: TopbarP
               </Avatar>
               <div className="hidden flex-col items-start text-left lg:flex">
                 <span className="text-sm font-medium">
-                  {user?.username || 'Admin'}
+                  {user?.username || t('admin')}
                 </span>
                 {user?.isSuperadmin && (
                   <Badge variant="admin" className="text-[10px] px-1.5 py-0">
-                    Superadmin
+                    {t('superadmin')}
                   </Badge>
                 )}
               </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push('/admin/profile')}>
               <User className="mr-2 h-4 w-4" />
-              Profile
+              {t('profile')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowLanguageDialog(true)}>
+              <LanguageSwitcher
+                currentLocale={locale || 'en'}
+                open={showLanguageDialog}
+                onOpenChange={setShowLanguageDialog}
+              />
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -127,7 +139,7 @@ export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues }: TopbarP
               className="text-destructive focus:text-destructive"
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Sign out
+              {t('signOut')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

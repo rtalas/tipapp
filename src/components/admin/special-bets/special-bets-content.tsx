@@ -5,6 +5,7 @@ import { Fragment } from 'react'
 import { format } from 'date-fns'
 import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { deleteSpecialBet } from '@/actions/special-bets'
 import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
 import { getErrorMessage } from '@/lib/error-handler'
@@ -92,6 +93,9 @@ function getResultTypeAndDisplay(specialBet: SpecialBet): { type: string; displa
 }
 
 export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, users, league }: SpecialBetsContentProps) {
+  const t = useTranslations('admin.specialBets')
+  const tCommon = useTranslations('admin.common')
+  const tSeries = useTranslations('admin.series')
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [leagueFilter, setLeagueFilter] = React.useState<string>('all')
@@ -151,11 +155,11 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
     setIsDeleting(true)
     try {
       await deleteSpecialBet(specialBetToDelete.id)
-      toast.success('Special bet deleted successfully')
+      toast.success(t('specialBetDeleted'))
       setDeleteDialogOpen(false)
       setSpecialBetToDelete(null)
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to delete special bet')
+      const message = getErrorMessage(error, t('specialBetDeleteFailed'))
       toast.error(message)
       logger.error('Failed to delete special bet', { error, specialBetId: specialBetToDelete?.id })
     } finally {
@@ -168,12 +172,12 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
       const result = await evaluateSpecialBetBets({ specialBetId })
 
       if (result.success && 'totalUsersEvaluated' in result) {
-        toast.success(`Special bet evaluated! ${result.totalUsersEvaluated} user(s) updated.`)
+        toast.success(t('specialBetEvaluated', { count: result.totalUsersEvaluated }))
       } else if (!result.success) {
-        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to evaluate special bet'))
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, t('specialBetEvaluateFailed')))
       }
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Failed to evaluate special bet'))
+      toast.error(getErrorMessage(error, t('specialBetEvaluateFailed')))
       logger.error('Failed to evaluate special bet', { error, specialBetId })
     }
   }
@@ -184,29 +188,29 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-1 gap-4 flex-wrap">
           <Input
-            placeholder="Search by special bet type..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
           />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={tCommon('status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
-              <SelectItem value="finished">Finished</SelectItem>
-              <SelectItem value="evaluated">Evaluated</SelectItem>
+              <SelectItem value="all">{tSeries('allStatus')}</SelectItem>
+              <SelectItem value="scheduled">{tSeries('scheduled')}</SelectItem>
+              <SelectItem value="finished">{tSeries('finished')}</SelectItem>
+              <SelectItem value="evaluated">{tSeries('evaluated')}</SelectItem>
             </SelectContent>
           </Select>
           {!league && (
             <Select value={leagueFilter} onValueChange={setLeagueFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="League" />
+                <SelectValue placeholder={tSeries('league')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Leagues</SelectItem>
+                <SelectItem value="all">{tSeries('allLeagues')}</SelectItem>
                 {leagues.map((lg) => (
                   <SelectItem key={lg.id} value={lg.id.toString()}>
                     {lg.name}
@@ -217,10 +221,10 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
           )}
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Users" />
+              <SelectValue placeholder={tSeries('allUsers')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="all">{tSeries('allUsers')}</SelectItem>
               {users.map((user) => (
                 <SelectItem key={user.id} value={user.id.toString()}>
                   {user.firstName} {user.lastName}
@@ -230,37 +234,37 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
           </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder={t('type')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="team">Team</SelectItem>
-              <SelectItem value="player">Player</SelectItem>
-              <SelectItem value="value">Value</SelectItem>
+              <SelectItem value="all">{t('allTypes')}</SelectItem>
+              <SelectItem value="team">{t('team')}</SelectItem>
+              <SelectItem value="player">{t('player')}</SelectItem>
+              <SelectItem value="value">{t('value')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <Button onClick={() => setAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Create Special Bet
+          {t('createSpecialBet')}
         </Button>
       </div>
 
       {/* Special Bets table */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>All Special Bets</CardTitle>
+          <CardTitle>{t('allSpecialBets')}</CardTitle>
           <CardDescription>
-            {filteredSpecialBets.length} special bet{filteredSpecialBets.length !== 1 ? 's' : ''} found
+            {t('specialBetsFound', { count: filteredSpecialBets.length, plural: filteredSpecialBets.length !== 1 ? 's' : '' })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {filteredSpecialBets.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground mb-4">No special bets found</p>
+              <p className="text-muted-foreground mb-4">{t('noSpecialBetsFound')}</p>
               <Button onClick={() => setAddDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create your first special bet
+                {t('createFirstSpecialBet')}
               </Button>
             </div>
           ) : (
@@ -269,15 +273,15 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[40px]"></TableHead>
-                    <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    {!league && <TableHead>League</TableHead>}
-                    <TableHead>Special Bet</TableHead>
-                    <TableHead>Result</TableHead>
-                    <TableHead>Points</TableHead>
-                    <TableHead className="text-center">Bets</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead className="w-[80px]">{tSeries('id')}</TableHead>
+                    <TableHead>{tSeries('dateTime')}</TableHead>
+                    {!league && <TableHead>{tSeries('league')}</TableHead>}
+                    <TableHead>{t('specialBet')}</TableHead>
+                    <TableHead>{t('result')}</TableHead>
+                    <TableHead>{tSeries('points')}</TableHead>
+                    <TableHead className="text-center">{tSeries('bets')}</TableHead>
+                    <TableHead>{tCommon('status')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -320,7 +324,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                             <div className="flex flex-col gap-1">
                               <span className="font-medium">{sb.SpecialBetSingle.name}</span>
                               <Badge variant="outline" className="w-fit text-xs">
-                                {sb.SpecialBetSingle.SpecialBetSingleType.name !== 'none' ? sb.SpecialBetSingle.SpecialBetSingleType.name : 'not set'}
+                                {sb.SpecialBetSingle.SpecialBetSingleType.name !== 'none' ? sb.SpecialBetSingle.SpecialBetSingleType.name : t('notSet')}
                               </Badge>
                             </div>
                           </TableCell>
@@ -328,7 +332,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                             {resultInfo.type !== 'none' && (
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline" className="text-xs">
-                                  {resultInfo.type}
+                                  {t(resultInfo.type)}
                                 </Badge>
                                 <span className="text-sm">{resultInfo.display}</span>
                               </div>
@@ -337,7 +341,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                               <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
-                          <TableCell>{sb.points} pts</TableCell>
+                          <TableCell>{sb.points} {t('pts')}</TableCell>
                           <TableCell className="text-center">
                             <Badge variant="outline">{sb.UserSpecialBetSingle.length}</Badge>
                           </TableCell>
@@ -351,7 +355,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                                   : 'scheduled'
                               }
                             >
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                              {tSeries(status)}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -366,7 +370,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                                   e.stopPropagation()
                                   setSelectedSpecialBet(sb)
                                 }}
-                                aria-label={`Edit special bet: ${sb.SpecialBetSingle.name}`}
+                                aria-label={t('editSpecialBet', { name: sb.SpecialBetSingle.name })}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
@@ -377,7 +381,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                                   e.stopPropagation()
                                   handleEvaluate(sb.id)
                                 }}
-                                aria-label={`Evaluate special bet: ${sb.SpecialBetSingle.name}`}
+                                aria-label={t('evaluateSpecialBet', { name: sb.SpecialBetSingle.name })}
                               >
                                 <Calculator className="h-4 w-4 text-blue-600" />
                               </Button>
@@ -389,7 +393,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                                   setSpecialBetToDelete(sb)
                                   setDeleteDialogOpen(true)
                                 }}
-                                aria-label={`Delete special bet: ${sb.SpecialBetSingle.name}`}
+                                aria-label={t('deleteSpecialBet', { name: sb.SpecialBetSingle.name })}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
@@ -404,17 +408,17 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                               <div className="p-4">
                                 {sb.UserSpecialBetSingle.length === 0 ? (
                                   <div className="py-8 text-center">
-                                    <p className="text-muted-foreground">No bets yet for this special bet</p>
+                                    <p className="text-muted-foreground">{t('noUserBets')}</p>
                                   </div>
                                 ) : (
                                   <div className="rounded-lg border bg-background">
                                     <Table>
                                       <TableHeader>
                                         <TableRow>
-                                          <TableHead>User</TableHead>
-                                          <TableHead>Prediction</TableHead>
-                                          <TableHead>Points</TableHead>
-                                          <TableHead className="text-right">Actions</TableHead>
+                                          <TableHead>{tSeries('user')}</TableHead>
+                                          <TableHead>{t('prediction')}</TableHead>
+                                          <TableHead>{tSeries('points')}</TableHead>
+                                          <TableHead className="text-right">{tCommon('actions')}</TableHead>
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
@@ -439,10 +443,10 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setCreateBetSpecialBetId(sb.id)}
-                                    aria-label="Add missing bet for this special bet"
+                                    aria-label={tSeries('addMissingBetAria')}
                                   >
                                     <Plus className="mr-2 h-4 w-4" />
-                                    Add Missing Bet
+                                    {tSeries('addMissingBet')}
                                   </Button>
                                 </div>
                               </div>
@@ -495,9 +499,9 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Special Bet</DialogTitle>
+            <DialogTitle>{t('deleteTitle')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this special bet? This action cannot be undone.
+              {t('deleteConfirm')}
             </DialogDescription>
           </DialogHeader>
           {specialBetToDelete && (() => {
@@ -505,29 +509,29 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
             return (
               <div className="rounded-lg border p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Bet ID:</span>
+                  <span className="text-sm text-muted-foreground">{t('betId')}</span>
                   <span className="font-mono">#{specialBetToDelete.id}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Date:</span>
+                  <span className="text-sm text-muted-foreground">{tSeries('date')}</span>
                   <span>{format(new Date(specialBetToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Name:</span>
+                  <span className="text-sm text-muted-foreground">{t('name')}</span>
                   <span className="font-medium">{specialBetToDelete.SpecialBetSingle.name}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Type:</span>
+                  <span className="text-sm text-muted-foreground">{t('typeLabel')}</span>
                   <Badge variant="outline" className="text-xs">
-                    {deleteResultInfo.type !== 'none' ? deleteResultInfo.type : 'not set'}
+                    {deleteResultInfo.type !== 'none' ? t(deleteResultInfo.type) : t('notSet')}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Points:</span>
-                  <span>{specialBetToDelete.points} pts</span>
+                  <span className="text-sm text-muted-foreground">{t('pointsLabel')}</span>
+                  <span>{specialBetToDelete.points} {t('pts')}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">League:</span>
+                  <span className="text-sm text-muted-foreground">{tSeries('leagueLabel')}</span>
                   <span>{specialBetToDelete.League.name}</span>
                 </div>
               </div>
@@ -535,14 +539,14 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
           })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? tCommon('deleting') : tCommon('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

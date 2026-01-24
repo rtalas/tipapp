@@ -10,11 +10,12 @@ import {
   Trophy,
   MessageCircle,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
   id: string
-  label: string
+  labelKey: string
   icon: React.ElementType
   href: (leagueId: number) => string
   matchPattern: RegExp
@@ -23,35 +24,35 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     id: 'matches',
-    label: 'Matches',
+    labelKey: 'matches',
     icon: Calendar,
     href: (leagueId) => `/${leagueId}/matches`,
     matchPattern: /^\/\d+\/matches/,
   },
   {
     id: 'series',
-    label: 'Series',
+    labelKey: 'series',
     icon: Swords,
     href: (leagueId) => `/${leagueId}/series`,
     matchPattern: /^\/\d+\/series/,
   },
   {
     id: 'chat',
-    label: 'Chat',
+    labelKey: 'chat',
     icon: MessageCircle,
     href: (leagueId) => `/${leagueId}/chat`,
     matchPattern: /^\/\d+\/chat/,
   },
   {
     id: 'special',
-    label: 'Special',
+    labelKey: 'special',
     icon: Target,
     href: (leagueId) => `/${leagueId}/special-bets`,
     matchPattern: /^\/\d+\/special-bets/,
   },
   {
     id: 'rankings',
-    label: 'Rankings',
+    labelKey: 'rankings',
     icon: Trophy,
     href: (leagueId) => `/${leagueId}/leaderboard`,
     matchPattern: /^\/\d+\/leaderboard/,
@@ -71,6 +72,7 @@ interface BottomNavProps {
 
 export function BottomNav({ leagueId, badges }: BottomNavProps) {
   const pathname = usePathname()
+  const t = useTranslations('user.navigation')
 
   return (
     <nav
@@ -137,7 +139,7 @@ export function BottomNav({ leagueId, badges }: BottomNavProps) {
                   isActive && 'font-semibold'
                 )}
               >
-                {item.label}
+                {t(item.labelKey)}
               </span>
             </Link>
           )

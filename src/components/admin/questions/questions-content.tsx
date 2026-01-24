@@ -5,6 +5,7 @@ import { Fragment } from 'react'
 import { format } from 'date-fns'
 import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { deleteQuestion } from '@/actions/questions'
 import { evaluateQuestionBets } from '@/actions/evaluate-questions'
 import { getErrorMessage } from '@/lib/error-handler'
@@ -61,6 +62,9 @@ function getQuestionStatus(question: Question): 'scheduled' | 'finished' | 'eval
 }
 
 export function QuestionsContent({ questions, users, league }: QuestionsContentProps) {
+  const t = useTranslations('admin.questions')
+  const tCommon = useTranslations('admin.common')
+  const tSeries = useTranslations('admin.series')
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [userFilter, setUserFilter] = React.useState<string>('all')
@@ -106,11 +110,11 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
     setIsDeleting(true)
     try {
       await deleteQuestion(questionToDelete.id)
-      toast.success('Question deleted successfully')
+      toast.success(t('questionDeleted'))
       setDeleteDialogOpen(false)
       setQuestionToDelete(null)
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to delete question')
+      const message = getErrorMessage(error, t('questionDeleteFailed'))
       toast.error(message)
       logger.error('Failed to delete question', { error, questionId: questionToDelete?.id })
     } finally {
@@ -125,14 +129,12 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
       })
 
       if (result.success && 'totalUsersEvaluated' in result) {
-        toast.success(
-          `Question evaluated! ${result.totalUsersEvaluated} user(s) updated.`
-        )
+        toast.success(t('questionEvaluated', { count: result.totalUsersEvaluated }))
       } else if (!result.success) {
-        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to evaluate question'))
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, t('questionEvaluateFailed')))
       }
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Failed to evaluate question'))
+      toast.error(getErrorMessage(error, t('questionEvaluateFailed')))
       logger.error('Failed to evaluate question', { error, questionId })
     }
   }
@@ -145,28 +147,28 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-1 flex-wrap gap-2">
           <Input
-            placeholder="Search by question text..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
           />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={tCommon('status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
-              <SelectItem value="finished">Finished</SelectItem>
-              <SelectItem value="evaluated">Evaluated</SelectItem>
+              <SelectItem value="all">{tSeries('allStatus')}</SelectItem>
+              <SelectItem value="scheduled">{tSeries('scheduled')}</SelectItem>
+              <SelectItem value="finished">{tSeries('finished')}</SelectItem>
+              <SelectItem value="evaluated">{tSeries('evaluated')}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Users" />
+              <SelectValue placeholder={tSeries('allUsers')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="all">{tSeries('allUsers')}</SelectItem>
               {users.map((user) => (
                 <SelectItem key={user.id} value={user.id.toString()}>
                   {user.firstName} {user.lastName}
@@ -177,25 +179,25 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
         </div>
         <Button onClick={() => setAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Create Question
+          {t('createQuestion')}
         </Button>
       </div>
 
       {/* Questions table */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>All Questions</CardTitle>
+          <CardTitle>{t('allQuestions')}</CardTitle>
           <CardDescription>
-            {filteredQuestions.length} questions found
+            {t('questionsFound', { count: filteredQuestions.length })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {filteredQuestions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground mb-4">No questions found</p>
+              <p className="text-muted-foreground mb-4">{t('noQuestionsFound')}</p>
               <Button onClick={() => setAddDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create your first question
+                {t('createFirstQuestion')}
               </Button>
             </div>
           ) : (
@@ -204,13 +206,13 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[40px]"></TableHead>
-                    <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Question</TableHead>
-                    <TableHead className="text-center">Result</TableHead>
-                    <TableHead className="text-center">Bets</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead className="w-[80px]">{tSeries('id')}</TableHead>
+                    <TableHead>{tSeries('dateTime')}</TableHead>
+                    <TableHead>{t('question')}</TableHead>
+                    <TableHead className="text-center">{t('result')}</TableHead>
+                    <TableHead className="text-center">{tSeries('bets')}</TableHead>
+                    <TableHead>{tCommon('status')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -254,7 +256,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                           <TableCell className="text-center">
                             {q.result !== null ? (
                               <Badge variant={q.result ? 'default' : 'secondary'}>
-                                {q.result ? 'Yes' : 'No'}
+                                {q.result ? t('yes') : t('no')}
                               </Badge>
                             ) : (
                               <span className="text-muted-foreground">-</span>
@@ -273,7 +275,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                                   : 'scheduled'
                               }
                             >
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                              {tSeries(status)}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -288,7 +290,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                                   e.stopPropagation()
                                   setQuestionToEdit(q)
                                 }}
-                                aria-label={`Edit question: ${q.text.substring(0, 50)}`}
+                                aria-label={t('editQuestion', { text: q.text.substring(0, 50) })}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
@@ -299,7 +301,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                                   e.stopPropagation()
                                   handleEvaluate(q.id)
                                 }}
-                                aria-label={`Evaluate question: ${q.text.substring(0, 50)}`}
+                                aria-label={t('evaluateQuestion', { text: q.text.substring(0, 50) })}
                               >
                                 <Calculator className="h-4 w-4 text-blue-600" />
                               </Button>
@@ -311,7 +313,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                                   setQuestionToDelete(q)
                                   setDeleteDialogOpen(true)
                                 }}
-                                aria-label={`Delete question: ${q.text.substring(0, 50)}`}
+                                aria-label={t('deleteQuestion', { text: q.text.substring(0, 50) })}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
@@ -326,17 +328,17 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                               <div className="p-4">
                                 {q.UserSpecialBetQuestion.length === 0 ? (
                                   <div className="py-8 text-center">
-                                    <p className="text-muted-foreground">No bets yet for this question</p>
+                                    <p className="text-muted-foreground">{t('noUserBets')}</p>
                                   </div>
                                 ) : (
                                   <div className="rounded-lg border bg-background">
                                     <Table>
                                       <TableHeader>
                                         <TableRow>
-                                          <TableHead>User</TableHead>
-                                          <TableHead>Answer</TableHead>
-                                          <TableHead>Points</TableHead>
-                                          <TableHead className="text-right">Actions</TableHead>
+                                          <TableHead>{tSeries('user')}</TableHead>
+                                          <TableHead>{t('answer')}</TableHead>
+                                          <TableHead>{tSeries('points')}</TableHead>
+                                          <TableHead className="text-right">{tCommon('actions')}</TableHead>
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
@@ -360,10 +362,10 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setCreateBetQuestionId(q.id)}
-                                    aria-label="Add missing bet for this question"
+                                    aria-label={tSeries('addMissingBetAria')}
                                   >
                                     <Plus className="mr-2 h-4 w-4" />
-                                    Add Missing Bet
+                                    {tSeries('addMissingBet')}
                                   </Button>
                                 </div>
                               </div>
@@ -410,41 +412,41 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Question</DialogTitle>
+            <DialogTitle>{t('deleteTitle')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this question? This action cannot be undone.
+              {t('deleteConfirm')}
             </DialogDescription>
           </DialogHeader>
           {questionToDelete && (
             <div className="rounded-lg border p-4 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Question ID:</span>
+                <span className="text-sm text-muted-foreground">{t('questionId')}</span>
                 <span className="font-mono">#{questionToDelete.id}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Date:</span>
+                <span className="text-sm text-muted-foreground">{tSeries('date')}</span>
                 <span>{format(new Date(questionToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
               </div>
               <div className="col-span-2">
-                <span className="text-sm text-muted-foreground">Question:</span>
+                <span className="text-sm text-muted-foreground">{t('questionLabel')}</span>
                 <p className="mt-1 font-medium">{questionToDelete.text}</p>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">League:</span>
+                <span className="text-sm text-muted-foreground">{tSeries('leagueLabel')}</span>
                 <span>{questionToDelete.League.name}</span>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? tCommon('deleting') : tCommon('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
