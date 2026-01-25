@@ -68,11 +68,18 @@ interface BottomNavProps {
     special?: number
     chat?: number
   }
+  /** Whether chat is enabled for the current league */
+  isChatEnabled?: boolean
 }
 
-export function BottomNav({ leagueId, badges }: BottomNavProps) {
+export function BottomNav({ leagueId, badges, isChatEnabled }: BottomNavProps) {
   const pathname = usePathname()
   const t = useTranslations('user.navigation')
+
+  // Filter out chat if disabled
+  const filteredNavItems = isChatEnabled
+    ? navItems
+    : navItems.filter((item) => item.id !== 'chat')
 
   return (
     <nav
@@ -82,7 +89,7 @@ export function BottomNav({ leagueId, badges }: BottomNavProps) {
     >
       {/* Safe area padding for iOS devices */}
       <div className="flex h-16 items-center justify-around pb-safe max-w-lg mx-auto">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const isActive = item.matchPattern.test(pathname)
           const Icon = item.icon
           const badgeCount = badges?.[item.id as keyof typeof badges]

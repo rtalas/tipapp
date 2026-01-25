@@ -30,7 +30,7 @@ export default async function LeagueLayout({
   // Verify the league exists and is active
   const league = await prisma.league.findUnique({
     where: { id: leagueId, deletedAt: null, isActive: true },
-    select: { id: true, name: true },
+    select: { id: true, name: true, isChatEnabled: true },
   })
 
   if (!league) {
@@ -224,6 +224,7 @@ export default async function LeagueLayout({
         series: upcomingSeriesCount || undefined,
         special: specialTabCount || undefined,
       }}
+      isChatEnabled={league.isChatEnabled}
       locale={locale}
     >
       {children}

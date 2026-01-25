@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -118,9 +119,9 @@ export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
                         selectedUser.username
                       )}
                     </DialogTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <DialogDescription>
                       {selectedUser.totalPoints} {t('points')} · {t('rankNumber', { rank: selectedUser.rank })}
-                    </p>
+                    </DialogDescription>
                   </div>
                 </>
               )}
