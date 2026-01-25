@@ -67,7 +67,22 @@ export function usePushNotifications(): PushNotificationHook {
       setPermissionState(Notification.permission as PushPermissionState)
     }
 
-    // Wait for service worker to be ready
+    // In development, service worker is not registered, so check immediately
+    if (process.env.NODE_ENV !== 'production') {
+      navigator.serviceWorker.getRegistration().then((registration) => {
+        if (registration) {
+          swRegistration = registration
+          checkSubscription()
+        } else {
+          // No SW in dev mode - mark as unsupported
+          setIsSupported(false)
+          setIsLoading(false)
+        }
+      })
+      return
+    }
+
+    // In production, wait for service worker to be ready
     navigator.serviceWorker.ready.then((registration) => {
       swRegistration = registration
       checkSubscription()

@@ -2,8 +2,7 @@ const CACHE_NAME = 'tipapp-v1'
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  '/icons/icon.svg',
 ]
 
 // Install event - cache static assets
@@ -24,8 +23,8 @@ self.addEventListener('push', (event) => {
     const payload = event.data.json()
     const options = {
       body: payload.body || '',
-      icon: payload.icon || '/icons/icon-192.png',
-      badge: payload.badge || '/icons/icon-192.png',
+      icon: payload.icon || '/icons/icon.svg',
+      badge: payload.badge || '/icons/icon.svg',
       tag: payload.tag || 'default',
       data: payload.data || {},
       requireInteraction: true,

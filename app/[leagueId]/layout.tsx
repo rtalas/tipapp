@@ -76,6 +76,7 @@ export default async function LeagueLayout({
           seasonFrom: true,
           seasonTo: true,
           isTheMostActive: true,
+          infoText: true,
           Sport: {
             select: {
               id: true,
@@ -99,6 +100,7 @@ export default async function LeagueLayout({
     seasonFrom: lu.League.seasonFrom,
     seasonTo: lu.League.seasonTo,
     isTheMostActive: lu.League.isTheMostActive,
+    infoText: lu.League.infoText,
     sport: lu.League.Sport,
     isAdmin: lu.admin ?? false,
     isPaid: lu.paid,

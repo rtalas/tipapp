@@ -291,7 +291,10 @@
       "pastLeagues": "Minulé ligy",
       "availableToJoin": "Dostupné k připojení",
       "noLeaguesAvailable": "Žádné dostupné ligy",
-      "join": "Připojit se"
+      "join": "Připojit se",
+      "selectLeagueDescription": "Vyberte ligu k zobrazení",
+      "leagueInfo": "Info o lize",
+      "leagueInfoDescription": "Informace o lize"
     },
     "language": {
       "label": "Jazyk",
@@ -844,6 +847,10 @@
       "chatResume": "Obnovit",
       "chatSuspend": "Pozastavit",
       "prizes": "Ceny",
+      "leagueInfo": "Informace o lize",
+      "infoText": "Informační text",
+      "infoTextPlaceholder": "Zadejte informace pro uživatele o této lize...",
+      "infoTextHelper": "Tento text se zobrazí uživatelům po kliknutí na ikonu info",
       "validation": {
         "nameRequired": "Název ligy nemůže být prázdný",
         "seasonEndGreater": "Konec sezóny musí být větší nebo roven začátku sezóny"

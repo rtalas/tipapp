@@ -43,6 +43,7 @@ model League {
   isPublic                 Boolean                     @default(false)
   isChatEnabled            Boolean                     @default(false)
   chatSuspendedAt          DateTime?                   @db.Timestamptz(6)
+  infoText                 String?                     @db.Text
   createdAt                DateTime                    @db.Timestamptz(6)
   updatedAt                DateTime                    @db.Timestamptz(6)
   deletedAt                DateTime?                   @db.Timestamptz(6)

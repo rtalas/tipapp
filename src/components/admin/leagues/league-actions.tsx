@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Settings, Users, Trash2, Edit, Award, MessageSquare, Pause, Play } from 'lucide-react'
+import { Settings, Users, Trash2, Edit, Award, MessageSquare, Pause, Play, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { updateLeague, updateLeagueChatSettings } from '@/actions/leagues'
@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { LeagueDeleteButton } from './league-delete-button'
@@ -33,6 +34,7 @@ interface LeagueActionsProps {
   isPublic: boolean
   isChatEnabled: boolean
   chatSuspendedAt: Date | null
+  infoText: string | null
 }
 
 export function LeagueActions({
@@ -44,6 +46,7 @@ export function LeagueActions({
   isPublic,
   isChatEnabled,
   chatSuspendedAt,
+  infoText,
 }: LeagueActionsProps) {
   const t = useTranslations('admin.leagueActions')
   const tCommon = useTranslations('admin.common')
@@ -56,6 +59,7 @@ export function LeagueActions({
     isActive,
     isPublic,
     isChatEnabled,
+    infoText: infoText || '',
   })
   const [isChatSuspended, setIsChatSuspended] = useState(chatSuspendedAt !== null)
   const [prizes, setPrizes] = useState<PrizeTier[]>([])
@@ -104,6 +108,7 @@ export function LeagueActions({
         seasonTo: editForm.seasonTo,
         isActive: editForm.isActive,
         isPublic: editForm.isPublic,
+        infoText: editForm.infoText || null,
       })
 
       // Update chat settings if changed
@@ -329,6 +334,25 @@ export function LeagueActions({
 
             <div className="border-t pt-4 mt-4">
               <LeaguePrizesSection prizes={prizes} onChange={setPrizes} />
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Info className="h-4 w-4" />
+                {t('leagueInfo')}
+              </h4>
+              <div>
+                <Label htmlFor="infoText">{t('infoText')}</Label>
+                <Textarea
+                  id="infoText"
+                  value={editForm.infoText}
+                  onChange={(e) => setEditForm({ ...editForm, infoText: e.target.value })}
+                  placeholder={t('infoTextPlaceholder')}
+                  rows={4}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">{t('infoTextHelper')}</p>
+              </div>
             </div>
           </div>
 

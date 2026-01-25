@@ -10,6 +10,7 @@ interface League {
   seasonFrom: number
   seasonTo: number
   isTheMostActive: boolean | null
+  infoText: string | null
   sport: {
     id: number
     name: string

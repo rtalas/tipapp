@@ -291,7 +291,10 @@
       "pastLeagues": "Past Leagues",
       "availableToJoin": "Available to Join",
       "noLeaguesAvailable": "No leagues available",
-      "join": "Join"
+      "join": "Join",
+      "selectLeagueDescription": "Select a league to view",
+      "leagueInfo": "League Info",
+      "leagueInfoDescription": "Information about the league"
     },
     "language": {
       "label": "Language",
@@ -844,6 +847,10 @@
       "chatResume": "Resume",
       "chatSuspend": "Suspend",
       "prizes": "Prizes",
+      "leagueInfo": "League Information",
+      "infoText": "Info Text",
+      "infoTextPlaceholder": "Enter information for users about this league...",
+      "infoTextHelper": "This text will be shown to users when they click the info icon",
       "validation": {
         "nameRequired": "League name cannot be empty",
         "seasonEndGreater": "Season end must be greater than or equal to season start"
