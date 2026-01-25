@@ -366,7 +366,7 @@ model User {
   createdAt               DateTime                  @db.Timestamptz(6)
   updatedAt               DateTime                  @db.Timestamptz(6)
   deletedAt               DateTime?                 @db.Timestamptz(6)
-  notifyHours             Int                       @default(2)
+  notifyHours             Int                       @default(0)
   LeagueUser              LeagueUser[]
   PasswordResetToken      PasswordResetToken[]
   UserRequest             UserRequest[]

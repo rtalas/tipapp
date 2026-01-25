@@ -281,7 +281,7 @@ export function Header({ user, locale }: HeaderProps) {
                     onOpenChange={setShowLanguageDialog}
                   />
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/profile')}>
+                <DropdownMenuItem onClick={() => router.push(`/${selectedLeagueId}/profile`)}>
                   <User className="mr-2 h-4 w-4" />
                   {t('profile')}
                 </DropdownMenuItem>

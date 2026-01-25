@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { format } from 'date-fns'
-import { User, Mail, Phone, Bell, Lock, Shield } from 'lucide-react'
+import { User, Mail, Phone, Bell, Lock, Shield, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { updateProfile, updatePassword, type UpdateProfileInput, type UpdatePasswordInput } from '@/actions/profile'
@@ -15,6 +15,26 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+
+// Notification time options in minutes
+const NOTIFICATION_OPTIONS = [
+  0, 5, 15, 30, 45, 60, 90, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720, 1080, 1440,
+]
+
+// Format minutes to display string
+function formatNotificationTime(minutes: number, t: (key: string, params?: any) => string): string {
+  if (minutes === 0) return t('notifyOff')
+  if (minutes < 60) return t('notifyMinutes', { minutes })
+
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+
+  if (remainingMinutes === 0) {
+    return t('notifyHours', { hours })
+  }
+
+  return t('notifyHoursMinutes', { hours, minutes: remainingMinutes })
+}
 
 interface ProfileContentProps {
   user: {
@@ -37,14 +57,49 @@ export function ProfileContent({ user }: ProfileContentProps) {
   const [isEditingPassword, setIsEditingPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Find the closest valid notification option
+  const findClosestOption = (value: number): number => {
+    if (value === 0) return 0
+    // Backward compatibility: if value is <= 24, assume it's in hours and convert to minutes
+    const valueInMinutes = value <= 24 && value > 0 ? value * 60 : value
+    const closest = NOTIFICATION_OPTIONS.reduce((prev, curr) =>
+      Math.abs(curr - valueInMinutes) < Math.abs(prev - valueInMinutes) ? curr : prev
+    )
+    return closest
+  }
+
   // Profile form state
   const [profileForm, setProfileForm] = useState<UpdateProfileInput>({
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
     mobileNumber: user.mobileNumber || '',
-    notifyHours: user.notifyHours,
+    notifyHours: findClosestOption(user.notifyHours),
   })
+
+  // Notification time handlers
+  const handleNotifyDecrement = () => {
+    const currentIndex = NOTIFICATION_OPTIONS.indexOf(profileForm.notifyHours)
+    if (currentIndex > 0) {
+      setProfileForm({
+        ...profileForm,
+        notifyHours: NOTIFICATION_OPTIONS[currentIndex - 1],
+      })
+    }
+  }
+
+  const handleNotifyIncrement = () => {
+    const currentIndex = NOTIFICATION_OPTIONS.indexOf(profileForm.notifyHours)
+    if (currentIndex < NOTIFICATION_OPTIONS.length - 1) {
+      setProfileForm({
+        ...profileForm,
+        notifyHours: NOTIFICATION_OPTIONS[currentIndex + 1],
+      })
+    }
+  }
+
+  const canDecrementNotify = NOTIFICATION_OPTIONS.indexOf(profileForm.notifyHours) > 0
+  const canIncrementNotify = NOTIFICATION_OPTIONS.indexOf(profileForm.notifyHours) < NOTIFICATION_OPTIONS.length - 1
 
   // Password form state
   const [passwordForm, setPasswordForm] = useState<UpdatePasswordInput>({
@@ -277,22 +332,31 @@ export function ProfileContent({ user }: ProfileContentProps) {
                 <Bell className="mr-2 inline h-4 w-4" />
                 {t('notificationTime')}
               </Label>
-              <Input
-                id="notifyHours"
-                type="number"
-                min="0"
-                max="24"
-                value={profileForm.notifyHours}
-                onChange={(e) =>
-                  setProfileForm({
-                    ...profileForm,
-                    notifyHours: parseInt(e.target.value, 10) || 0,
-                  })
-                }
-                disabled={!isEditingProfile || isSubmitting}
-              />
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handleNotifyDecrement}
+                  disabled={!isEditingProfile || isSubmitting || !canDecrementNotify}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex-1 text-center py-2 px-4 rounded-md border bg-background font-medium">
+                  {formatNotificationTime(profileForm.notifyHours, t)}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handleNotifyIncrement}
+                  disabled={!isEditingProfile || isSubmitting || !canIncrementNotify}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
-                {t('notificationHelper', { hours: profileForm.notifyHours })}
+                {profileForm.notifyHours === 0 ? t('notifyOffHelper') : t('notificationHelper')}
               </p>
             </div>
 

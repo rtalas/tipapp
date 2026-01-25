@@ -12,7 +12,7 @@ const updateProfileSchema = z.object({
   lastName: z.string().min(1, 'Last name is required').max(255),
   email: z.string().email('Invalid email address').max(255),
   mobileNumber: z.string().max(255).optional().nullable(),
-  notifyHours: z.number().int().min(0).max(24).default(2),
+  notifyHours: z.number().int().min(0).max(1440).default(0), // Stored as minutes (0-1440 = 24 hours)
 })
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>

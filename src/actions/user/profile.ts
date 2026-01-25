@@ -11,6 +11,8 @@ const updateProfileSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50),
   lastName: z.string().min(1, 'Last name is required').max(50),
   email: z.string().email('Invalid email address'),
+  mobileNumber: z.string().optional(),
+  notifyHours: z.number().int().min(0).max(1440).default(0), // Stored as minutes (0-1440 = 24 hours)
 })
 
 const changePasswordSchema = z.object({
@@ -42,6 +44,8 @@ export async function getUserProfile() {
       email: true,
       firstName: true,
       lastName: true,
+      mobileNumber: true,
+      notifyHours: true,
       isSuperadmin: true,
       createdAt: true,
     },
@@ -71,7 +75,7 @@ export async function updateProfile(input: UpdateProfileInput) {
     }
   }
 
-  const { firstName, lastName, email } = parsed.data
+  const { firstName, lastName, email, mobileNumber, notifyHours } = parsed.data
   const userId = parseInt(session.user.id)
 
   // Check if email is already taken by another user
@@ -93,6 +97,8 @@ export async function updateProfile(input: UpdateProfileInput) {
         firstName,
         lastName,
         email,
+        mobileNumber: mobileNumber || null,
+        notifyHours,
         updatedAt: new Date(),
       },
     })

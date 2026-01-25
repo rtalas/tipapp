@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         email: validatedData.email.toLowerCase(),
         password: hashedPassword,
         isSuperadmin: false,
-        notifyHours: 2,
+        notifyHours: 0, // Default: notifications turned off (stored as minutes)
         createdAt: new Date(),
         updatedAt: new Date(),
       },

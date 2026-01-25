@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, Lock, Eye, EyeOff, Check, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { User, Lock, Eye, EyeOff, Check, Loader2, Phone, Bell, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +18,46 @@ import {
 } from '@/components/ui/card'
 import { updateProfile, changePassword } from '@/actions/user/profile'
 
+// Notification time options in minutes
+// 0 = Off, 5, 15, 30, 45, 60 (1h), 90 (1h 30m), 120 (2h), then by hours (180, 240, 300, etc.)
+const NOTIFICATION_OPTIONS = [
+  0,    // Off
+  5,    // 5 min
+  15,   // 15 min
+  30,   // 30 min
+  45,   // 45 min
+  60,   // 1h
+  90,   // 1h 30m
+  120,  // 2h
+  180,  // 3h
+  240,  // 4h
+  300,  // 5h
+  360,  // 6h
+  420,  // 7h
+  480,  // 8h
+  540,  // 9h
+  600,  // 10h
+  660,  // 11h
+  720,  // 12h
+  1080, // 18h
+  1440, // 24h
+]
+
+// Format minutes to display string
+function formatNotificationTime(minutes: number, t: (key: string, params?: any) => string): string {
+  if (minutes === 0) return t('notifyOff')
+  if (minutes < 60) return t('notifyMinutes', { minutes })
+
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+
+  if (remainingMinutes === 0) {
+    return t('notifyHours', { hours })
+  }
+
+  return t('notifyHoursMinutes', { hours, minutes: remainingMinutes })
+}
+
 interface ProfileContentProps {
   profile: {
     id: number
@@ -24,17 +65,34 @@ interface ProfileContentProps {
     email: string | null
     firstName: string | null
     lastName: string | null
+    mobileNumber: string | null
+    notifyHours: number // Actually stored as minutes
     createdAt: Date
   }
 }
 
 export function ProfileContent({ profile }: ProfileContentProps) {
   const router = useRouter()
+  const t = useTranslations('auth.profile')
 
   // Profile form state
   const [firstName, setFirstName] = useState(profile.firstName || '')
   const [lastName, setLastName] = useState(profile.lastName || '')
   const [email, setEmail] = useState(profile.email || '')
+  const [mobileNumber, setMobileNumber] = useState(profile.mobileNumber || '')
+
+  // Find the closest valid notification option to the current value
+  const findClosestOption = (value: number): number => {
+    if (value === 0) return 0
+    // Backward compatibility: if value is <= 24, assume it's in hours and convert to minutes
+    const valueInMinutes = value <= 24 && value > 0 ? value * 60 : value
+    const closest = NOTIFICATION_OPTIONS.reduce((prev, curr) =>
+      Math.abs(curr - valueInMinutes) < Math.abs(prev - valueInMinutes) ? curr : prev
+    )
+    return closest
+  }
+
+  const [notifyMinutes, setNotifyMinutes] = useState(findClosestOption(profile.notifyHours))
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
 
   // Password form state
@@ -54,6 +112,24 @@ export function ProfileContent({ profile }: ProfileContentProps) {
     return profile.username.slice(0, 2).toUpperCase()
   }, [profile])
 
+  // Notification time handlers
+  const handleNotifyDecrement = () => {
+    const currentIndex = NOTIFICATION_OPTIONS.indexOf(notifyMinutes)
+    if (currentIndex > 0) {
+      setNotifyMinutes(NOTIFICATION_OPTIONS[currentIndex - 1])
+    }
+  }
+
+  const handleNotifyIncrement = () => {
+    const currentIndex = NOTIFICATION_OPTIONS.indexOf(notifyMinutes)
+    if (currentIndex < NOTIFICATION_OPTIONS.length - 1) {
+      setNotifyMinutes(NOTIFICATION_OPTIONS[currentIndex + 1])
+    }
+  }
+
+  const canDecrementNotify = NOTIFICATION_OPTIONS.indexOf(notifyMinutes) > 0
+  const canIncrementNotify = NOTIFICATION_OPTIONS.indexOf(notifyMinutes) < NOTIFICATION_OPTIONS.length - 1
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsUpdatingProfile(true)
@@ -63,16 +139,18 @@ export function ProfileContent({ profile }: ProfileContentProps) {
         firstName,
         lastName,
         email,
+        mobileNumber,
+        notifyHours: notifyMinutes, // Store minutes in notifyHours field
       })
 
       if (result.success) {
-        toast.success('Profile updated successfully')
+        toast.success(t('successPersonalInfo'))
         router.refresh()
       } else {
-        toast.error(result.error || 'Failed to update profile')
+        toast.error(result.error || t('errorGeneric'))
       }
     } catch {
-      toast.error('Failed to update profile')
+      toast.error(t('errorGeneric'))
     } finally {
       setIsUpdatingProfile(false)
     }
@@ -82,12 +160,12 @@ export function ProfileContent({ profile }: ProfileContentProps) {
     e.preventDefault()
 
     if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match')
+      toast.error(t('errorGeneric'))
       return
     }
 
     if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters')
+      toast.error(t('errorGeneric'))
       return
     }
 
@@ -101,38 +179,22 @@ export function ProfileContent({ profile }: ProfileContentProps) {
       })
 
       if (result.success) {
-        toast.success('Password changed successfully')
+        toast.success(t('successPassword'))
         setCurrentPassword('')
         setNewPassword('')
         setConfirmPassword('')
       } else {
-        toast.error(result.error || 'Failed to change password')
+        toast.error(result.error || t('errorGeneric'))
       }
     } catch {
-      toast.error('Failed to change password')
+      toast.error(t('errorGeneric'))
     } finally {
       setIsChangingPassword(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 glass-card border-b-0 rounded-b-2xl">
-        <div className="flex h-14 items-center gap-4 px-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-xl hover:bg-secondary/50 transition-colors"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <h1 className="text-lg font-bold">Profile</h1>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="container mx-auto px-4 py-6 max-w-lg space-y-6">
+    <div className="animate-fade-in space-y-6">
         {/* User Info Card */}
         <Card className="glass-card border-0">
           <CardContent className="pt-6">
@@ -159,47 +221,94 @@ export function ProfileContent({ profile }: ProfileContentProps) {
           <CardHeader>
             <div className="flex items-center gap-2">
               <User className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Personal Information</CardTitle>
+              <CardTitle className="text-lg">{t('personalInfo')}</CardTitle>
             </div>
-            <CardDescription>Update your personal details</CardDescription>
+            <CardDescription>{t('title')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="firstName">{t('firstName')}</Label>
                   <Input
                     id="firstName"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Enter first name"
+                    placeholder={t('firstName')}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName">{t('lastName')}</Label>
                   <Input
                     id="lastName"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Enter last name"
+                    placeholder={t('lastName')}
                     required
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('email')}</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter email"
+                  placeholder={t('email')}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="mobileNumber">
+                  <Phone className="mr-2 inline h-4 w-4" />
+                  {t('mobileNumber')}
+                </Label>
+                <Input
+                  id="mobileNumber"
+                  type="tel"
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value)}
+                  placeholder={t('mobileOptional')}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notifyHours">
+                  <Bell className="mr-2 inline h-4 w-4" />
+                  {t('notificationTime')}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleNotifyDecrement}
+                    disabled={!canDecrementNotify}
+                    className="h-10 w-10 shrink-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex-1 text-center py-2 px-4 rounded-lg bg-secondary/30 border border-border font-medium">
+                    {formatNotificationTime(notifyMinutes, t)}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleNotifyIncrement}
+                    disabled={!canIncrementNotify}
+                    className="h-10 w-10 shrink-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {notifyMinutes === 0 ? t('notifyOffHelper') : t('notificationHelper')}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="username">{t('username')}</Label>
                 <Input
                   id="username"
                   value={profile.username}
@@ -207,7 +316,7 @@ export function ProfileContent({ profile }: ProfileContentProps) {
                   className="bg-secondary/50"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Username cannot be changed
+                  {t('usernameReadonly')}
                 </p>
               </div>
               <Button
@@ -218,12 +327,12 @@ export function ProfileContent({ profile }: ProfileContentProps) {
                 {isUpdatingProfile ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    {t('savingPersonalInfo')}
                   </>
                 ) : (
                   <>
                     <Check className="mr-2 h-4 w-4" />
-                    Save Changes
+                    {t('savePersonalInfo')}
                   </>
                 )}
               </Button>
@@ -236,21 +345,21 @@ export function ProfileContent({ profile }: ProfileContentProps) {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Lock className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Change Password</CardTitle>
+              <CardTitle className="text-lg">{t('changePassword')}</CardTitle>
             </div>
-            <CardDescription>Update your password</CardDescription>
+            <CardDescription>{t('changePassword')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
+                <Label htmlFor="currentPassword">{t('currentPassword')}</Label>
                 <div className="relative">
                   <Input
                     id="currentPassword"
                     type={showCurrentPassword ? 'text' : 'password'}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Enter current password"
+                    placeholder={t('currentPassword')}
                     required
                     className="pr-10"
                   />
@@ -268,14 +377,14 @@ export function ProfileContent({ profile }: ProfileContentProps) {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
+                <Label htmlFor="newPassword">{t('newPassword')}</Label>
                 <div className="relative">
                   <Input
                     id="newPassword"
                     type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
+                    placeholder={t('newPassword')}
                     required
                     minLength={6}
                     className="pr-10"
@@ -294,14 +403,14 @@ export function ProfileContent({ profile }: ProfileContentProps) {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
+                    placeholder={t('confirmPassword')}
                     required
                     minLength={6}
                     className="pr-10"
@@ -327,19 +436,18 @@ export function ProfileContent({ profile }: ProfileContentProps) {
                 {isChangingPassword ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Changing...
+                    {t('savingPassword')}
                   </>
                 ) : (
                   <>
                     <Lock className="mr-2 h-4 w-4" />
-                    Change Password
+                    {t('savePassword')}
                   </>
                 )}
               </Button>
             </form>
           </CardContent>
         </Card>
-      </main>
     </div>
   )
 }
