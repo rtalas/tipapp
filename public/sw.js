@@ -16,6 +16,51 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
+// Push event - display notification
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+
+  try {
+    const payload = event.data.json()
+    const options = {
+      body: payload.body || '',
+      icon: payload.icon || '/icons/icon-192.png',
+      badge: payload.badge || '/icons/icon-192.png',
+      tag: payload.tag || 'default',
+      data: payload.data || {},
+      requireInteraction: true,
+      vibrate: [200, 100, 200],
+    }
+
+    event.waitUntil(
+      self.registration.showNotification(payload.title || 'TipApp', options)
+    )
+  } catch (error) {
+    console.error('Error handling push event:', error)
+  }
+})
+
+// Notification click event - open app/match
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  const urlToOpen = event.notification.data?.url || '/'
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Check if there's already an open window we can use
+      for (const client of windowClients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(urlToOpen)
+          return client.focus()
+        }
+      }
+      // If no window is open, open a new one
+      return clients.openWindow(urlToOpen)
+    })
+  )
+})
+
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(

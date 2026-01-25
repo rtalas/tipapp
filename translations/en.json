@@ -121,7 +121,17 @@
       "savingPassword": "Updating...",
       "successPersonalInfo": "Profile updated successfully",
       "successPassword": "Password changed successfully",
-      "errorGeneric": "An error occurred. Please try again."
+      "errorGeneric": "An error occurred. Please try again.",
+      "pushNotifications": "Push Notifications",
+      "pushOn": "Notifications On",
+      "pushOff": "Enable Notifications",
+      "pushOnHelper": "You will receive browser notifications before matches",
+      "pushOffHelper": "Enable to receive browser notifications before matches",
+      "pushDeniedHelper": "Notifications are blocked. Please enable in browser settings.",
+      "pushEnabled": "Push notifications enabled",
+      "pushDisabled": "Push notifications disabled",
+      "pushDenied": "Notification permission denied",
+      "pushError": "Failed to update notification settings"
     }
   },
   "user": {

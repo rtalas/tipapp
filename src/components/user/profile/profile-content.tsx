@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { User, Lock, Eye, EyeOff, Check, Loader2, Phone, Bell, ChevronLeft, ChevronRight } from 'lucide-react'
+import { User, Lock, Eye, EyeOff, Check, Loader2, Phone, Bell, ChevronLeft, ChevronRight, BellRing, BellOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { updateProfile, changePassword } from '@/actions/user/profile'
+import { usePushNotifications } from '@/components/providers/service-worker-register'
 
 // Notification time options in minutes
 // 0 = Off, 5, 15, 30, 45, 60 (1h), 90 (1h 30m), 120 (2h), then by hours (180, 240, 300, etc.)
@@ -74,6 +75,7 @@ interface ProfileContentProps {
 export function ProfileContent({ profile }: ProfileContentProps) {
   const router = useRouter()
   const t = useTranslations('auth.profile')
+  const pushNotifications = usePushNotifications()
 
   // Profile form state
   const [firstName, setFirstName] = useState(profile.firstName || '')
@@ -319,6 +321,61 @@ export function ProfileContent({ profile }: ProfileContentProps) {
                   {t('usernameReadonly')}
                 </p>
               </div>
+
+              {/* Push Notifications Toggle */}
+              {pushNotifications.isSupported && notifyMinutes > 0 && (
+                <div className="space-y-2">
+                  <Label>
+                    <BellRing className="mr-2 inline h-4 w-4" />
+                    {t('pushNotifications')}
+                  </Label>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant={pushNotifications.isSubscribed ? 'default' : 'outline'}
+                      size="sm"
+                      disabled={pushNotifications.isLoading || pushNotifications.permissionState === 'denied'}
+                      onClick={async () => {
+                        if (pushNotifications.isSubscribed) {
+                          const success = await pushNotifications.unsubscribe()
+                          if (success) {
+                            toast.success(t('pushDisabled'))
+                          } else {
+                            toast.error(t('pushError'))
+                          }
+                        } else {
+                          const success = await pushNotifications.subscribe()
+                          if (success) {
+                            toast.success(t('pushEnabled'))
+                          } else if (pushNotifications.permissionState === 'denied') {
+                            toast.error(t('pushDenied'))
+                          } else {
+                            toast.error(t('pushError'))
+                          }
+                        }
+                      }}
+                      className="flex-1"
+                    >
+                      {pushNotifications.isLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : pushNotifications.isSubscribed ? (
+                        <BellRing className="mr-2 h-4 w-4" />
+                      ) : (
+                        <BellOff className="mr-2 h-4 w-4" />
+                      )}
+                      {pushNotifications.isSubscribed ? t('pushOn') : t('pushOff')}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {pushNotifications.permissionState === 'denied'
+                      ? t('pushDeniedHelper')
+                      : pushNotifications.isSubscribed
+                        ? t('pushOnHelper')
+                        : t('pushOffHelper')}
+                  </p>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full"

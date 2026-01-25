@@ -78,16 +78,17 @@ model LeaguePrize {
 }
 
 model LeagueMatch {
-  id        Int       @id @default(autoincrement())
-  leagueId  Int
-  matchId   Int
-  isDoubled Boolean?
-  createdAt DateTime  @db.Timestamptz(6)
-  updatedAt DateTime  @db.Timestamptz(6)
-  deletedAt DateTime? @db.Timestamptz(6)
-  League    League    @relation(fields: [leagueId], references: [id], onDelete: NoAction)
-  Match     Match     @relation(fields: [matchId], references: [id], onDelete: NoAction)
-  UserBet   UserBet[]
+  id               Int                @id @default(autoincrement())
+  leagueId         Int
+  matchId          Int
+  isDoubled        Boolean?
+  createdAt        DateTime           @db.Timestamptz(6)
+  updatedAt        DateTime           @db.Timestamptz(6)
+  deletedAt        DateTime?          @db.Timestamptz(6)
+  League           League             @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  Match            Match              @relation(fields: [matchId], references: [id], onDelete: NoAction)
+  UserBet          UserBet[]
+  SentNotification SentNotification[]
 }
 
 model LeaguePhase {
@@ -371,6 +372,8 @@ model User {
   PasswordResetToken      PasswordResetToken[]
   UserRequest             UserRequest[]
   TopScorerRankingVersion TopScorerRankingVersion[]
+  PushSubscription        PushSubscription[]
+  SentNotification        SentNotification[]
 }
 
 model PasswordResetToken {
@@ -522,4 +525,33 @@ model Message {
   LeagueUser   LeagueUser @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
 
   @@index([leagueId, createdAt])
+}
+
+model PushSubscription {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  endpoint  String    @db.Text
+  p256dh    String    @db.VarChar(255)
+  auth      String    @db.VarChar(255)
+  userAgent String?   @db.VarChar(500)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endpoint, deletedAt])
+  @@index([userId, deletedAt])
+}
+
+model SentNotification {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  leagueMatchId Int
+  sentAt        DateTime    @default(now()) @db.Timestamptz(6)
+  User          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  LeagueMatch   LeagueMatch @relation(fields: [leagueMatchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, leagueMatchId])
+  @@index([userId])
+  @@index([leagueMatchId])
 }

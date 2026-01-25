@@ -121,7 +121,17 @@
       "savingPassword": "Aktualizace...",
       "successPersonalInfo": "Profil byl úspěšně aktualizován",
       "successPassword": "Heslo bylo úspěšně změněno",
-      "errorGeneric": "Došlo k chybě. Zkuste to prosím znovu."
+      "errorGeneric": "Došlo k chybě. Zkuste to prosím znovu.",
+      "pushNotifications": "Push notifikace",
+      "pushOn": "Notifikace zapnuty",
+      "pushOff": "Zapnout notifikace",
+      "pushOnHelper": "Budete dostávat upozornění v prohlížeči před zápasy",
+      "pushOffHelper": "Zapněte pro příjem upozornění v prohlížeči před zápasy",
+      "pushDeniedHelper": "Notifikace jsou zablokovány. Povolte je v nastavení prohlížeče.",
+      "pushEnabled": "Push notifikace zapnuty",
+      "pushDisabled": "Push notifikace vypnuty",
+      "pushDenied": "Oprávnění pro notifikace zamítnuto",
+      "pushError": "Nepodařilo se aktualizovat nastavení notifikací"
     }
   },
   "user": {
