@@ -4,7 +4,7 @@ import Negotiator from 'negotiator';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Routes that don't require authentication
-const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/api/auth", "/api/register"];
+const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/api/auth", "/api/register"];
 
 // Locale configuration
 const locales = ['en', 'cs'] as const;

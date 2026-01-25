@@ -72,7 +72,7 @@ function LoginForm() {
             </div>
           )}
 
-          <div className="space-y-4 rounded-md shadow-sm">
+          <div className="space-y-4">
             <div>
               <label htmlFor="username" className="sr-only">
                 {t('username')}

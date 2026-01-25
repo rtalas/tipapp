@@ -124,7 +124,7 @@ function RegisterForm() {
             </div>
           )}
 
-          <div className="space-y-4 rounded-md shadow-sm">
+          <div className="space-y-4">
             <div>
               <label htmlFor="firstName" className="sr-only">
                 {t('firstName')}
