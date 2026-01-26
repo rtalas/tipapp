@@ -10,7 +10,6 @@ import {
   updateEvaluatorName,
   deleteEvaluator,
 } from '@/actions/evaluators'
-import { getEvaluatorTypes } from '@/actions/shared-queries'
 import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -124,19 +123,26 @@ export function EvaluatorsContent({
     setEditPointsValue(String(evaluator.points))
   }
 
-  const handleCancelEditName = () => {
+  const handleCancelEdit = () => {
     setEditingId(null)
     setEditNameValue('')
     setEditPointsValue('')
   }
 
-  const handleCancelEditPoints = () => {
-    setEditingId(null)
-    setEditNameValue('')
-    setEditPointsValue('')
-  }
+  const handleSave = async (evaluatorId: number, originalName: string, originalPoints: number) => {
+    const nameChanged = editNameValue.trim() !== originalName
+    const pointsChanged = editPointsValue !== String(originalPoints)
 
-  const handleSavePoints = async (evaluatorId: number) => {
+    if (!nameChanged && !pointsChanged) {
+      handleCancelEdit()
+      return
+    }
+
+    if (!editNameValue.trim()) {
+      toast.error(t('validation.nameRequired'))
+      return
+    }
+
     if (!editPointsValue || isNaN(Number(editPointsValue))) {
       toast.error(t('validation.invalidNumber'))
       return
@@ -144,39 +150,25 @@ export function EvaluatorsContent({
 
     setIsSaving(true)
     try {
-      await updateEvaluatorPoints({ evaluatorId, points: parseInt(editPointsValue, 10) })
-      toast.success(t('toast.pointsUpdated'))
+      // Update both fields if changed
+      if (nameChanged) {
+        await updateEvaluatorName({ evaluatorId, name: editNameValue })
+      }
+      if (pointsChanged) {
+        await updateEvaluatorPoints({ evaluatorId, points: parseInt(editPointsValue, 10) })
+      }
+
+      toast.success(t('toast.updated'))
       setEditingId(null)
+      setEditNameValue('')
+      setEditPointsValue('')
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error(t('toast.pointsUpdateFailed'))
+        toast.error(t('toast.updateFailed'))
       }
-      logger.error('Failed to update evaluator points', { error, evaluatorId })
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const handleSaveName = async (evaluatorId: number) => {
-    if (!editNameValue.trim()) {
-      toast.error(t('validation.nameRequired'))
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      await updateEvaluatorName({ evaluatorId, name: editNameValue })
-      toast.success(t('toast.nameUpdated'))
-      setEditingId(null)
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error(t('toast.nameUpdateFailed'))
-      }
-      logger.error('Failed to update evaluator name', { error, evaluatorId })
+      logger.error('Failed to update evaluator', { error, evaluatorId })
     } finally {
       setIsSaving(false)
     }
@@ -294,7 +286,7 @@ export function EvaluatorsContent({
                     <TableHead>{t('table.ruleName')}</TableHead>
                     <TableHead>{t('table.type')}</TableHead>
                     <TableHead className="text-center">{t('table.points')}</TableHead>
-                    <TableHead className="w-[80px]">{tCommon('common.actions')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -307,36 +299,15 @@ export function EvaluatorsContent({
                       )}
                       <TableCell>
                         {editingId === evaluator.id ? (
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="text"
-                              value={editNameValue}
-                              onChange={(e) => setEditNameValue(e.target.value)}
-                              className="flex-1 h-8"
-                              disabled={isSaving}
-                              autoFocus
-                              aria-label="Evaluator name"
-                            />
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEditName}
-                                aria-label="Cancel editing name"
-                              >
-                                {tCommon('button.cancel')}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleSaveName(evaluator.id)}
-                                disabled={isSaving}
-                                aria-label="Save name"
-                              >
-                                {tCommon('button.save')}
-                              </Button>
-                            </div>
-                          </div>
+                          <Input
+                            type="text"
+                            value={editNameValue}
+                            onChange={(e) => setEditNameValue(e.target.value)}
+                            className="h-8"
+                            disabled={isSaving}
+                            autoFocus
+                            aria-label="Evaluator name"
+                          />
                         ) : (
                           <span className="font-medium">{evaluator.name}</span>
                         )}
@@ -348,36 +319,15 @@ export function EvaluatorsContent({
                       </TableCell>
                       <TableCell className="text-center">
                         {editingId === evaluator.id ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <Input
-                              type="number"
-                              min="0"
-                              value={editPointsValue}
-                              onChange={(e) => setEditPointsValue(e.target.value)}
-                              className="w-16 h-8 text-center"
-                              disabled={isSaving}
-                              aria-label="Points value"
-                            />
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEditPoints}
-                                aria-label="Cancel editing points"
-                              >
-                                {tCommon('button.cancel')}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleSavePoints(evaluator.id)}
-                                disabled={isSaving}
-                                aria-label="Save points"
-                              >
-                                {tCommon('button.save')}
-                              </Button>
-                            </div>
-                          </div>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={editPointsValue}
+                            onChange={(e) => setEditPointsValue(e.target.value)}
+                            className="w-20 h-8 text-center mx-auto"
+                            disabled={isSaving}
+                            aria-label="Points value"
+                          />
                         ) : (
                           <span className="font-mono font-bold">{evaluator.points}</span>
                         )}
@@ -385,28 +335,49 @@ export function EvaluatorsContent({
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {editingId === evaluator.id ? (
-                            <span className="text-sm text-muted-foreground">{t('button.editing')}</span>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                disabled={isSaving}
+                                aria-label="Cancel editing"
+                              >
+                                {tCommon('button.cancel')}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
+                                disabled={isSaving}
+                                aria-label="Save changes"
+                              >
+                                {isSaving ? tCommon('saving') : tCommon('button.save')}
+                              </Button>
+                            </>
                           ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleStartEdit(evaluator)}
-                              aria-label={`Edit evaluator: ${evaluator.name}`}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleStartEdit(evaluator)}
+                                aria-label={`Edit evaluator: ${evaluator.name}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEvaluatorToDelete(evaluator)
+                                  setDeleteDialogOpen(true)
+                                }}
+                                aria-label={`Delete evaluator: ${evaluator.name}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEvaluatorToDelete(evaluator)
-                              setDeleteDialogOpen(true)
-                            }}
-                            aria-label={`Delete evaluator: ${evaluator.name}`}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>

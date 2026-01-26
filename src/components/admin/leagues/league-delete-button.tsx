@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteLeague } from '@/actions/leagues'

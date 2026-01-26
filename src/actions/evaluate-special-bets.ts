@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { evaluateSpecialBetAtomic } from '@/lib/evaluation/special-bet-evaluator'
 import { z } from 'zod'

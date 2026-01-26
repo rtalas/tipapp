@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Settings, Users, Trash2, Edit, Award, MessageSquare, Pause, Play, Info } from 'lucide-react'
+import { Settings, Users, Edit, Award, MessageSquare, Pause, Play, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { updateLeague, updateLeagueChatSettings } from '@/actions/leagues'

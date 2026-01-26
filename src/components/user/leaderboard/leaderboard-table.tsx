@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Trophy } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'

@@ -20,7 +20,6 @@ import {
   updateUserBetSchema,
   createUserSeriesBetSchema,
   updateUserSeriesBetSchema,
-  updateSpecialBetResultSchema,
   createUserSpecialBetSchema,
   updateUserSpecialBetSchema,
   updateQuestionSchema,

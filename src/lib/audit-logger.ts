@@ -26,9 +26,6 @@ export enum EventType {
   SERIES_EVALUATED = "SERIES_EVALUATED",
   SPECIAL_BET_EVALUATED = "SPECIAL_BET_EVALUATED",
   QUESTION_EVALUATED = "QUESTION_EVALUATED",
-
-  // Admin actions (extensible)
-  ADMIN_ACTION = "ADMIN_ACTION",
 }
 
 export enum EventCategory {

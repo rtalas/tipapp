@@ -1044,6 +1044,8 @@
         "pointsInvalid": "Body musí být platné číslo"
       },
       "toast": {
+        "updated": "Hodnotitel aktualizován",
+        "updateFailed": "Nepodařilo se aktualizovat hodnotitele",
         "pointsUpdated": "Body aktualizovány",
         "pointsUpdateFailed": "Nepodařilo se aktualizovat body",
         "nameUpdated": "Název aktualizován",

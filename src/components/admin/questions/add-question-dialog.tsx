@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState } from 'react'
 import { toast } from 'sonner'
 import { createQuestion } from '@/actions/questions'
 import { logger } from '@/lib/client-logger'

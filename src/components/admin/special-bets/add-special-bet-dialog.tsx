@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState } from 'react'
 import { toast } from 'sonner'
 import { createSpecialBet } from '@/actions/special-bets'
 import { logger } from '@/lib/client-logger'

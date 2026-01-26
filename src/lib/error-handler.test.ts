@@ -8,7 +8,6 @@ import {
   isPrismaError,
   logError,
   type PrismaError,
-  type ErrorResponse,
 } from './error-handler'
 
 describe('error-handler', () => {

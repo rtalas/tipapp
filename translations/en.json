@@ -1044,6 +1044,8 @@
         "pointsInvalid": "Points must be a valid number"
       },
       "toast": {
+        "updated": "Evaluator updated",
+        "updateFailed": "Failed to update evaluator",
         "pointsUpdated": "Points updated",
         "pointsUpdateFailed": "Failed to update points",
         "nameUpdated": "Name updated",

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { Session } from 'next-auth'
-import { ZodSchema, z } from 'zod'
+import { ZodSchema } from 'zod'
 import { requireAdmin } from './auth-utils'
 import { getErrorMessage } from './error-handler'
 

@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildDeletionErrorMessage } from '@/lib/delete-utils'

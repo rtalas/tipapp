@@ -4,7 +4,6 @@ import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
-import { buildSpecialBetsWhere } from '@/lib/query-builders'
 import { specialBetInclude } from '@/lib/prisma-helpers'
 import {
   createSpecialBetSchema,

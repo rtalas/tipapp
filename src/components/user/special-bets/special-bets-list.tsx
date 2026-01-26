@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
 import { Trophy, Target, HelpCircle, Check, Lock, Clock, Users, CheckCircle, XCircle } from 'lucide-react'
