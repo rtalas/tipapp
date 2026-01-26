@@ -15,6 +15,7 @@ import {
   Loader2,
   Trophy,
   Info,
+  Globe,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useTranslations } from 'next-intl'
@@ -288,11 +289,8 @@ export function Header({ user, locale }: HeaderProps) {
                   {theme === 'dark' ? t('lightMode') : t('darkMode')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowLanguageDialog(true)}>
-                  <LanguageSwitcher
-                    currentLocale={locale || 'en'}
-                    open={showLanguageDialog}
-                    onOpenChange={setShowLanguageDialog}
-                  />
+                  <Globe className="mr-2 h-4 w-4" />
+                  {t('language')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push(`/${selectedLeagueId}/profile`)}>
                   <User className="mr-2 h-4 w-4" />
@@ -463,6 +461,13 @@ export function Header({ user, locale }: HeaderProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Language Switcher Dialog */}
+      <LanguageSwitcher
+        currentLocale={locale || 'en'}
+        open={showLanguageDialog}
+        onOpenChange={setShowLanguageDialog}
+      />
     </>
   )
 }

@@ -13,6 +13,9 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get callback URL from search params
+  // Note: Don't default to /admin here - let the signIn result determine the redirect
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -38,7 +41,20 @@ function LoginForm() {
         return;
       }
 
-      router.push(callbackUrl);
+      // If no specific callback URL, check if user is admin and redirect accordingly
+      if (callbackUrl === "/") {
+        // Fetch session to check if user is superadmin
+        const response = await fetch('/api/auth/session');
+        const session = await response.json();
+
+        if (session?.user?.isSuperadmin) {
+          router.push('/admin');
+        } else {
+          router.push('/');
+        }
+      } else {
+        router.push(callbackUrl);
+      }
     } catch (err) {
       console.error("signIn error:", err);
       setError(t('errorGeneric'));

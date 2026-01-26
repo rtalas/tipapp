@@ -60,15 +60,8 @@ export default auth((req) => {
     }
   }
 
-  // Root route handling
-  if (pathname === '/') {
-    if (req.auth?.user?.isSuperadmin) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/admin";
-      return Response.redirect(url);
-    }
-    // For regular users, let the page handle redirect to their league
-  }
+  // Root route handling - let the page handle redirect to league or available leagues
+  // Admins can access user view via the root route, and can switch to admin via the menu
 
   // Default: require authentication for non-public routes
   if (!req.auth && !isPublicRoute) {

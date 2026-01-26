@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { format } from 'date-fns'
-import { Check, X, Trash2 } from 'lucide-react'
+import { Check, X, Trash2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import {
@@ -12,6 +12,8 @@ import {
   updateLeagueUserActive,
   updateLeagueUserPaid,
   removeLeagueUser,
+  addUserToLeague,
+  getUsers,
 } from '@/actions/users'
 import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
@@ -93,6 +95,12 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
   const [userToRemove, setUserToRemove] = useState<LeagueUser | null>(null)
   const [isRemoving, setIsRemoving] = useState(false)
+  const [addUserDialogOpen, setAddUserDialogOpen] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<string>('')
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string>('')
+  const [allUsers, setAllUsers] = useState<Array<{ id: number; firstName: string; lastName: string; username: string }>>([])
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+  const [isAddingUser, setIsAddingUser] = useState(false)
 
   // Filter league users with optimized string search
   const filteredLeagueUsers = leagueUsers.filter((lu) => {
@@ -202,6 +210,66 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
     }
   }
 
+  const loadUsers = async () => {
+    setIsLoadingUsers(true)
+    try {
+      const users = await getUsers()
+      // Filter out users who are already members of the selected league
+      const leagueIdToCheck = league?.id ?? (selectedLeagueId ? parseInt(selectedLeagueId) : null)
+      if (leagueIdToCheck) {
+        const filteredUsers = users.filter(
+          (user) => !leagueUsers.some((lu) => lu.userId === user.id && lu.leagueId === leagueIdToCheck)
+        )
+        setAllUsers(filteredUsers)
+      } else {
+        setAllUsers(users)
+      }
+    } catch (error) {
+      toast.error('Failed to load users')
+      logger.error('Failed to load users', { error })
+    } finally {
+      setIsLoadingUsers(false)
+    }
+  }
+
+  const handleAddUser = async () => {
+    if (!selectedUserId) {
+      toast.error('Please select a user')
+      return
+    }
+
+    const leagueId = league?.id ?? (selectedLeagueId ? parseInt(selectedLeagueId) : null)
+    if (!leagueId) {
+      toast.error('Please select a league')
+      return
+    }
+
+    setIsAddingUser(true)
+    try {
+      await addUserToLeague(parseInt(selectedUserId), leagueId)
+      toast.success(t('addUserSuccess'))
+      setAddUserDialogOpen(false)
+      setSelectedUserId('')
+      setSelectedLeagueId('')
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message)
+      } else {
+        toast.error(t('addUserFailed'))
+      }
+      logger.error('Failed to add user to league', { error, userId: selectedUserId, leagueId })
+    } finally {
+      setIsAddingUser(false)
+    }
+  }
+
+  // Load users when dialog opens
+  React.useEffect(() => {
+    if (addUserDialogOpen) {
+      loadUsers()
+    }
+  }, [addUserDialogOpen, selectedLeagueId, league])
+
   return (
     <>
       {/* Pending Requests */}
@@ -297,10 +365,18 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
       {/* League Users */}
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle>{t('leagueUsers')}</CardTitle>
-          <CardDescription>
-            {t('leagueUsersDescription')}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>{t('leagueUsers')}</CardTitle>
+              <CardDescription>
+                {t('leagueUsersDescription')}
+              </CardDescription>
+            </div>
+            <Button onClick={() => setAddUserDialogOpen(true)}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              {t('addUser')}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Filters */}
@@ -417,6 +493,89 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
             </Button>
             <Button variant="destructive" onClick={handleRemove} disabled={isRemoving}>
               {isRemoving ? t('removing') : t('remove')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add User Dialog */}
+      <Dialog open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('addUserTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('addUserDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* User selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('user')}</label>
+              <Select
+                value={selectedUserId}
+                onValueChange={setSelectedUserId}
+                disabled={isLoadingUsers || allUsers.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      isLoadingUsers
+                        ? tCommon('loading')
+                        : allUsers.length === 0
+                        ? t('noUsersAvailable')
+                        : t('selectUser')
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {allUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id.toString()}>
+                      {user.firstName} {user.lastName} (@{user.username})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* League selector (only if not on league-specific page) */}
+            {!league && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('league')}</label>
+                <Select
+                  value={selectedLeagueId}
+                  onValueChange={setSelectedLeagueId}
+                  disabled={leagues.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        leagues.length === 0
+                          ? tCommon('noLeaguesAvailable')
+                          : t('selectLeague')
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {leagues.map((lg) => (
+                      <SelectItem key={lg.id} value={lg.id.toString()}>
+                        {lg.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setAddUserDialogOpen(false)
+              setSelectedUserId('')
+              setSelectedLeagueId('')
+            }}>
+              {tCommon('cancel')}
+            </Button>
+            <Button onClick={handleAddUser} disabled={isAddingUser}>
+              {isAddingUser ? t('adding') : t('addUserButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

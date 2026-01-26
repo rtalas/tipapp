@@ -299,6 +299,7 @@
     "language": {
       "label": "Language",
       "chooseLanguage": "Choose Language",
+      "selectPreferredLanguage": "Select your preferred language",
       "changedToEnglish": "Language changed to English",
       "changedToCzech": "Language changed to Čeština",
       "changeFailed": "Failed to change language"
@@ -310,6 +311,8 @@
       "superadmin": "Superadmin",
       "myAccount": "My Account",
       "profile": "Profile",
+      "userView": "User View",
+      "language": "Language",
       "signOut": "Sign out",
       "toggleMenu": "Toggle menu",
       "toggleTheme": "Toggle theme",
@@ -704,7 +707,17 @@
       "removing": "Removing...",
       "remove": "Remove",
       "userRemoved": "User removed from league",
-      "userRemoveFailed": "Failed to remove user"
+      "userRemoveFailed": "Failed to remove user",
+      "addUser": "Add User",
+      "addUserTitle": "Add User to League",
+      "addUserDescription": "Select a user to add to the league",
+      "selectUser": "Select user",
+      "selectLeague": "Select league",
+      "noUsersAvailable": "No users available",
+      "addUserButton": "Add to League",
+      "addUserSuccess": "User added to league",
+      "addUserFailed": "Failed to add user to league",
+      "adding": "Adding..."
     },
     "matchPhases": {
       "title": "Match Phases",

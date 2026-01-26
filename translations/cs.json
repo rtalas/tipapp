@@ -299,6 +299,7 @@
     "language": {
       "label": "Jazyk",
       "chooseLanguage": "Vyberte jazyk",
+      "selectPreferredLanguage": "Vyberte preferovaný jazyk",
       "changedToEnglish": "Jazyk změněn na English",
       "changedToCzech": "Jazyk změněn na Čeština",
       "changeFailed": "Nepodařilo se změnit jazyk"
@@ -310,6 +311,8 @@
       "superadmin": "Superadmin",
       "myAccount": "Můj účet",
       "profile": "Profil",
+      "userView": "Uživatelský pohled",
+      "language": "Jazyk",
       "signOut": "Odhlásit se",
       "toggleMenu": "Přepnout menu",
       "toggleTheme": "Přepnout téma",
@@ -704,7 +707,17 @@
       "removing": "Odebírání...",
       "remove": "Odebrat",
       "userRemoved": "Uživatel odebrán z ligy",
-      "userRemoveFailed": "Nepodařilo se odebrat uživatele"
+      "userRemoveFailed": "Nepodařilo se odebrat uživatele",
+      "addUser": "Přidat uživatele",
+      "addUserTitle": "Přidat uživatele do ligy",
+      "addUserDescription": "Vyberte uživatele k přidání do ligy",
+      "selectUser": "Vyberte uživatele",
+      "selectLeague": "Vyberte ligu",
+      "noUsersAvailable": "Žádní dostupní uživatelé",
+      "addUserButton": "Přidat do ligy",
+      "addUserSuccess": "Uživatel přidán do ligy",
+      "addUserFailed": "Nepodařilo se přidat uživatele do ligy",
+      "adding": "Přidávání..."
     },
     "matchPhases": {
       "title": "Fáze zápasů",

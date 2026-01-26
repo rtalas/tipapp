@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { signOut } from 'next-auth/react'
-import { Menu, Moon, Sun, LogOut, User } from 'lucide-react'
+import { Menu, Moon, Sun, LogOut, User, Trophy, Globe } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import {
@@ -119,11 +119,13 @@ export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues, locale }:
                 {t('profile')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowLanguageDialog(true)}>
-                <LanguageSwitcher
-                  currentLocale={locale || 'en'}
-                  open={showLanguageDialog}
-                  onOpenChange={setShowLanguageDialog}
-                />
+                <Globe className="mr-2 h-4 w-4" />
+                {t('language')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push('/')}>
+                <Trophy className="mr-2 h-4 w-4" />
+                {t('userView')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -191,11 +193,13 @@ export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues, locale }:
                   {t('profile')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowLanguageDialog(true)}>
-                  <LanguageSwitcher
-                    currentLocale={locale || 'en'}
-                    open={showLanguageDialog}
-                    onOpenChange={setShowLanguageDialog}
-                  />
+                  <Globe className="mr-2 h-4 w-4" />
+                  {t('language')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/')}>
+                  <Trophy className="mr-2 h-4 w-4" />
+                  {t('userView')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -215,6 +219,13 @@ export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues, locale }:
           <Breadcrumbs leagues={leagues} />
         </div>
       </div>
+
+      {/* Language Switcher Dialog */}
+      <LanguageSwitcher
+        currentLocale={locale || 'en'}
+        open={showLanguageDialog}
+        onOpenChange={setShowLanguageDialog}
+      />
     </header>
   )
 }

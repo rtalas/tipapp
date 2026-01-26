@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -47,41 +48,39 @@ export function LanguageSwitcher({ currentLocale, open, onOpenChange }: Language
   };
 
   return (
-    <>
-      <Globe className="mr-2 h-4 w-4" />
-      {t('label')}
-
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-xs">
-          <DialogHeader>
-            <DialogTitle>{t('chooseLanguage')}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 mt-4">
-            {locales.map((locale) => (
-              <button
-                key={locale}
-                onClick={() => handleLanguageChange(locale)}
-                disabled={isPending}
-                className={`flex w-full items-center gap-3 p-3 rounded-lg border transition-colors ${
-                  locale === currentLocale
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:bg-accent'
-                } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <span className="text-2xl">
-                  {locale === 'en' ? '🇬🇧' : '🇨🇿'}
-                </span>
-                <span className="flex-1 text-left font-medium">
-                  {localeLabels[locale]}
-                </span>
-                {locale === currentLocale && (
-                  <Check className="h-5 w-5 text-primary" />
-                )}
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-xs">
+        <DialogHeader>
+          <DialogTitle>{t('chooseLanguage')}</DialogTitle>
+          <DialogDescription>
+            {t('selectPreferredLanguage')}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 mt-4">
+          {locales.map((locale) => (
+            <button
+              key={locale}
+              onClick={() => handleLanguageChange(locale)}
+              disabled={isPending}
+              className={`flex w-full items-center gap-3 p-3 rounded-lg border transition-colors ${
+                locale === currentLocale
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:bg-accent'
+              } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <span className="text-2xl">
+                {locale === 'en' ? '🇬🇧' : '🇨🇿'}
+              </span>
+              <span className="flex-1 text-left font-medium">
+                {localeLabels[locale]}
+              </span>
+              {locale === currentLocale && (
+                <Check className="h-5 w-5 text-primary" />
+              )}
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

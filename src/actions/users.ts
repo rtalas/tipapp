@@ -195,6 +195,61 @@ export async function updateLeagueUserPaid(leagueUserId: number, isPaid: boolean
   return { success: true }
 }
 
+// Add user to league
+export async function addUserToLeague(userId: number, leagueId: number) {
+  await requireAdmin()
+
+  const now = new Date()
+
+  // Check if user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId, deletedAt: null },
+  })
+
+  if (!user) {
+    throw new Error('User not found')
+  }
+
+  // Check if league exists
+  const league = await prisma.league.findUnique({
+    where: { id: leagueId, deletedAt: null },
+  })
+
+  if (!league) {
+    throw new Error('League not found')
+  }
+
+  // Check if user is already a member
+  const existingMembership = await prisma.leagueUser.findFirst({
+    where: {
+      userId,
+      leagueId,
+      deletedAt: null,
+    },
+  })
+
+  if (existingMembership) {
+    throw new Error('User is already a member of this league')
+  }
+
+  // Create league user membership
+  await prisma.leagueUser.create({
+    data: {
+      userId,
+      leagueId,
+      paid: false,
+      active: true,
+      admin: false,
+      createdAt: now,
+      updatedAt: now,
+    },
+  })
+
+  revalidatePath('/admin/users')
+  revalidatePath(`/admin/${leagueId}/users`)
+  return { success: true }
+}
+
 // Remove user from league
 export async function removeLeagueUser(leagueUserId: number) {
   await requireAdmin()
