@@ -7,6 +7,7 @@ import { userMatchBetSchema, type UserMatchBetInput } from '@/lib/validation/use
 import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { AppError } from '@/lib/error-handler'
 import { SPORT_IDS } from '@/lib/constants'
+import { AuditLogger } from '@/lib/audit-logger'
 
 /**
  * Fetches matches for a league with the current user's bets
@@ -162,6 +163,7 @@ export type FriendPrediction = Awaited<
  * Uses Serializable transaction for data consistency
  */
 export async function saveMatchBet(input: UserMatchBetInput) {
+  const startTime = Date.now()
   const parsed = userMatchBetSchema.safeParse(input)
 
   if (!parsed.success) {
@@ -188,6 +190,8 @@ export async function saveMatchBet(input: UserMatchBetInput) {
 
   // Wrap database operations in Serializable transaction
   try {
+    let isUpdate = false
+
     await prisma.$transaction(
       async (tx) => {
         // Fetch match details within transaction for consistency
@@ -258,6 +262,19 @@ export async function saveMatchBet(input: UserMatchBetInput) {
           }
         }
 
+        // Check if bet exists to determine action type
+        const existingBet = await tx.userBet.findUnique({
+          where: {
+            leagueMatchId_leagueUserId_deletedAt: nullableUniqueConstraint({
+              leagueMatchId: validated.leagueMatchId,
+              leagueUserId: leagueUser.id,
+              deletedAt: null,
+            }),
+          },
+        })
+
+        isUpdate = !!existingBet
+
         // Atomic upsert to prevent race conditions
         const now = new Date()
 
@@ -300,6 +317,35 @@ export async function saveMatchBet(input: UserMatchBetInput) {
         timeout: 10000, // 10s max transaction time
       }
     )
+
+    // Audit log (fire-and-forget)
+    const durationMs = Date.now() - startTime
+    const metadata = {
+      homeScore: validated.homeScore,
+      awayScore: validated.awayScore,
+      scorerId: validated.scorerId,
+      noScorer: validated.noScorer,
+      overtime: validated.overtime,
+      homeAdvanced: validated.homeAdvanced,
+    }
+
+    if (isUpdate) {
+      AuditLogger.userBetUpdated(
+        leagueUser.userId,
+        matchInfo.leagueId,
+        validated.leagueMatchId,
+        metadata,
+        durationMs
+      ).catch((err) => console.error('Audit log failed:', err))
+    } else {
+      AuditLogger.userBetCreated(
+        leagueUser.userId,
+        matchInfo.leagueId,
+        validated.leagueMatchId,
+        metadata,
+        durationMs
+      ).catch((err) => console.error('Audit log failed:', err))
+    }
 
     revalidatePath(`/${matchInfo.leagueId}/matches`)
     return { success: true }

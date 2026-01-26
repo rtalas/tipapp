@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validation";
 import { isPrismaError, handlePrismaError } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
+import { AuditLogger } from "@/lib/audit-logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,6 +54,11 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       },
     });
+
+    // Audit log (fire-and-forget)
+    AuditLogger.userRegistered(user.id, user.username, user.email).catch((err) =>
+      console.error("Audit log failed:", err)
+    );
 
     return NextResponse.json(
       {

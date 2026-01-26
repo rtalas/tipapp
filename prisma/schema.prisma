@@ -60,6 +60,7 @@ model League {
   TopScorerRankingVersion  TopScorerRankingVersion[]
   Message                  Message[]
   LeaguePrize              LeaguePrize[]
+  AuditLog                 AuditLog[]
 }
 
 model LeaguePrize {
@@ -375,6 +376,7 @@ model User {
   TopScorerRankingVersion TopScorerRankingVersion[]
   PushSubscription        PushSubscription[]
   SentNotification        SentNotification[]
+  AuditLog                AuditLog[]
 }
 
 model PasswordResetToken {
@@ -555,4 +557,52 @@ model SentNotification {
   @@unique([userId, leagueMatchId])
   @@index([userId])
   @@index([leagueMatchId])
+}
+
+model AuditLog {
+  id            Int       @id @default(autoincrement())
+  timestamp     DateTime  @default(now()) @db.Timestamptz(6)
+
+  // Event classification
+  eventType     String    @db.VarChar(50)   // "USER_BET_CREATED", "USER_LOGIN_SUCCESS", "MATCH_EVALUATED"
+  eventCategory String    @db.VarChar(30)   // "USER_ACTION", "ADMIN_ACTION", "AUTH", "EVALUATION"
+  severity      String    @db.VarChar(10)   // "INFO", "WARNING", "ERROR"
+
+  // Actor information
+  userId        Int?
+  sessionId     String?   @db.VarChar(255)
+  ipAddress     String?   @db.VarChar(45)   // IPv6-compatible
+
+  // Resource information
+  resourceType  String?   @db.VarChar(50)   // "UserBet", "Match", "League", etc.
+  resourceId    Int?
+  leagueId      Int?
+
+  // Action details
+  action        String?   @db.VarChar(50)   // "CREATE", "UPDATE", "EVALUATE", "LOGIN"
+  description   String?   @db.VarChar(500)  // Human-readable summary
+
+  // Flexible data payload (old/new values, validation errors, etc.)
+  metadata      Json?
+
+  // Performance tracking
+  durationMs    Int?
+
+  // Status
+  success       Boolean   @default(true)
+  errorCode     String?   @db.VarChar(50)
+  errorMessage  String?   @db.Text
+
+  // Relations
+  User          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  League        League?   @relation(fields: [leagueId], references: [id], onDelete: SetNull)
+
+  // Indexes for common query patterns
+  @@index([timestamp])
+  @@index([userId, timestamp])
+  @@index([eventType, timestamp])
+  @@index([eventCategory, timestamp])
+  @@index([resourceType, resourceId])
+  @@index([leagueId, timestamp])
+  @@index([success, severity])
 }

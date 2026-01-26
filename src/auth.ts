@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signInSchema } from "@/lib/validation";
+import { AuditLogger } from "@/lib/audit-logger";
 
 export const { handlers, auth } = NextAuth({
   providers: [
@@ -27,6 +28,12 @@ export const { handlers, auth } = NextAuth({
           });
 
           if (!user) {
+            // Audit log failed login (fire-and-forget)
+            AuditLogger.loginFailed(
+              validatedCredentials.username,
+              "User not found"
+            ).catch((err) => console.error("Audit log failed:", err));
+
             return null;
           }
 
@@ -37,8 +44,19 @@ export const { handlers, auth } = NextAuth({
           );
 
           if (!isPasswordValid) {
+            // Audit log failed login (fire-and-forget)
+            AuditLogger.loginFailed(
+              validatedCredentials.username,
+              "Invalid password"
+            ).catch((err) => console.error("Audit log failed:", err));
+
             return null;
           }
+
+          // Audit log successful login (fire-and-forget)
+          AuditLogger.loginSuccess(user.id, user.username).catch((err) =>
+            console.error("Audit log failed:", err)
+          );
 
           return {
             id: user.id.toString(),

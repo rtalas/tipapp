@@ -17,6 +17,7 @@ import {
   Target,
   MessageSquare,
   Layers,
+  FileText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -61,6 +62,7 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
 
   const generalAdminItems = [
     { key: 'leagues', href: '/admin/leagues', icon: Trophy },
+    { key: 'auditLogs', href: '/admin/audit-logs', icon: FileText },
     { key: 'teamsGlobal', href: '/admin/teams', icon: Shield },
     { key: 'playersGlobal', href: '/admin/players', icon: User },
     { key: 'usersGlobal', href: '/admin/users', icon: Users },

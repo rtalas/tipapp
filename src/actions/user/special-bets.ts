@@ -6,6 +6,7 @@ import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userSpecialBetSchema, type UserSpecialBetInput } from '@/lib/validation/user'
 import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { AppError } from '@/lib/error-handler'
+import { AuditLogger } from '@/lib/audit-logger'
 
 /**
  * Fetches special bets for a league with the current user's picks
@@ -172,6 +173,7 @@ export async function getSpecialBetPlayers(leagueId: number) {
  * Uses Serializable transaction for data consistency
  */
 export async function saveSpecialBet(input: UserSpecialBetInput) {
+  const startTime = Date.now()
   const parsed = userSpecialBetSchema.safeParse(input)
 
   if (!parsed.success) {
@@ -198,6 +200,8 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
 
   // Wrap database operations in Serializable transaction
   try {
+    let isUpdate = false
+
     await prisma.$transaction(
       async (tx) => {
         // Fetch special bet details within transaction for consistency
@@ -217,6 +221,20 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
             400
           )
         }
+
+        // Check if bet exists to determine action type
+        const existingBet = await tx.userSpecialBetSingle.findUnique({
+          where: {
+            leagueSpecialBetSingleId_leagueUserId_deletedAt:
+              nullableUniqueConstraint({
+                leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
+                leagueUserId: leagueUser.id,
+                deletedAt: null,
+              }),
+          },
+        })
+
+        isUpdate = !!existingBet
 
         // Atomic upsert to prevent race conditions
         const now = new Date()
@@ -255,6 +273,32 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
         timeout: 10000, // 10s max transaction time
       }
     )
+
+    // Audit log (fire-and-forget)
+    const durationMs = Date.now() - startTime
+    const metadata = {
+      teamResultId: validated.teamResultId,
+      playerResultId: validated.playerResultId,
+      value: validated.value,
+    }
+
+    if (isUpdate) {
+      AuditLogger.specialBetUpdated(
+        leagueUser.userId,
+        specialBetInfo.leagueId,
+        validated.leagueSpecialBetSingleId,
+        metadata,
+        durationMs
+      ).catch((err) => console.error('Audit log failed:', err))
+    } else {
+      AuditLogger.specialBetCreated(
+        leagueUser.userId,
+        specialBetInfo.leagueId,
+        validated.leagueSpecialBetSingleId,
+        metadata,
+        durationMs
+      ).catch((err) => console.error('Audit log failed:', err))
+    }
 
     revalidatePath(`/${specialBetInfo.leagueId}/special-bets`)
     return { success: true }

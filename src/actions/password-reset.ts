@@ -8,6 +8,7 @@ import { isPasswordResetRateLimited } from '@/lib/rate-limit';
 import { sendPasswordResetEmail } from '@/lib/email';
 import { AppError, handleActionError, logError } from '@/lib/error-handler';
 import bcryptjs from 'bcryptjs';
+import { AuditLogger } from '@/lib/audit-logger';
 
 const APP_URL = env.APP_URL;
 
@@ -69,7 +70,7 @@ export async function requestPasswordReset(
       // Create password reset token in database
       const expiresAt = getTokenExpirationTime(1); // 1 hour from now
 
-      await prisma.passwordResetToken.create({
+      const resetToken = await prisma.passwordResetToken.create({
         data: {
           userId: user.id,
           token: hashedToken,
@@ -77,6 +78,13 @@ export async function requestPasswordReset(
           createdAt: new Date(),
         },
       });
+
+      // Audit log password reset request (fire-and-forget)
+      AuditLogger.passwordResetRequested(
+        user.id,
+        user.email,
+        resetToken.id
+      ).catch((err) => console.error("Audit log failed:", err));
 
       // Generate reset URL
       const resetUrl = `${APP_URL}/reset-password/${plainToken}`;
@@ -210,11 +218,24 @@ export async function resetPassword(
       }),
     ]);
 
+    // Audit log successful password reset (fire-and-forget)
+    AuditLogger.passwordResetCompleted(
+      resetToken.userId,
+      resetToken.User.email
+    ).catch((err) => console.error("Audit log failed:", err));
+
     return {
       success: true,
       message: 'Password has been reset successfully. You can now log in with your new password.',
     };
   } catch (error) {
+    // Audit log failed password reset (fire-and-forget)
+    if (error instanceof AppError) {
+      AuditLogger.passwordResetFailed(error.message, {
+        code: error.code,
+      }).catch((err) => console.error("Audit log failed:", err));
+    }
+
     const errorResponse = handleActionError(
       error,
       'An error occurred while resetting your password. Please try again.',

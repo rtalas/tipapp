@@ -6,6 +6,7 @@ import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userSeriesBetSchema, type UserSeriesBetInput } from '@/lib/validation/user'
 import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { AppError } from '@/lib/error-handler'
+import { AuditLogger } from '@/lib/audit-logger'
 
 /**
  * Fetches series for a league with the current user's bets
@@ -110,6 +111,7 @@ export type SeriesFriendPrediction = Awaited<
  * Uses Serializable transaction for data consistency
  */
 export async function saveSeriesBet(input: UserSeriesBetInput) {
+  const startTime = Date.now()
   const parsed = userSeriesBetSchema.safeParse(input)
 
   if (!parsed.success) {
@@ -136,6 +138,8 @@ export async function saveSeriesBet(input: UserSeriesBetInput) {
 
   // Wrap database operations in Serializable transaction
   try {
+    let isUpdate = false
+
     await prisma.$transaction(
       async (tx) => {
         // Fetch series details within transaction for consistency
@@ -155,6 +159,21 @@ export async function saveSeriesBet(input: UserSeriesBetInput) {
             400
           )
         }
+
+        // Check if bet exists to determine action type
+        const existingBet = await tx.userSpecialBetSerie.findUnique({
+          where: {
+            leagueSpecialBetSerieId_leagueUserId_deletedAt: nullableUniqueConstraint(
+              {
+                leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
+                leagueUserId: leagueUser.id,
+                deletedAt: null,
+              }
+            ),
+          },
+        })
+
+        isUpdate = !!existingBet
 
         // Atomic upsert to prevent race conditions
         const now = new Date()
@@ -192,6 +211,31 @@ export async function saveSeriesBet(input: UserSeriesBetInput) {
         timeout: 10000, // 10s max transaction time
       }
     )
+
+    // Audit log (fire-and-forget)
+    const durationMs = Date.now() - startTime
+    const metadata = {
+      homeTeamScore: validated.homeTeamScore,
+      awayTeamScore: validated.awayTeamScore,
+    }
+
+    if (isUpdate) {
+      AuditLogger.seriesBetUpdated(
+        leagueUser.userId,
+        seriesInfo.leagueId,
+        validated.leagueSpecialBetSerieId,
+        metadata,
+        durationMs
+      ).catch((err) => console.error('Audit log failed:', err))
+    } else {
+      AuditLogger.seriesBetCreated(
+        leagueUser.userId,
+        seriesInfo.leagueId,
+        validated.leagueSpecialBetSerieId,
+        metadata,
+        durationMs
+      ).catch((err) => console.error('Audit log failed:', err))
+    }
 
     revalidatePath(`/${seriesInfo.leagueId}/series`)
     return { success: true }
