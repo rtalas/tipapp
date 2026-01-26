@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
-import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle, SheetDescription, VisuallyHidden } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { LeagueProvider } from '@/contexts/league-context'
 import type { League } from '@prisma/client'
@@ -37,6 +37,12 @@ export function AdminLayout({ children, user, leagues, locale }: AdminLayoutProp
         {/* Mobile Sidebar (Sheet) */}
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
           <SheetContent side="left" className="w-64 p-0">
+            <VisuallyHidden>
+              <SheetTitle>Navigation Menu</SheetTitle>
+              <SheetDescription>
+                Admin navigation menu with links to leagues, matches, teams, and settings
+              </SheetDescription>
+            </VisuallyHidden>
             <Sidebar
               collapsed={false}
               onToggle={() => setMobileMenuOpen(false)}
@@ -61,7 +67,7 @@ export function AdminLayout({ children, user, leagues, locale }: AdminLayoutProp
           />
 
           {/* Main content */}
-          <main className="flex-1 overflow-auto p-6 pt-22">
+          <main className="flex-1 overflow-auto p-6 pt-24 lg:pt-16">
             <div className="mx-auto max-w-7xl">{children}</div>
           </main>
         </div>

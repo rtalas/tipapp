@@ -65,24 +65,24 @@ export function Breadcrumbs({ leagues = [] }: BreadcrumbsProps) {
   })
 
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center space-x-1 text-sm">
+    <nav aria-label="Breadcrumb" className="flex items-center space-x-1 text-sm min-w-0">
       <Link
         href="/admin"
-        className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
       >
         <Home className="h-4 w-4" />
       </Link>
 
       {breadcrumbs.slice(1).map((crumb, index) => (
-        <div key={crumb.href} className="flex items-center">
-          <ChevronRight className="h-4 w-4 text-muted-foreground mx-1" />
+        <div key={crumb.href} className="flex items-center min-w-0">
+          <ChevronRight className="h-4 w-4 text-muted-foreground mx-1 flex-shrink-0" />
           {crumb.isLast ? (
-            <span className="font-medium text-foreground">{crumb.label}</span>
+            <span className="font-medium text-foreground truncate">{crumb.label}</span>
           ) : (
             <Link
               href={crumb.href}
               className={cn(
-                'text-muted-foreground hover:text-foreground transition-colors'
+                'text-muted-foreground hover:text-foreground transition-colors truncate'
               )}
             >
               {crumb.label}

@@ -51,7 +51,7 @@ export function LeagueSelector({ leagues, currentLeagueId }: LeagueSelectorProps
       onValueChange={handleChange}
       disabled={leagues.length === 0}
     >
-      <SelectTrigger className="w-[280px]" aria-label={t('selectLeague')}>
+      <SelectTrigger className="w-full lg:w-[280px]" aria-label={t('selectLeague')}>
         <SelectValue placeholder={t('selectLeague')} />
       </SelectTrigger>
       <SelectContent>
