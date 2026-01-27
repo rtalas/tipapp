@@ -47,22 +47,41 @@ export function UserLeagueProvider({
   const pathname = usePathname()
   const router = useRouter()
   const [leagues] = useState<League[]>(initialLeagues)
-  const [selectedLeagueId, setSelectedLeagueIdState] = useState<number | null>(
-    initialLeagueId ?? null
-  )
+  const [selectedLeagueId, setSelectedLeagueIdState] = useState<number | null>(() => {
+    // Initialize from props first
+    if (initialLeagueId) {
+      return initialLeagueId
+    }
+    // Then try localStorage
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const storedId = parseInt(stored, 10)
+        // Only use stored ID if the user is a member of that league
+        const isValidLeague = initialLeagues.some((l) => l.leagueId === storedId)
+        if (isValidLeague) {
+          return storedId
+        }
+      }
+    }
+    return null
+  })
   const [isLoading, setIsLoading] = useState(false)
 
   // Sync with URL when on league-specific routes
+  // Valid use of setState in effect: syncing with external system (router/URL)
   useEffect(() => {
     // Match routes like /1/matches, /2/series, etc.
     const leagueIdMatch = pathname.match(/^\/(\d+)/)
     if (leagueIdMatch) {
       const urlLeagueId = parseInt(leagueIdMatch[1], 10)
-      if (urlLeagueId !== selectedLeagueId) {
-        setSelectedLeagueIdState(urlLeagueId)
-      }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedLeagueIdState((current) => {
+        // Only update if URL is different from current state
+        return current !== urlLeagueId ? urlLeagueId : current
+      })
     }
-  }, [pathname, selectedLeagueId])
+  }, [pathname])
 
   // Persist to localStorage
   useEffect(() => {
@@ -70,21 +89,6 @@ export function UserLeagueProvider({
       localStorage.setItem(STORAGE_KEY, String(selectedLeagueId))
     }
   }, [selectedLeagueId])
-
-  // Initialize from localStorage on mount (if no initial value)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !initialLeagueId) {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const storedId = parseInt(stored, 10)
-        // Only use stored ID if the user is a member of that league
-        const isValidLeague = leagues.some((l) => l.leagueId === storedId)
-        if (isValidLeague && storedId !== selectedLeagueId) {
-          setSelectedLeagueIdState(storedId)
-        }
-      }
-    }
-  }, [initialLeagueId, leagues, selectedLeagueId])
 
   const setSelectedLeagueId = useCallback(
     (leagueId: number) => {

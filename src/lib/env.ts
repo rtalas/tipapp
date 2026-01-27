@@ -50,6 +50,3 @@ export const env = {
   // Optional features
   DEBUG: process.env.DEBUG === 'true',
 } as const
-
-// Type-safe access (internal use only)
-type Env = typeof env

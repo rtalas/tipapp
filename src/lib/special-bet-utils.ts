@@ -24,38 +24,3 @@ export function getSpecialBetType(typeId: number): SpecialBetType {
   if (typeId === SPECIAL_BET_TYPE_IDS.PLAYER) return 'player'
   return 'value'
 }
-
-/**
- * Type guard: Check if bet type is team-based
- */
-function isTeamBet(typeId: number): boolean {
-  return typeId === SPECIAL_BET_TYPE_IDS.TEAM
-}
-
-/**
- * Type guard: Check if bet type is player-based
- */
-function isPlayerBet(typeId: number): boolean {
-  return typeId === SPECIAL_BET_TYPE_IDS.PLAYER
-}
-
-/**
- * Type guard: Check if bet type is value-based (exact or closest)
- */
-function isValueBet(typeId: number): boolean {
-  return typeId === SPECIAL_BET_TYPE_IDS.EXACT_VALUE || typeId === SPECIAL_BET_TYPE_IDS.CLOSEST_VALUE
-}
-
-/**
- * Type guard: Check if bet type is exact value
- */
-function isExactValueBet(typeId: number): boolean {
-  return typeId === SPECIAL_BET_TYPE_IDS.EXACT_VALUE
-}
-
-/**
- * Type guard: Check if bet type is closest value
- */
-function isClosestValueBet(typeId: number): boolean {
-  return typeId === SPECIAL_BET_TYPE_IDS.CLOSEST_VALUE
-}
