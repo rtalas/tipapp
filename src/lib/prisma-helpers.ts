@@ -114,7 +114,7 @@ const playerWithCountsInclude = {
  * Include pattern for LeagueSpecialBetSerie with all related data
  * Prevents N+1 queries when fetching multiple series
  */
-export const seriesInclude = {
+const seriesInclude = {
   League: true,
   SpecialBetSerie: true,
   LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam: {
@@ -233,7 +233,7 @@ const specialBetWithBetsInclude = {
 /**
  * Include object for LeagueSpecialBetQuestion queries (basic)
  */
-export const questionInclude = {
+const questionInclude = {
   League: true,
   _count: {
     select: { UserSpecialBetQuestion: true },

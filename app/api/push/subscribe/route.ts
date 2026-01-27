@@ -52,6 +52,8 @@ export async function POST(request: NextRequest) {
         p256dh: validatedData.keys.p256dh,
         auth: validatedData.keys.auth,
         userAgent,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     })
 

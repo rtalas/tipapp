@@ -10,6 +10,7 @@ import type {
   ClosestValueContext,
 } from './types'
 import type { QuestionContext } from './question'
+import { getScorerRankingAtTime } from '@/lib/scorer-ranking-utils'
 
 // Type imports for Prisma entities
 type Match = {
@@ -57,13 +58,24 @@ type UserSpecialBetSingle = {
 
 /**
  * Build MatchBetContext from database entities
+ * @param userBet - User's bet prediction
+ * @param match - Match with results
+ * @param matchDateTime - Match date/time for time-based ranking lookup
  */
-export function buildMatchBetContext(
+export async function buildMatchBetContext(
   userBet: UserBet,
-  match: Match
-): MatchBetContext {
+  match: Match,
+  matchDateTime: Date
+): Promise<MatchBetContext> {
   // Extract scorer IDs from MatchScorer (can have multiple scorers)
   const scorerIds = match.MatchScorer.map((ms) => ms.scorerId)
+
+  // Load time-based rankings for all scorers in the match
+  const scorerRankings = new Map<number, number | null>()
+  for (const scorerId of scorerIds) {
+    const ranking = await getScorerRankingAtTime(scorerId, matchDateTime)
+    scorerRankings.set(scorerId, ranking)
+  }
 
   return {
     prediction: {
@@ -80,6 +92,7 @@ export function buildMatchBetContext(
       homeFinalScore: match.homeFinalScore,
       awayFinalScore: match.awayFinalScore,
       scorerIds,
+      scorerRankings, // Include scorer rankings
       isOvertime: match.isOvertime,
       isShootout: match.isShootout,
       isPlayoffGame: match.isPlayoffGame,

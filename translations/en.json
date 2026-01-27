@@ -327,6 +327,7 @@
       "loading": "Loading...",
       "saving": "Saving...",
       "deleting": "Deleting...",
+      "creating": "Creating...",
       "name": "Name",
       "status": "Status",
       "selectLeague": "Select league",

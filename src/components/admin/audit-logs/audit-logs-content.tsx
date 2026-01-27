@@ -36,7 +36,7 @@ interface AuditLog {
   leagueId: number | null;
   action: string | null;
   description: string | null;
-  metadata: Record<string, unknown> | null;
+  metadata: unknown; // Prisma JsonValue
   durationMs: number | null;
   success: boolean;
   errorCode: string | null;
@@ -59,6 +59,10 @@ interface AuditLogsContentProps {
   currentPage: number;
   totalPages: number;
   hasMore: boolean;
+}
+
+function isValidMetadata(metadata: unknown): metadata is Record<string, unknown> {
+  return typeof metadata === 'object' && metadata !== null && !Array.isArray(metadata)
 }
 
 export function AuditLogsContent({
@@ -339,7 +343,7 @@ export function AuditLogsContent({
                                 )}
 
                                 {/* Metadata */}
-                                {log.metadata && Object.keys(log.metadata).length > 0 && (
+                                {isValidMetadata(log.metadata) && Object.keys(log.metadata).length > 0 && (
                                   <div>
                                     <div className="text-sm font-medium mb-1">{t("metadata")}:</div>
                                     <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">

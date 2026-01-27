@@ -23,7 +23,7 @@ import {
 } from './index'
 
 // Type definitions
-type MatchEvaluatorFn = (context: MatchBetContext) => boolean
+type MatchEvaluatorFn = (context: MatchBetContext) => boolean | number
 type SeriesEvaluatorFn = (context: SeriesBetContext) => boolean
 type SpecialEvaluatorFn = (context: SpecialBetContext) => boolean
 type ClosestValueEvaluatorFn = (context: ClosestValueContext) => boolean

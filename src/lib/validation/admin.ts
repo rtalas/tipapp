@@ -7,6 +7,27 @@ export const deleteByIdSchema = z.object({
 
 export type DeleteByIdInput = z.infer<typeof deleteByIdSchema>
 
+// Scorer ranked config schema for flexible rank-based points
+export const scorerRankedConfigSchema = z
+  .object({
+    rankedPoints: z
+      .record(z.string(), z.number().int().min(0).max(100))
+      .refine((ranks) => Object.keys(ranks).length > 0, {
+        message: 'At least one rank must be configured',
+      })
+      .refine(
+        (ranks) =>
+          Object.keys(ranks).every(
+            (k) => !isNaN(parseInt(k)) && parseInt(k) > 0
+          ),
+        {
+          message: 'Rank keys must be positive integers',
+        }
+      ),
+    unrankedPoints: z.number().int().min(0).max(100),
+  })
+  .nullable()
+
 // Evaluator schemas (defined first for use in league schema)
 const evaluatorRuleSchema = z.object({
   evaluatorTypeId: z.number().int().positive(),
@@ -19,6 +40,7 @@ export const createEvaluatorSchema = z.object({
   evaluatorTypeId: z.number().int().positive('Evaluator type is required'),
   name: z.string().min(1, 'Name is required').max(255),
   points: z.number().int().min(0, 'Points cannot be negative').max(100),
+  config: scorerRankedConfigSchema.optional(),
 })
 
 export type CreateEvaluatorInput = z.infer<typeof createEvaluatorSchema>
@@ -37,14 +59,12 @@ export const updateEvaluatorNameSchema = z.object({
 
 export type UpdateEvaluatorNameInput = z.infer<typeof updateEvaluatorNameSchema>
 
-// Team group update schema
-export const updateTeamGroupSchema = z.object({
-  leagueTeamId: z.number().int().positive('League Team ID is required'),
-  group: z.string().max(10).nullable(),
+export const updateEvaluatorConfigSchema = z.object({
+  evaluatorId: z.number().int().positive('Evaluator ID is required'),
+  config: scorerRankedConfigSchema,
 })
 
-export type UpdateTeamGroupInput = z.infer<typeof updateTeamGroupSchema>
-
+export type UpdateEvaluatorConfigInput = z.infer<typeof updateEvaluatorConfigSchema>
 
 // League validation schemas
 export const createLeagueSchema = z.object({
@@ -68,13 +88,6 @@ export const updateLeagueSchema = createLeagueSchema.partial().extend({
 })
 
 export type UpdateLeagueInput = z.infer<typeof updateLeagueSchema>
-
-export const updateEvaluatorSchema = z.object({
-  leagueId: z.number().int().positive(),
-  rules: z.array(evaluatorRuleSchema),
-})
-
-export type UpdateEvaluatorInput = z.infer<typeof updateEvaluatorSchema>
 
 // Team assignment schemas
 export const assignTeamSchema = z.object({

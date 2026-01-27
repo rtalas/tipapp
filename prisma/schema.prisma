@@ -8,20 +8,54 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model AuditLog {
+  id            Int      @id @default(autoincrement())
+  timestamp     DateTime @default(now()) @db.Timestamptz(6)
+  eventType     String   @db.VarChar(50)
+  eventCategory String   @db.VarChar(30)
+  severity      String   @db.VarChar(10)
+  userId        Int?
+  sessionId     String?  @db.VarChar(255)
+  ipAddress     String?  @db.VarChar(45)
+  resourceType  String?  @db.VarChar(50)
+  resourceId    Int?
+  leagueId      Int?
+  action        String?  @db.VarChar(50)
+  description   String?  @db.VarChar(500)
+  metadata      Json?
+  durationMs    Int?
+  success       Boolean  @default(true)
+  errorCode     String?  @db.VarChar(50)
+  errorMessage  String?
+  League        League?  @relation(fields: [leagueId], references: [id])
+  User          User?    @relation(fields: [userId], references: [id])
+
+  @@index([eventCategory, timestamp])
+  @@index([eventType, timestamp])
+  @@index([leagueId, timestamp])
+  @@index([resourceType, resourceId])
+  @@index([success, severity])
+  @@index([timestamp])
+  @@index([userId, timestamp])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Evaluator {
   id              Int           @id @default(autoincrement())
   name            String        @db.VarChar(255)
   evaluatorTypeId Int
-  points          Int
   leagueId        Int
   entity          String        @default("match") @db.VarChar(255)
   createdAt       DateTime      @db.Timestamptz(6)
   updatedAt       DateTime      @db.Timestamptz(6)
   deletedAt       DateTime?     @db.Timestamptz(6)
+  points          Int
+  config          Json?
   EvaluatorType   EvaluatorType @relation(fields: [evaluatorTypeId], references: [id], onDelete: NoAction)
   League          League        @relation(fields: [leagueId], references: [id], onDelete: NoAction)
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model EvaluatorType {
   id        Int         @id @default(autoincrement())
   name      String      @db.VarChar(255)
@@ -31,54 +65,40 @@ model EvaluatorType {
   Evaluator Evaluator[]
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model League {
-  id                       Int                         @id @default(autoincrement())
-  name                     String                      @db.VarChar(255)
+  id                       Int                        @id @default(autoincrement())
+  name                     String                     @db.VarChar(255)
   sportId                  Int
-  isActive                 Boolean                     @default(false)
-  isTheMostActive          Boolean?                    @default(false)
+  isActive                 Boolean                    @default(false)
+  isTheMostActive          Boolean?                   @default(false)
   seasonFrom               Int
   seasonTo                 Int
-  isFinished               Boolean?                    @default(false)
-  isPublic                 Boolean                     @default(false)
-  isChatEnabled            Boolean                     @default(false)
-  chatSuspendedAt          DateTime?                   @db.Timestamptz(6)
-  infoText                 String?                     @db.Text
-  createdAt                DateTime                    @db.Timestamptz(6)
-  updatedAt                DateTime                    @db.Timestamptz(6)
-  deletedAt                DateTime?                   @db.Timestamptz(6)
+  isFinished               Boolean?                   @default(false)
+  isPublic                 Boolean                    @default(false)
+  createdAt                DateTime                   @db.Timestamptz(6)
+  updatedAt                DateTime                   @db.Timestamptz(6)
+  deletedAt                DateTime?                  @db.Timestamptz(6)
+  chatSuspendedAt          DateTime?                  @db.Timestamptz(6)
+  isChatEnabled            Boolean                    @default(false)
+  infoText                 String?
+  AuditLog                 AuditLog[]
   Evaluator                Evaluator[]
-  Sport                    Sport                       @relation(fields: [sportId], references: [id], onDelete: NoAction)
+  Sport                    Sport                      @relation(fields: [sportId], references: [id], onDelete: NoAction)
   LeagueMatch              LeagueMatch[]
+  LeaguePrize              LeaguePrize[]
+  LeagueSpecialBetQuestion LeagueSpecialBetQuestion[]
   LeagueSpecialBetSerie    LeagueSpecialBetSerie[]
   LeagueSpecialBetSingle   LeagueSpecialBetSingle[]
-  LeagueSpecialBetQuestion LeagueSpecialBetQuestion[]
   LeagueTeam               LeagueTeam[]
   LeagueUser               LeagueUser[]
+  Message                  Message[]
+  TopScorerRankingVersion  TopScorerRankingVersion[]
   UserRequest              UserRequest[]
   UserSetting              UserSetting[]
-  TopScorerRankingVersion  TopScorerRankingVersion[]
-  Message                  Message[]
-  LeaguePrize              LeaguePrize[]
-  AuditLog                 AuditLog[]
 }
 
-model LeaguePrize {
-  id        Int       @id @default(autoincrement())
-  leagueId  Int
-  rank      Int
-  amount    Int
-  currency  String    @default("CZK") @db.VarChar(3)
-  label     String?   @db.VarChar(100)
-  createdAt DateTime  @db.Timestamptz(6)
-  updatedAt DateTime  @db.Timestamptz(6)
-  deletedAt DateTime? @db.Timestamptz(6)
-  League    League    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-
-  @@unique([leagueId, rank, deletedAt])
-  @@index([leagueId, deletedAt])
-}
-
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model LeagueMatch {
   id               Int                @id @default(autoincrement())
   leagueId         Int
@@ -89,10 +109,11 @@ model LeagueMatch {
   deletedAt        DateTime?          @db.Timestamptz(6)
   League           League             @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   Match            Match              @relation(fields: [matchId], references: [id], onDelete: NoAction)
-  UserBet          UserBet[]
   SentNotification SentNotification[]
+  UserBet          UserBet[]
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model LeaguePhase {
   id         Int          @id @default(autoincrement())
   name       String       @db.VarChar(255)
@@ -103,6 +124,7 @@ model LeaguePhase {
   LeagueTeam LeagueTeam[]
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model LeaguePlayer {
   id                      Int                       @id @default(autoincrement())
   leagueTeamId            Int
@@ -122,11 +144,44 @@ model LeaguePlayer {
   Player                  Player                    @relation(fields: [playerId], references: [id], onDelete: NoAction)
   LeagueSpecialBetSingle  LeagueSpecialBetSingle[]
   MatchScorer             MatchScorer[]
+  TopScorerRankingVersion TopScorerRankingVersion[]
   UserBet                 UserBet[]
   UserSpecialBetSingle    UserSpecialBetSingle[]
-  TopScorerRankingVersion TopScorerRankingVersion[]
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model LeaguePrize {
+  id        Int       @id @default(autoincrement())
+  leagueId  Int
+  rank      Int
+  amount    Int
+  currency  String    @default("CZK") @db.VarChar(3)
+  label     String?   @db.VarChar(100)
+  createdAt DateTime  @db.Timestamptz(6)
+  updatedAt DateTime  @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
+  League    League    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, rank, deletedAt])
+  @@index([leagueId, deletedAt])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model LeagueSpecialBetQuestion {
+  id                     Int                      @id @default(autoincrement())
+  leagueId               Int
+  text                   String
+  dateTime               DateTime                 @db.Timestamptz(6)
+  result                 Boolean?
+  isEvaluated            Boolean                  @default(false)
+  createdAt              DateTime                 @db.Timestamptz(6)
+  updatedAt              DateTime                 @db.Timestamptz(6)
+  deletedAt              DateTime?                @db.Timestamptz(6)
+  League                 League                   @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  UserSpecialBetQuestion UserSpecialBetQuestion[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model LeagueSpecialBetSerie {
   id                                                      Int                   @id @default(autoincrement())
   leagueId                                                Int
@@ -146,10 +201,11 @@ model LeagueSpecialBetSerie {
   SpecialBetSerie                                         SpecialBetSerie       @relation(fields: [specialBetSerieId], references: [id], onDelete: NoAction)
   UserSpecialBetSerie                                     UserSpecialBetSerie[]
 
-  @@index([leagueId, deletedAt])
   @@index([isEvaluated, deletedAt])
+  @@index([leagueId, deletedAt])
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model LeagueSpecialBetSingle {
   id                       Int                    @id @default(autoincrement())
   leagueId                 Int
@@ -169,24 +225,11 @@ model LeagueSpecialBetSingle {
   LeagueTeam               LeagueTeam?            @relation(fields: [specialBetTeamResultId], references: [id])
   UserSpecialBetSingle     UserSpecialBetSingle[]
 
-  @@index([leagueId, deletedAt])
   @@index([isEvaluated, deletedAt])
+  @@index([leagueId, deletedAt])
 }
 
-model LeagueSpecialBetQuestion {
-  id                       Int                        @id @default(autoincrement())
-  leagueId                 Int
-  text                     String
-  dateTime                 DateTime                   @db.Timestamptz(6)
-  result                   Boolean?
-  isEvaluated              Boolean                    @default(false)
-  createdAt                DateTime                   @db.Timestamptz(6)
-  updatedAt                DateTime                   @db.Timestamptz(6)
-  deletedAt                DateTime?                  @db.Timestamptz(6)
-  League                   League                     @relation(fields: [leagueId], references: [id], onDelete: NoAction)
-  UserSpecialBetQuestion   UserSpecialBetQuestion[]
-}
-
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model LeagueTeam {
   id                                                                 Int                      @id @default(autoincrement())
   leagueId                                                           Int
@@ -208,6 +251,7 @@ model LeagueTeam {
   UserSpecialBetSingle                                               UserSpecialBetSingle[]
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model LeagueUser {
   id                     Int                      @id @default(autoincrement())
   leagueId               Int
@@ -220,20 +264,20 @@ model LeagueUser {
   deletedAt              DateTime?                @db.Timestamptz(6)
   League                 League                   @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   User                   User                     @relation(fields: [userId], references: [id], onDelete: NoAction)
+  Message                Message[]
   UserBet                UserBet[]
   UserSetting            UserSetting[]
+  UserSpecialBetQuestion UserSpecialBetQuestion[]
   UserSpecialBetSerie    UserSpecialBetSerie[]
   UserSpecialBetSingle   UserSpecialBetSingle[]
-  UserSpecialBetQuestion UserSpecialBetQuestion[]
-  Message                Message[]
 
   @@unique([leagueId, userId, deletedAt])
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Match {
   id                                      Int           @id @default(autoincrement())
   gameNumber                              Int?
-  matchPhaseId                            Int?
   dateTime                                DateTime      @db.Timestamptz(6)
   homeTeamId                              Int
   awayTeamId                              Int
@@ -249,13 +293,15 @@ model Match {
   createdAt                               DateTime      @db.Timestamptz(6)
   updatedAt                               DateTime      @db.Timestamptz(6)
   deletedAt                               DateTime?     @db.Timestamptz(6)
+  matchPhaseId                            Int?
   LeagueMatch                             LeagueMatch[]
   LeagueTeam_Match_awayTeamIdToLeagueTeam LeagueTeam    @relation("Match_awayTeamIdToLeagueTeam", fields: [awayTeamId], references: [id], onDelete: NoAction)
   LeagueTeam_Match_homeTeamIdToLeagueTeam LeagueTeam    @relation("Match_homeTeamIdToLeagueTeam", fields: [homeTeamId], references: [id], onDelete: NoAction)
-  MatchPhase                              MatchPhase?   @relation(fields: [matchPhaseId], references: [id], onDelete: SetNull)
+  MatchPhase                              MatchPhase?   @relation(fields: [matchPhaseId], references: [id])
   MatchScorer                             MatchScorer[]
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model MatchPhase {
   id        Int       @id @default(autoincrement())
   name      String    @db.VarChar(255)
@@ -267,6 +313,7 @@ model MatchPhase {
   Match     Match[]
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model MatchScorer {
   id            Int          @id @default(autoincrement())
   matchId       Int
@@ -279,6 +326,36 @@ model MatchScorer {
   LeaguePlayer  LeaguePlayer @relation(fields: [scorerId], references: [id], onDelete: NoAction)
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Message {
+  id           Int        @id @default(autoincrement())
+  leagueId     Int
+  leagueUserId Int
+  text         String
+  createdAt    DateTime   @db.Timestamptz(6)
+  updatedAt    DateTime   @db.Timestamptz(6)
+  deletedAt    DateTime?  @db.Timestamptz(6)
+  League       League     @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  LeagueUser   LeagueUser @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
+
+  @@index([leagueId, createdAt])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  token     String    @unique @db.VarChar(255)
+  expiresAt DateTime  @db.Timestamptz(6)
+  createdAt DateTime  @db.Timestamptz(6)
+  usedAt    DateTime? @db.Timestamptz(6)
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId, expiresAt])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Player {
   id           Int            @id @default(autoincrement())
   firstName    String?        @db.VarChar(255)
@@ -292,10 +369,41 @@ model Player {
   LeaguePlayer LeaguePlayer[]
 }
 
+model PushSubscription {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  endpoint  String
+  p256dh    String    @db.VarChar(255)
+  auth      String    @db.VarChar(255)
+  userAgent String?   @db.VarChar(500)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endpoint, deletedAt])
+  @@index([userId, deletedAt])
+}
+
+model SentNotification {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  leagueMatchId Int
+  sentAt        DateTime    @default(now()) @db.Timestamptz(6)
+  LeagueMatch   LeagueMatch @relation(fields: [leagueMatchId], references: [id], onDelete: Cascade)
+  User          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, leagueMatchId])
+  @@index([leagueMatchId])
+  @@index([userId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model SequelizeMeta {
   name String @id @db.VarChar(255)
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model SpecialBetSerie {
   id                    Int                     @id @default(autoincrement())
   bestOf                Int
@@ -306,6 +414,7 @@ model SpecialBetSerie {
   LeagueSpecialBetSerie LeagueSpecialBetSerie[]
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model SpecialBetSingle {
   id                     Int                      @id @default(autoincrement())
   sportId                Int
@@ -319,6 +428,7 @@ model SpecialBetSingle {
   Sport                  Sport                    @relation(fields: [sportId], references: [id], onDelete: NoAction)
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model SpecialBetSingleType {
   id               Int                @id @default(autoincrement())
   name             String             @default("") @db.VarChar(255)
@@ -328,6 +438,7 @@ model SpecialBetSingleType {
   SpecialBetSingle SpecialBetSingle[]
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Sport {
   id               Int                @id @default(autoincrement())
   name             String             @db.VarChar(255)
@@ -339,6 +450,7 @@ model Sport {
   Team             Team[]
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Team {
   id         Int          @id @default(autoincrement())
   name       String       @db.VarChar(255)
@@ -355,6 +467,26 @@ model Team {
   Sport      Sport        @relation(fields: [sportId], references: [id], onDelete: NoAction)
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model TopScorerRankingVersion {
+  id              Int          @id @default(autoincrement())
+  leagueId        Int
+  leaguePlayerId  Int
+  ranking         Int
+  effectiveFrom   DateTime     @db.Timestamptz(6)
+  effectiveTo     DateTime?    @db.Timestamptz(6)
+  createdAt       DateTime     @db.Timestamptz(6)
+  createdByUserId Int?
+  User            User?        @relation(fields: [createdByUserId], references: [id])
+  League          League       @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  LeaguePlayer    LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: NoAction)
+
+  @@index([leagueId, effectiveFrom])
+  @@index([leagueId, effectiveTo])
+  @@index([leaguePlayerId, effectiveFrom])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model User {
   id                      Int                       @id @default(autoincrement())
   firstName               String                    @db.VarChar(255)
@@ -370,28 +502,16 @@ model User {
   updatedAt               DateTime                  @db.Timestamptz(6)
   deletedAt               DateTime?                 @db.Timestamptz(6)
   notifyHours             Int                       @default(0)
+  AuditLog                AuditLog[]
   LeagueUser              LeagueUser[]
   PasswordResetToken      PasswordResetToken[]
-  UserRequest             UserRequest[]
-  TopScorerRankingVersion TopScorerRankingVersion[]
   PushSubscription        PushSubscription[]
   SentNotification        SentNotification[]
-  AuditLog                AuditLog[]
+  TopScorerRankingVersion TopScorerRankingVersion[]
+  UserRequest             UserRequest[]
 }
 
-model PasswordResetToken {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  token     String    @unique @db.VarChar(255)
-  expiresAt DateTime  @db.Timestamptz(6)
-  createdAt DateTime  @db.Timestamptz(6)
-  usedAt    DateTime? @db.Timestamptz(6)
-  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@index([userId, expiresAt])
-}
-
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model UserBet {
   id            Int           @id @default(autoincrement())
   leagueMatchId Int
@@ -401,22 +521,23 @@ model UserBet {
   awayScore     Int           @default(0)
   homeAdvanced  Boolean?
   scorerId      Int?
-  noScorer      Boolean?
   totalPoints   Int           @default(0)
   overtime      Boolean       @default(false)
   createdAt     DateTime      @db.Timestamptz(6)
   updatedAt     DateTime      @db.Timestamptz(6)
   deletedAt     DateTime?     @db.Timestamptz(6)
+  noScorer      Boolean?
   LeagueMatch   LeagueMatch   @relation(fields: [leagueMatchId], references: [id], onDelete: NoAction)
   LeagueUser    LeagueUser    @relation(fields: [leagueUserId], references: [id], onDelete: Cascade)
   LeaguePlayer  LeaguePlayer? @relation(fields: [scorerId], references: [id])
 
   @@unique([leagueMatchId, leagueUserId, deletedAt])
+  @@index([leagueMatchId, deletedAt])
   @@index([leagueMatchId, leagueUserId, deletedAt])
   @@index([leagueUserId, deletedAt])
-  @@index([leagueMatchId, deletedAt])
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model UserRequest {
   id        Int       @id @default(autoincrement())
   userId    Int
@@ -430,6 +551,7 @@ model UserRequest {
   User      User      @relation(fields: [userId], references: [id], onDelete: NoAction)
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model UserSetting {
   id                            Int        @id @default(autoincrement())
   leagueUserId                  Int
@@ -445,6 +567,24 @@ model UserSetting {
   LeagueUser                    LeagueUser @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model UserSpecialBetQuestion {
+  id                         Int                      @id @default(autoincrement())
+  leagueSpecialBetQuestionId Int
+  leagueUserId               Int
+  userBet                    Boolean?
+  totalPoints                Int                      @default(0)
+  dateTime                   DateTime                 @db.Timestamptz(6)
+  createdAt                  DateTime                 @db.Timestamptz(6)
+  updatedAt                  DateTime                 @db.Timestamptz(6)
+  deletedAt                  DateTime?                @db.Timestamptz(6)
+  LeagueSpecialBetQuestion   LeagueSpecialBetQuestion @relation(fields: [leagueSpecialBetQuestionId], references: [id], onDelete: NoAction)
+  LeagueUser                 LeagueUser               @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
+
+  @@unique([leagueSpecialBetQuestionId, leagueUserId, deletedAt])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model UserSpecialBetSerie {
   id                      Int                   @id @default(autoincrement())
   leagueSpecialBetSerieId Int
@@ -462,6 +602,7 @@ model UserSpecialBetSerie {
   @@unique([leagueSpecialBetSerieId, leagueUserId, deletedAt])
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model UserSpecialBetSingle {
   id                       Int                    @id @default(autoincrement())
   leagueSpecialBetSingleId Int
@@ -480,129 +621,4 @@ model UserSpecialBetSingle {
   LeagueTeam               LeagueTeam?            @relation(fields: [teamResultId], references: [id])
 
   @@unique([leagueSpecialBetSingleId, leagueUserId, deletedAt])
-}
-
-model UserSpecialBetQuestion {
-  id                         Int                        @id @default(autoincrement())
-  leagueSpecialBetQuestionId Int
-  leagueUserId               Int
-  userBet                    Boolean?
-  totalPoints                Int                        @default(0)
-  dateTime                   DateTime                   @db.Timestamptz(6)
-  createdAt                  DateTime                   @db.Timestamptz(6)
-  updatedAt                  DateTime                   @db.Timestamptz(6)
-  deletedAt                  DateTime?                  @db.Timestamptz(6)
-  LeagueSpecialBetQuestion   LeagueSpecialBetQuestion   @relation(fields: [leagueSpecialBetQuestionId], references: [id], onDelete: NoAction)
-  LeagueUser                 LeagueUser                 @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
-
-  @@unique([leagueSpecialBetQuestionId, leagueUserId, deletedAt])
-}
-
-model TopScorerRankingVersion {
-  id              Int          @id @default(autoincrement())
-  leagueId        Int
-  leaguePlayerId  Int
-  ranking         Int
-  effectiveFrom   DateTime     @db.Timestamptz(6)
-  effectiveTo     DateTime?    @db.Timestamptz(6)
-  createdAt       DateTime     @db.Timestamptz(6)
-  createdByUserId Int?
-  League          League       @relation(fields: [leagueId], references: [id], onDelete: NoAction)
-  LeaguePlayer    LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: NoAction)
-  User            User?        @relation(fields: [createdByUserId], references: [id])
-
-  @@index([leagueId, effectiveFrom])
-  @@index([leaguePlayerId, effectiveFrom])
-  @@index([leagueId, effectiveTo])
-}
-
-model Message {
-  id           Int        @id @default(autoincrement())
-  leagueId     Int
-  leagueUserId Int
-  text         String
-  createdAt    DateTime   @db.Timestamptz(6)
-  updatedAt    DateTime   @db.Timestamptz(6)
-  deletedAt    DateTime?  @db.Timestamptz(6)
-  League       League     @relation(fields: [leagueId], references: [id], onDelete: NoAction)
-  LeagueUser   LeagueUser @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
-
-  @@index([leagueId, createdAt])
-}
-
-model PushSubscription {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  endpoint  String    @db.Text
-  p256dh    String    @db.VarChar(255)
-  auth      String    @db.VarChar(255)
-  userAgent String?   @db.VarChar(500)
-  createdAt DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
-  deletedAt DateTime? @db.Timestamptz(6)
-  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, endpoint, deletedAt])
-  @@index([userId, deletedAt])
-}
-
-model SentNotification {
-  id            Int         @id @default(autoincrement())
-  userId        Int
-  leagueMatchId Int
-  sentAt        DateTime    @default(now()) @db.Timestamptz(6)
-  User          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  LeagueMatch   LeagueMatch @relation(fields: [leagueMatchId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, leagueMatchId])
-  @@index([userId])
-  @@index([leagueMatchId])
-}
-
-model AuditLog {
-  id            Int       @id @default(autoincrement())
-  timestamp     DateTime  @default(now()) @db.Timestamptz(6)
-
-  // Event classification
-  eventType     String    @db.VarChar(50)   // "USER_BET_CREATED", "USER_LOGIN_SUCCESS", "MATCH_EVALUATED"
-  eventCategory String    @db.VarChar(30)   // "USER_ACTION", "ADMIN_ACTION", "AUTH", "EVALUATION"
-  severity      String    @db.VarChar(10)   // "INFO", "WARNING", "ERROR"
-
-  // Actor information
-  userId        Int?
-  sessionId     String?   @db.VarChar(255)
-  ipAddress     String?   @db.VarChar(45)   // IPv6-compatible
-
-  // Resource information
-  resourceType  String?   @db.VarChar(50)   // "UserBet", "Match", "League", etc.
-  resourceId    Int?
-  leagueId      Int?
-
-  // Action details
-  action        String?   @db.VarChar(50)   // "CREATE", "UPDATE", "EVALUATE", "LOGIN"
-  description   String?   @db.VarChar(500)  // Human-readable summary
-
-  // Flexible data payload (old/new values, validation errors, etc.)
-  metadata      Json?
-
-  // Performance tracking
-  durationMs    Int?
-
-  // Status
-  success       Boolean   @default(true)
-  errorCode     String?   @db.VarChar(50)
-  errorMessage  String?   @db.Text
-
-  // Relations
-  User          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  League        League?   @relation(fields: [leagueId], references: [id], onDelete: SetNull)
-
-  // Indexes for common query patterns
-  @@index([timestamp])
-  @@index([userId, timestamp])
-  @@index([eventType, timestamp])
-  @@index([eventCategory, timestamp])
-  @@index([resourceType, resourceId])
-  @@index([leagueId, timestamp])
-  @@index([success, severity])
 }

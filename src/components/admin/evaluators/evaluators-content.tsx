@@ -8,12 +8,15 @@ import {
   createEvaluator,
   updateEvaluatorPoints,
   updateEvaluatorName,
+  updateEvaluatorConfig,
   deleteEvaluator,
 } from '@/actions/evaluators'
 import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
@@ -49,6 +52,11 @@ interface League {
   name: string
 }
 
+interface ScorerRankedConfig {
+  rankedPoints: Record<string, number>
+  unrankedPoints: number
+}
+
 interface Evaluator {
   id: number
   name: string
@@ -56,6 +64,7 @@ interface Evaluator {
   entity: string
   leagueId: number
   evaluatorTypeId: number
+  config: unknown // Prisma JsonValue
   EvaluatorType: EvaluatorType
   League: League
 }
@@ -92,6 +101,11 @@ export function EvaluatorsContent({
     points: '',
   })
   const [isCreating, setIsCreating] = useState(false)
+  const [useRankBased, setUseRankBased] = useState(false)
+  const [rankEntries, setRankEntries] = useState<Array<{ rank: number; points: number }>>([
+    { rank: 1, points: 0 },
+  ])
+  const [unrankedPoints, setUnrankedPoints] = useState<string>('')
 
   // Update leagueId when league prop changes
   useEffect(() => {
@@ -175,23 +189,47 @@ export function EvaluatorsContent({
   }
 
   const handleCreateEvaluator = async () => {
-    if (!createForm.leagueId || !createForm.evaluatorTypeId || !createForm.name || !createForm.points) {
+    if (!createForm.leagueId || !createForm.evaluatorTypeId || !createForm.name) {
       toast.error(t('validation.requiredFields'))
       return
     }
 
-    if (isNaN(Number(createForm.points))) {
-      toast.error(t('validation.pointsInvalid'))
-      return
+    const isScorer = evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'scorer'
+
+    // Validate based on mode
+    if (useRankBased && isScorer) {
+      if (rankEntries.length === 0 || !unrankedPoints) {
+        toast.error('Please configure rank points and unranked points')
+        return
+      }
+      if (isNaN(Number(unrankedPoints))) {
+        toast.error('Invalid unranked points value')
+        return
+      }
+    } else {
+      if (!createForm.points || isNaN(Number(createForm.points))) {
+        toast.error(t('validation.pointsInvalid'))
+        return
+      }
     }
 
     setIsCreating(true)
     try {
+      const config = useRankBased && isScorer
+        ? {
+            rankedPoints: Object.fromEntries(
+              rankEntries.map(e => [String(e.rank), e.points])
+            ),
+            unrankedPoints: parseInt(unrankedPoints, 10),
+          }
+        : null
+
       await createEvaluator({
         leagueId: parseInt(createForm.leagueId, 10),
         evaluatorTypeId: parseInt(createForm.evaluatorTypeId, 10),
         name: createForm.name,
-        points: parseInt(createForm.points, 10),
+        points: parseInt(createForm.points, 10) || 0,
+        config,
       })
       toast.success(t('toast.created'))
       setCreateDialogOpen(false)
@@ -201,6 +239,9 @@ export function EvaluatorsContent({
         name: '',
         points: ''
       })
+      setUseRankBased(false)
+      setRankEntries([{ rank: 1, points: 0 }])
+      setUnrankedPoints('')
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
@@ -328,6 +369,16 @@ export function EvaluatorsContent({
                             disabled={isSaving}
                             aria-label="Points value"
                           />
+                        ) : evaluator.config && evaluator.EvaluatorType.name === 'scorer' ? (
+                          <span className="text-xs font-mono">
+                            {(() => {
+                              const config = evaluator.config as ScorerRankedConfig
+                              return Object.entries(config.rankedPoints)
+                                .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                                .map(([rank, pts]) => `R${rank}:${pts}`)
+                                .join(' ') + ` U:${config.unrankedPoints}`
+                            })()}
+                          </span>
                         ) : (
                           <span className="font-mono font-bold">{evaluator.points}</span>
                         )}
@@ -488,8 +539,104 @@ export function EvaluatorsContent({
                 onChange={(e) =>
                   setCreateForm({ ...createForm, points: e.target.value })
                 }
+                disabled={useRankBased && evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'scorer'}
               />
             </div>
+
+            {/* Rank-based configuration for scorer */}
+            {evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'scorer' && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={useRankBased}
+                    onCheckedChange={(checked) => {
+                      setUseRankBased(checked)
+                      if (!checked) {
+                        setRankEntries([{ rank: 1, points: 0 }])
+                        setUnrankedPoints('')
+                      }
+                    }}
+                    id="rank-based-mode"
+                  />
+                  <Label htmlFor="rank-based-mode" className="text-sm">
+                    Use rank-based scoring
+                  </Label>
+                </div>
+
+                {useRankBased && (
+                  <div className="space-y-3 pl-6">
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Ranked Players</Label>
+                      {rankEntries.map((entry, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Rank"
+                            value={entry.rank}
+                            onChange={(e) => {
+                              const updated = [...rankEntries]
+                              updated[index].rank = parseInt(e.target.value) || 0
+                              setRankEntries(updated)
+                            }}
+                            className="w-20"
+                            min={1}
+                          />
+                          <span>→</span>
+                          <Input
+                            type="number"
+                            placeholder="Points"
+                            value={entry.points}
+                            onChange={(e) => {
+                              const updated = [...rankEntries]
+                              updated[index].points = parseInt(e.target.value) || 0
+                              setRankEntries(updated)
+                            }}
+                            className="w-20"
+                            min={0}
+                            max={100}
+                          />
+                          <span className="text-xs text-muted-foreground">pts</span>
+                          {rankEntries.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setRankEntries(rankEntries.filter((_, i) => i !== index))}
+                            >
+                              ✕
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const maxRank = Math.max(...rankEntries.map(e => e.rank), 0)
+                          setRankEntries([...rankEntries, { rank: maxRank + 1, points: 0 }])
+                        }}
+                        className="w-full"
+                      >
+                        + Add Rank
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Unranked Players</Label>
+                      <Input
+                        type="number"
+                        placeholder="Points for unranked scorers"
+                        value={unrankedPoints}
+                        onChange={(e) => setUnrankedPoints(e.target.value)}
+                        min={0}
+                        max={100}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter>

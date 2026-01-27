@@ -5,6 +5,8 @@
 
 import { prisma } from '@/lib/prisma'
 import { getMatchEvaluator, buildMatchBetContext } from '@/lib/evaluators'
+import { evaluateScorer } from '@/lib/evaluators/scorer'
+import type { ScorerRankedConfig } from '@/lib/evaluators/types'
 
 interface EvaluateMatchOptions {
   matchId: number
@@ -102,8 +104,8 @@ async function evaluateMatch(
   const results: EvaluationResult[] = []
 
   for (const userBet of leagueMatch.UserBet) {
-    // Build context
-    const context = buildMatchBetContext(userBet, match)
+    // Build context with time-based ranking lookup
+    const context = await buildMatchBetContext(userBet, match, match.dateTime)
 
     let totalPoints = 0
     const evaluatorResults = []
@@ -119,22 +121,32 @@ async function evaluateMatch(
         continue
       }
 
-      // Execute evaluator function
-      const awarded = evaluatorFn(context)
-      const points = awarded ? evaluator.points : 0
+      let points = 0
+
+      // Handle scorer evaluator (supports both simple and rank-based modes)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const config = (evaluator as any).config
+      if (evaluator.EvaluatorType.name === 'scorer' && config) {
+        // Rank-based mode: config exists, call evaluateScorer directly with config
+        const scorerConfig = config as unknown as ScorerRankedConfig
+        points = evaluateScorer(context, scorerConfig) as number
+      }
+      // All other evaluators (including scorer without config)
+      else {
+        const awarded = evaluatorFn(context) as unknown as boolean
+        points = awarded ? evaluator.points : 0
+      }
+
+      // Apply isDoubled multiplier per evaluator if configured
+      const finalPoints = leagueMatch.isDoubled ? points * 2 : points
 
       evaluatorResults.push({
         evaluatorName: evaluator.EvaluatorType.name,
-        awarded,
-        points,
+        awarded: points > 0,
+        points: finalPoints,
       })
 
-      totalPoints += points
-    }
-
-    // Apply isDoubled multiplier if configured
-    if (leagueMatch.isDoubled) {
-      totalPoints *= 2
+      totalPoints += finalPoints
     }
 
     results.push({

@@ -22,6 +22,7 @@ export interface MatchBetContext {
     homeFinalScore: number | null;
     awayFinalScore: number | null;
     scorerIds: number[]; // Array of scorer IDs from MatchScorer
+    scorerRankings?: Map<number, number | null>; // leaguePlayerId -> ranking at match time
     isOvertime: boolean | null;
     isShootout: boolean | null;
     isPlayoffGame: boolean;
@@ -71,3 +72,23 @@ export interface ClosestValueContext {
   };
   allPredictions: number[]; // All user predictions for comparison
 }
+
+/**
+ * Config for rank-based scorer evaluation
+ * Supports flexible number of ranks per league
+ */
+export interface ScorerRankedConfig {
+  rankedPoints: Record<string, number>; // "1" -> 2pts, "2" -> 4pts, etc.
+  unrankedPoints: number; // Points for unranked scorers
+}
+
+// Example config JSON stored in database:
+// {
+//   "rankedPoints": { "1": 2, "2": 4, "3": 5, "4": 6 },
+//   "unrankedPoints": 8
+// }
+// OR for league with only 3 ranks:
+// {
+//   "rankedPoints": { "1": 3, "2": 5, "3": 7 },
+//   "unrankedPoints": 10
+// }
