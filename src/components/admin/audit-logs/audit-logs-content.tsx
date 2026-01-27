@@ -36,7 +36,7 @@ interface AuditLog {
   leagueId: number | null;
   action: string | null;
   description: string | null;
-  metadata: any;
+  metadata: Record<string, unknown> | null;
   durationMs: number | null;
   success: boolean;
   errorCode: string | null;

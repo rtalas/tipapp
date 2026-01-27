@@ -126,7 +126,7 @@ export function Header({ user, locale }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const router = useRouter()
   const t = useTranslations('user.header')
-  const { leagues, selectedLeagueId, selectedLeague, setSelectedLeagueId } =
+  const { selectedLeagueId, selectedLeague, setSelectedLeagueId } =
     useUserLeagueContext()
   const [showLeagueDialog, setShowLeagueDialog] = useState(false)
   const [showLanguageDialog, setShowLanguageDialog] = useState(false)
@@ -172,7 +172,7 @@ export function Header({ user, locale }: HeaderProps) {
       setUserLeagues(data.userLeagues)
       setPastLeagues(data.pastLeagues)
       setAvailableLeagues(data.availableLeagues)
-    } catch (error) {
+    } catch {
       toast.error('Failed to load leagues')
     } finally {
       setIsLoadingLeagues(false)

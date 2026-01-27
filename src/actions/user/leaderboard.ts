@@ -20,7 +20,7 @@ export interface LeaderboardData {
  * Fetches leaderboard for a league with aggregated points and prizes
  */
 export async function getLeaderboard(leagueId: number): Promise<LeaderboardData> {
-  const { leagueUser, userId } = await requireLeagueMember(leagueId)
+  const { userId } = await requireLeagueMember(leagueId)
 
   // Fetch all league users with their bets
   const leagueUsers = await prisma.leagueUser.findMany({

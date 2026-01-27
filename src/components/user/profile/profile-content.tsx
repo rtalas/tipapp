@@ -45,7 +45,7 @@ const NOTIFICATION_OPTIONS = [
 ]
 
 // Format minutes to display string
-function formatNotificationTime(minutes: number, t: (key: string, params?: any) => string): string {
+function formatNotificationTime(minutes: number, t: (key: string, params?: Record<string, number>) => string): string {
   if (minutes === 0) return t('notifyOff')
   if (minutes < 60) return t('notifyMinutes', { minutes })
 

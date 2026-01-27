@@ -105,7 +105,7 @@ export default auth((req) => {
             console.warn(`[CSRF] Blocked request from referer: ${referer}`);
             return new Response('CSRF validation failed', { status: 403 });
           }
-        } catch (e) {
+        } catch {
           console.warn(`[CSRF] Invalid referer header: ${referer}`);
           return new Response('CSRF validation failed', { status: 403 });
         }

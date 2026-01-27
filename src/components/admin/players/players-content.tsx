@@ -83,7 +83,7 @@ interface CreateFormData {
   externalId: string
 }
 
-export function PlayersContent({ players, league }: PlayersContentProps) {
+export function PlayersContent({ players }: PlayersContentProps) {
   const t = useTranslations('admin.players')
   const tCommon = useTranslations('admin.common')
   const [search, setSearch] = useState('')

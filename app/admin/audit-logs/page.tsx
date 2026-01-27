@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { AuditLogsContent } from "@/components/admin/audit-logs/audit-logs-content";
 import { getRecentAuditLogs } from "@/lib/audit-queries";
+import { EventCategory } from "@/lib/audit-logger";
 
 export default async function AuditLogsPage({
   searchParams,
@@ -25,7 +26,7 @@ export default async function AuditLogsPage({
   const { logs, total, hasMore } = await getRecentAuditLogs({
     limit,
     offset,
-    eventCategory: eventCategory as any,
+    eventCategory: eventCategory as EventCategory | undefined,
     failedOnly,
     successOnly,
   });

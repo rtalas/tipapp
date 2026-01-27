@@ -92,7 +92,7 @@ interface CreateFormData {
   externalId: string
 }
 
-export function TeamsContent({ teams, sports, league }: TeamsContentProps) {
+export function TeamsContent({ teams, sports }: TeamsContentProps) {
   const t = useTranslations('admin.teams')
   const tCommon = useTranslations('admin.common')
   const [search, setSearch] = useState('')

@@ -24,18 +24,6 @@ export async function getAllSeriesTypes() {
   })
 }
 
-// Get series type by ID (internal use only)
-async function getSeriesTypeById(id: number) {
-  return prisma.specialBetSerie.findUnique({
-    where: { id },
-    include: {
-      _count: {
-        select: { LeagueSpecialBetSerie: true },
-      },
-    },
-  })
-}
-
 // Create a new series type
 export async function createSeriesType(input: CreateSeriesTypeInput) {
   return executeServerAction(input, {

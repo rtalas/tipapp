@@ -395,7 +395,7 @@ export function EvaluatorsContent({
           <DialogHeader>
             <DialogTitle>{t('dialog.deleteTitle')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{evaluatorToDelete?.name}"
+              Are you sure you want to delete &quot;{evaluatorToDelete?.name}&quot;
               {!league && ` from ${evaluatorToDelete?.League.name}`}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>

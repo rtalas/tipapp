@@ -139,7 +139,7 @@ describe('league-utils', () => {
       // parseInt('123.456', 10) returns 123
       vi.mocked(prisma.league.findFirst).mockResolvedValue(mockLeague)
 
-      const result = await validateLeagueAccess('123.456')
+      await validateLeagueAccess('123.456')
 
       expect(prisma.league.findFirst).toHaveBeenCalledWith({
         where: {
@@ -182,7 +182,7 @@ describe('league-utils', () => {
     })
 
     it('should filter out inactive leagues', async () => {
-      const result = await getActiveLeagues()
+      await getActiveLeagues()
 
       expect(prisma.league.findMany).toHaveBeenCalledWith({
         where: expect.objectContaining({
@@ -193,7 +193,7 @@ describe('league-utils', () => {
     })
 
     it('should filter out soft deleted leagues', async () => {
-      const result = await getActiveLeagues()
+      await getActiveLeagues()
 
       expect(prisma.league.findMany).toHaveBeenCalledWith({
         where: expect.objectContaining({

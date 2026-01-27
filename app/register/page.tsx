@@ -72,7 +72,7 @@ function RegisterForm() {
       setTimeout(() => {
         router.push("/");
       }, 1500);
-    } catch (err) {
+    } catch {
       setError(t('errorGeneric'));
       setIsLoading(false);
     }

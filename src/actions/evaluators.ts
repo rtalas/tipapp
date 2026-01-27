@@ -13,18 +13,6 @@ import {
   type DeleteByIdInput,
 } from '@/lib/validation/admin'
 
-// Get all evaluators (internal use only)
-async function getAllEvaluators() {
-  return prisma.evaluator.findMany({
-    where: { deletedAt: null },
-    include: {
-      EvaluatorType: true,
-      League: true,
-    },
-    orderBy: [{ League: { name: 'asc' } }, { EvaluatorType: { name: 'asc' } }],
-  })
-}
-
 // Get evaluators for a specific league
 export async function getLeagueEvaluators(leagueId: number) {
   return prisma.evaluator.findMany({

@@ -253,7 +253,7 @@ export default function ResetPasswordPage() {
                 <p className="text-xs text-red-600 mt-1">{validationErrors.confirmPassword}</p>
               )}
               {confirmPassword && !passwordsMatch && (
-                <p className="text-xs text-red-600 mt-1">Passwords don't match</p>
+                <p className="text-xs text-red-600 mt-1">Passwords don&apos;t match</p>
               )}
             </div>
           </div>

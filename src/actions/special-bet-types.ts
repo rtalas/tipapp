@@ -26,20 +26,6 @@ export async function getAllSpecialBetTypes() {
   })
 }
 
-// Get special bet type by ID (internal use only)
-async function getSpecialBetTypeById(id: number) {
-  return prisma.specialBetSingle.findUnique({
-    where: { id },
-    include: {
-      Sport: true,
-      SpecialBetSingleType: true,
-      _count: {
-        select: { LeagueSpecialBetSingle: true },
-      },
-    },
-  })
-}
-
 // Create a new special bet type
 export async function createSpecialBetType(input: CreateSpecialBetTypeInput) {
   return executeServerAction(input, {

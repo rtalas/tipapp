@@ -133,7 +133,7 @@ export function AvailableLeaguesContent({ user }: AvailableLeaguesContentProps) 
     try {
       const data = await getAllLeaguesForSelector()
       setAvailableLeagues(data.availableLeagues)
-    } catch (error) {
+    } catch {
       toast.error('Failed to load leagues')
     } finally {
       setIsLoading(false)

@@ -399,7 +399,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
                 </p>
               ) : scorers.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  No scorers added yet. Click "Add Scorer" to record goal scorers.
+                  No scorers added yet. Click &quot;Add Scorer&quot; to record goal scorers.
                 </p>
               ) : (
                 <div className="space-y-3">

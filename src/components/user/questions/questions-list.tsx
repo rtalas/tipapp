@@ -270,7 +270,7 @@ function QuestionCard({
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>Friends' picks</span>
+                <span>Friends&apos; picks</span>
               </button>
             </div>
           </div>
@@ -322,11 +322,11 @@ function QuestionCard({
           <div className="mt-4">
             <div className="flex items-center gap-2 mb-3">
               <Users className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Friends' Answers</span>
+              <span className="font-medium text-sm">Friends&apos; Answers</span>
             </div>
             <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               <p className="text-center text-muted-foreground text-sm py-4">
-                No friends' answers yet
+                No friends&apos; answers yet
               </p>
             </div>
           </div>

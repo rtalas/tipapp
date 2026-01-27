@@ -232,8 +232,8 @@ export async function processNotifications(): Promise<NotificationResult> {
     const payload: PushPayload = {
       title: 'Bet Reminder',
       body: `${user.homeTeamName} vs ${user.awayTeamName} - Place your bet before the match starts!`,
-      icon: '/icons/icon.svg',
-      badge: '/icons/icon.svg',
+      icon: '/favicon-32x32.png',
+      badge: '/favicon-32x32.png',
       tag: `match-${user.leagueMatchId}`,
       data: {
         url: `/${user.leagueId}/matches`,

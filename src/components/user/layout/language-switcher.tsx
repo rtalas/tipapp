@@ -3,7 +3,7 @@
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Globe, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,

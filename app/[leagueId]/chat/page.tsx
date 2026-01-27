@@ -110,7 +110,6 @@ export default async function ChatPage({ params }: ChatPageProps) {
       leagueName={league.name}
       initialMessages={initialMessages}
       currentUserId={userId}
-      currentLeagueUserId={leagueUser.id}
       isLeagueAdmin={leagueUser.admin === true}
       isSuperadmin={session.user.isSuperadmin === true}
       isSuspended={league.chatSuspendedAt !== null}

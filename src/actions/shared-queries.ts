@@ -82,24 +82,3 @@ export async function getLeaguesWithTeams() {
 // Export type for components
 export type LeagueWithTeams = Awaited<ReturnType<typeof getLeaguesWithTeams>>[number]
 
-/**
- * Get leagues with their associated teams only (no players)
- * Used in: series dialogs (where player selection is not needed)
- * (internal use only)
- */
-async function getLeaguesWithTeamsOnly() {
-  return prisma.league.findMany({
-    where: {
-      deletedAt: null,
-      isActive: true,
-    },
-    include: {
-      LeagueTeam: {
-        where: { deletedAt: null },
-        include: { Team: true },
-        orderBy: { Team: { name: 'asc' } },
-      },
-    },
-    orderBy: { name: 'asc' },
-  })
-}

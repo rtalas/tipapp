@@ -24,7 +24,6 @@ function formatTimeRemaining(deadline: Date): {
   const seconds = Math.floor(diff / 1000)
   const minutes = Math.floor(diff / (1000 * 60))
   const hours = Math.floor(diff / (1000 * 60 * 60))
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 
   // More than 6 hours - don't show countdown
   if (hours > 6) {

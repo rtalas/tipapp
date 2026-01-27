@@ -5,7 +5,6 @@ const resend = new Resend(env.RESEND_API_KEY);
 
 const FROM_EMAIL = env.RESEND_FROM_EMAIL;
 const FROM_NAME = env.RESEND_FROM_NAME;
-const APP_URL = env.APP_URL;
 const APP_NAME = env.APP_NAME;
 
 interface SendPasswordResetEmailParams {

@@ -25,6 +25,6 @@
  */
 export function nullableUniqueConstraint<T extends Record<string, unknown>>(
   where: T & { deletedAt: null }
-): any {
-  return { ...where, deletedAt: null as any }
+): T & { deletedAt: null } {
+  return { ...where, deletedAt: null }
 }

@@ -16,7 +16,7 @@ export function groupByDate<T>(
   getDate?: (item: T) => Date
 ): Map<string, T[]> {
   const groups = new Map<string, T[]>()
-  const dateExtractor = getDate || ((item: any) => item.dateTime)
+  const dateExtractor = getDate || ((item: T) => (item as { dateTime: Date }).dateTime)
 
   items.forEach((item) => {
     const date = startOfDay(dateExtractor(item))

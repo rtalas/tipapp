@@ -5,19 +5,15 @@ import { executeServerAction } from '@/lib/server-action-utils'
 import {
   createLeagueSchema,
   updateLeagueSchema,
-  updateEvaluatorSchema,
   assignTeamSchema,
   assignPlayerSchema,
-  updateTeamGroupSchema,
   updateTopScorerRankingSchema,
   updateLeagueChatSettingsSchema,
   deleteByIdSchema,
   type CreateLeagueInput,
   type UpdateLeagueInput,
-  type UpdateEvaluatorInput,
   type AssignTeamInput,
   type AssignPlayerInput,
-  type UpdateTeamGroupInput,
   type UpdateTopScorerRankingInput,
   type UpdateLeagueChatSettingsInput,
   type DeleteByIdInput,
@@ -136,33 +132,6 @@ export async function deleteLeague(input: DeleteByIdInput) {
   })
 }
 
-async function updateEvaluatorRules(input: UpdateEvaluatorInput) {
-  return executeServerAction(input, {
-    validator: updateEvaluatorSchema,
-    handler: async (validated) => {
-      // Update each evaluator rule
-      await prisma.$transaction(
-        validated.rules.map((rule: { evaluatorTypeId: number; points: number }) =>
-          prisma.evaluator.updateMany({
-            where: {
-              leagueId: validated.leagueId,
-              evaluatorTypeId: rule.evaluatorTypeId,
-            },
-            data: {
-              points: rule.points,
-              updatedAt: new Date(),
-            },
-          })
-        )
-      )
-
-      return {}
-    },
-    revalidatePath: `/admin/leagues/${input.leagueId}`,
-    requiresAdmin: true,
-  })
-}
-
 export async function assignTeamToLeague(input: AssignTeamInput) {
   return executeServerAction(input, {
     validator: assignTeamSchema,
@@ -205,22 +174,6 @@ export async function removeTeamFromLeague(input: DeleteByIdInput) {
       await prisma.leagueTeam.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
-      })
-
-      return {}
-    },
-    revalidatePath: '/admin/leagues',
-    requiresAdmin: true,
-  })
-}
-
-async function updateTeamGroup(input: UpdateTeamGroupInput) {
-  return executeServerAction(input, {
-    validator: updateTeamGroupSchema,
-    handler: async (validated) => {
-      await prisma.leagueTeam.update({
-        where: { id: validated.leagueTeamId },
-        data: { group: validated.group },
       })
 
       return {}

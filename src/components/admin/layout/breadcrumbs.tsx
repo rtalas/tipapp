@@ -73,7 +73,7 @@ export function Breadcrumbs({ leagues = [] }: BreadcrumbsProps) {
         <Home className="h-4 w-4" />
       </Link>
 
-      {breadcrumbs.slice(1).map((crumb, index) => (
+      {breadcrumbs.slice(1).map((crumb) => (
         <div key={crumb.href} className="flex items-center min-w-0">
           <ChevronRight className="h-4 w-4 text-muted-foreground mx-1 flex-shrink-0" />
           {crumb.isLast ? (

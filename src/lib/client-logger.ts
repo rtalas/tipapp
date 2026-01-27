@@ -68,7 +68,7 @@ function captureLog(level: LogLevel, message: string, context?: Record<string, u
       if (logs.length > 50) logs.shift()
       sessionStorage.setItem('_app_logs', JSON.stringify(logs))
     }
-  } catch (e) {
+  } catch {
     // Silently fail if sessionStorage is unavailable
   }
 

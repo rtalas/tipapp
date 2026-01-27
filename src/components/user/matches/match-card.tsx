@@ -497,7 +497,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Friends' picks</span>
+              <span>Friends&apos; picks</span>
             </button>
           </div>
         )}
@@ -523,12 +523,12 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
           <div className="mt-4">
             <div className="flex items-center gap-2 mb-3">
               <Users className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Friends' Predictions</span>
+              <span className="font-medium text-sm">Friends&apos; Predictions</span>
             </div>
             <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {!isLocked ? (
                 <p className="text-center text-muted-foreground text-sm py-4">
-                  Friends' picks will be visible after betting closes
+                  Friends&apos; picks will be visible after betting closes
                 </p>
               ) : isLoadingFriends ? (
                 <p className="text-center text-muted-foreground text-sm py-4">
@@ -536,7 +536,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
                 </p>
               ) : friendPredictions.length === 0 ? (
                 <p className="text-center text-muted-foreground text-sm py-4">
-                  No friends' predictions yet
+                  No friends&apos; predictions yet
                 </p>
               ) : (
                 friendPredictions.map((prediction) => {

@@ -9,7 +9,6 @@ import type { ChatMessage } from '@/hooks/useMessages'
 interface MessageListProps {
   messages: ChatMessage[]
   currentUserId: number
-  currentLeagueUserId: number
   isLeagueAdmin: boolean
   isSuperadmin: boolean
   isLoading: boolean
@@ -21,7 +20,6 @@ interface MessageListProps {
 export function MessageList({
   messages,
   currentUserId,
-  currentLeagueUserId,
   isLeagueAdmin,
   isSuperadmin,
   isLoading,

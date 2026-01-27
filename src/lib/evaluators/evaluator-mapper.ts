@@ -28,11 +28,6 @@ type SeriesEvaluatorFn = (context: SeriesBetContext) => boolean
 type SpecialEvaluatorFn = (context: SpecialBetContext) => boolean
 type ClosestValueEvaluatorFn = (context: ClosestValueContext) => boolean
 
-type EvaluatorFunction =
-  | MatchEvaluatorFn
-  | SeriesEvaluatorFn
-  | SpecialEvaluatorFn
-  | ClosestValueEvaluatorFn
 
 // Evaluator mapping registries
 const MATCH_EVALUATORS: Record<string, MatchEvaluatorFn> = {
@@ -103,22 +98,4 @@ export function isClosestValueEvaluator(evaluatorTypeName: string): boolean {
  */
 export function isQuestionEvaluator(evaluatorTypeName: string): boolean {
   return evaluatorTypeName === 'question'
-}
-
-/**
- * Get all supported evaluator types by entity (internal use only)
- */
-function getSupportedEvaluatorTypes(
-  entity: 'match' | 'series' | 'special'
-): string[] {
-  switch (entity) {
-    case 'match':
-      return Object.keys(MATCH_EVALUATORS)
-    case 'series':
-      return Object.keys(SERIES_EVALUATORS)
-    case 'special':
-      return [...Object.keys(SPECIAL_EVALUATORS), ...Object.keys(CLOSEST_VALUE_EVALUATORS)]
-    default:
-      return []
-  }
 }

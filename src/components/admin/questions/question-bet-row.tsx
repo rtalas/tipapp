@@ -28,7 +28,6 @@ interface QuestionBetRowProps {
 
 export function QuestionBetRow({
   bet,
-  questionText,
   isQuestionEvaluated,
   questionId,
 }: QuestionBetRowProps) {

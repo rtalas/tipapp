@@ -182,23 +182,7 @@ export const updateMatchResultSchema = z.object({
 
 export type UpdateMatchResultInput = z.infer<typeof updateMatchResultSchema>
 
-// User request schemas (internal use only)
-const handleUserRequestSchema = z.object({
-  requestId: z.number().int().positive(),
-  accepted: z.boolean(),
-})
 
-type HandleUserRequestInput = z.infer<typeof handleUserRequestSchema>
-
-// League user schemas (internal use only)
-const updateLeagueUserSchema = z.object({
-  leagueUserId: z.number().int().positive(),
-  admin: z.boolean().optional(),
-  active: z.boolean().optional(),
-  paid: z.boolean().optional(),
-})
-
-type UpdateLeagueUserInput = z.infer<typeof updateLeagueUserSchema>
 
 // Team validation schemas
 export const createTeamSchema = z.object({

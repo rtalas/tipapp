@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { EventCategory } from "./audit-logger";
 
@@ -30,7 +31,7 @@ export async function getRecentAuditLogs(options?: AuditLogFilters) {
     failedOnly,
   } = options || {};
 
-  const where: any = {};
+  const where: Prisma.AuditLogWhereInput = {};
 
   if (eventCategory) {
     where.eventCategory = eventCategory;

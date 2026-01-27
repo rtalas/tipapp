@@ -11,7 +11,6 @@ interface ChatViewProps {
   leagueName: string
   initialMessages: ChatMessage[]
   currentUserId: number
-  currentLeagueUserId: number
   isLeagueAdmin: boolean
   isSuperadmin: boolean
   isSuspended: boolean
@@ -22,7 +21,6 @@ export function ChatView({
   leagueName,
   initialMessages,
   currentUserId,
-  currentLeagueUserId,
   isLeagueAdmin,
   isSuperadmin,
   isSuspended,
@@ -78,7 +76,6 @@ export function ChatView({
           <MessageList
             messages={messages}
             currentUserId={currentUserId}
-            currentLeagueUserId={currentLeagueUserId}
             isLeagueAdmin={isLeagueAdmin}
             isSuperadmin={isSuperadmin}
             isLoading={isLoading}
