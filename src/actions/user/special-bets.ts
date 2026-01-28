@@ -72,7 +72,7 @@ export async function getSpecialBetFriendPredictions(leagueSpecialBetSingleId: n
   })
 
   if (!specialBet) {
-    throw new Error('Special bet not found')
+    throw new AppError('Special bet not found', 'NOT_FOUND', 404)
   }
 
   const { leagueUser } = await requireLeagueMember(specialBet.leagueId)

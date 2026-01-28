@@ -14,6 +14,7 @@ import { logger } from '@/lib/client-logger'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
+import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -378,33 +379,19 @@ export function SpecialBetTypesContent({
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog.open} onOpenChange={deleteDialog.setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('dialog.deleteTitle')}</DialogTitle>
-            <DialogDescription>
-              {deleteDialog.itemToDelete && (
-                <>
-                  {t('dialog.deleteConfirm', { name: deleteDialog.itemToDelete.name })}
-                  {deleteDialog.itemToDelete._count.LeagueSpecialBetSingle > 0 && (
-                    <div className="mt-2 text-sm font-semibold text-amber-600">
-                      {t('dialog.deleteWarning', { count: deleteDialog.itemToDelete._count.LeagueSpecialBetSingle })}
-                    </div>
-                  )}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={deleteDialog.closeDialog}>
-              {tCommon('button.cancel')}
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteDialog.isDeleting}>
-              {deleteDialog.isDeleting ? t('dialog.deleting') : t('dialog.delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteEntityDialog
+        open={deleteDialog.open}
+        onOpenChange={deleteDialog.setOpen}
+        title={t('dialog.deleteTitle')}
+        description={deleteDialog.itemToDelete ? t('dialog.deleteConfirm', { name: deleteDialog.itemToDelete.name }) : ''}
+        warningMessage={
+          deleteDialog.itemToDelete && deleteDialog.itemToDelete._count.LeagueSpecialBetSingle > 0
+            ? t('dialog.deleteWarning', { count: deleteDialog.itemToDelete._count.LeagueSpecialBetSingle })
+            : undefined
+        }
+        onConfirm={handleDelete}
+        isDeleting={deleteDialog.isDeleting}
+      />
 
       {/* Create Special Bet Type Dialog */}
       <Dialog open={createDialog.open} onOpenChange={createDialog.setOpen}>

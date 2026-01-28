@@ -11,6 +11,7 @@ import {
   deleteEvaluator,
 } from '@/actions/evaluators'
 import { logger } from '@/lib/client-logger'
+import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -344,24 +345,14 @@ export function LeagueEvaluatorsContent({
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('deleteTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('deleteConfirm', { name: evaluatorToDelete?.name || '' })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteEntityDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={t('deleteTitle')}
+        description={t('deleteConfirm', { name: evaluatorToDelete?.name || '' })}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+      />
 
       {/* Create Evaluator Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

@@ -29,11 +29,29 @@ interface PushNotificationHook {
 // Store the service worker registration globally
 let swRegistration: ServiceWorkerRegistration | null = null
 
+// Check if push notifications are supported (safe for SSR)
+function checkPushSupport(): boolean {
+  return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window
+}
+
+// Get initial permission state (safe for SSR)
+function getInitialPermissionState(): PushPermissionState {
+  if (typeof window === 'undefined') return 'default'
+  if (!checkPushSupport()) return 'unsupported'
+  if ('Notification' in window) return Notification.permission as PushPermissionState
+  return 'default'
+}
+
+// Get initial loading state - only loading if supported (async work needed)
+function getInitialLoadingState(): boolean {
+  return checkPushSupport()
+}
+
 export function usePushNotifications(): PushNotificationHook {
-  const [isSupported, setIsSupported] = useState(false)
-  const [permissionState, setPermissionState] = useState<PushPermissionState>('default')
+  const [isSupported, setIsSupported] = useState(checkPushSupport)
+  const [permissionState, setPermissionState] = useState<PushPermissionState>(getInitialPermissionState)
   const [isSubscribed, setIsSubscribed] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(getInitialLoadingState)
 
   // Check current subscription status
   const checkSubscription = useCallback(async () => {
@@ -52,19 +70,9 @@ export function usePushNotifications(): PushNotificationHook {
   }, [])
 
   useEffect(() => {
-    // Check if push notifications are supported
-    const supported = 'serviceWorker' in navigator && 'PushManager' in window
-    setIsSupported(supported)
-
-    if (!supported) {
-      setPermissionState('unsupported')
-      setIsLoading(false)
+    // Initial values are computed by state initializers, just handle async setup
+    if (!isSupported) {
       return
-    }
-
-    // Check permission state
-    if ('Notification' in window) {
-      setPermissionState(Notification.permission as PushPermissionState)
     }
 
     // In development, service worker is not registered, so check immediately
@@ -87,7 +95,7 @@ export function usePushNotifications(): PushNotificationHook {
       swRegistration = registration
       checkSubscription()
     })
-  }, [checkSubscription])
+  }, [isSupported, checkSubscription])
 
   const subscribe = useCallback(async (): Promise<boolean> => {
     if (!swRegistration || !isSupported) return false

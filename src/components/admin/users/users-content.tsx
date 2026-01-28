@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { format } from 'date-fns'
 import { Check, X, Trash2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,6 +16,7 @@ import {
   getUsers,
 } from '@/actions/users'
 import { logger } from '@/lib/client-logger'
+import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -210,7 +211,7 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
     }
   }
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setIsLoadingUsers(true)
     try {
       const users = await getUsers()
@@ -230,7 +231,7 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
     } finally {
       setIsLoadingUsers(false)
     }
-  }
+  }, [league?.id, selectedLeagueId, leagueUsers])
 
   const handleAddUser = async () => {
     if (!selectedUserId) {
@@ -268,7 +269,7 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
     if (addUserDialogOpen) {
       loadUsers()
     }
-  }, [addUserDialogOpen, selectedLeagueId, league])
+  }, [addUserDialogOpen, loadUsers])
 
   return (
     <>
@@ -475,28 +476,22 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
       </Card>
 
       {/* Remove Confirmation Dialog */}
-      <Dialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('removeTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('removeConfirm', {
-                firstName: userToRemove?.User.firstName ?? '',
-                lastName: userToRemove?.User.lastName ?? '',
-                leagueName: userToRemove?.League.name ?? ''
-              })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRemoveDialogOpen(false)}>
-              {tCommon('cancel')}
-            </Button>
-            <Button variant="destructive" onClick={handleRemove} disabled={isRemoving}>
-              {isRemoving ? t('removing') : t('remove')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteEntityDialog
+        open={removeDialogOpen}
+        onOpenChange={setRemoveDialogOpen}
+        title={t('removeTitle')}
+        description={
+          userToRemove
+            ? t('removeConfirm', {
+                firstName: userToRemove.User.firstName ?? '',
+                lastName: userToRemove.User.lastName ?? '',
+                leagueName: userToRemove.League.name ?? '',
+              })
+            : ''
+        }
+        onConfirm={handleRemove}
+        isDeleting={isRemoving}
+      />
 
       {/* Add User Dialog */}
       <Dialog open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen}>

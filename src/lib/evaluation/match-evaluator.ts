@@ -6,6 +6,7 @@
 import { prisma } from '@/lib/prisma'
 import { getMatchEvaluator, buildMatchBetContext } from '@/lib/evaluators'
 import { evaluateScorer } from '@/lib/evaluators/scorer'
+import { AppError } from '@/lib/error-handler'
 import type { ScorerRankedConfig } from '@/lib/evaluators/types'
 
 interface EvaluateMatchOptions {
@@ -90,14 +91,14 @@ async function evaluateMatch(
   // 2. Validate match has results entered
   const match = leagueMatch.Match
   if (match.homeRegularScore === null || match.awayRegularScore === null) {
-    throw new Error('Cannot evaluate match without results')
+    throw new AppError('Cannot evaluate match without results', 'BAD_REQUEST', 400)
   }
 
   // 3. Get evaluators for this league (entity: match)
   const evaluators = leagueMatch.League.Evaluator
 
   if (evaluators.length === 0) {
-    throw new Error('No evaluators configured for this league')
+    throw new AppError('No evaluators configured for this league', 'BAD_REQUEST', 400)
   }
 
   // 4. Evaluate each user bet

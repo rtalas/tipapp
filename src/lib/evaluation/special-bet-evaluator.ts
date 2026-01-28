@@ -4,6 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import { AppError } from '@/lib/error-handler'
 import {
   getSpecialEvaluator,
   isClosestValueEvaluator,
@@ -94,14 +95,14 @@ async function evaluateSpecialBet(
     specialBet.specialBetValue !== null
 
   if (!hasResult) {
-    throw new Error('Cannot evaluate special bet without result')
+    throw new AppError('Cannot evaluate special bet without result', 'BAD_REQUEST', 400)
   }
 
   // 3. Get evaluators
   const evaluators = specialBet.League.Evaluator
 
   if (evaluators.length === 0) {
-    throw new Error('No evaluators configured for this league')
+    throw new AppError('No evaluators configured for this league', 'BAD_REQUEST', 400)
   }
 
   // 4. Evaluate each user bet

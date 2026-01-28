@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildSeriesPicksWhere } from '@/lib/query-builders'
+import { AppError } from '@/lib/error-handler'
 import {
   createUserSeriesBetSchema,
   updateUserSeriesBetSchema,
@@ -79,7 +80,7 @@ export async function createUserSeriesBet(input: CreateUserSeriesBetInput) {
       })
 
       if (!series) {
-        throw new Error('Series not found')
+        throw new AppError('Series not found', 'NOT_FOUND', 404)
       }
 
       // Verify leagueUser exists
@@ -88,7 +89,7 @@ export async function createUserSeriesBet(input: CreateUserSeriesBetInput) {
       })
 
       if (!leagueUser) {
-        throw new Error('League user not found')
+        throw new AppError('League user not found', 'NOT_FOUND', 404)
       }
 
       // Check for duplicate bet
@@ -101,7 +102,7 @@ export async function createUserSeriesBet(input: CreateUserSeriesBetInput) {
       })
 
       if (existingBet) {
-        throw new Error('User already has a bet for this series')
+        throw new AppError('User already has a bet for this series', 'CONFLICT', 409)
       }
 
       const now = new Date()

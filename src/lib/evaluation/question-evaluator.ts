@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { AppError } from '@/lib/error-handler'
 
 export interface EvaluateQuestionOptions {
   questionId: number
@@ -64,13 +65,13 @@ async function evaluateQuestion(
 
   // Validate question has result
   if (question.result === null) {
-    throw new Error('Question result must be set before evaluation')
+    throw new AppError('Question result must be set before evaluation', 'BAD_REQUEST', 400)
   }
 
   // Get evaluator points
   const questionEvaluator = question.League.Evaluator[0]
   if (!questionEvaluator) {
-    throw new Error('No question evaluator configured for this league')
+    throw new AppError('No question evaluator configured for this league', 'BAD_REQUEST', 400)
   }
 
   const basePoints = questionEvaluator.points || 0

@@ -11,6 +11,7 @@ import type {
 } from './types'
 import type { QuestionContext } from './question'
 import { getScorerRankingAtTime } from '@/lib/scorer-ranking-utils'
+import { AppError } from '@/lib/error-handler'
 
 // Type imports for Prisma entities
 type Match = {
@@ -151,7 +152,7 @@ export function buildClosestValueContext(
   allUserBets: UserSpecialBetSingle[]
 ): ClosestValueContext {
   if (userBet.value === null || specialBet.specialBetValue === null) {
-    throw new Error('Value predictions required for closest_value evaluator')
+    throw new AppError('Value predictions required for closest_value evaluator', 'BAD_REQUEST', 400)
   }
 
   // Extract all user prediction values (filter out nulls)
@@ -191,7 +192,7 @@ export function buildQuestionContext(
   const correctAnswer = convertToAnswer(specialBet.specialBetValue)
 
   if (correctAnswer === null) {
-    throw new Error('Question must have a correct answer set')
+    throw new AppError('Question must have a correct answer set', 'BAD_REQUEST', 400)
   }
 
   return {

@@ -16,6 +16,7 @@ import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { ContentFilterHeader } from '@/components/admin/common/content-filter-header'
+import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -443,33 +444,19 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog.open} onOpenChange={deleteDialog.setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('deleteTitle')}</DialogTitle>
-            <DialogDescription>
-              {deleteDialog.itemToDelete && (
-                <>
-                  {t('deleteConfirm', { name: deleteDialog.itemToDelete.name })}
-                  {deleteDialog.itemToDelete._count.LeagueTeam > 0 && (
-                    <div className="mt-2 text-sm font-semibold text-amber-600">
-                      {t('deleteWarning', { count: deleteDialog.itemToDelete._count.LeagueTeam })}
-                    </div>
-                  )}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={deleteDialog.closeDialog}>
-              {tCommon('cancel')}
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteDialog.isDeleting}>
-              {deleteDialog.isDeleting ? tCommon('deleting') : tCommon('delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteEntityDialog
+        open={deleteDialog.open}
+        onOpenChange={deleteDialog.setOpen}
+        title={t('deleteTitle')}
+        description={deleteDialog.itemToDelete ? t('deleteConfirm', { name: deleteDialog.itemToDelete.name }) : ''}
+        warningMessage={
+          deleteDialog.itemToDelete && deleteDialog.itemToDelete._count.LeagueTeam > 0
+            ? t('deleteWarning', { count: deleteDialog.itemToDelete._count.LeagueTeam })
+            : undefined
+        }
+        onConfirm={handleDelete}
+        isDeleting={deleteDialog.isDeleting}
+      />
 
       {/* Create Team Dialog */}
       <Dialog open={createDialog.open} onOpenChange={createDialog.setOpen}>

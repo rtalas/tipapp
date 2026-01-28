@@ -4,11 +4,15 @@
  * Prevents runtime errors from missing required env vars
  */
 
+import { AppError } from '@/lib/error-handler'
+
 function requireEnv(key: string): string {
   const value = process.env[key]
   if (!value) {
-    throw new Error(
-      `Missing required environment variable: ${key}. Please check your .env file.`
+    throw new AppError(
+      `Missing required environment variable: ${key}. Please check your .env file.`,
+      'INTERNAL_ERROR',
+      500
     )
   }
   return value
@@ -17,8 +21,10 @@ function requireEnv(key: string): string {
 function getEnv(key: string, defaultValue?: string): string {
   const value = process.env[key]
   if (!value && !defaultValue) {
-    throw new Error(
-      `Missing required environment variable: ${key}. Please check your .env file.`
+    throw new AppError(
+      `Missing required environment variable: ${key}. Please check your .env file.`,
+      'INTERNAL_ERROR',
+      500
     )
   }
   return value || defaultValue || ''

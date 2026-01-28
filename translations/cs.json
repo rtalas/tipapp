@@ -294,7 +294,10 @@
       "join": "Připojit se",
       "selectLeagueDescription": "Vyberte ligu k zobrazení",
       "leagueInfo": "Info o lize",
-      "leagueInfoDescription": "Informace o lize"
+      "leagueInfoDescription": "Informace o lize",
+      "joinedLeague": "Přidáno do ligy {leagueName}!",
+      "joinFailed": "Nepodařilo se přidat do ligy",
+      "loadFailed": "Nepodařilo se načíst ligy"
     },
     "language": {
       "label": "Jazyk",
@@ -1055,7 +1058,9 @@
         "invalidNumber": "Prosím zadejte platné číslo",
         "nameRequired": "Název nemůže být prázdný",
         "requiredFields": "Prosím vyplňte všechna pole",
-        "pointsInvalid": "Body musí být platné číslo"
+        "pointsInvalid": "Body musí být platné číslo",
+        "rankConfigRequired": "Prosím nakonfigurujte body pro hodnocené a nehodnocené hráče",
+        "invalidUnrankedPoints": "Neplatná hodnota bodů pro nehodnocené hráče"
       },
       "toast": {
         "updated": "Hodnotitel aktualizován",
@@ -1089,7 +1094,14 @@
         "nameExample": "např. Přesný skóre",
         "pointsExample": "např. 5",
         "selectLeague": "Vybrat ligu",
-        "selectType": "Vybrat typ"
+        "selectType": "Vybrat typ",
+        "useRankBased": "Použít bodování podle umístění",
+        "rankedPlayers": "Hodnocení hráči",
+        "unrankedPlayers": "Nehodnocení hráči",
+        "unrankedPointsPlaceholder": "Body pro nehodnocené střelce",
+        "addRank": "Přidat umístění",
+        "rankPlaceholder": "Umístění",
+        "pointsPlaceholder": "Body"
       }
     },
     "sidebar": {

@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildDeletionErrorMessage } from '@/lib/delete-utils'
+import { AppError } from '@/lib/error-handler'
 import {
   createMatchPhaseSchema,
   updateMatchPhaseSchema,
@@ -108,7 +109,7 @@ export async function deleteMatchPhase(id: number) {
       })
 
       if (usageCount > 0) {
-        throw new Error(buildDeletionErrorMessage('match phase', usageCount))
+        throw new AppError(buildDeletionErrorMessage('match phase', usageCount), 'CONFLICT', 409)
       }
 
       await prisma.matchPhase.update({

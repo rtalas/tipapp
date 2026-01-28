@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { AppError } from '@/lib/error-handler'
 import {
   createLeagueSchema,
   updateLeagueSchema,
@@ -146,7 +147,7 @@ export async function assignTeamToLeague(input: AssignTeamInput) {
       })
 
       if (existing) {
-        throw new Error('Team is already assigned to this league')
+        throw new AppError('Team is already assigned to this league', 'CONFLICT', 409)
       }
 
       const now = new Date()
@@ -197,7 +198,7 @@ export async function assignPlayerToLeagueTeam(input: AssignPlayerInput) {
       })
 
       if (existing) {
-        throw new Error('Player is already assigned to this team in this league')
+        throw new AppError('Player is already assigned to this team in this league', 'CONFLICT', 409)
       }
 
       const now = new Date()
@@ -357,7 +358,7 @@ export async function updateLeagueChatSettings(input: UpdateLeagueChatSettingsIn
       })
 
       if (!league) {
-        throw new Error('League not found')
+        throw new AppError('League not found', 'NOT_FOUND', 404)
       }
 
       const updateData: { isChatEnabled?: boolean; chatSuspendedAt?: Date | null; updatedAt: Date } = {

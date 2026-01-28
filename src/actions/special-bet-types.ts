@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildDeletionErrorMessage } from '@/lib/delete-utils'
+import { AppError } from '@/lib/error-handler'
 import {
   createSpecialBetTypeSchema,
   updateSpecialBetTypeSchema,
@@ -39,7 +40,7 @@ export async function createSpecialBetType(input: CreateSpecialBetTypeInput) {
       })
 
       if (!sport) {
-        throw new Error('Sport not found')
+        throw new AppError('Sport not found', 'NOT_FOUND', 404)
       }
 
       // Verify special bet type exists
@@ -48,7 +49,7 @@ export async function createSpecialBetType(input: CreateSpecialBetTypeInput) {
       })
 
       if (!betType) {
-        throw new Error('Special bet type not found')
+        throw new AppError('Special bet type not found', 'NOT_FOUND', 404)
       }
 
       const specialBetType = await prisma.specialBetSingle.create({
@@ -84,7 +85,7 @@ export async function updateSpecialBetType(input: UpdateSpecialBetTypeInput) {
         })
 
         if (!sport) {
-          throw new Error('Sport not found')
+          throw new AppError('Sport not found', 'NOT_FOUND', 404)
         }
       }
 
@@ -95,7 +96,7 @@ export async function updateSpecialBetType(input: UpdateSpecialBetTypeInput) {
         })
 
         if (!betType) {
-          throw new Error('Special bet type not found')
+          throw new AppError('Special bet type not found', 'NOT_FOUND', 404)
         }
       }
 
@@ -134,7 +135,7 @@ export async function deleteSpecialBetType(id: number) {
       })
 
       if (usageCount > 0) {
-        throw new Error(buildDeletionErrorMessage('special bet type', usageCount))
+        throw new AppError(buildDeletionErrorMessage('special bet type', usageCount), 'CONFLICT', 409)
       }
 
       await prisma.specialBetSingle.update({

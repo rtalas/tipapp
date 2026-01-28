@@ -74,7 +74,8 @@ Nested JSON organized by namespaces:
 - Clean, modular, self-documenting code. Strict TypeScript (no `any`).
 - Default to Server Components. Client only for interactivity.
 - Every feature must have tests (`.test.ts` / `.test.tsx`).
-- Before finishing: Run `npm run build` + `npm test`, verify in browser.
+- **Testing policy:** Only run `npm test` for significant changes (new features, business logic, evaluators, schema changes, security fixes, core bugs). Skip for minor UI tweaks, documentation, config updates, or small refactoring.
+- Before finishing significant changes: Run `npm run build` + `npm test`, verify in browser.
 
 ## Database Rules (CRITICAL)
 - Tables use PascalCase (`User`, `Match`, `UserBet`), mapped to `prisma.user`, `prisma.match`.

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Fragment } from 'react'
 import { format } from 'date-fns'
 import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
@@ -11,6 +11,7 @@ import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
+import { DetailedEntityDeleteDialog } from '@/components/admin/common/detailed-entity-delete-dialog'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,14 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { AddSeriesDialog } from './add-series-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
 import { SeriesBetRow } from './series-bet-row'
@@ -462,55 +455,42 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
       )}
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('deleteTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('deleteConfirm')}
-            </DialogDescription>
-          </DialogHeader>
-          {seriesToDelete && (
-            <div className="rounded-lg border p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{t('seriesId')}</span>
-                <span className="font-mono">#{seriesToDelete.id}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{t('date')}</span>
-                <span>{format(new Date(seriesToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{t('typeLabel')}</span>
-                <span>{seriesToDelete.SpecialBetSerie.name} ({t('bestOf', { count: seriesToDelete.SpecialBetSerie.bestOf })})</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{t('matchupLabel')}</span>
-                <span className="font-medium">
-                  {seriesToDelete.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team.name} {t('vs')}{' '}
-                  {seriesToDelete.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team.name}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{t('leagueLabel')}</span>
-                <span>{seriesToDelete.League.name}</span>
-              </div>
+      <DetailedEntityDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={t('deleteTitle')}
+        description={t('deleteConfirm')}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+      >
+        {seriesToDelete && (
+          <div className="rounded-lg border p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('seriesId')}</span>
+              <span className="font-mono">#{seriesToDelete.id}</span>
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              {tCommon('cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? tCommon('deleting') : tCommon('delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('date')}</span>
+              <span>{format(new Date(seriesToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('typeLabel')}</span>
+              <span>{seriesToDelete.SpecialBetSerie.name} ({t('bestOf', { count: seriesToDelete.SpecialBetSerie.bestOf })})</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('matchupLabel')}</span>
+              <span className="font-medium">
+                {seriesToDelete.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team.name} {t('vs')}{' '}
+                {seriesToDelete.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team.name}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('leagueLabel')}</span>
+              <span>{seriesToDelete.League.name}</span>
+            </div>
+          </div>
+        )}
+      </DetailedEntityDeleteDialog>
     </>
   )
 }

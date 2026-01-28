@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { AppError } from '@/lib/error-handler'
 import { createPlayerSchema, updatePlayerSchema, deleteByIdSchema, type CreatePlayerInput, type UpdatePlayerInput } from '@/lib/validation/admin'
 
 // Create new player
@@ -34,7 +35,7 @@ export async function updatePlayer(input: UpdatePlayerInput) {
     validator: updatePlayerSchema,
     handler: async (validated) => {
       if (!validated.id) {
-        throw new Error('Player ID is required')
+        throw new AppError('Player ID is required', 'BAD_REQUEST', 400)
       }
 
       // Check if player exists
@@ -43,7 +44,7 @@ export async function updatePlayer(input: UpdatePlayerInput) {
       })
 
       if (!existingPlayer) {
-        throw new Error('Player not found')
+        throw new AppError('Player not found', 'NOT_FOUND', 404)
       }
 
       await prisma.player.update({
@@ -83,7 +84,7 @@ export async function deletePlayer(id: number) {
         })
 
         if (!player) {
-          throw new Error('Player not found')
+          throw new AppError('Player not found', 'NOT_FOUND', 404)
         }
 
         // Warn if player is assigned to leagues

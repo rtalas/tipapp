@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/auth-utils'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildQuestionPicksWhere } from '@/lib/query-builders'
+import { AppError } from '@/lib/error-handler'
 import {
   createUserQuestionBetSchema,
   updateUserQuestionBetSchema,
@@ -70,12 +71,12 @@ export async function createUserQuestionBet(input: CreateUserQuestionBetInput) {
         })
 
         if (!question) {
-          throw new Error('Question not found')
+          throw new AppError('Question not found', 'NOT_FOUND', 404)
         }
 
         // Check betting deadline - users cannot bet after dateTime
         if (question.dateTime <= now) {
-          throw new Error('Betting deadline has passed for this question')
+          throw new AppError('Betting deadline has passed for this question', 'BAD_REQUEST', 400)
         }
 
         // Verify leagueUser exists
@@ -84,7 +85,7 @@ export async function createUserQuestionBet(input: CreateUserQuestionBetInput) {
         })
 
         if (!leagueUser) {
-          throw new Error('League user not found')
+          throw new AppError('League user not found', 'NOT_FOUND', 404)
         }
 
         // Check for duplicate bet (same user + question)
@@ -97,7 +98,7 @@ export async function createUserQuestionBet(input: CreateUserQuestionBetInput) {
         })
 
         if (existingBet) {
-          throw new Error('User already has a bet for this question')
+          throw new AppError('User already has a bet for this question', 'CONFLICT', 409)
         }
 
         // Create the bet
@@ -139,12 +140,12 @@ export async function updateUserQuestionBet(input: UpdateUserQuestionBetInput) {
       })
 
       if (!bet) {
-        throw new Error('User bet not found')
+        throw new AppError('User bet not found', 'NOT_FOUND', 404)
       }
 
       // Check betting deadline - users cannot update bet after dateTime
       if (bet.LeagueSpecialBetQuestion.dateTime <= now) {
-        throw new Error('Betting deadline has passed for this question')
+        throw new AppError('Betting deadline has passed for this question', 'BAD_REQUEST', 400)
       }
 
       await prisma.userSpecialBetQuestion.update({
@@ -175,7 +176,7 @@ export async function deleteUserQuestionBet(id: number) {
       })
 
       if (!bet) {
-        throw new Error('User bet not found')
+        throw new AppError('User bet not found', 'NOT_FOUND', 404)
       }
 
       await prisma.userSpecialBetQuestion.update({

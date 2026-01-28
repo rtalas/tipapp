@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { AppError } from '@/lib/error-handler'
 import { createTeamSchema, updateTeamSchema, deleteByIdSchema, type CreateTeamInput, type UpdateTeamInput } from '@/lib/validation/admin'
 
 // Get all teams with Sport relation
@@ -29,7 +30,7 @@ export async function createTeam(input: CreateTeamInput) {
       })
 
       if (!sport) {
-        throw new Error('Sport not found')
+        throw new AppError('Sport not found', 'NOT_FOUND', 404)
       }
 
       const team = await prisma.team.create({
@@ -62,7 +63,7 @@ export async function updateTeam(input: UpdateTeamInput) {
     validator: updateTeamSchema,
     handler: async (validated) => {
       if (!validated.id) {
-        throw new Error('Team ID is required')
+        throw new AppError('Team ID is required', 'BAD_REQUEST', 400)
       }
 
       // Check if sport exists (if being updated)
@@ -72,7 +73,7 @@ export async function updateTeam(input: UpdateTeamInput) {
         })
 
         if (!sport) {
-          throw new Error('Sport not found')
+          throw new AppError('Sport not found', 'NOT_FOUND', 404)
         }
       }
 
@@ -82,7 +83,7 @@ export async function updateTeam(input: UpdateTeamInput) {
       })
 
       if (!existingTeam) {
-        throw new Error('Team not found')
+        throw new AppError('Team not found', 'NOT_FOUND', 404)
       }
 
       await prisma.team.update({
@@ -124,7 +125,7 @@ export async function deleteTeam(id: number) {
         })
 
         if (!team) {
-          throw new Error('Team not found')
+          throw new AppError('Team not found', 'NOT_FOUND', 404)
         }
 
         // Warn if team is assigned to leagues

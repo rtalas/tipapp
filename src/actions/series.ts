@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { AppError } from '@/lib/error-handler'
 import {
   createSeriesSchema,
   updateSeriesResultSchema,
@@ -34,7 +35,7 @@ export async function createSeries(input: CreateSeriesInput) {
       })
 
       if (!homeTeam || !awayTeam) {
-        throw new Error('Teams must belong to the selected league')
+        throw new AppError('Teams must belong to the selected league', 'BAD_REQUEST', 400)
       }
 
       // Create the series

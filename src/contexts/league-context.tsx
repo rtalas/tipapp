@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
+import { AppError } from '@/lib/error-handler'
 
 interface LeagueContextType {
   selectedLeagueId: string | null
@@ -12,36 +13,35 @@ const LeagueContext = React.createContext<LeagueContextType | undefined>(undefin
 
 export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [selectedLeagueId, setSelectedLeagueIdState] = useState<string | null>(null)
 
-  // Sync with URL when on league-specific routes
-  useEffect(() => {
-    const leagueIdMatch = pathname.match(/^\/admin\/(\d+)/)
-    if (leagueIdMatch) {
-      const urlLeagueId = leagueIdMatch[1]
-      setSelectedLeagueIdState(urlLeagueId)
-    }
-  }, [pathname])
-
-  // Optional: Persist to localStorage (only after mount to avoid hydration issues)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && selectedLeagueId) {
-      localStorage.setItem('tipapp_selected_league_id', selectedLeagueId)
-    }
-  }, [selectedLeagueId])
-
-  // Optional: Initialize from localStorage on mount
-  useEffect(() => {
+  // State only for manual selection (initialized from localStorage)
+  const [manuallySelectedLeagueId, setManuallySelectedLeagueId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('tipapp_selected_league_id')
-      if (stored && !selectedLeagueId) {
-        setSelectedLeagueIdState(stored)
-      }
+      return localStorage.getItem('tipapp_selected_league_id')
     }
-  }, [selectedLeagueId])
+    return null
+  })
+
+  // Derive the current league ID from URL (no effect needed)
+  const urlLeagueId = pathname.match(/^\/admin\/(\d+)/)?.[1] ?? null
+  const selectedLeagueId = urlLeagueId ?? manuallySelectedLeagueId
+
+  // Update localStorage when URL changes (no state update - that's the key!)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && urlLeagueId) {
+      localStorage.setItem('tipapp_selected_league_id', urlLeagueId)
+    }
+  }, [urlLeagueId])
+
+  const setSelectedLeagueId = (leagueId: string | null) => {
+    if (typeof window !== 'undefined' && leagueId) {
+      localStorage.setItem('tipapp_selected_league_id', leagueId)
+    }
+    setManuallySelectedLeagueId(leagueId)
+  }
 
   return (
-    <LeagueContext.Provider value={{ selectedLeagueId, setSelectedLeagueId: setSelectedLeagueIdState }}>
+    <LeagueContext.Provider value={{ selectedLeagueId, setSelectedLeagueId }}>
       {children}
     </LeagueContext.Provider>
   )
@@ -50,7 +50,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
 export function useLeagueContext() {
   const context = React.useContext(LeagueContext)
   if (context === undefined) {
-    throw new Error('useLeagueContext must be used within a LeagueProvider')
+    throw new AppError('useLeagueContext must be used within a LeagueProvider', 'INTERNAL_ERROR', 500)
   }
   return context
 }

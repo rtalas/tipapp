@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { AppError } from '@/lib/error-handler'
 import {
   createQuestionSchema,
   updateQuestionSchema,
@@ -30,7 +31,7 @@ export async function createQuestion(input: CreateQuestionInput) {
       })
 
       if (!league) {
-        throw new Error('League not found')
+        throw new AppError('League not found', 'NOT_FOUND', 404)
       }
 
       // Create the question
@@ -66,7 +67,7 @@ export async function updateQuestion(input: UpdateQuestionInput) {
       })
 
       if (!question) {
-        throw new Error('Question not found')
+        throw new AppError('Question not found', 'NOT_FOUND', 404)
       }
 
       // Update the question with provided fields
@@ -101,7 +102,7 @@ export async function updateQuestionResult(input: UpdateQuestionResultInput) {
       })
 
       if (!question) {
-        throw new Error('Question not found')
+        throw new AppError('Question not found', 'NOT_FOUND', 404)
       }
 
       // Update the question result
@@ -133,7 +134,7 @@ export async function deleteQuestion(id: number) {
       })
 
       if (!question) {
-        throw new Error('Question not found')
+        throw new AppError('Question not found', 'NOT_FOUND', 404)
       }
 
       // Soft delete by setting deletedAt

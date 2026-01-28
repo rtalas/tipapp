@@ -6,12 +6,10 @@ import {
   createEvaluatorSchema,
   updateEvaluatorPointsSchema,
   updateEvaluatorNameSchema,
-  updateEvaluatorConfigSchema,
   deleteByIdSchema,
   type CreateEvaluatorInput,
   type UpdateEvaluatorPointsInput,
   type UpdateEvaluatorNameInput,
-  type UpdateEvaluatorConfigInput,
   type DeleteByIdInput,
 } from '@/lib/validation/admin'
 
@@ -82,25 +80,6 @@ export async function updateEvaluatorName(input: UpdateEvaluatorNameInput) {
         where: { id: validated.evaluatorId },
         data: {
           name: validated.name.trim(),
-          updatedAt: new Date(),
-        },
-      })
-      return {}
-    },
-    revalidatePath: '/admin/evaluators',
-    requiresAdmin: true,
-  })
-}
-
-// Update evaluator config
-export async function updateEvaluatorConfig(input: UpdateEvaluatorConfigInput) {
-  return executeServerAction(input, {
-    validator: updateEvaluatorConfigSchema,
-    handler: async (validated) => {
-      await prisma.evaluator.update({
-        where: { id: validated.evaluatorId },
-        data: {
-          ...(validated.config && { config: validated.config }),
           updatedAt: new Date(),
         },
       })

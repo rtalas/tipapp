@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 
 // ==================== Enums ====================
@@ -121,7 +122,7 @@ export async function auditLog(options: AuditLogOptions): Promise<void> {
         leagueId: options.leagueId,
         action: options.action,
         description: options.description,
-        metadata: sanitizedMetadata as any,
+        metadata: sanitizedMetadata as Prisma.InputJsonValue,
         durationMs: options.durationMs,
         success: options.success ?? true,
         errorCode: options.errorCode,

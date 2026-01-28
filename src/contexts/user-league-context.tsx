@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { AppError } from '@/lib/error-handler'
 
 interface League {
   leagueUserId: number
@@ -129,8 +130,10 @@ export function UserLeagueProvider({
 export function useUserLeagueContext() {
   const context = React.useContext(UserLeagueContext)
   if (context === undefined) {
-    throw new Error(
-      'useUserLeagueContext must be used within a UserLeagueProvider'
+    throw new AppError(
+      'useUserLeagueContext must be used within a UserLeagueProvider',
+      'INTERNAL_ERROR',
+      500
     )
   }
   return context

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildSpecialBetPicksWhere } from '@/lib/query-builders'
+import { AppError } from '@/lib/error-handler'
 import {
   createUserSpecialBetSchema,
   updateUserSpecialBetSchema,
@@ -90,7 +91,7 @@ export async function createUserSpecialBet(input: CreateUserSpecialBetInput) {
       })
 
       if (!specialBet) {
-        throw new Error('Special bet not found')
+        throw new AppError('Special bet not found', 'NOT_FOUND', 404)
       }
 
       // Verify leagueUser exists
@@ -99,7 +100,7 @@ export async function createUserSpecialBet(input: CreateUserSpecialBetInput) {
       })
 
       if (!leagueUser) {
-        throw new Error('League user not found')
+        throw new AppError('League user not found', 'NOT_FOUND', 404)
       }
 
       // Check for duplicate bet
@@ -112,7 +113,7 @@ export async function createUserSpecialBet(input: CreateUserSpecialBetInput) {
       })
 
       if (existingBet) {
-        throw new Error('User already has a bet for this special bet')
+        throw new AppError('User already has a bet for this special bet', 'CONFLICT', 409)
       }
 
       // Verify team belongs to league if team prediction
@@ -126,7 +127,7 @@ export async function createUserSpecialBet(input: CreateUserSpecialBetInput) {
         })
 
         if (!team) {
-          throw new Error('Selected team does not belong to this league')
+          throw new AppError('Selected team does not belong to this league', 'BAD_REQUEST', 400)
         }
       }
 
@@ -144,7 +145,7 @@ export async function createUserSpecialBet(input: CreateUserSpecialBetInput) {
         })
 
         if (!player) {
-          throw new Error('Selected player does not belong to this league')
+          throw new AppError('Selected player does not belong to this league', 'BAD_REQUEST', 400)
         }
       }
 
@@ -189,7 +190,7 @@ export async function updateUserSpecialBet(input: UpdateUserSpecialBetInput) {
       })
 
       if (!bet) {
-        throw new Error('Bet not found')
+        throw new AppError('Bet not found', 'NOT_FOUND', 404)
       }
 
       // Verify team belongs to league if team prediction
@@ -203,7 +204,7 @@ export async function updateUserSpecialBet(input: UpdateUserSpecialBetInput) {
         })
 
         if (!team) {
-          throw new Error('Selected team does not belong to this league')
+          throw new AppError('Selected team does not belong to this league', 'BAD_REQUEST', 400)
         }
       }
 
@@ -221,7 +222,7 @@ export async function updateUserSpecialBet(input: UpdateUserSpecialBetInput) {
         })
 
         if (!player) {
-          throw new Error('Selected player does not belong to this league')
+          throw new AppError('Selected player does not belong to this league', 'BAD_REQUEST', 400)
         }
       }
 

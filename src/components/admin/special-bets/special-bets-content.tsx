@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Fragment } from 'react'
 import { format } from 'date-fns'
 import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
@@ -11,6 +11,7 @@ import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
+import { DetailedEntityDeleteDialog } from '@/components/admin/common/detailed-entity-delete-dialog'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,14 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { AddSpecialBetDialog } from './add-special-bet-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
 import { SpecialBetRow } from './special-bet-row'
@@ -496,61 +489,48 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
       )}
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('deleteTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('deleteConfirm')}
-            </DialogDescription>
-          </DialogHeader>
-          {specialBetToDelete && (() => {
-            const deleteResultInfo = getResultTypeAndDisplay(specialBetToDelete)
-            return (
-              <div className="rounded-lg border p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{t('betId')}</span>
-                  <span className="font-mono">#{specialBetToDelete.id}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{tSeries('date')}</span>
-                  <span>{format(new Date(specialBetToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{t('name')}</span>
-                  <span className="font-medium">{specialBetToDelete.SpecialBetSingle.name}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{t('typeLabel')}</span>
-                  <Badge variant="outline" className="text-xs">
-                    {deleteResultInfo.type !== 'none' ? t(deleteResultInfo.type) : t('notSet')}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{t('pointsLabel')}</span>
-                  <span>{specialBetToDelete.points} {t('pts')}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{tSeries('leagueLabel')}</span>
-                  <span>{specialBetToDelete.League.name}</span>
-                </div>
+      <DetailedEntityDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={t('deleteTitle')}
+        description={t('deleteConfirm')}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+      >
+        {specialBetToDelete && (() => {
+          const deleteResultInfo = getResultTypeAndDisplay(specialBetToDelete)
+          return (
+            <div className="rounded-lg border p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{t('betId')}</span>
+                <span className="font-mono">#{specialBetToDelete.id}</span>
               </div>
-            )
-          })()}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              {tCommon('cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? tCommon('deleting') : tCommon('delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{tSeries('date')}</span>
+                <span>{format(new Date(specialBetToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{t('name')}</span>
+                <span className="font-medium">{specialBetToDelete.SpecialBetSingle.name}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{t('typeLabel')}</span>
+                <Badge variant="outline" className="text-xs">
+                  {deleteResultInfo.type !== 'none' ? t(deleteResultInfo.type) : t('notSet')}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{t('pointsLabel')}</span>
+                <span>{specialBetToDelete.points} {t('pts')}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{tSeries('leagueLabel')}</span>
+                <span>{specialBetToDelete.League.name}</span>
+              </div>
+            </div>
+          )
+        })()}
+      </DetailedEntityDeleteDialog>
     </>
   )
 }

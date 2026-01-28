@@ -3,6 +3,7 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { AppError } from '@/lib/error-handler'
 import { z } from 'zod'
 import bcryptjs from 'bcryptjs'
 
@@ -102,7 +103,7 @@ export async function updateProfile(input: UpdateProfileInput) {
       })
 
       if (existingUser) {
-        throw new Error('Email is already taken')
+        throw new AppError('Email is already taken', 'CONFLICT', 409)
       }
 
       // Update user profile
@@ -155,14 +156,14 @@ export async function updatePassword(input: UpdatePasswordInput) {
       })
 
       if (!user) {
-        throw new Error('User not found')
+        throw new AppError('User not found', 'NOT_FOUND', 404)
       }
 
       // Verify current password using bcrypt.compare
       const isValid = await bcryptjs.compare(validated.currentPassword, user.password)
 
       if (!isValid) {
-        throw new Error('Current password is incorrect')
+        throw new AppError('Current password is incorrect', 'UNAUTHORIZED', 401)
       }
 
       // Hash new password

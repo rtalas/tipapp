@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { Plus, Trash2 } from 'lucide-react'
@@ -116,27 +116,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
   const sportId = match.League.sportId
 
-  // Load full match data with players when dialog opens
-  useEffect(() => {
-    if (open) {
-      loadMatchData()
-    }
-  }, [open, match.Match.id])
-
-  // Auto-populate final scores with regular scores when overtime is checked
-  useEffect(() => {
-    if ((isOvertime || isShootout) && homeRegularScore && awayRegularScore) {
-      // Only populate if final scores are empty
-      if (!homeFinalScore) {
-        setHomeFinalScore(homeRegularScore)
-      }
-      if (!awayFinalScore) {
-        setAwayFinalScore(awayRegularScore)
-      }
-    }
-  }, [isOvertime, isShootout, homeRegularScore, awayRegularScore])
-
-  const loadMatchData = async () => {
+  const loadMatchData = useCallback(async () => {
     try {
       const fullMatch = await getMatchById(match.Match.id)
       if (fullMatch) {
@@ -161,7 +141,27 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
     } catch (error) {
       logger.error('Failed to load match data', { error, matchId: match.Match.id })
     }
-  }
+  }, [match.Match.id])
+
+  // Load full match data with players when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadMatchData()
+    }
+  }, [open, loadMatchData])
+
+  // Auto-populate final scores with regular scores when overtime is checked
+  useEffect(() => {
+    if ((isOvertime || isShootout) && homeRegularScore && awayRegularScore) {
+      // Only populate if final scores are empty
+      if (!homeFinalScore) {
+        setHomeFinalScore(homeRegularScore)
+      }
+      if (!awayFinalScore) {
+        setAwayFinalScore(awayRegularScore)
+      }
+    }
+  }, [isOvertime, isShootout, homeRegularScore, awayRegularScore, homeFinalScore, awayFinalScore])
 
   const handleAddScorer = () => {
     setScorers([...scorers, { playerId: '', numberOfGoals: 1 }])

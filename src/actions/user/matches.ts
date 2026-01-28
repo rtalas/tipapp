@@ -105,7 +105,7 @@ export async function getMatchFriendPredictions(leagueMatchId: number) {
   })
 
   if (!match) {
-    throw new Error('Match not found')
+    throw new AppError('Match not found', 'NOT_FOUND', 404)
   }
 
   const { leagueUser } = await requireLeagueMember(match.leagueId)

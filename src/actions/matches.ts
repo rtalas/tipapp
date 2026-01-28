@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildLeagueMatchWhere } from '@/lib/query-builders'
 import { leagueMatchWithBetsInclude } from '@/lib/prisma-helpers'
+import { AppError } from '@/lib/error-handler'
 import {
   createMatchSchema,
   updateMatchSchema,
@@ -38,7 +39,7 @@ export async function createMatch(input: CreateMatchInput) {
       })
 
       if (!homeTeam || !awayTeam) {
-        throw new Error('Teams must belong to the selected league')
+        throw new AppError('Teams must belong to the selected league', 'BAD_REQUEST', 400)
       }
 
       // Verify match phase exists if provided
@@ -51,12 +52,12 @@ export async function createMatch(input: CreateMatchInput) {
         })
 
         if (!matchPhase) {
-          throw new Error('Match phase not found')
+          throw new AppError('Match phase not found', 'NOT_FOUND', 404)
         }
 
         // Validate game number against phase bestOf if both provided
         if (validated.gameNumber && matchPhase.bestOf && validated.gameNumber > matchPhase.bestOf) {
-          throw new Error(`Game number cannot exceed best of ${matchPhase.bestOf}`)
+          throw new AppError(`Game number cannot exceed best of ${matchPhase.bestOf}`, 'BAD_REQUEST', 400)
         }
       }
 
@@ -111,12 +112,12 @@ export async function updateMatch(input: UpdateMatchInput) {
         })
 
         if (!matchPhase) {
-          throw new Error('Match phase not found')
+          throw new AppError('Match phase not found', 'NOT_FOUND', 404)
         }
 
         // Validate game number against phase bestOf if both provided
         if (validated.gameNumber && matchPhase.bestOf && validated.gameNumber > matchPhase.bestOf) {
-          throw new Error(`Game number cannot exceed best of ${matchPhase.bestOf}`)
+          throw new AppError(`Game number cannot exceed best of ${matchPhase.bestOf}`, 'BAD_REQUEST', 400)
         }
       }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { format } from 'date-fns'
 import { Zap, Check, Clock, Lock, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -8,15 +8,10 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { ScoreInput } from './score-input'
 import { ScorerSelect } from './scorer-select'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
 import { cn } from '@/lib/utils'
 import { SPORT_IDS } from '@/lib/constants'
 import { getUserDisplayName, getUserInitials } from '@/lib/user-display-utils'
@@ -504,100 +499,83 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
       </div>
 
       {/* Friends Predictions Modal */}
-      <Dialog open={showFriendsBets} onOpenChange={setShowFriendsBets}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <span>{homeTeamName}</span>
-              <span className="text-muted-foreground">vs</span>
-              <span>{awayTeamName}</span>
-            </DialogTitle>
-            {hasResult && (
-              <p className="text-sm text-muted-foreground">
-                Final: {match.Match.homeRegularScore} - {match.Match.awayRegularScore}
-                {match.Match.isOvertime && ' (OT)'}
-                {match.Match.isShootout && ' (SO)'}
-              </p>
-            )}
-          </DialogHeader>
-          <div className="mt-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Friends&apos; Predictions</span>
-            </div>
-            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-              {!isLocked ? (
-                <p className="text-center text-muted-foreground text-sm py-4">
-                  Friends&apos; picks will be visible after betting closes
-                </p>
-              ) : isLoadingFriends ? (
-                <p className="text-center text-muted-foreground text-sm py-4">
-                  Loading...
-                </p>
-              ) : friendPredictions.length === 0 ? (
-                <p className="text-center text-muted-foreground text-sm py-4">
-                  No friends&apos; predictions yet
-                </p>
-              ) : (
-                friendPredictions.map((prediction) => {
-                  const user = prediction.LeagueUser.User
-                  const displayName = getUserDisplayName(user)
-                  const initials = getUserInitials(user)
-                  const isCorrect = hasResult &&
-                    prediction.homeScore === match.Match.homeRegularScore &&
-                    prediction.awayScore === match.Match.awayRegularScore
+      <FriendPredictionsModal
+        open={showFriendsBets}
+        onOpenChange={setShowFriendsBets}
+        title={`${homeTeamName} vs ${awayTeamName}`}
+        subtitle={
+          hasResult
+            ? `Final: ${match.Match.homeRegularScore} - ${match.Match.awayRegularScore}${
+                match.Match.isOvertime ? ' (OT)' : ''
+              }${match.Match.isShootout ? ' (SO)' : ''}`
+            : undefined
+        }
+        sectionLabel="Friends' Predictions"
+        isLocked={isLocked}
+        isLoading={isLoadingFriends}
+        predictions={friendPredictions}
+        emptyMessage="No friends' predictions yet"
+        lockedMessage="Friends' picks will be visible after betting closes"
+      >
+        {friendPredictions.map((prediction) => {
+          const user = prediction.LeagueUser.User
+          const displayName = getUserDisplayName(user)
+          const initials = getUserInitials(user)
+          const isCorrect =
+            hasResult &&
+            prediction.homeScore === match.Match.homeRegularScore &&
+            prediction.awayScore === match.Match.awayRegularScore
 
-                  // Get scorer name if predicted
-                  const scorerName = prediction.LeaguePlayer?.Player
-                    ? `${prediction.LeaguePlayer.Player.firstName || ''} ${prediction.LeaguePlayer.Player.lastName || ''}`.trim()
-                    : null
+          // Get scorer name if predicted
+          const scorerName = prediction.LeaguePlayer?.Player
+            ? `${prediction.LeaguePlayer.Player.firstName || ''} ${prediction.LeaguePlayer.Player.lastName || ''}`.trim()
+            : null
 
-                  return (
-                    <div
-                      key={prediction.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-secondary/30"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="text-xs font-semibold bg-primary/20 text-primary">
-                            {initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-sm">{displayName}</span>
-                          {scorerName && (
-                            <span className="text-xs text-muted-foreground">
-                              Scorer: {scorerName}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={cn(
-                          'font-bold text-sm',
-                          isCorrect ? 'text-primary' : 'text-foreground'
-                        )}>
-                          {prediction.homeScore} : {prediction.awayScore}
-                        </span>
-                        {isEvaluated && prediction.totalPoints !== 0 && (
-                          <span className={cn(
-                            'px-2 py-0.5 rounded text-[10px] font-bold',
-                            prediction.totalPoints > 0
-                              ? 'bg-primary/20 text-primary'
-                              : 'bg-secondary text-muted-foreground'
-                          )}>
-                            {prediction.totalPoints > 0 ? '+' : ''}{prediction.totalPoints}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })
-              )}
+          return (
+            <div
+              key={prediction.id}
+              className="flex items-center justify-between p-3 rounded-lg bg-secondary/30"
+            >
+              <div className="flex items-center gap-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="text-xs font-semibold bg-primary/20 text-primary">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="font-medium text-sm">{displayName}</span>
+                  {scorerName && (
+                    <span className="text-xs text-muted-foreground">Scorer: {scorerName}</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span
+                  className={cn(
+                    'font-bold text-sm',
+                    isCorrect ? 'text-primary' : 'text-foreground'
+                  )}
+                >
+                  {prediction.homeScore} : {prediction.awayScore}
+                </span>
+                {isEvaluated && prediction.totalPoints !== 0 && (
+                  <span
+                    className={cn(
+                      'px-2 py-0.5 rounded text-[10px] font-bold',
+                      prediction.totalPoints > 0
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-secondary text-muted-foreground'
+                    )}
+                  >
+                    {prediction.totalPoints > 0 ? '+' : ''}
+                    {prediction.totalPoints}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          )
+        })}
+      </FriendPredictionsModal>
     </>
   )
 }

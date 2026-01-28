@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
+import { AppError } from '@/lib/error-handler'
 import { z } from 'zod'
 
 // Validation schemas
@@ -33,7 +34,7 @@ export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
 export async function getUserProfile() {
   const session = await auth()
   if (!session?.user?.id) {
-    throw new Error('Not authenticated')
+    throw new AppError('Not authenticated', 'UNAUTHORIZED', 401)
   }
 
   const user = await prisma.user.findUnique({
@@ -52,7 +53,7 @@ export async function getUserProfile() {
   })
 
   if (!user) {
-    throw new Error('User not found')
+    throw new AppError('User not found', 'NOT_FOUND', 404)
   }
 
   return user

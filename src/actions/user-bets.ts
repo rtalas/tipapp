@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildUserPicksWhere } from '@/lib/query-builders'
+import { AppError } from '@/lib/error-handler'
 import {
   createUserBetSchema,
   updateUserBetSchema,
@@ -106,7 +107,7 @@ export async function createUserBet(input: CreateUserBetInput) {
       })
 
       if (!leagueMatch) {
-        throw new Error('Match not found')
+        throw new AppError('Match not found', 'NOT_FOUND', 404)
       }
 
       // Verify leagueUser exists
@@ -115,7 +116,7 @@ export async function createUserBet(input: CreateUserBetInput) {
       })
 
       if (!leagueUser) {
-        throw new Error('User not found')
+        throw new AppError('User not found', 'NOT_FOUND', 404)
       }
 
       // Check if bet already exists (prevent duplicates)
@@ -128,7 +129,7 @@ export async function createUserBet(input: CreateUserBetInput) {
       })
 
       if (existingBet) {
-        throw new Error('User already has a bet for this match')
+        throw new AppError('User already has a bet for this match', 'CONFLICT', 409)
       }
 
       // Verify scorer belongs to one of the teams if provided
@@ -138,7 +139,7 @@ export async function createUserBet(input: CreateUserBetInput) {
         })
 
         if (!scorer) {
-          throw new Error('Scorer not found')
+          throw new AppError('Scorer not found', 'NOT_FOUND', 404)
         }
 
         const isValidScorer =
@@ -146,13 +147,13 @@ export async function createUserBet(input: CreateUserBetInput) {
           scorer.leagueTeamId === leagueMatch.Match.awayTeamId
 
         if (!isValidScorer) {
-          throw new Error('Scorer must belong to one of the teams playing')
+          throw new AppError('Scorer must belong to one of the teams playing', 'BAD_REQUEST', 400)
         }
       }
 
       // Validate mutual exclusivity between scorerId and noScorer
       if (validated.noScorer === true && validated.scorerId !== undefined) {
-        throw new Error('Cannot set both scorer and no scorer')
+        throw new AppError('Cannot set both scorer and no scorer', 'BAD_REQUEST', 400)
       }
 
       const now = new Date()
@@ -195,7 +196,7 @@ export async function updateUserBet(input: UpdateUserBetInput) {
       })
 
       if (!bet) {
-        throw new Error('Bet not found')
+        throw new AppError('Bet not found', 'NOT_FOUND', 404)
       }
 
       // Warning if match already evaluated
@@ -207,7 +208,7 @@ export async function updateUserBet(input: UpdateUserBetInput) {
 
       // Validate mutual exclusivity between scorerId and noScorer
       if (validated.noScorer === true && validated.scorerId !== undefined) {
-        throw new Error('Cannot set both scorer and no scorer')
+        throw new AppError('Cannot set both scorer and no scorer', 'BAD_REQUEST', 400)
       }
 
       // Verify scorer belongs to one of the teams if provided
@@ -217,7 +218,7 @@ export async function updateUserBet(input: UpdateUserBetInput) {
         })
 
         if (!scorer) {
-          throw new Error('Scorer not found')
+          throw new AppError('Scorer not found', 'NOT_FOUND', 404)
         }
 
         const isValidScorer =
@@ -225,7 +226,7 @@ export async function updateUserBet(input: UpdateUserBetInput) {
           scorer.leagueTeamId === bet.LeagueMatch.Match.awayTeamId
 
         if (!isValidScorer) {
-          throw new Error('Scorer must belong to one of the teams playing')
+          throw new AppError('Scorer must belong to one of the teams playing', 'BAD_REQUEST', 400)
         }
       }
 
@@ -264,7 +265,7 @@ export async function deleteUserBet(id: number) {
         })
 
         if (!bet) {
-          throw new Error('Bet not found')
+          throw new AppError('Bet not found', 'NOT_FOUND', 404)
         }
 
         await prisma.userBet.update({

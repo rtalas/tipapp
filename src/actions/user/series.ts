@@ -60,7 +60,7 @@ export async function getSeriesFriendPredictions(leagueSpecialBetSerieId: number
   })
 
   if (!series) {
-    throw new Error('Series not found')
+    throw new AppError('Series not found', 'NOT_FOUND', 404)
   }
 
   const { leagueUser } = await requireLeagueMember(series.leagueId)

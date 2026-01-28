@@ -25,6 +25,11 @@
  */
 export function nullableUniqueConstraint<T extends Record<string, unknown>>(
   where: T & { deletedAt: null }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
+  // The any return type is intentional - Prisma's generated compound unique
+  // constraint types don't properly handle nullable fields. This helper
+  // encapsulates the unsafe cast while maintaining runtime type safety.
+  // See: https://github.com/prisma/prisma/issues/8807
   return { ...where, deletedAt: null }
 }

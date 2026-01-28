@@ -15,6 +15,7 @@ import { validatePlayerCreate, validatePlayerEdit } from '@/lib/validation-clien
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
+import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -414,28 +415,14 @@ export function PlayersContent({ players }: PlayersContentProps) {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog.open} onOpenChange={deleteDialog.setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('deleteTitle')}</DialogTitle>
-            <DialogDescription>
-              {deleteDialog.itemToDelete && (
-                <>
-                  {t('deleteConfirm', { name: getPlayerName(deleteDialog.itemToDelete) })}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={deleteDialog.closeDialog}>
-              {tCommon('cancel')}
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteDialog.isDeleting}>
-              {deleteDialog.isDeleting ? tCommon('deleting') : tCommon('delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteEntityDialog
+        open={deleteDialog.open}
+        onOpenChange={deleteDialog.setOpen}
+        title={t('deleteTitle')}
+        description={deleteDialog.itemToDelete ? t('deleteConfirm', { name: getPlayerName(deleteDialog.itemToDelete) }) : ''}
+        onConfirm={handleDelete}
+        isDeleting={deleteDialog.isDeleting}
+      />
 
       {/* Create Player Dialog */}
       <Dialog open={createDialog.open} onOpenChange={createDialog.setOpen}>

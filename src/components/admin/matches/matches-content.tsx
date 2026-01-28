@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Fragment } from 'react'
 import { format } from 'date-fns'
 import { Plus, Edit, Trash2, ChevronDown, Calculator, Calendar } from 'lucide-react'
@@ -12,6 +12,7 @@ import { getMatchStatus } from '@/lib/match-utils'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
+import { DetailedEntityDeleteDialog } from '@/components/admin/common/detailed-entity-delete-dialog'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,14 +33,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { AddMatchDialog } from './add-match-dialog'
 import { EditMatchDialog } from './edit-match-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
@@ -517,51 +510,38 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
       )}
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('deleteTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('deleteConfirm')}
-            </DialogDescription>
-          </DialogHeader>
-          {matchToDelete && (
-            <div className="rounded-lg border p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{t('matchId')}</span>
-                <span className="font-mono">#{matchToDelete.Match.id}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{t('date')}</span>
-                <span>{format(new Date(matchToDelete.Match.dateTime), 'd.M.yyyy HH:mm')}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{t('matchup')}:</span>
-                <span className="font-medium">
-                  {matchToDelete.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name} {t('vs')}{' '}
-                  {matchToDelete.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{t('league')}:</span>
-                <span>{matchToDelete.League.name}</span>
-              </div>
+      <DetailedEntityDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={t('deleteTitle')}
+        description={t('deleteConfirm')}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+      >
+        {matchToDelete && (
+          <div className="rounded-lg border p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('matchId')}</span>
+              <span className="font-mono">#{matchToDelete.Match.id}</span>
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              {tCommon('cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? tCommon('deleting') : tCommon('delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('date')}</span>
+              <span>{format(new Date(matchToDelete.Match.dateTime), 'd.M.yyyy HH:mm')}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('matchup')}:</span>
+              <span className="font-medium">
+                {matchToDelete.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name} {t('vs')}{' '}
+                {matchToDelete.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('league')}:</span>
+              <span>{matchToDelete.League.name}</span>
+            </div>
+          </div>
+        )}
+      </DetailedEntityDeleteDialog>
     </>
   )
 }

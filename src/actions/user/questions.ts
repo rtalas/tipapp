@@ -50,7 +50,7 @@ export async function getQuestionFriendPredictions(leagueSpecialBetQuestionId: n
   })
 
   if (!question) {
-    throw new Error('Question not found')
+    throw new AppError('Question not found', 'NOT_FOUND', 404)
   }
 
   const { leagueUser } = await requireLeagueMember(question.leagueId)

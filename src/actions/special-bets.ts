@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { specialBetInclude } from '@/lib/prisma-helpers'
+import { AppError } from '@/lib/error-handler'
 import {
   createSpecialBetSchema,
   updateSpecialBetResultSchema,
@@ -27,7 +28,7 @@ export async function createSpecialBet(input: CreateSpecialBetInput) {
       })
 
       if (!league) {
-        throw new Error('League not found')
+        throw new AppError('League not found', 'NOT_FOUND', 404)
       }
 
       // Verify special bet type exists
@@ -39,7 +40,7 @@ export async function createSpecialBet(input: CreateSpecialBetInput) {
       })
 
       if (!specialBetType) {
-        throw new Error('Special bet type not found')
+        throw new AppError('Special bet type not found', 'NOT_FOUND', 404)
       }
 
       // Create the special bet
@@ -75,7 +76,7 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
       ].filter(Boolean).length
 
       if (fieldsSet !== 1) {
-        throw new Error('Exactly one result field must be set (team OR player OR value)')
+        throw new AppError('Exactly one result field must be set (team OR player OR value)', 'BAD_REQUEST', 400)
       }
 
       // Get the special bet to verify it belongs to a league
@@ -84,7 +85,7 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
       })
 
       if (!specialBet) {
-        throw new Error('Special bet not found')
+        throw new AppError('Special bet not found', 'NOT_FOUND', 404)
       }
 
       // Verify team belongs to league if team result
@@ -98,7 +99,7 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
         })
 
         if (!team) {
-          throw new Error('Selected team does not belong to this league')
+          throw new AppError('Selected team does not belong to this league', 'BAD_REQUEST', 400)
         }
       }
 
@@ -116,7 +117,7 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
         })
 
         if (!player) {
-          throw new Error('Selected player does not belong to this league')
+          throw new AppError('Selected player does not belong to this league', 'BAD_REQUEST', 400)
         }
       }
 

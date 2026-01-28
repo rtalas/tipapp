@@ -294,7 +294,10 @@
       "join": "Join",
       "selectLeagueDescription": "Select a league to view",
       "leagueInfo": "League Info",
-      "leagueInfoDescription": "Information about the league"
+      "leagueInfoDescription": "Information about the league",
+      "joinedLeague": "Joined {leagueName}!",
+      "joinFailed": "Failed to join league",
+      "loadFailed": "Failed to load leagues"
     },
     "language": {
       "label": "Language",
@@ -1055,7 +1058,9 @@
         "invalidNumber": "Please enter a valid number",
         "nameRequired": "Name cannot be empty",
         "requiredFields": "Please fill in all fields",
-        "pointsInvalid": "Points must be a valid number"
+        "pointsInvalid": "Points must be a valid number",
+        "rankConfigRequired": "Please configure rank points and unranked points",
+        "invalidUnrankedPoints": "Invalid unranked points value"
       },
       "toast": {
         "updated": "Evaluator updated",
@@ -1089,7 +1094,14 @@
         "nameExample": "e.g., Exact Score",
         "pointsExample": "e.g., 5",
         "selectLeague": "Select league",
-        "selectType": "Select type"
+        "selectType": "Select type",
+        "useRankBased": "Use rank-based scoring",
+        "rankedPlayers": "Ranked Players",
+        "unrankedPlayers": "Unranked Players",
+        "unrankedPointsPlaceholder": "Points for unranked scorers",
+        "addRank": "Add Rank",
+        "rankPlaceholder": "Rank",
+        "pointsPlaceholder": "Points"
       }
     },
     "sidebar": {

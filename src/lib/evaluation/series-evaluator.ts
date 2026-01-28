@@ -5,6 +5,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { getSeriesEvaluator, buildSeriesBetContext } from '@/lib/evaluators'
+import { AppError } from '@/lib/error-handler'
 
 interface EvaluateSeriesOptions {
   seriesId: number
@@ -79,14 +80,14 @@ async function evaluateSeries(
 
   // 2. Validate series has results
   if (series.homeTeamScore === null || series.awayTeamScore === null) {
-    throw new Error('Cannot evaluate series without results')
+    throw new AppError('Cannot evaluate series without results', 'BAD_REQUEST', 400)
   }
 
   // 3. Get evaluators
   const evaluators = series.League.Evaluator
 
   if (evaluators.length === 0) {
-    throw new Error('No evaluators configured for this league')
+    throw new AppError('No evaluators configured for this league', 'BAD_REQUEST', 400)
   }
 
   // 4. Evaluate each user bet

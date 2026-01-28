@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-utils'
 import { buildLeagueUserWhere } from '@/lib/query-builders'
+import { AppError } from '@/lib/error-handler'
 
 // Get pending user requests
 export async function getPendingRequests(filters?: { leagueId?: number }) {
@@ -34,11 +35,11 @@ export async function approveRequest(requestId: number) {
   })
 
   if (!request) {
-    throw new Error('Request not found')
+    throw new AppError('Request not found', 'NOT_FOUND', 404)
   }
 
   if (request.decided) {
-    throw new Error('Request has already been decided')
+    throw new AppError('Request has already been decided', 'CONFLICT', 409)
   }
 
   // Transaction: Create LeagueUser and update request
@@ -92,11 +93,11 @@ export async function rejectRequest(requestId: number) {
   })
 
   if (!request) {
-    throw new Error('Request not found')
+    throw new AppError('Request not found', 'NOT_FOUND', 404)
   }
 
   if (request.decided) {
-    throw new Error('Request has already been decided')
+    throw new AppError('Request has already been decided', 'CONFLICT', 409)
   }
 
   await prisma.userRequest.update({
@@ -207,7 +208,7 @@ export async function addUserToLeague(userId: number, leagueId: number) {
   })
 
   if (!user) {
-    throw new Error('User not found')
+    throw new AppError('User not found', 'NOT_FOUND', 404)
   }
 
   // Check if league exists
@@ -216,7 +217,7 @@ export async function addUserToLeague(userId: number, leagueId: number) {
   })
 
   if (!league) {
-    throw new Error('League not found')
+    throw new AppError('League not found', 'NOT_FOUND', 404)
   }
 
   // Check if user is already a member
@@ -229,7 +230,7 @@ export async function addUserToLeague(userId: number, leagueId: number) {
   })
 
   if (existingMembership) {
-    throw new Error('User is already a member of this league')
+    throw new AppError('User is already a member of this league', 'CONFLICT', 409)
   }
 
   // Create league user membership
