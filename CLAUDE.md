@@ -65,7 +65,10 @@ Nested JSON organized by namespaces:
 ## Commands
 - `npm run dev` - Start dev server
 - `npm run build` - Build production
-- `npm test` - Run tests
+- `npm test` - Run tests once and exit (fast feedback)
+- `npm run test:watch` - Run tests in watch mode (for development)
+- `npm run test:ui` - Run tests with UI
+- `npm run test:coverage` - Generate coverage report
 - `npx prisma db pull` - Sync schema
 - `npx prisma generate` - Update Prisma Client
 - `npx prisma studio` - Open DB GUI
@@ -197,6 +200,7 @@ src/
 - **Metrics:** State variables 11→3 (73% reduction), 100% accessibility, single validation source
 - **Utils:** `executeServerAction()` wrapper eliminates duplicate try-catch (89 lines removed)
 - **Type consolidation (Jan 2026):** `ScorerRankedConfig` interface consolidated from 5 duplicates to single source in `lib/evaluators/types.ts`
+- **Test optimization (Jan 2026):** `npm test` runs once and exits (4.73s for 403 tests), `test:watch` available for development
 
 ### Security Audit (Jan 2026) - 20/24 issues fixed
 **Fixed (Critical - First Audit):**
@@ -228,7 +232,7 @@ src/
 - CORS, audit logging, token blacklist, email retry queue
 
 ### Build Status
-✅ Production build clean (0 errors/warnings) • ✅ 366/366 tests pass • ✅ 37 routes • ✅ PWA ready
+✅ Production build clean (0 errors/warnings) • ✅ 403/403 tests pass • ✅ 37 routes • ✅ PWA ready
 
 ### Race Condition Prevention (Jan 2026)
 User betting actions use **atomic upserts** to prevent duplicate bets during concurrent submissions:
