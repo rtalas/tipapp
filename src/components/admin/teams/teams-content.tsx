@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Trash2, Edit } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import {
@@ -17,33 +16,16 @@ import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { ContentFilterHeader } from '@/components/admin/common/content-filter-header'
 import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { TeamTableRow } from './team-table-row'
+import { CreateTeamDialog } from './create-team-dialog'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 
 interface Sport {
   id: number
@@ -137,10 +119,6 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
       flagIcon: team.flagIcon || '',
       flagType: team.flagType || 'none',
     })
-  }
-
-  const handleCancelEdit = () => {
-    inlineEdit.cancelEdit()
   }
 
   const handleSaveEdit = async (teamId: number) => {
@@ -296,145 +274,19 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
                 </TableHeader>
                 <TableBody>
                   {filteredTeams.map((team) => (
-                    <TableRow key={team.id} className="table-row-hover">
-                      <TableCell>
-                        {inlineEdit.editingId === team.id && inlineEdit.form ? (
-                          <div className="flex items-start gap-2 min-w-max">
-                            <div className="flex-1 space-y-2">
-                              <Input
-                                type="text"
-                                value={inlineEdit.form.name}
-                                onChange={(e) =>
-                                  inlineEdit.updateForm({ name: e.target.value })
-                                }
-                                placeholder={t('teamName')}
-                                className="h-8"
-                                disabled={inlineEdit.isSaving}
-                                autoFocus
-                                aria-label={t('teamName')}
-                              />
-                              <Input
-                                type="text"
-                                value={inlineEdit.form.nickname}
-                                onChange={(e) =>
-                                  inlineEdit.updateForm({ nickname: e.target.value })
-                                }
-                                placeholder={t('nicknameOptional')}
-                                className="h-8"
-                                disabled={inlineEdit.isSaving}
-                                aria-label={t('nickname')}
-                              />
-                              <Input
-                                type="text"
-                                value={inlineEdit.form.shortcut}
-                                onChange={(e) =>
-                                  inlineEdit.updateForm({ shortcut: e.target.value })
-                                }
-                                placeholder={t('shortcut')}
-                                className="h-8"
-                                disabled={inlineEdit.isSaving}
-                                aria-label={t('teamShortcut')}
-                              />
-                              <Select
-                                value={inlineEdit.form.sportId}
-                                onValueChange={(value) =>
-                                  inlineEdit.updateForm({ sportId: value })
-                                }
-                              >
-                                <SelectTrigger className="h-8" aria-label={t('teamSport')}>
-                                  <SelectValue placeholder={t('selectSport')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {sports.map((sport) => (
-                                    <SelectItem key={sport.id} value={sport.id.toString()}>
-                                      {sport.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <Select
-                                value={inlineEdit.form.flagType}
-                                onValueChange={(value) =>
-                                  inlineEdit.updateForm({ flagType: value })
-                                }
-                              >
-                                <SelectTrigger className="h-8" aria-label={t('flagType')}>
-                                  <SelectValue placeholder={t('selectFlagType')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">{t('flagTypeNone')}</SelectItem>
-                                  <SelectItem value="icon">{t('flagTypeIcon')}</SelectItem>
-                                  <SelectItem value="path">{t('flagTypePath')}</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <Input
-                                type="text"
-                                value={inlineEdit.form.flagIcon}
-                                onChange={(e) =>
-                                  inlineEdit.updateForm({ flagIcon: e.target.value })
-                                }
-                                placeholder={inlineEdit.form.flagType === 'path' ? t('flagIconPathPlaceholder') : t('flagIconPlaceholder')}
-                                className="h-8"
-                                disabled={inlineEdit.isSaving}
-                                aria-label={t('flagIconPath')}
-                              />
-                            </div>
-                            <div className="flex items-center gap-2 mt-8">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                                aria-label={t('cancelEditing')}
-                              >
-                                {tCommon('cancel')}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleSaveEdit(team.id)}
-                                disabled={inlineEdit.isSaving}
-                                aria-label={t('saveChanges')}
-                              >
-                                {tCommon('save')}
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="font-medium">{team.name}</div>
-                            {team.nickname && (
-                              <div className="text-sm text-muted-foreground">{team.nickname}</div>
-                            )}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-mono text-sm text-muted-foreground">{team.shortcut}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{team.Sport.name}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStartEdit(team)}
-                            aria-label={t('editTeam', { name: team.name })}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteDialog.openDialog(team)}
-                            aria-label={t('deleteTeam', { name: team.name })}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <TeamTableRow
+                      key={team.id}
+                      team={team}
+                      isEditing={inlineEdit.editingId === team.id}
+                      editForm={inlineEdit.form}
+                      onStartEdit={() => handleStartEdit(team)}
+                      onSaveEdit={() => handleSaveEdit(team.id)}
+                      onCancelEdit={inlineEdit.cancelEdit}
+                      onDelete={() => deleteDialog.openDialog(team)}
+                      onFormChange={inlineEdit.updateForm}
+                      isSaving={inlineEdit.isSaving}
+                      sports={sports}
+                    />
                   ))}
                 </TableBody>
               </Table>
@@ -459,138 +311,15 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
       />
 
       {/* Create Team Dialog */}
-      <Dialog open={createDialog.open} onOpenChange={createDialog.setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('createTitle')}</DialogTitle>
-            <DialogDescription>{t('createDescription')}</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">{t('sport')}</label>
-              <Select
-                value={createDialog.form.sportId}
-                onValueChange={(value) =>
-                  createDialog.updateForm({ sportId: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('selectSport')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {sports.map((sport) => (
-                    <SelectItem key={sport.id} value={sport.id.toString()}>
-                      {sport.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">{tCommon('name')}</label>
-              <Input
-                placeholder={t('nameExample')}
-                value={createDialog.form.name}
-                onChange={(e) =>
-                  createDialog.updateForm({ name: e.target.value })
-                }
-                aria-label={t('teamName')}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">{t('nickname')}</label>
-              <Input
-                placeholder={t('nicknameExample')}
-                value={createDialog.form.nickname}
-                onChange={(e) =>
-                  createDialog.updateForm({ nickname: e.target.value })
-                }
-                aria-label={t('nickname')}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">{t('shortcut')}</label>
-              <Input
-                placeholder={t('shortcutExample')}
-                value={createDialog.form.shortcut}
-                onChange={(e) =>
-                  createDialog.updateForm({ shortcut: e.target.value })
-                }
-                aria-label={t('teamShortcut')}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">{t('flagType')}</label>
-              <Select
-                value={createDialog.form.flagType}
-                onValueChange={(value) =>
-                  createDialog.updateForm({ flagType: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('selectFlagType')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('flagTypeNone')}</SelectItem>
-                  <SelectItem value="icon">{t('flagTypeIconNational')}</SelectItem>
-                  <SelectItem value="path">{t('flagTypePathLogo')}</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('chooseFlagType')}
-              </p>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">{t('flagIconPath')}</label>
-              <Input
-                placeholder={createDialog.form.flagType === 'path' ? t('flagIconPathPlaceholder') : t('flagIconPlaceholder')}
-                value={createDialog.form.flagIcon}
-                onChange={(e) =>
-                  createDialog.updateForm({ flagIcon: e.target.value })
-                }
-                aria-label={t('flagIconPath')}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {createDialog.form.flagType === 'path'
-                  ? t('flagPathHelp')
-                  : t('flagIconHelp')}
-              </p>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">{t('externalId')}</label>
-              <Input
-                type="number"
-                placeholder={t('externalIdOptional')}
-                value={createDialog.form.externalId}
-                onChange={(e) =>
-                  createDialog.updateForm({ externalId: e.target.value })
-                }
-                aria-label={t('externalId')}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={createDialog.closeDialog}
-              disabled={createDialog.isCreating}
-            >
-              {tCommon('cancel')}
-            </Button>
-            <Button onClick={handleCreateTeam} disabled={createDialog.isCreating}>
-              {createDialog.isCreating ? t('creating') : tCommon('create')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateTeamDialog
+        open={createDialog.open}
+        onOpenChange={createDialog.setOpen}
+        formData={createDialog.form}
+        onFormChange={createDialog.updateForm}
+        onCreate={handleCreateTeam}
+        isCreating={createDialog.isCreating}
+        sports={sports}
+      />
     </>
   )
 }

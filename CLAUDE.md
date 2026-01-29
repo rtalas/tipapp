@@ -81,6 +81,7 @@ Nested JSON organized by namespaces:
 - Tables use PascalCase (`User`, `Match`, `UserBet`), mapped to `prisma.user`, `prisma.match`.
 - **DO NOT** rename fields to camelCase. Use introspected schema exactly as-is.
 - **Evaluator.points:** Uses `Int` type (not String) - stored as integers for performance and type safety.
+- **Evaluator.config:** Optional `Json` field storing `ScorerRankedConfig` for rank-based scorer evaluation. When config exists, points field is set to 0.
 - **Unique constraints:** All bet tables have unique constraints on `[foreignKey, leagueUserId, deletedAt]` to prevent duplicates.
 - **Performance indexes:** Critical query paths have composite indexes for fast lookups.
 
@@ -102,6 +103,7 @@ app/
     └── */              # Global (leagues, teams, players, users, series-types, special-bet-types)
 src/
 ├── actions/            # Server actions (admin + user)
+│   ├── evaluators.ts   # updateEvaluator() supports config for scorer rank-based points
 ├── components/         # UI (user + admin)
 ├── contexts/           # League context (admin + user)
 ├── hooks/              # useRefresh, useInlineEdit, useDeleteDialog, useCreateDialog, useExpandableRow
@@ -115,6 +117,7 @@ src/
 │   ├── server-action-utils.ts # executeServerAction()
 │   ├── prisma-utils.ts # nullableUniqueConstraint() for type-safe Prisma
 │   └── validation/     # Zod schemas (admin.ts, user.ts)
+│       └── admin.ts    # scorerRankedConfigSchema, updateEvaluatorSchema with config support
 └── types/              # Session + user types
 ```
 
@@ -130,6 +133,17 @@ src/
 2. **score-difference** - Goal diff (excl. exact)
 3. **winner** - Winner (final time, incl. OT/SO)
 4. **scorer** - Predicted scorer in actual scorers
+   - **Supports two modes:**
+     - Simple mode: Boolean (correct/incorrect)
+     - Rank-based mode: Variable points based on player ranking (stored in `Evaluator.config`)
+   - **ScorerRankedConfig structure:**
+     ```json
+     {
+       "rankedPoints": { "1": 2, "2": 4, "3": 5 },
+       "unrankedPoints": 8
+     }
+     ```
+   - Points awarded based on scorer's ranking at match time. Flexible rank count per league.
 5. **draw** - Draw prediction (soccer, excl. exact)
 6. **soccer-playoff-advance** - Advancing team
 7. **series-exact** - Exact series result
@@ -157,6 +171,10 @@ src/
 - **League context:** Topbar dropdown, localStorage persistence, URL sync
 - **Prizes:** 1-10 configurable tiers per league (stored in halers)
 - **Questions:** Yes/no bets, scoring logic (correct = +pts, wrong = -pts/2)
+- **Evaluator management:**
+  - Scorer evaluators support rank-based configuration (UI auto-expands row when editing)
+  - Ranking points UI: Add/remove ranks, set points per rank, set unranked points
+  - Config stored in `Evaluator.config` JSON field, validated via Zod schema
 - **Soft delete:** All entities use `deletedAt` timestamp
 - **Action buttons:** Direct icon buttons (no dropdowns)
 
@@ -178,6 +196,7 @@ src/
 - **Hooks:** `useInlineEdit`, `useDeleteDialog`, `useCreateDialog`, `useExpandableRow`, `useRefresh`
 - **Metrics:** State variables 11→3 (73% reduction), 100% accessibility, single validation source
 - **Utils:** `executeServerAction()` wrapper eliminates duplicate try-catch (89 lines removed)
+- **Type consolidation (Jan 2026):** `ScorerRankedConfig` interface consolidated from 5 duplicates to single source in `lib/evaluators/types.ts`
 
 ### Security Audit (Jan 2026) - 20/24 issues fixed
 **Fixed (Critical - First Audit):**

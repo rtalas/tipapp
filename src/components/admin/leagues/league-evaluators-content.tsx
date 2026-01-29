@@ -1,43 +1,31 @@
 'use client'
 
-import React, { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Trash2, Edit, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   createEvaluator,
-  updateEvaluatorPoints,
-  updateEvaluatorName,
+  updateEvaluator,
   deleteEvaluator,
 } from '@/actions/evaluators'
+import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/client-logger'
+import { useInlineEdit } from '@/hooks/useInlineEdit'
+import { useDeleteDialog } from '@/hooks/useDeleteDialog'
+import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
+import { EvaluatorTableRow } from './evaluator-table-row'
+import { CreateEvaluatorDialog } from './create-evaluator-dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import type { ScorerRankedConfig } from '@/lib/evaluators/types'
 
 interface EvaluatorType {
   id: number
@@ -49,6 +37,7 @@ interface Evaluator {
   name: string
   points: number
   evaluatorTypeId: number
+  config?: unknown // Prisma JsonValue
   EvaluatorType: EvaluatorType
 }
 
@@ -59,6 +48,20 @@ interface LeagueEvaluatorsContentProps {
   evaluatorTypes: EvaluatorType[]
 }
 
+interface EditFormData {
+  evaluatorTypeId: string
+  name: string
+  points: string
+  config?: ScorerRankedConfig | null
+}
+
+interface CreateFormData {
+  evaluatorTypeId: string
+  name: string
+  points: string
+  config?: ScorerRankedConfig | null
+}
+
 export function LeagueEvaluatorsContent({
   leagueId,
   leagueName,
@@ -66,139 +69,132 @@ export function LeagueEvaluatorsContent({
   evaluatorTypes,
 }: LeagueEvaluatorsContentProps) {
   const t = useTranslations('admin.leagueEvaluators')
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [editPointsValue, setEditPointsValue] = useState<string>('')
-  const [editNameValue, setEditNameValue] = useState<string>('')
-  const [isSaving, setIsSaving] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [evaluatorToDelete, setEvaluatorToDelete] = useState<Evaluator | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [createForm, setCreateForm] = useState({
+
+  const inlineEdit = useInlineEdit<EditFormData>()
+  const deleteDialog = useDeleteDialog<Evaluator>()
+  const createDialog = useCreateDialog<CreateFormData>({
     evaluatorTypeId: '',
     name: '',
     points: '',
   })
-  const [isCreating, setIsCreating] = useState(false)
 
   const handleStartEdit = (evaluator: Evaluator) => {
-    setEditingId(evaluator.id)
-    setEditNameValue(evaluator.name)
-    setEditPointsValue(String(evaluator.points))
-  }
+    // Check if this is a scorer evaluator
+    const isScorer = evaluator.EvaluatorType.name === 'scorer'
 
-  const handleCancelEditName = () => {
-    setEditingId(null)
-    setEditNameValue('')
-    setEditPointsValue('')
-  }
-
-  const handleCancelEditPoints = () => {
-    setEditingId(null)
-    setEditNameValue('')
-    setEditPointsValue('')
-  }
-
-  const handleSavePoints = async (evaluatorId: number) => {
-    if (!editPointsValue || isNaN(Number(editPointsValue))) {
-      toast.error(t('pointsValidation'))
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      await updateEvaluatorPoints({ evaluatorId, points: parseInt(editPointsValue, 10) })
-      toast.success(t('pointsUpdated'))
-      setEditingId(null)
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error(t('evaluatorUpdateFailed'))
+    // Cast config to proper type if it exists, or initialize default for scorer
+    let config: ScorerRankedConfig | null = null
+    if (evaluator.config && typeof evaluator.config === 'object') {
+      config = evaluator.config as ScorerRankedConfig
+    } else if (isScorer) {
+      // Initialize default config for scorer evaluators without one
+      config = {
+        rankedPoints: {
+          '1': evaluator.points,
+        },
+        unrankedPoints: evaluator.points,
       }
-      logger.error('Failed to update evaluator points', { error, evaluatorId })
-    } finally {
-      setIsSaving(false)
     }
+
+    inlineEdit.startEdit(evaluator.id, {
+      evaluatorTypeId: evaluator.evaluatorTypeId.toString(),
+      name: evaluator.name,
+      points: String(evaluator.points),
+      config,
+    })
   }
 
-  const handleSaveName = async (evaluatorId: number) => {
-    if (!editNameValue.trim()) {
+  const handleSaveEdit = async (evaluatorId: number) => {
+    if (!inlineEdit.form) return
+
+    if (!inlineEdit.form.name.trim()) {
       toast.error(t('nameValidation'))
       return
     }
 
-    setIsSaving(true)
-    try {
-      await updateEvaluatorName({ evaluatorId, name: editNameValue })
-      toast.success(t('nameUpdated'))
-      setEditingId(null)
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error(t('evaluatorUpdateFailed'))
+    // Validate config if it exists
+    if (inlineEdit.form.config) {
+      if (Object.keys(inlineEdit.form.config.rankedPoints).length === 0) {
+        toast.error('At least one ranking level is required')
+        return
       }
-      logger.error('Failed to update evaluator name', { error, evaluatorId })
+    } else {
+      // Only validate points if not using config
+      if (!inlineEdit.form.points || isNaN(Number(inlineEdit.form.points))) {
+        toast.error(t('pointsValidation'))
+        return
+      }
+    }
+
+    inlineEdit.setSaving(true)
+    try {
+      await updateEvaluator({
+        evaluatorId,
+        name: inlineEdit.form.name,
+        // Set points to 0 for scorers with config since actual points come from config
+        points: inlineEdit.form.config ? 0 : parseInt(inlineEdit.form.points, 10),
+        config: inlineEdit.form.config,
+      })
+      toast.success(t('evaluatorUpdated'))
+      inlineEdit.finishEdit()
+    } catch (error) {
+      const message = getErrorMessage(error, t('evaluatorUpdateFailed'))
+      toast.error(message)
+      logger.error('Failed to update evaluator', { error, evaluatorId })
     } finally {
-      setIsSaving(false)
+      inlineEdit.setSaving(false)
     }
   }
 
   const handleCreateEvaluator = async () => {
-    if (!createForm.evaluatorTypeId || !createForm.name || !createForm.points) {
+    if (!createDialog.form.evaluatorTypeId || !createDialog.form.name || !createDialog.form.points) {
       toast.error(t('fillValidation'))
       return
     }
 
-    if (isNaN(Number(createForm.points))) {
+    if (isNaN(Number(createDialog.form.points))) {
       toast.error(t('pointsValidation'))
       return
     }
 
-    setIsCreating(true)
+    createDialog.startCreating()
     try {
       await createEvaluator({
         leagueId,
-        evaluatorTypeId: parseInt(createForm.evaluatorTypeId, 10),
-        name: createForm.name,
-        points: parseInt(createForm.points, 10),
+        evaluatorTypeId: parseInt(createDialog.form.evaluatorTypeId, 10),
+        name: createDialog.form.name,
+        points: parseInt(createDialog.form.points, 10),
       })
       toast.success(t('evaluatorCreated'))
-      setCreateDialogOpen(false)
-      setCreateForm({ evaluatorTypeId: '', name: '', points: '' })
+      createDialog.finishCreating()
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error(t('evaluatorCreateFailed'))
-      }
+      const message = getErrorMessage(error, t('evaluatorCreateFailed'))
+      toast.error(message)
       logger.error('Failed to create evaluator', { error, leagueId })
-    } finally {
-      setIsCreating(false)
+      createDialog.cancelCreating()
     }
   }
 
   const handleDelete = async () => {
-    if (!evaluatorToDelete) return
-    setIsDeleting(true)
+    if (!deleteDialog.itemToDelete) return
+
+    deleteDialog.startDeleting()
     try {
-      await deleteEvaluator({ id: evaluatorToDelete.id })
+      await deleteEvaluator({ id: deleteDialog.itemToDelete.id })
       toast.success(t('evaluatorDeleted'))
-      setDeleteDialogOpen(false)
-      setEvaluatorToDelete(null)
+      deleteDialog.finishDeleting()
     } catch (error) {
-      toast.error(t('evaluatorDeleteFailed'))
-      logger.error('Failed to delete evaluator', { error, evaluatorId: evaluatorToDelete?.id })
-    } finally {
-      setIsDeleting(false)
+      const message = getErrorMessage(error, t('evaluatorDeleteFailed'))
+      toast.error(message)
+      logger.error('Failed to delete evaluator', { error, evaluatorId: deleteDialog.itemToDelete?.id })
+      deleteDialog.cancelDeleting()
     }
   }
 
   return (
     <>
       <div className="flex justify-end mb-6">
-        <Button onClick={() => setCreateDialogOpen(true)}>
+        <Button onClick={createDialog.openDialog}>
           <Plus className="mr-2 h-4 w-4" />
           {t('addEvaluator')}
         </Button>
@@ -230,112 +226,19 @@ export function LeagueEvaluatorsContent({
                 </TableHeader>
                 <TableBody>
                   {evaluators.map((evaluator) => (
-                    <TableRow key={evaluator.id} className="table-row-hover">
-                      <TableCell>
-                        {editingId === evaluator.id ? (
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="text"
-                              value={editNameValue}
-                              onChange={(e) => setEditNameValue(e.target.value)}
-                              className="flex-1 h-8"
-                              disabled={isSaving}
-                              autoFocus
-                              aria-label="Evaluator name"
-                            />
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEditName}
-                                aria-label="Cancel editing name"
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleSaveName(evaluator.id)}
-                                disabled={isSaving}
-                                aria-label="Save name"
-                              >
-                                Save
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="font-medium">{evaluator.name}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {evaluator.EvaluatorType.name}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {editingId === evaluator.id ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <Input
-                              type="number"
-                              min="0"
-                              value={editPointsValue}
-                              onChange={(e) => setEditPointsValue(e.target.value)}
-                              className="w-16 h-8 text-center"
-                              disabled={isSaving}
-                              aria-label="Points value"
-                            />
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEditPoints}
-                                aria-label="Cancel editing points"
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleSavePoints(evaluator.id)}
-                                disabled={isSaving}
-                                aria-label="Save points"
-                              >
-                                Save
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="font-mono font-bold">{evaluator.points}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {editingId === evaluator.id ? (
-                            <span className="text-sm text-muted-foreground">{t('editing')}</span>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleStartEdit(evaluator)}
-                              aria-label={`Edit evaluator: ${evaluator.name}`}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEvaluatorToDelete(evaluator)
-                              setDeleteDialogOpen(true)
-                            }}
-                            aria-label={`Delete evaluator: ${evaluator.name}`}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <EvaluatorTableRow
+                      key={evaluator.id}
+                      evaluator={evaluator}
+                      isEditing={inlineEdit.editingId === evaluator.id}
+                      editForm={inlineEdit.form ?? null}
+                      onStartEdit={() => handleStartEdit(evaluator)}
+                      onSaveEdit={() => handleSaveEdit(evaluator.id)}
+                      onCancelEdit={inlineEdit.cancelEdit}
+                      onDelete={() => deleteDialog.openDialog(evaluator)}
+                      onFormChange={inlineEdit.updateForm}
+                      isSaving={inlineEdit.isSaving}
+                      evaluatorTypes={evaluatorTypes}
+                    />
                   ))}
                 </TableBody>
               </Table>
@@ -346,83 +249,25 @@ export function LeagueEvaluatorsContent({
 
       {/* Delete Confirmation Dialog */}
       <DeleteEntityDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        open={deleteDialog.open}
+        onOpenChange={deleteDialog.setOpen}
         title={t('deleteTitle')}
-        description={t('deleteConfirm', { name: evaluatorToDelete?.name || '' })}
+        description={deleteDialog.itemToDelete ? t('deleteConfirm', { name: deleteDialog.itemToDelete.name }) : ''}
         onConfirm={handleDelete}
-        isDeleting={isDeleting}
+        isDeleting={deleteDialog.isDeleting}
       />
 
       {/* Create Evaluator Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('createTitle')}</DialogTitle>
-            <DialogDescription>{t('createDescription', { leagueName })}</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">{t('evaluatorType')}</label>
-              <Select
-                value={createForm.evaluatorTypeId}
-                onValueChange={(value) =>
-                  setCreateForm({ ...createForm, evaluatorTypeId: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('selectType')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {evaluatorTypes.map((type) => (
-                    <SelectItem key={type.id} value={type.id.toString()}>
-                      {type.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">{t('evaluatorName')}</label>
-              <Input
-                placeholder={t('nameExample')}
-                value={createForm.name}
-                onChange={(e) =>
-                  setCreateForm({ ...createForm, name: e.target.value })
-                }
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">{t('pointsLabel')}</label>
-              <Input
-                type="number"
-                min="0"
-                placeholder={t('pointsExample')}
-                value={createForm.points}
-                onChange={(e) =>
-                  setCreateForm({ ...createForm, points: e.target.value })
-                }
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setCreateDialogOpen(false)}
-              disabled={isCreating}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleCreateEvaluator} disabled={isCreating}>
-              {isCreating ? 'Creating...' : 'Create'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateEvaluatorDialog
+        open={createDialog.open}
+        onOpenChange={createDialog.setOpen}
+        formData={createDialog.form}
+        onFormChange={createDialog.updateForm}
+        onCreate={handleCreateEvaluator}
+        isCreating={createDialog.isCreating}
+        evaluatorTypes={evaluatorTypes}
+        leagueName={leagueName}
+      />
     </>
   )
 }

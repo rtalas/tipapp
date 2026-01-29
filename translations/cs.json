@@ -668,7 +668,20 @@
       "questionDeleted": "Otázka úspěšně smazána",
       "questionDeleteFailed": "Nepodařilo se smazat otázku",
       "questionEvaluated": "Otázka vyhodnocena! {count} uživatel(ů) aktualizováno.",
-      "questionEvaluateFailed": "Nepodařilo se vyhodnotit otázku"
+      "questionEvaluateFailed": "Nepodařilo se vyhodnotit otázku",
+      "questionText": "Text otázky",
+      "questionTextPlaceholder": "Zadejte text otázky...",
+      "charactersMinimum": "znaků (minimum 10)",
+      "deadlineDateTime": "Termín uzávěrky (UTC)",
+      "deadlineHelp": "Uživatelé nemohou odpovídat po tomto termínu.",
+      "createTitle": "Vytvořit otázku",
+      "createDescription": "Přidejte novou otázku, na kterou uživatelé odpoví Ano nebo Ne.",
+      "creating": "Vytváření...",
+      "fillAllFields": "Vyplňte prosím všechna povinná pole",
+      "questionMinLength": "Otázka musí mít alespoň 10 znaků",
+      "questionMaxLength": "Otázka nesmí přesáhnout 500 znaků",
+      "questionCreated": "Otázka úspěšně vytvořena",
+      "questionCreateFailed": "Nepodařilo se vytvořit otázku"
     },
     "users": {
       "title": "Správa uživatelů",

@@ -8,7 +8,7 @@ import { useState, useCallback } from 'react'
  */
 export function useInlineEdit<T = unknown>() {
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [form, setForm] = useState<T>()
+  const [form, setForm] = useState<T | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
   const startEdit = useCallback((id: number, initialData: T) => {
@@ -18,14 +18,14 @@ export function useInlineEdit<T = unknown>() {
 
   const updateForm = useCallback((updates: Partial<T>) => {
     setForm((prev) => {
-      if (!prev) return undefined
+      if (!prev) return null
       return Object.assign({}, prev, updates)
     })
   }, [])
 
   const cancelEdit = useCallback(() => {
     setEditingId(null)
-    setForm(undefined)
+    setForm(null)
   }, [])
 
   const setSaving = useCallback((saving: boolean) => {
@@ -34,7 +34,7 @@ export function useInlineEdit<T = unknown>() {
 
   const finishEdit = useCallback(() => {
     setEditingId(null)
-    setForm(undefined)
+    setForm(null)
     setIsSaving(false)
   }, [])
 

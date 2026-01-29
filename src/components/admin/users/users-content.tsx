@@ -1,8 +1,6 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { format } from 'date-fns'
-import { Check, X, Trash2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import {
@@ -17,34 +15,9 @@ import {
 } from '@/actions/users'
 import { logger } from '@/lib/client-logger'
 import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { PendingRequestsTable } from './pending-requests-table'
+import { LeagueUsersTable } from './league-users-table'
+import { AddUserDialog } from './add-user-dialog'
 
 interface User {
   id: number
@@ -88,8 +61,6 @@ interface UsersContentProps {
 
 export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: UsersContentProps) {
   const t = useTranslations('admin.users')
-  const tCommon = useTranslations('admin.common')
-  const tSeries = useTranslations('admin.series')
   const [search, setSearch] = useState('')
   const [leagueFilter, setLeagueFilter] = useState<string>('all')
   const [processingRequests, setProcessingRequests] = useState<Set<number>>(new Set())
@@ -264,6 +235,12 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
     }
   }
 
+  const handleCancelAddUser = () => {
+    setAddUserDialogOpen(false)
+    setSelectedUserId('')
+    setSelectedLeagueId('')
+  }
+
   // Load users when dialog opens
   React.useEffect(() => {
     if (addUserDialogOpen) {
@@ -274,206 +251,31 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
   return (
     <>
       {/* Pending Requests */}
-      <Card className="card-shadow">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>{t('pendingRequests')}</CardTitle>
-              <CardDescription>
-                {t('pendingRequestsDescription')}
-              </CardDescription>
-            </div>
-            {pendingRequests.length > 0 && (
-              <Badge variant="warning" className="text-sm">
-                {t('pending', { count: pendingRequests.length })}
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {pendingRequests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">{t('noPendingRequests')}</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {t('allRequestsProcessed')}
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('user')}</TableHead>
-                    <TableHead>{t('email')}</TableHead>
-                    <TableHead>{t('requestedLeague')}</TableHead>
-                    <TableHead>{t('date')}</TableHead>
-                    <TableHead className="w-[120px]">{tCommon('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingRequests.map((request) => (
-                    <TableRow key={request.id} className="table-row-hover">
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">
-                            {request.User.firstName} {request.User.lastName}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            @{request.User.username}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {request.User.email || '-'}
-                      </TableCell>
-                      <TableCell>{request.League.name}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {format(new Date(request.createdAt), 'MMM d, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-100"
-                            onClick={() => handleApprove(request.id)}
-                            disabled={processingRequests.has(request.id)}
-                          >
-                            <Check className="h-4 w-4" />
-                            <span className="sr-only">{t('approve')}</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleReject(request.id)}
-                            disabled={processingRequests.has(request.id)}
-                          >
-                            <X className="h-4 w-4" />
-                            <span className="sr-only">{t('reject')}</span>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <PendingRequestsTable
+        requests={pendingRequests}
+        onApprove={handleApprove}
+        onReject={handleReject}
+        processingRequests={processingRequests}
+      />
 
       {/* League Users */}
-      <Card className="card-shadow">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>{t('leagueUsers')}</CardTitle>
-              <CardDescription>
-                {t('leagueUsersDescription')}
-              </CardDescription>
-            </div>
-            <Button onClick={() => setAddUserDialogOpen(true)}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              {t('addUser')}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Filters */}
-          <div className="flex gap-4">
-            <Input
-              placeholder={t('searchPlaceholder')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="max-w-sm"
-            />
-            {!league && (
-              <Select value={leagueFilter} onValueChange={setLeagueFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder={t('league')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{tSeries('allLeagues')}</SelectItem>
-                  {leagues.map((lg) => (
-                    <SelectItem key={lg.id} value={lg.id.toString()}>
-                      {lg.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          {filteredLeagueUsers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">{t('noUsersFound')}</p>
-            </div>
-          ) : (
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('user')}</TableHead>
-                    <TableHead>{t('league')}</TableHead>
-                    <TableHead className="text-center">{t('admin')}</TableHead>
-                    <TableHead className="text-center">{t('active')}</TableHead>
-                    <TableHead className="text-center">{t('paid')}</TableHead>
-                    <TableHead className="w-[60px]">{tCommon('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLeagueUsers.map((lu) => (
-                    <TableRow key={lu.id} className="table-row-hover">
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">
-                            {lu.User.firstName} {lu.User.lastName}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {lu.User.email || `@${lu.User.username}`}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{lu.League.name}</TableCell>
-                      <TableCell className="text-center">
-                        <Switch
-                          checked={lu.admin ?? false}
-                          onCheckedChange={() => handleToggleAdmin(lu.id, lu.admin ?? false)}
-                        />
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Switch
-                          checked={lu.active ?? false}
-                          onCheckedChange={() => handleToggleActive(lu.id, lu.active ?? false)}
-                        />
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Switch
-                          checked={lu.paid}
-                          onCheckedChange={() => handleTogglePaid(lu.id, lu.paid)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setUserToRemove(lu)
-                            setRemoveDialogOpen(true)
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <LeagueUsersTable
+        leagueUsers={filteredLeagueUsers}
+        search={search}
+        onSearchChange={setSearch}
+        leagueFilter={leagueFilter}
+        onLeagueFilterChange={setLeagueFilter}
+        leagues={leagues}
+        showLeagueFilter={!league}
+        onToggleAdmin={handleToggleAdmin}
+        onToggleActive={handleToggleActive}
+        onTogglePaid={handleTogglePaid}
+        onRemove={(lu) => {
+          setUserToRemove(lu)
+          setRemoveDialogOpen(true)
+        }}
+        onAddUser={() => setAddUserDialogOpen(true)}
+      />
 
       {/* Remove Confirmation Dialog */}
       <DeleteEntityDialog
@@ -494,87 +296,21 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
       />
 
       {/* Add User Dialog */}
-      <Dialog open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('addUserTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('addUserDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {/* User selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('user')}</label>
-              <Select
-                value={selectedUserId}
-                onValueChange={setSelectedUserId}
-                disabled={isLoadingUsers || allUsers.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      isLoadingUsers
-                        ? tCommon('loading')
-                        : allUsers.length === 0
-                        ? t('noUsersAvailable')
-                        : t('selectUser')
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {allUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.id.toString()}>
-                      {user.firstName} {user.lastName} (@{user.username})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* League selector (only if not on league-specific page) */}
-            {!league && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('league')}</label>
-                <Select
-                  value={selectedLeagueId}
-                  onValueChange={setSelectedLeagueId}
-                  disabled={leagues.length === 0}
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        leagues.length === 0
-                          ? tCommon('noLeaguesAvailable')
-                          : t('selectLeague')
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {leagues.map((lg) => (
-                      <SelectItem key={lg.id} value={lg.id.toString()}>
-                        {lg.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setAddUserDialogOpen(false)
-              setSelectedUserId('')
-              setSelectedLeagueId('')
-            }}>
-              {tCommon('cancel')}
-            </Button>
-            <Button onClick={handleAddUser} disabled={isAddingUser}>
-              {isAddingUser ? t('adding') : t('addUserButton')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddUserDialog
+        open={addUserDialogOpen}
+        onOpenChange={setAddUserDialogOpen}
+        selectedUserId={selectedUserId}
+        onUserIdChange={setSelectedUserId}
+        selectedLeagueId={selectedLeagueId}
+        onLeagueIdChange={setSelectedLeagueId}
+        allUsers={allUsers}
+        leagues={leagues}
+        showLeagueSelector={!league}
+        isLoadingUsers={isLoadingUsers}
+        isAddingUser={isAddingUser}
+        onAddUser={handleAddUser}
+        onCancel={handleCancelAddUser}
+      />
     </>
   )
 }

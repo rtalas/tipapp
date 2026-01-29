@@ -1,0 +1,85 @@
+import { Zap, Lock, Clock } from 'lucide-react'
+import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
+import type { UserMatch } from '@/actions/user/matches'
+
+interface MatchHeaderProps {
+  match: UserMatch
+  isLocked: boolean
+  isEvaluated: boolean
+  isDoubled: boolean
+}
+
+export function MatchHeader({
+  match,
+  isLocked,
+  isEvaluated,
+  isDoubled,
+}: MatchHeaderProps) {
+  const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
+  const isPlayoff = match.Match.isPlayoffGame
+
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-1.5">
+        {/* Phase + Game Number badge */}
+        {match.Match.MatchPhase && (
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
+            {match.Match.MatchPhase.name}
+            {match.Match.gameNumber &&
+              match.Match.MatchPhase.bestOf &&
+              match.Match.MatchPhase.bestOf > 1 && <>, Game {match.Match.gameNumber}</>}
+          </span>
+        )}
+
+        {/* Fallback badges for backward compatibility (only if no phase) */}
+        {!match.Match.MatchPhase && (
+          <>
+            {homeTeam.group && (
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
+                {homeTeam.group}
+              </span>
+            )}
+            {isPlayoff && (
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
+                Playoff
+              </span>
+            )}
+          </>
+        )}
+      </div>
+      <div className="flex items-center gap-1.5">
+        {isDoubled && (
+          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 text-[10px] font-bold">
+            <Zap className="w-3 h-3" />
+            2x
+          </span>
+        )}
+        {isLocked && (
+          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-muted-foreground text-[10px] font-medium">
+            <Lock className="w-3 h-3" />
+            Locked
+          </span>
+        )}
+        {!isLocked && (
+          <span className="badge-upcoming flex items-center gap-1 text-[10px]">
+            <Clock className="w-3 h-3" />
+            {format(match.Match.dateTime, 'HH:mm')}
+          </span>
+        )}
+        {isEvaluated && match.userBet && (
+          <span
+            className={cn(
+              'px-2 py-0.5 rounded text-[10px] font-bold',
+              match.userBet.totalPoints > 0
+                ? 'bg-primary/20 text-primary'
+                : 'bg-secondary text-muted-foreground'
+            )}
+          >
+            +{match.userBet.totalPoints} pts
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}

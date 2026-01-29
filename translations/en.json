@@ -668,7 +668,20 @@
       "questionDeleted": "Question deleted successfully",
       "questionDeleteFailed": "Failed to delete question",
       "questionEvaluated": "Question evaluated! {count} user(s) updated.",
-      "questionEvaluateFailed": "Failed to evaluate question"
+      "questionEvaluateFailed": "Failed to evaluate question",
+      "questionText": "Question Text",
+      "questionTextPlaceholder": "Enter the question text...",
+      "charactersMinimum": "characters (minimum 10)",
+      "deadlineDateTime": "Deadline Date & Time (UTC)",
+      "deadlineHelp": "Users cannot answer after this deadline.",
+      "createTitle": "Create Question",
+      "createDescription": "Add a new question for users to answer with Yes or No.",
+      "creating": "Creating...",
+      "fillAllFields": "Please fill in all required fields",
+      "questionMinLength": "Question must be at least 10 characters",
+      "questionMaxLength": "Question must not exceed 500 characters",
+      "questionCreated": "Question created successfully",
+      "questionCreateFailed": "Failed to create question"
     },
     "users": {
       "title": "User Management",

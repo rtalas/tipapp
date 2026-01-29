@@ -1,41 +1,31 @@
 'use client'
 
 import { useState } from 'react'
-import { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
-import { deleteQuestion } from '@/actions/questions'
+import { deleteQuestion, createQuestion } from '@/actions/questions'
 import { evaluateQuestionBets } from '@/actions/evaluate-questions'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
+import { useCreateDialog } from '@/hooks/useCreateDialog'
+import { ContentFilterHeader } from '@/components/admin/common/content-filter-header'
 import { DetailedEntityDeleteDialog } from '@/components/admin/common/detailed-entity-delete-dialog'
-import { cn } from '@/lib/utils'
+import { QuestionTableRow } from './question-table-row'
+import { CreateQuestionDialog } from './create-question-dialog'
+import { EditQuestionDialog } from './edit-question-dialog'
+import { CreateQuestionBetDialog } from './create-question-bet-dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { AddQuestionDialog } from './add-question-dialog'
-import { EditQuestionDialog } from './edit-question-dialog'
-import { QuestionBetRow } from './question-bet-row'
-import { CreateQuestionBetDialog } from './create-question-bet-dialog'
 import { type QuestionWithUserBets } from '@/actions/question-bets'
 import { type UserBasic } from '@/actions/users'
 
@@ -46,6 +36,11 @@ interface QuestionsContentProps {
   questions: Question[]
   users: User[]
   league: { id: number; name: string }
+}
+
+interface CreateFormData {
+  text: string
+  dateTime: string
 }
 
 function getQuestionStatus(question: Question): 'scheduled' | 'finished' | 'evaluated' {
@@ -61,15 +56,17 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [userFilter, setUserFilter] = useState<string>('all')
-  const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [questionToEdit, setQuestionToEdit] = useState<Question | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [createBetQuestionId, setCreateBetQuestionId] = useState<number | null>(null)
 
-  // Expandable rows
   const { isExpanded, toggleRow } = useExpandableRow()
+  const createDialog = useCreateDialog<CreateFormData>({
+    text: '',
+    dateTime: '',
+  })
 
   // Filter questions with optimized string search
   const filteredQuestions = questions.filter((q) => {
@@ -97,6 +94,39 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
 
     return true
   })
+
+  const handleCreateQuestion = async () => {
+    if (!createDialog.form.text || !createDialog.form.dateTime) {
+      toast.error(t('fillAllFields'))
+      return
+    }
+
+    if (createDialog.form.text.length < 10) {
+      toast.error(t('questionMinLength'))
+      return
+    }
+
+    if (createDialog.form.text.length > 500) {
+      toast.error(t('questionMaxLength'))
+      return
+    }
+
+    createDialog.startCreating()
+    try {
+      await createQuestion({
+        leagueId: league.id,
+        text: createDialog.form.text,
+        dateTime: new Date(createDialog.form.dateTime),
+      })
+      toast.success(t('questionCreated'))
+      createDialog.finishCreating()
+    } catch (error) {
+      const message = getErrorMessage(error, t('questionCreateFailed'))
+      toast.error(message)
+      logger.error('Failed to create question', { error })
+      createDialog.cancelCreating()
+    }
+  }
 
   const handleDelete = async () => {
     if (!questionToDelete) return
@@ -136,47 +166,43 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
 
   return (
     <>
-      {/* Filters */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-1 flex-wrap gap-2">
-          <Input
-            placeholder={t('searchPlaceholder')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder={tCommon('status')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{tSeries('allStatus')}</SelectItem>
-              <SelectItem value="scheduled">{tSeries('scheduled')}</SelectItem>
-              <SelectItem value="finished">{tSeries('finished')}</SelectItem>
-              <SelectItem value="evaluated">{tSeries('evaluated')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={userFilter} onValueChange={setUserFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={tSeries('allUsers')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{tSeries('allUsers')}</SelectItem>
-              {users.map((user) => (
-                <SelectItem key={user.id} value={user.id.toString()}>
-                  {user.firstName} {user.lastName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('createQuestion')}
-        </Button>
-      </div>
+      {/* Header with Create Button and Filters */}
+      <ContentFilterHeader
+        searchPlaceholder={t('searchPlaceholder')}
+        searchValue={search}
+        onSearchChange={setSearch}
+        filters={[
+          {
+            name: 'status',
+            value: statusFilter,
+            onChange: setStatusFilter,
+            placeholder: tCommon('status'),
+            options: [
+              { value: 'all', label: tSeries('allStatus') },
+              { value: 'scheduled', label: tSeries('scheduled') },
+              { value: 'finished', label: tSeries('finished') },
+              { value: 'evaluated', label: tSeries('evaluated') },
+            ],
+          },
+          {
+            name: 'user',
+            value: userFilter,
+            onChange: setUserFilter,
+            placeholder: tSeries('allUsers'),
+            options: [
+              { value: 'all', label: tSeries('allUsers') },
+              ...users.map((user) => ({
+                value: user.id.toString(),
+                label: `${user.firstName} ${user.lastName}`,
+              })),
+            ],
+          },
+        ]}
+        createButtonLabel={t('createQuestion')}
+        onCreateClick={createDialog.openDialog}
+      />
 
-      {/* Questions table */}
+      {/* Questions Table */}
       <Card className="card-shadow">
         <CardHeader>
           <CardTitle>{t('allQuestions')}</CardTitle>
@@ -188,7 +214,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
           {filteredQuestions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-muted-foreground mb-4">{t('noQuestionsFound')}</p>
-              <Button onClick={() => setAddDialogOpen(true)}>
+              <Button onClick={createDialog.openDialog}>
                 <Plus className="mr-2 h-4 w-4" />
                 {t('createFirstQuestion')}
               </Button>
@@ -209,165 +235,22 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredQuestions.map((q) => {
-                    const status = getQuestionStatus(q)
-                    const expanded = isExpanded(q.id)
-
-                    return (
-                      <Fragment key={q.id}>
-                        {/* Main row - clickable to expand */}
-                        <TableRow
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => toggleRow(q.id)}
-                        >
-                          <TableCell>
-                            <ChevronDown
-                              className={cn(
-                                'h-4 w-4 transition-transform',
-                                expanded && 'rotate-180'
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="font-mono text-muted-foreground">
-                            #{q.id}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {format(new Date(q.dateTime), 'd.M.yyyy')}
-                              </span>
-                              <span className="text-sm text-muted-foreground">
-                                {format(new Date(q.dateTime), 'HH:mm')}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="max-w-md">
-                              <p className="line-clamp-2">{q.text}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {q.result !== null ? (
-                              <Badge variant={q.result ? 'default' : 'secondary'}>
-                                {q.result ? t('yes') : t('no')}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline">{q.UserSpecialBetQuestion.length}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                status === 'evaluated'
-                                  ? 'evaluated'
-                                  : status === 'finished'
-                                  ? 'finished'
-                                  : 'scheduled'
-                              }
-                            >
-                              {tSeries(status)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div
-                              className="flex items-center gap-2"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setQuestionToEdit(q)
-                                }}
-                                aria-label={t('editQuestion', { text: q.text.substring(0, 50) })}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleEvaluate(q.id)
-                                }}
-                                aria-label={t('evaluateQuestion', { text: q.text.substring(0, 50) })}
-                              >
-                                <Calculator className="h-4 w-4 text-blue-600" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setQuestionToDelete(q)
-                                  setDeleteDialogOpen(true)
-                                }}
-                                aria-label={t('deleteQuestion', { text: q.text.substring(0, 50) })}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Expanded row - user bets */}
-                        {expanded && (
-                          <TableRow>
-                            <TableCell colSpan={8} className="bg-muted/20 p-0">
-                              <div className="p-4">
-                                {q.UserSpecialBetQuestion.length === 0 ? (
-                                  <div className="py-8 text-center">
-                                    <p className="text-muted-foreground">{t('noUserBets')}</p>
-                                  </div>
-                                ) : (
-                                  <div className="rounded-lg border bg-background">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead>{tSeries('user')}</TableHead>
-                                          <TableHead>{t('answer')}</TableHead>
-                                          <TableHead>{tSeries('points')}</TableHead>
-                                          <TableHead className="text-right">{tCommon('actions')}</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {q.UserSpecialBetQuestion.map((bet) => (
-                                          <QuestionBetRow
-                                            key={bet.id}
-                                            bet={bet}
-                                            questionText={q.text}
-                                            isQuestionEvaluated={q.isEvaluated}
-                                            questionId={q.id}
-                                          />
-                                        ))}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                )}
-
-                                {/* Add Missing Bet button */}
-                                <div className="mt-4 flex justify-end">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCreateBetQuestionId(q.id)}
-                                    aria-label={tSeries('addMissingBetAria')}
-                                  >
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    {tSeries('addMissingBet')}
-                                  </Button>
-                                </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </Fragment>
-                    )
-                  })}
+                  {filteredQuestions.map((q) => (
+                    <QuestionTableRow
+                      key={q.id}
+                      question={q}
+                      isExpanded={isExpanded(q.id)}
+                      onToggleExpand={() => toggleRow(q.id)}
+                      onEdit={() => setQuestionToEdit(q)}
+                      onEvaluate={() => handleEvaluate(q.id)}
+                      onDelete={() => {
+                        setQuestionToDelete(q)
+                        setDeleteDialogOpen(true)
+                      }}
+                      onAddBet={() => setCreateBetQuestionId(q.id)}
+                      status={getQuestionStatus(q)}
+                    />
+                  ))}
                 </TableBody>
               </Table>
             </div>
@@ -375,11 +258,14 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
         </CardContent>
       </Card>
 
-      {/* Add Question Dialog */}
-      <AddQuestionDialog
-        open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
-        league={league}
+      {/* Create Question Dialog */}
+      <CreateQuestionDialog
+        open={createDialog.open}
+        onOpenChange={createDialog.setOpen}
+        formData={createDialog.form}
+        onFormChange={createDialog.updateForm}
+        onCreate={handleCreateQuestion}
+        isCreating={createDialog.isCreating}
       />
 
       {/* Edit Question Dialog */}

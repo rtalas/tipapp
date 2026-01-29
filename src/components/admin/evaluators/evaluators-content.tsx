@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import {
   updateEvaluatorPoints,
   updateEvaluatorName,
+  updateEvaluator,
   deleteEvaluator,
 } from '@/actions/evaluators'
 import { logger } from '@/lib/client-logger'
@@ -38,6 +39,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { EvaluatorCreateDialog } from './evaluator-create-dialog'
+import type { ScorerRankedConfig } from '@/lib/evaluators/types'
 
 interface EvaluatorType {
   id: number
@@ -47,11 +49,6 @@ interface EvaluatorType {
 interface League {
   id: number
   name: string
-}
-
-interface ScorerRankedConfig {
-  rankedPoints: Record<string, number>
-  unrankedPoints: number
 }
 
 interface Evaluator {
@@ -86,6 +83,7 @@ export function EvaluatorsContent({
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editPointsValue, setEditPointsValue] = useState<string>('')
   const [editNameValue, setEditNameValue] = useState<string>('')
+  const [editConfig, setEditConfig] = useState<ScorerRankedConfig | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [evaluatorToDelete, setEvaluatorToDelete] = useState<Evaluator | null>(null)
@@ -113,19 +111,37 @@ export function EvaluatorsContent({
     setEditingId(evaluator.id)
     setEditNameValue(evaluator.name)
     setEditPointsValue(String(evaluator.points))
+
+    // Initialize config for scorer evaluators
+    const isScorer = evaluator.EvaluatorType.name === 'scorer'
+    if (isScorer) {
+      if (evaluator.config && typeof evaluator.config === 'object') {
+        setEditConfig(evaluator.config as ScorerRankedConfig)
+      } else {
+        // Initialize default config
+        setEditConfig({
+          rankedPoints: { '1': evaluator.points },
+          unrankedPoints: evaluator.points,
+        })
+      }
+    } else {
+      setEditConfig(null)
+    }
   }
 
   const handleCancelEdit = () => {
     setEditingId(null)
     setEditNameValue('')
     setEditPointsValue('')
+    setEditConfig(null)
   }
 
   const handleSave = async (evaluatorId: number, originalName: string, originalPoints: number) => {
     const nameChanged = editNameValue.trim() !== originalName
     const pointsChanged = editPointsValue !== String(originalPoints)
+    const hasConfig = editConfig !== null
 
-    if (!nameChanged && !pointsChanged) {
+    if (!nameChanged && !pointsChanged && !hasConfig) {
       handleCancelEdit()
       return
     }
@@ -140,20 +156,40 @@ export function EvaluatorsContent({
       return
     }
 
+    // Validate config if present
+    if (hasConfig && editConfig) {
+      if (Object.keys(editConfig.rankedPoints).length === 0) {
+        toast.error('At least one ranking level is required')
+        return
+      }
+    }
+
     setIsSaving(true)
     try {
-      // Update both fields if changed
-      if (nameChanged) {
-        await updateEvaluatorName({ evaluatorId, name: editNameValue })
-      }
-      if (pointsChanged) {
-        await updateEvaluatorPoints({ evaluatorId, points: parseInt(editPointsValue, 10) })
+      // If editing scorer with config, use updateEvaluator which supports config
+      if (hasConfig) {
+        // For scorers with config, set points to 0 since actual points come from config
+        await updateEvaluator({
+          evaluatorId,
+          name: editNameValue.trim(),
+          points: 0,
+          config: editConfig,
+        })
+      } else {
+        // For non-scorer evaluators, use the old method
+        if (nameChanged) {
+          await updateEvaluatorName({ evaluatorId, name: editNameValue })
+        }
+        if (pointsChanged) {
+          await updateEvaluatorPoints({ evaluatorId, points: parseInt(editPointsValue, 10) })
+        }
       }
 
       toast.success(t('toast.updated'))
       setEditingId(null)
       setEditNameValue('')
       setEditPointsValue('')
+      setEditConfig(null)
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
@@ -243,60 +279,205 @@ export function EvaluatorsContent({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEvaluators.map((evaluator) => (
-                    <TableRow key={evaluator.id} className="table-row-hover">
-                      {!league && (
+                  {filteredEvaluators.map((evaluator) => {
+                    const isEditingThisRow = editingId === evaluator.id
+                    const isEditingScorer = isEditingThisRow && editConfig !== null
+
+                    // For scorer evaluators being edited, show full-width row
+                    if (isEditingScorer) {
+                      return (
+                        <TableRow key={evaluator.id} className="table-row-hover">
+                          <TableCell colSpan={league ? 4 : 5} className="p-4">
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium">Rule Name</label>
+                                <Input
+                                  type="text"
+                                  value={editNameValue}
+                                  onChange={(e) => setEditNameValue(e.target.value)}
+                                  className="h-8 mt-1"
+                                  disabled={isSaving}
+                                  aria-label="Evaluator name"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-sm font-medium">Ranking Points</label>
+                                <div className="space-y-2 mt-2">
+                                  {editConfig && Object.entries(editConfig.rankedPoints)
+                                    .sort(([a], [b]) => Number(a) - Number(b))
+                                    .map(([rank, points]) => (
+                                      <div key={rank} className="flex items-center gap-2">
+                                        <span className="text-sm font-medium w-16">Rank {rank}:</span>
+                                        <Input
+                                          type="number"
+                                          min="0"
+                                          max="100"
+                                          value={points}
+                                          onChange={(e) => {
+                                            const val = parseInt(e.target.value, 10)
+                                            if (!isNaN(val) && editConfig) {
+                                              setEditConfig({
+                                                ...editConfig,
+                                                rankedPoints: {
+                                                  ...editConfig.rankedPoints,
+                                                  [rank]: val,
+                                                },
+                                              })
+                                            }
+                                          }}
+                                          className="w-20 h-8"
+                                          disabled={isSaving}
+                                        />
+                                        <span className="text-sm text-muted-foreground">pts</span>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            if (editConfig && Object.keys(editConfig.rankedPoints).length > 1) {
+                                              const newRankedPoints = { ...editConfig.rankedPoints }
+                                              delete newRankedPoints[rank]
+                                              setEditConfig({
+                                                ...editConfig,
+                                                rankedPoints: newRankedPoints,
+                                              })
+                                            }
+                                          }}
+                                          disabled={isSaving || (editConfig && Object.keys(editConfig.rankedPoints).length === 1)}
+                                        >
+                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      if (editConfig) {
+                                        const existingRanks = Object.keys(editConfig.rankedPoints).map(Number)
+                                        const nextRank = existingRanks.length > 0 ? Math.max(...existingRanks) + 1 : 1
+                                        setEditConfig({
+                                          ...editConfig,
+                                          rankedPoints: {
+                                            ...editConfig.rankedPoints,
+                                            [nextRank.toString()]: 0,
+                                          },
+                                        })
+                                      }
+                                    }}
+                                    disabled={isSaving}
+                                  >
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    Add Rank
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="text-sm font-medium">Unranked Points</label>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={editConfig?.unrankedPoints || 0}
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value, 10)
+                                      if (!isNaN(val) && editConfig) {
+                                        setEditConfig({
+                                          ...editConfig,
+                                          unrankedPoints: val,
+                                        })
+                                      }
+                                    }}
+                                    className="w-20 h-8"
+                                    disabled={isSaving}
+                                  />
+                                  <span className="text-sm text-muted-foreground">pts for unranked scorers</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 pt-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEdit}
+                                  disabled={isSaving}
+                                >
+                                  {tCommon('cancel')}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
+                                  disabled={isSaving}
+                                >
+                                  {tCommon('save')}
+                                </Button>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    }
+
+                    // Normal row display or simple inline editing
+                    return (
+                      <TableRow key={evaluator.id} className="table-row-hover">
+                        {!league && (
+                          <TableCell>
+                            <Badge variant="secondary">{evaluator.League.name}</Badge>
+                          </TableCell>
+                        )}
                         <TableCell>
-                          <Badge variant="secondary">{evaluator.League.name}</Badge>
+                          {isEditingThisRow ? (
+                            <Input
+                              type="text"
+                              value={editNameValue}
+                              onChange={(e) => setEditNameValue(e.target.value)}
+                              className="h-8"
+                              disabled={isSaving}
+                              autoFocus
+                              aria-label="Evaluator name"
+                            />
+                          ) : (
+                            <span className="font-medium">{evaluator.name}</span>
+                          )}
                         </TableCell>
-                      )}
-                      <TableCell>
-                        {editingId === evaluator.id ? (
-                          <Input
-                            type="text"
-                            value={editNameValue}
-                            onChange={(e) => setEditNameValue(e.target.value)}
-                            className="h-8"
-                            disabled={isSaving}
-                            autoFocus
-                            aria-label="Evaluator name"
-                          />
-                        ) : (
-                          <span className="font-medium">{evaluator.name}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {evaluator.EvaluatorType.name}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {editingId === evaluator.id ? (
-                          <Input
-                            type="number"
-                            min="0"
-                            value={editPointsValue}
-                            onChange={(e) => setEditPointsValue(e.target.value)}
-                            className="w-20 h-8 text-center mx-auto"
-                            disabled={isSaving}
-                            aria-label="Points value"
-                          />
-                        ) : evaluator.config && evaluator.EvaluatorType.name === 'scorer' ? (
-                          <span className="text-xs font-mono">
-                            {(() => {
-                              const config = evaluator.config as ScorerRankedConfig
-                              return Object.entries(config.rankedPoints)
-                                .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                                .map(([rank, pts]) => `R${rank}:${pts}`)
-                                .join(' ') + ` U:${config.unrankedPoints}`
-                            })()}
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {evaluator.EvaluatorType.name}
                           </span>
-                        ) : (
-                          <span className="font-mono font-bold">{evaluator.points}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {isEditingThisRow ? (
+                            <Input
+                              type="number"
+                              min="0"
+                              value={editPointsValue}
+                              onChange={(e) => setEditPointsValue(e.target.value)}
+                              className="w-20 h-8 text-center mx-auto"
+                              disabled={isSaving}
+                              aria-label="Points value"
+                            />
+                          ) : evaluator.config && evaluator.EvaluatorType.name === 'scorer' ? (
+                            <span className="text-xs font-mono">
+                              {(() => {
+                                const config = evaluator.config as ScorerRankedConfig
+                                return Object.entries(config.rankedPoints)
+                                  .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                                  .map(([rank, pts]) => `R${rank}:${pts}`)
+                                  .join(' ') + ` U:${config.unrankedPoints}`
+                              })()}
+                            </span>
+                          ) : (
+                            <span className="font-mono font-bold">{evaluator.points}</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
                           {editingId === evaluator.id ? (
                             <>
                               <Button
@@ -344,7 +525,8 @@ export function EvaluatorsContent({
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>

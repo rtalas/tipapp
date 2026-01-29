@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Trash2, Edit, Plus, Eye, EyeOff } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import {
@@ -16,14 +16,14 @@ import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
+import { PlayerTableRow } from './player-table-row'
+import { CreatePlayerDialog } from './create-player-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -35,15 +35,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Switch } from '@/components/ui/switch'
 
 interface Player {
   id: number
@@ -128,10 +119,6 @@ export function PlayersContent({ players }: PlayersContentProps) {
       lastName: player.lastName || '',
       position: player.position || '',
     })
-  }
-
-  const handleCancelEdit = () => {
-    inlineEdit.cancelEdit()
   }
 
   const handleSaveEdit = async (playerId: number) => {
@@ -290,122 +277,19 @@ export function PlayersContent({ players }: PlayersContentProps) {
                 </TableHeader>
                 <TableBody>
                   {filteredPlayers.map((player) => (
-                    <TableRow key={player.id} className="table-row-hover">
-                      <TableCell>
-                        {inlineEdit.editingId === player.id && inlineEdit.form ? (
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 space-y-2">
-                              <Input
-                                type="text"
-                                value={inlineEdit.form.firstName}
-                                onChange={(e) =>
-                                  inlineEdit.updateForm({ firstName: e.target.value })
-                                }
-                                placeholder={t('firstName')}
-                                className="h-8"
-                                disabled={inlineEdit.isSaving}
-                                autoFocus
-                                aria-label={t('firstName')}
-                              />
-                              <Input
-                                type="text"
-                                value={inlineEdit.form.lastName}
-                                onChange={(e) =>
-                                  inlineEdit.updateForm({ lastName: e.target.value })
-                                }
-                                placeholder={t('lastName')}
-                                className="h-8"
-                                disabled={inlineEdit.isSaving}
-                                aria-label={t('lastName')}
-                              />
-                              <Input
-                                type="text"
-                                value={inlineEdit.form.position}
-                                onChange={(e) =>
-                                  inlineEdit.updateForm({ position: e.target.value })
-                                }
-                                placeholder={t('positionOptional')}
-                                className="h-8"
-                                disabled={inlineEdit.isSaving}
-                                aria-label={t('position')}
-                              />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                                aria-label={t('cancelEditing')}
-                              >
-                                {tCommon('cancel')}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleSaveEdit(player.id)}
-                                disabled={inlineEdit.isSaving}
-                                aria-label={tCommon('save')}
-                              >
-                                {tCommon('save')}
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="font-medium">{getPlayerName(player)}</div>
-                            {!player.isActive && (
-                              <Badge variant="outline" className="mt-1">
-                                {t('inactive')}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {player.position || '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {player.isActive ? (
-                          <Badge variant="success">{t('active')}</Badge>
-                        ) : (
-                          <Badge variant="secondary">{t('inactive')}</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStartEdit(player)}
-                            aria-label={t('editPlayer', { name: getPlayerName(player) })}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleToggleActive(player)}
-                            aria-label={`Toggle active status: ${getPlayerName(player)}`}
-                          >
-                            {player.isActive ? (
-                              <Eye className="h-4 w-4" />
-                            ) : (
-                              <EyeOff className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteDialog.openDialog(player)}
-                            aria-label={t('deletePlayer', { name: getPlayerName(player) })}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <PlayerTableRow
+                      key={player.id}
+                      player={player}
+                      isEditing={inlineEdit.editingId === player.id}
+                      editForm={inlineEdit.form}
+                      onStartEdit={() => handleStartEdit(player)}
+                      onSaveEdit={() => handleSaveEdit(player.id)}
+                      onCancelEdit={inlineEdit.cancelEdit}
+                      onDelete={() => deleteDialog.openDialog(player)}
+                      onToggleActive={() => handleToggleActive(player)}
+                      onFormChange={inlineEdit.updateForm}
+                      isSaving={inlineEdit.isSaving}
+                    />
                   ))}
                 </TableBody>
               </Table>
@@ -425,89 +309,14 @@ export function PlayersContent({ players }: PlayersContentProps) {
       />
 
       {/* Create Player Dialog */}
-      <Dialog open={createDialog.open} onOpenChange={createDialog.setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('createTitle')}</DialogTitle>
-            <DialogDescription>{t('createDescription')}</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">{t('firstName')}</label>
-              <Input
-                placeholder="e.g., Cristiano"
-                value={createDialog.form.firstName}
-                onChange={(e) =>
-                  createDialog.updateForm({ firstName: e.target.value })
-                }
-                aria-label={t('firstName')}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">{t('lastName')}</label>
-              <Input
-                placeholder="e.g., Ronaldo"
-                value={createDialog.form.lastName}
-                onChange={(e) =>
-                  createDialog.updateForm({ lastName: e.target.value })
-                }
-                aria-label={t('lastName')}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">{t('position')}</label>
-              <Input
-                placeholder="e.g., Forward"
-                value={createDialog.form.position}
-                onChange={(e) =>
-                  createDialog.updateForm({ position: e.target.value })
-                }
-                aria-label={t('position')}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">{t('active')}</label>
-              <Switch
-                checked={createDialog.form.isActive}
-                onCheckedChange={(checked) =>
-                  createDialog.updateForm({ isActive: checked })
-                }
-                aria-label={t('active')}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">External ID</label>
-              <Input
-                type="number"
-                placeholder="Optional external ID"
-                value={createDialog.form.externalId}
-                onChange={(e) =>
-                  createDialog.updateForm({ externalId: e.target.value })
-                }
-                aria-label="External ID"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={createDialog.closeDialog}
-              disabled={createDialog.isCreating}
-            >
-              {tCommon('cancel')}
-            </Button>
-            <Button onClick={handleCreatePlayer} disabled={createDialog.isCreating}>
-              {createDialog.isCreating ? tCommon('creating') : tCommon('create')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreatePlayerDialog
+        open={createDialog.open}
+        onOpenChange={createDialog.setOpen}
+        formData={createDialog.form}
+        onFormChange={createDialog.updateForm}
+        onCreate={handleCreatePlayer}
+        isCreating={createDialog.isCreating}
+      />
     </>
   )
 }

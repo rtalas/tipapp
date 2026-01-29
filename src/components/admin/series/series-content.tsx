@@ -1,41 +1,32 @@
 'use client'
 
-import { useState } from 'react'
-import { Fragment } from 'react'
-import { format } from 'date-fns'
-import { Plus, Edit, Trash2, ChevronDown, Calculator } from 'lucide-react'
+import React, { useState } from 'react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
-import { deleteSeries } from '@/actions/series'
+import { format } from 'date-fns'
+import { Plus } from 'lucide-react'
+import { deleteSeries, createSeries, updateSeriesResult } from '@/actions/series'
 import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
+import { useDeleteDialog } from '@/hooks/useDeleteDialog'
+import { useCreateDialog } from '@/hooks/useCreateDialog'
+import { ContentFilterHeader } from '@/components/admin/common/content-filter-header'
 import { DetailedEntityDeleteDialog } from '@/components/admin/common/detailed-entity-delete-dialog'
-import { cn } from '@/lib/utils'
+import { SeriesTableRow } from './series-table-row'
+import { CreateSeriesDialog } from './create-series-dialog'
+import { ResultEntryDialog } from './result-entry-dialog'
+import { CreateSeriesBetDialog } from './create-series-bet-dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { AddSeriesDialog } from './add-series-dialog'
-import { ResultEntryDialog } from './result-entry-dialog'
-import { SeriesBetRow } from './series-bet-row'
-import { CreateSeriesBetDialog } from './create-series-bet-dialog'
 import { type SeriesWithUserBets } from '@/actions/series-bets'
 import { type UserBasic } from '@/actions/users'
 
@@ -52,6 +43,16 @@ interface SeriesContentProps {
   league?: { id: number; name: string }
 }
 
+interface CreateFormData {
+  leagueId: string
+  specialBetSerieId: string
+  homeTeamId: string
+  awayTeamId: string
+  dateTime: string
+  homeTeamScore: string
+  awayTeamScore: string
+}
+
 function getSeriesStatus(series: Series): 'scheduled' | 'finished' | 'evaluated' {
   if (series.isEvaluated) return 'evaluated'
   if (series.homeTeamScore !== null && series.awayTeamScore !== null) return 'finished'
@@ -65,15 +66,25 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [leagueFilter, setLeagueFilter] = useState<string>('all')
   const [userFilter, setUserFilter] = useState<string>('all')
-  const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [seriesToDelete, setSeriesToDelete] = useState<Series | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
   const [createBetSeriesId, setCreateBetSeriesId] = useState<number | null>(null)
 
   // Expandable rows
   const { isExpanded, toggleRow } = useExpandableRow()
+
+  // Delete dialog
+  const deleteDialog = useDeleteDialog<Series>()
+
+  // Create dialog
+  const createDialog = useCreateDialog<CreateFormData>({
+    leagueId: league?.id.toString() || '',
+    specialBetSerieId: '',
+    homeTeamId: '',
+    awayTeamId: '',
+    dateTime: '',
+    homeTeamScore: '',
+    awayTeamScore: '',
+  })
 
   // Filter series with optimized string search
   const filteredSeries = series.filter((s) => {
@@ -110,20 +121,39 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
     return true
   })
 
-  const handleDelete = async () => {
-    if (!seriesToDelete) return
-    setIsDeleting(true)
+  const handleCreateSeries = async () => {
+    createDialog.startCreating()
     try {
-      await deleteSeries(seriesToDelete.id)
+      await createSeries({
+        leagueId: parseInt(createDialog.form.leagueId, 10),
+        specialBetSerieId: parseInt(createDialog.form.specialBetSerieId, 10),
+        homeTeamId: parseInt(createDialog.form.homeTeamId, 10),
+        awayTeamId: parseInt(createDialog.form.awayTeamId, 10),
+        dateTime: new Date(createDialog.form.dateTime),
+      })
+      toast.success(t('seriesCreated'))
+      createDialog.finishCreating()
+    } catch (error) {
+      const message = getErrorMessage(error, t('seriesCreateFailed'))
+      toast.error(message)
+      logger.error('Failed to create series', { error })
+      createDialog.cancelCreating()
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteDialog.itemToDelete) return
+
+    deleteDialog.startDeleting()
+    try {
+      await deleteSeries(deleteDialog.itemToDelete.id)
       toast.success(t('seriesDeleted'))
-      setDeleteDialogOpen(false)
-      setSeriesToDelete(null)
+      deleteDialog.finishDeleting()
     } catch (error) {
       const message = getErrorMessage(error, t('seriesDeleteFailed'))
       toast.error(message)
-      logger.error('Failed to delete series', { error, seriesId: seriesToDelete?.id })
-    } finally {
-      setIsDeleting(false)
+      logger.error('Failed to delete series', { error, seriesId: deleteDialog.itemToDelete?.id })
+      deleteDialog.cancelDeleting()
     }
   }
 
@@ -148,62 +178,63 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
 
   const createBetSeries = filteredSeries.find((s) => s.id === createBetSeriesId)
 
+  // Build filters dynamically
+  const filters = [
+    {
+      name: 'status',
+      value: statusFilter,
+      onChange: setStatusFilter,
+      placeholder: tCommon('status'),
+      options: [
+        { value: 'all', label: t('allStatus') },
+        { value: 'scheduled', label: t('scheduled') },
+        { value: 'finished', label: t('finished') },
+        { value: 'evaluated', label: t('evaluated') },
+      ],
+    },
+    ...(league
+      ? []
+      : [
+          {
+            name: 'league',
+            value: leagueFilter,
+            onChange: setLeagueFilter,
+            placeholder: t('league'),
+            options: [
+              { value: 'all', label: t('allLeagues') },
+              ...leagues.map((lg) => ({
+                value: lg.id.toString(),
+                label: lg.name,
+              })),
+            ],
+          },
+        ]),
+    {
+      name: 'user',
+      value: userFilter,
+      onChange: setUserFilter,
+      placeholder: t('allUsers'),
+      options: [
+        { value: 'all', label: t('allUsers') },
+        ...users.map((user) => ({
+          value: user.id.toString(),
+          label: `${user.firstName} ${user.lastName}`,
+        })),
+      ],
+    },
+  ]
+
   return (
     <>
-      {/* Filters */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-1 flex-wrap gap-2">
-          <Input
-            placeholder={t('searchPlaceholder')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder={tCommon('status')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allStatus')}</SelectItem>
-              <SelectItem value="scheduled">{t('scheduled')}</SelectItem>
-              <SelectItem value="finished">{t('finished')}</SelectItem>
-              <SelectItem value="evaluated">{t('evaluated')}</SelectItem>
-            </SelectContent>
-          </Select>
-          {!league && (
-            <Select value={leagueFilter} onValueChange={setLeagueFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t('league')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('allLeagues')}</SelectItem>
-                {leagues.map((lg) => (
-                  <SelectItem key={lg.id} value={lg.id.toString()}>
-                    {lg.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Select value={userFilter} onValueChange={setUserFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('allUsers')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allUsers')}</SelectItem>
-              {users.map((user) => (
-                <SelectItem key={user.id} value={user.id.toString()}>
-                  {user.firstName} {user.lastName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('createSeries')}
-        </Button>
-      </div>
+      {/* Header with Create Button and Filters */}
+      <ContentFilterHeader
+        searchPlaceholder={t('searchPlaceholder')}
+        searchValue={search}
+        onSearchChange={setSearch}
+        filters={filters}
+        createButtonLabel={t('createSeries')}
+        onCreateClick={createDialog.openDialog}
+      />
 
       {/* Series table */}
       <Card className="card-shadow">
@@ -217,7 +248,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
           {filteredSeries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-muted-foreground mb-4">{t('noSeriesFound')}</p>
-              <Button onClick={() => setAddDialogOpen(true)}>
+              <Button onClick={createDialog.openDialog}>
                 <Plus className="mr-2 h-4 w-4" />
                 {t('createFirstSeries')}
               </Button>
@@ -240,183 +271,19 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSeries.map((s) => {
-                    const status = getSeriesStatus(s)
-                    const homeTeam = s.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team
-                    const awayTeam = s.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team
-                    const expanded = isExpanded(s.id)
-
-                    return (
-                      <Fragment key={s.id}>
-                        {/* Main row - clickable to expand */}
-                        <TableRow
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => toggleRow(s.id)}
-                        >
-                          <TableCell>
-                            <ChevronDown
-                              className={cn(
-                                'h-4 w-4 transition-transform',
-                                expanded && 'rotate-180'
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="font-mono text-muted-foreground">
-                            #{s.id}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {format(new Date(s.dateTime), 'd.M.yyyy')}
-                              </span>
-                              <span className="text-sm text-muted-foreground">
-                                {format(new Date(s.dateTime), 'HH:mm')}
-                              </span>
-                            </div>
-                          </TableCell>
-                          {!league && <TableCell>{s.League.name}</TableCell>}
-                          <TableCell>
-                            <span className="text-sm text-muted-foreground">
-                              {s.SpecialBetSerie.name} ({t('bestOf', { count: s.SpecialBetSerie.bestOf })})
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{homeTeam.name}</span>
-                              <span className="text-muted-foreground">{t('vs')}</span>
-                              <span className="font-medium">{awayTeam.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {s.homeTeamScore !== null ? (
-                              <div className="flex items-center justify-center gap-1">
-                                <span className="font-mono font-bold text-lg">
-                                  {s.homeTeamScore}
-                                </span>
-                                <span className="text-muted-foreground">:</span>
-                                <span className="font-mono font-bold text-lg">
-                                  {s.awayTeamScore}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline">{s.UserSpecialBetSerie.length}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                status === 'evaluated'
-                                  ? 'evaluated'
-                                  : status === 'finished'
-                                  ? 'finished'
-                                  : 'scheduled'
-                              }
-                            >
-                              {t(status)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div
-                              className="flex items-center gap-2"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setSelectedSeries(s)
-                                }}
-                                aria-label={t('editSeriesResult', { matchup: `${homeTeam.name} ${t('vs')} ${awayTeam.name}` })}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleEvaluate(s.id)
-                                }}
-                                aria-label={t('evaluateSeries', { matchup: `${homeTeam.name} ${t('vs')} ${awayTeam.name}` })}
-                              >
-                                <Calculator className="h-4 w-4 text-blue-600" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setSeriesToDelete(s)
-                                  setDeleteDialogOpen(true)
-                                }}
-                                aria-label={t('deleteSeries', { matchup: `${homeTeam.name} ${t('vs')} ${awayTeam.name}` })}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Expanded row - user bets */}
-                        {expanded && (
-                          <TableRow>
-                            <TableCell colSpan={10} className="bg-muted/20 p-0">
-                              <div className="p-4">
-                                {s.UserSpecialBetSerie.length === 0 ? (
-                                  <div className="py-8 text-center">
-                                    <p className="text-muted-foreground">{t('noUserBets')}</p>
-                                  </div>
-                                ) : (
-                                  <div className="rounded-lg border bg-background">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead>{t('user')}</TableHead>
-                                          <TableHead>{t('homeScore')}</TableHead>
-                                          <TableHead>{t('awayScore')}</TableHead>
-                                          <TableHead>{t('points')}</TableHead>
-                                          <TableHead className="text-right">{tCommon('actions')}</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {s.UserSpecialBetSerie.map((bet) => (
-                                          <SeriesBetRow
-                                            key={bet.id}
-                                            bet={bet}
-                                            seriesHomeTeam={homeTeam}
-                                            seriesAwayTeam={awayTeam}
-                                            isSeriesEvaluated={s.isEvaluated}
-                                            seriesId={s.id}
-                                          />
-                                        ))}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                )}
-
-                                {/* Add Missing Bet button */}
-                                <div className="mt-4 flex justify-end">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCreateBetSeriesId(s.id)}
-                                    aria-label={t('addMissingBetAria')}
-                                  >
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    {t('addMissingBet')}
-                                  </Button>
-                                </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </Fragment>
-                    )
-                  })}
+                  {filteredSeries.map((s) => (
+                    <SeriesTableRow
+                      key={s.id}
+                      series={s}
+                      isExpanded={isExpanded(s.id)}
+                      onToggleExpand={() => toggleRow(s.id)}
+                      onEdit={() => setSelectedSeries(s)}
+                      onEvaluate={() => handleEvaluate(s.id)}
+                      onDelete={() => deleteDialog.openDialog(s)}
+                      onAddBet={() => setCreateBetSeriesId(s.id)}
+                      showLeagueColumn={!league}
+                    />
+                  ))}
                 </TableBody>
               </Table>
             </div>
@@ -424,10 +291,14 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
         </CardContent>
       </Card>
 
-      {/* Add Series Dialog */}
-      <AddSeriesDialog
-        open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
+      {/* Create Series Dialog */}
+      <CreateSeriesDialog
+        open={createDialog.open}
+        onOpenChange={createDialog.setOpen}
+        formData={createDialog.form}
+        onFormChange={createDialog.updateForm}
+        onCreate={handleCreateSeries}
+        isCreating={createDialog.isCreating}
         leagues={leagues}
         specialBetSeries={specialBetSeries}
         league={league}
@@ -456,37 +327,37 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
 
       {/* Delete Confirmation Dialog */}
       <DetailedEntityDeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        open={deleteDialog.open}
+        onOpenChange={deleteDialog.setOpen}
         title={t('deleteTitle')}
         description={t('deleteConfirm')}
         onConfirm={handleDelete}
-        isDeleting={isDeleting}
+        isDeleting={deleteDialog.isDeleting}
       >
-        {seriesToDelete && (
+        {deleteDialog.itemToDelete && (
           <div className="rounded-lg border p-4 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('seriesId')}</span>
-              <span className="font-mono">#{seriesToDelete.id}</span>
+              <span className="font-mono">#{deleteDialog.itemToDelete.id}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('date')}</span>
-              <span>{format(new Date(seriesToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
+              <span>{format(new Date(deleteDialog.itemToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('typeLabel')}</span>
-              <span>{seriesToDelete.SpecialBetSerie.name} ({t('bestOf', { count: seriesToDelete.SpecialBetSerie.bestOf })})</span>
+              <span>{deleteDialog.itemToDelete.SpecialBetSerie.name} ({t('bestOf', { count: deleteDialog.itemToDelete.SpecialBetSerie.bestOf })})</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('matchupLabel')}</span>
               <span className="font-medium">
-                {seriesToDelete.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team.name} {t('vs')}{' '}
-                {seriesToDelete.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team.name}
+                {deleteDialog.itemToDelete.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team.name} {t('vs')}{' '}
+                {deleteDialog.itemToDelete.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team.name}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('leagueLabel')}</span>
-              <span>{seriesToDelete.League.name}</span>
+              <span>{deleteDialog.itemToDelete.League.name}</span>
             </div>
           </div>
         )}

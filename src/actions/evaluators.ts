@@ -1,15 +1,18 @@
 'use server'
 
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import {
   createEvaluatorSchema,
   updateEvaluatorPointsSchema,
   updateEvaluatorNameSchema,
+  updateEvaluatorSchema,
   deleteByIdSchema,
   type CreateEvaluatorInput,
   type UpdateEvaluatorPointsInput,
   type UpdateEvaluatorNameInput,
+  type UpdateEvaluatorInput,
   type DeleteByIdInput,
 } from '@/lib/validation/admin'
 
@@ -26,6 +29,7 @@ export async function getLeagueEvaluators(leagueId: number) {
     },
     orderBy: { EvaluatorType: { name: 'asc' } },
   })
+  // Note: config field is automatically included as part of the model
 }
 
 // Update evaluator points
@@ -82,6 +86,33 @@ export async function updateEvaluatorName(input: UpdateEvaluatorNameInput) {
           name: validated.name.trim(),
           updatedAt: new Date(),
         },
+      })
+      return {}
+    },
+    revalidatePath: '/admin/evaluators',
+    requiresAdmin: true,
+  })
+}
+
+// Update evaluator (both name and points)
+export async function updateEvaluator(input: UpdateEvaluatorInput) {
+  return executeServerAction(input, {
+    validator: updateEvaluatorSchema,
+    handler: async (validated) => {
+      const updateData: Prisma.EvaluatorUpdateInput = {
+        name: validated.name.trim(),
+        points: validated.points,
+        updatedAt: new Date(),
+      }
+
+      // Handle config update - only include if explicitly provided
+      if (validated.config !== undefined) {
+        updateData.config = validated.config === null ? Prisma.JsonNull : (validated.config as Prisma.InputJsonValue)
+      }
+
+      await prisma.evaluator.update({
+        where: { id: validated.evaluatorId },
+        data: updateData,
       })
       return {}
     },

@@ -59,6 +59,15 @@ export const updateEvaluatorNameSchema = z.object({
 
 export type UpdateEvaluatorNameInput = z.infer<typeof updateEvaluatorNameSchema>
 
+export const updateEvaluatorSchema = z.object({
+  evaluatorId: z.number().int().positive('Evaluator ID is required'),
+  name: z.string().min(1, 'Name cannot be empty').max(255),
+  points: z.number().int().min(0, 'Points cannot be negative').max(100),
+  config: scorerRankedConfigSchema.optional().nullable(),
+})
+
+export type UpdateEvaluatorInput = z.infer<typeof updateEvaluatorSchema>
+
 // League validation schemas
 export const createLeagueSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
