@@ -199,7 +199,6 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
                   max="7"
                   value={homeTeamScore}
                   onChange={(e) => setHomeTeamScore(e.target.value)}
-                  disabled={series.isEvaluated}
                   aria-label={`${homeTeam.name} score`}
                 />
               </div>
@@ -213,7 +212,6 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
                   max="7"
                   value={awayTeamScore}
                   onChange={(e) => setAwayTeamScore(e.target.value)}
-                  disabled={series.isEvaluated}
                   aria-label={`${awayTeam.name} score`}
                 />
               </div>
@@ -230,24 +228,20 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
             Close
           </Button>
 
-          {!series.isEvaluated && (
-            <>
-              <Button
-                onClick={handleSaveResult}
-                disabled={isSubmitting || isEvaluating}
-              >
-                {isSubmitting ? 'Saving...' : 'Save Result'}
-              </Button>
+          <Button
+            onClick={handleSaveResult}
+            disabled={isSubmitting || isEvaluating}
+          >
+            {isSubmitting ? 'Saving...' : 'Save Result'}
+          </Button>
 
-              <Button
-                onClick={handleEvaluate}
-                disabled={isSubmitting || isEvaluating || (!series.homeTeamScore && !homeTeamScore)}
-                variant="default"
-              >
-                {isEvaluating ? 'Evaluating...' : 'Save & Evaluate'}
-              </Button>
-            </>
-          )}
+          <Button
+            onClick={handleEvaluate}
+            disabled={isSubmitting || isEvaluating || (!series.homeTeamScore && !homeTeamScore)}
+            variant="default"
+          >
+            {isEvaluating ? 'Evaluating...' : series.isEvaluated ? 'Re-Evaluate' : 'Save & Evaluate'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

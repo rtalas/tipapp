@@ -3,6 +3,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { getEvaluatorEntity } from '@/lib/evaluators'
 import {
   createEvaluatorSchema,
   updateEvaluatorPointsSchema,
@@ -56,6 +57,14 @@ export async function createEvaluator(input: CreateEvaluatorInput) {
   return executeServerAction(input, {
     validator: createEvaluatorSchema,
     handler: async (validated) => {
+      // Fetch evaluator type to determine entity
+      const evaluatorType = await prisma.evaluatorType.findUniqueOrThrow({
+        where: { id: validated.evaluatorTypeId },
+      })
+
+      // Determine entity based on evaluator type name
+      const entity = getEvaluatorEntity(evaluatorType.name)
+
       const evaluator = await prisma.evaluator.create({
         data: {
           leagueId: validated.leagueId,
@@ -63,7 +72,7 @@ export async function createEvaluator(input: CreateEvaluatorInput) {
           name: validated.name,
           points: validated.points,
           ...(validated.config && { config: validated.config }),
-          entity: 'match',
+          entity,
           createdAt: new Date(),
           updatedAt: new Date(),
         },

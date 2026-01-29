@@ -41,18 +41,19 @@ model AuditLog {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Evaluator {
-  id              Int           @id @default(autoincrement())
-  name            String        @db.VarChar(255)
-  evaluatorTypeId Int
-  leagueId        Int
-  entity          String        @default("match") @db.VarChar(255)
-  createdAt       DateTime      @db.Timestamptz(6)
-  updatedAt       DateTime      @db.Timestamptz(6)
-  deletedAt       DateTime?     @db.Timestamptz(6)
-  points          Int
-  config          Json?
-  EvaluatorType   EvaluatorType @relation(fields: [evaluatorTypeId], references: [id], onDelete: NoAction)
-  League          League        @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  id                     Int                      @id @default(autoincrement())
+  name                   String                   @db.VarChar(255)
+  evaluatorTypeId        Int
+  leagueId               Int
+  entity                 String                   @default("match") @db.VarChar(255)
+  createdAt              DateTime                 @db.Timestamptz(6)
+  updatedAt              DateTime                 @db.Timestamptz(6)
+  deletedAt              DateTime?                @db.Timestamptz(6)
+  points                 Int
+  config                 Json?
+  EvaluatorType          EvaluatorType            @relation(fields: [evaluatorTypeId], references: [id], onDelete: NoAction)
+  League                 League                   @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  LeagueSpecialBetSingle LeagueSpecialBetSingle[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -219,12 +220,15 @@ model LeagueSpecialBetSingle {
   createdAt                DateTime               @db.Timestamptz(6)
   updatedAt                DateTime               @db.Timestamptz(6)
   deletedAt                DateTime?              @db.Timestamptz(6)
+  evaluatorId              Int
+  Evaluator                Evaluator              @relation(fields: [evaluatorId], references: [id], onDelete: NoAction)
   League                   League                 @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   LeaguePlayer             LeaguePlayer?          @relation(fields: [specialBetPlayerResultId], references: [id])
   SpecialBetSingle         SpecialBetSingle       @relation(fields: [specialBetSingleId], references: [id], onDelete: NoAction)
   LeagueTeam               LeagueTeam?            @relation(fields: [specialBetTeamResultId], references: [id])
   UserSpecialBetSingle     UserSpecialBetSingle[]
 
+  @@index([evaluatorId])
   @@index([isEvaluated, deletedAt])
   @@index([leagueId, deletedAt])
 }

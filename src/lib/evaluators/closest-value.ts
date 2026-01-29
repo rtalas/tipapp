@@ -1,22 +1,30 @@
 import type { ClosestValueContext } from "./types";
 
 /**
- * CLOSEST_VALUE: Awards points if user's prediction was the closest among all users
- * Only evaluated if exact_value is false
+ * CLOSEST_VALUE: Awards points based on prediction accuracy
+ * Returns a point multiplier:
+ * - Exact match: 1.0 (full points)
+ * - Closest (but not exact): 0.33 (1/3 points)
+ * - Not closest: 0 (no points)
+ *
+ * Use case: Hard-to-guess values (e.g., "How many viewers will watch this game?")
+ * - Set evaluator points to the exact match reward (e.g., 30 points)
+ * - Exact match gets full 30 points
+ * - Closest (not exact) gets 10 points (1/3 of 30)
  */
-export function evaluateClosestValue(context: ClosestValueContext): boolean {
+export function evaluateClosestValue(context: ClosestValueContext): number {
   const { prediction, actual, allPredictions } = context;
 
   if (allPredictions.length === 0) {
-    return false;
+    return 0;
   }
 
   // Calculate absolute differences for all predictions
   const userDiff = Math.abs(prediction.value - actual.value);
 
-  // If user got exact value, they don't get closest_value points (they get exact_value points)
+  // Check if user got exact value
   if (userDiff === 0) {
-    return false;
+    return 1.0; // Full points for exact match
   }
 
   // Check if user's prediction is the closest (or tied for closest)
@@ -24,5 +32,9 @@ export function evaluateClosestValue(context: ClosestValueContext): boolean {
     ...allPredictions.map((pred) => Math.abs(pred - actual.value))
   );
 
-  return userDiff === minDiff;
+  if (userDiff === minDiff) {
+    return 0.33; // 1/3 points for being closest (but not exact)
+  }
+
+  return 0; // No points for not being closest
 }

@@ -306,7 +306,7 @@ export function SeriesCard({ series, onSaved }: SeriesCardProps) {
         title={`${homeTeamName} vs ${awayTeamName}`}
         subtitle={
           series.homeTeamScore !== null && series.awayTeamScore !== null
-            ? `${t('final')}: ${series.homeTeamScore} - ${series.awayTeamScore}`
+            ? `${t('final')} ${series.homeTeamScore} - ${series.awayTeamScore}`
             : undefined
         }
         sectionLabel={t('friendsPredictions')}

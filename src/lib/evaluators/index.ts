@@ -4,8 +4,9 @@
  * The TipApp betting system uses 13 distinct evaluator types organized into three categories:
  *
  * ## Match Bet Evaluators
- * - `exact-score` - Exact match prediction (e.g., 3-2)
+ * - `exact-score` - Exact match prediction (regulation score + overtime must match)
  * - `score-difference` - Goal difference prediction (excludes exact score)
+ * - `one-team-score` - One team's score correct (excludes exact score and score difference)
  * - `winner` - Match winner prediction (includes OT/SO)
  * - `scorer` - Goal scorer prediction
  * - `draw` - Draw prediction (soccer only, excludes exact score)
@@ -37,6 +38,7 @@ export type {
 // Export match bet evaluators
 export { evaluateExactScore } from "./exact-score";
 export { evaluateScoreDifference } from "./score-difference";
+export { evaluateOneTeamScore } from "./one-team-score";
 export { evaluateWinner } from "./winner";
 export { evaluateScorer } from "./scorer";
 export { evaluateDraw } from "./draw";
@@ -60,6 +62,7 @@ export {
   getSpecialEvaluator,
   isClosestValueEvaluator,
   isQuestionEvaluator,
+  getEvaluatorEntity,
 } from "./evaluator-mapper";
 
 export {

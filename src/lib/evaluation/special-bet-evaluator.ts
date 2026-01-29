@@ -52,22 +52,12 @@ async function evaluateSpecialBet(
   const specialBet = await tx.leagueSpecialBetSingle.findUniqueOrThrow({
     where: { id: specialBetId },
     include: {
-      League: {
+      Evaluator: {
         include: {
-          Evaluator: {
-            where: {
-              entity: 'special',
-              deletedAt: null,
-            },
-            include: {
-              EvaluatorType: true,
-            },
-            orderBy: {
-              EvaluatorType: { name: 'asc' },
-            },
-          },
+          EvaluatorType: true,
         },
       },
+      League: true,
       UserSpecialBetSingle: {
         where: {
           deletedAt: null,
@@ -98,75 +88,67 @@ async function evaluateSpecialBet(
     throw new AppError('Cannot evaluate special bet without result', 'BAD_REQUEST', 400)
   }
 
-  // 3. Get evaluators
-  const evaluators = specialBet.League.Evaluator
+  // 3. Get evaluator
+  const evaluator = specialBet.Evaluator
 
-  if (evaluators.length === 0) {
-    throw new AppError('No evaluators configured for this league', 'BAD_REQUEST', 400)
+  if (!evaluator) {
+    throw new AppError('No evaluator configured for this special bet', 'BAD_REQUEST', 400)
+  }
+
+  // Get evaluator function
+  const evaluatorFn = getSpecialEvaluator(evaluator.EvaluatorType.name)
+
+  if (!evaluatorFn) {
+    throw new AppError(`Unknown evaluator type: ${evaluator.EvaluatorType.name}`, 'BAD_REQUEST', 400)
   }
 
   // 4. Evaluate each user bet
   const results: EvaluationResult[] = []
 
   for (const userBet of specialBet.UserSpecialBetSingle) {
-    let totalPoints = 0
-    const evaluatorResults = []
+    let awarded = false
+    let points = 0
 
-    for (const evaluator of evaluators) {
-      const evaluatorFn = getSpecialEvaluator(evaluator.EvaluatorType.name)
-
-      if (!evaluatorFn) {
-        console.warn(`Unknown evaluator type: ${evaluator.EvaluatorType.name}`)
-        continue
-      }
-
-      let awarded = false
-      let points = 0
-
-      // Special handling for question (returns point multiplier)
-      if (isQuestionEvaluator(evaluator.EvaluatorType.name)) {
-        const context = buildQuestionContext(userBet, specialBet)
-        const multiplier = evaluateQuestion(context)
-        points = Math.round(multiplier * evaluator.points)
-        awarded = points !== 0 // For tracking purposes
-      }
-      // Special handling for closest_value
-      else if (isClosestValueEvaluator(evaluator.EvaluatorType.name)) {
-        const context = buildClosestValueContext(
-          userBet,
-          specialBet,
-          specialBet.UserSpecialBetSingle
-        )
-        awarded = (evaluatorFn as (ctx: ClosestValueContext) => boolean)(context)
-        points = awarded ? evaluator.points : 0
-      }
-      // Standard special bet evaluators
-      else {
-        const context = buildSpecialBetContext(userBet, specialBet)
-        awarded = (evaluatorFn as (ctx: SpecialBetContext) => boolean)(context)
-        points = awarded ? evaluator.points : 0
-      }
-
-      evaluatorResults.push({
-        evaluatorName: evaluator.EvaluatorType.name,
-        awarded,
-        points,
-      })
-
-      totalPoints += points
+    // Special handling for question (returns point multiplier)
+    if (isQuestionEvaluator(evaluator.EvaluatorType.name)) {
+      const context = buildQuestionContext(userBet, specialBet)
+      const multiplier = evaluateQuestion(context)
+      points = Math.round(multiplier * evaluator.points)
+      awarded = points !== 0 // For tracking purposes
+    }
+    // Special handling for closest_value (returns point multiplier)
+    else if (isClosestValueEvaluator(evaluator.EvaluatorType.name)) {
+      const context = buildClosestValueContext(
+        userBet,
+        specialBet,
+        specialBet.UserSpecialBetSingle
+      )
+      const multiplier = (evaluatorFn as (ctx: ClosestValueContext) => number)(context)
+      points = Math.round(multiplier * evaluator.points)
+      awarded = points !== 0 // For tracking purposes
+    }
+    // Standard special bet evaluators
+    else {
+      const context = buildSpecialBetContext(userBet, specialBet)
+      awarded = (evaluatorFn as (ctx: SpecialBetContext) => boolean)(context)
+      points = awarded ? evaluator.points : 0
     }
 
     results.push({
       userId: userBet.LeagueUser.userId,
-      totalPoints,
-      evaluatorResults,
+      totalPoints: points,
+      evaluatorResults: [{
+        evaluatorName: evaluator.EvaluatorType.name,
+        awarded,
+        points,
+      }],
     })
 
     // 5. Update UserSpecialBetSingle.totalPoints
     await tx.userSpecialBetSingle.update({
       where: { id: userBet.id },
       data: {
-        totalPoints,
+        totalPoints: points,
         updatedAt: new Date(),
       },
     })

@@ -82,14 +82,18 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
     setIsSubmitting(true)
 
     try {
-      await updateSpecialBetResult({
+      const result = await updateSpecialBetResult({
         specialBetId: specialBet.id,
         specialBetTeamResultId: resultType === 'team' ? parseInt(selectedTeamId, 10) : undefined,
         specialBetPlayerResultId: resultType === 'player' ? parseInt(selectedPlayerId, 10) : undefined,
         specialBetValue: resultType === 'value' ? parseInt(valueResult, 10) : undefined,
       })
 
-      toast.success('Special bet result saved successfully')
+      if ('needsReEvaluation' in result && result.needsReEvaluation) {
+        toast.success('Result updated. Please re-evaluate to update points.')
+      } else {
+        toast.success('Special bet result saved successfully')
+      }
       // Keep dialog open so user can evaluate if needed
     } catch (error) {
       if (error instanceof Error) {
@@ -160,14 +164,20 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
                 <Badge variant="evaluated">Evaluated</Badge>
               )}
             </div>
-            <div className="flex items-center justify-between">
+            <div>
               <span className="text-lg font-semibold">{specialBet.SpecialBetSingle.name}</span>
-              <span className="text-sm text-muted-foreground">{specialBet.points} points</span>
             </div>
             <div className="mt-2 text-sm text-muted-foreground">
               {specialBet._count.UserSpecialBetSingle} user prediction{specialBet._count.UserSpecialBetSingle !== 1 ? 's' : ''}
             </div>
           </div>
+
+          {/* Warning if editing evaluated bet */}
+          {specialBet.isEvaluated && (
+            <div className="rounded-lg border border-yellow-500 bg-yellow-50 p-3 text-sm text-yellow-800">
+              <strong>Warning:</strong> This special bet has been evaluated. Changing the result will reset evaluation status and require re-evaluation to update points.
+            </div>
+          )}
 
           <Separator />
 
@@ -191,7 +201,6 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
               <Select
                 value={selectedTeamId}
                 onValueChange={setSelectedTeamId}
-                disabled={specialBet.isEvaluated}
               >
                 <SelectTrigger id="teamResult">
                   <SelectValue placeholder="Select winning team" />
@@ -213,7 +222,6 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
               <Select
                 value={selectedPlayerId}
                 onValueChange={setSelectedPlayerId}
-                disabled={specialBet.isEvaluated}
               >
                 <SelectTrigger id="playerResult">
                   <SelectValue placeholder="Select player" />
@@ -237,7 +245,6 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
                 type="number"
                 value={valueResult}
                 onChange={(e) => setValueResult(e.target.value)}
-                disabled={specialBet.isEvaluated}
                 placeholder="Enter numeric value"
                 aria-label="Numeric result value"
               />
@@ -254,24 +261,20 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
             Close
           </Button>
 
-          {!specialBet.isEvaluated && (
-            <>
-              <Button
-                onClick={handleSaveResult}
-                disabled={isSubmitting || isEvaluating}
-              >
-                {isSubmitting ? 'Saving...' : 'Save Result'}
-              </Button>
+          <Button
+            onClick={handleSaveResult}
+            disabled={isSubmitting || isEvaluating}
+          >
+            {isSubmitting ? 'Saving...' : 'Save Result'}
+          </Button>
 
-              <Button
-                onClick={handleEvaluate}
-                disabled={isSubmitting || isEvaluating}
-                variant="default"
-              >
-                {isEvaluating ? 'Evaluating...' : 'Save & Evaluate'}
-              </Button>
-            </>
-          )}
+          <Button
+            onClick={handleEvaluate}
+            disabled={isSubmitting || isEvaluating}
+            variant="default"
+          >
+            {isEvaluating ? 'Evaluating...' : specialBet.isEvaluated ? 'Re-Evaluate' : 'Save & Evaluate'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

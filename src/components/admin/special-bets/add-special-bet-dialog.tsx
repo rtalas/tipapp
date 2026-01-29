@@ -25,20 +25,22 @@ import {
 
 type League = { id: number; name: string }
 type SpecialBetType = { id: number; name: string }
+type Evaluator = { id: number; name: string }
 
 interface AddSpecialBetDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   leagues: League[]
   specialBetTypes: SpecialBetType[]
+  evaluators: Evaluator[]
   league?: { id: number; name: string }
 }
 
-export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTypes, league }: AddSpecialBetDialogProps) {
+export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTypes, evaluators, league }: AddSpecialBetDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>(league?.id.toString() || '')
   const [selectedTypeId, setSelectedTypeId] = useState<string>('')
-  const [points, setPoints] = useState<string>('0')
+  const [selectedEvaluatorId, setSelectedEvaluatorId] = useState<string>('')
   const [dateTime, setDateTime] = useState<string>('')
 
   const effectiveLeagueId = league?.id.toString() || selectedLeagueId
@@ -46,14 +48,8 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!effectiveLeagueId || !selectedTypeId || !dateTime) {
+    if (!effectiveLeagueId || !selectedTypeId || !selectedEvaluatorId || !dateTime) {
       toast.error('Please fill in all required fields')
-      return
-    }
-
-    const pointsValue = parseInt(points, 10)
-    if (isNaN(pointsValue) || pointsValue < 0) {
-      toast.error('Points must be a non-negative number')
       return
     }
 
@@ -63,7 +59,7 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
       await createSpecialBet({
         leagueId: parseInt(effectiveLeagueId, 10),
         specialBetSingleId: parseInt(selectedTypeId, 10),
-        points: pointsValue,
+        evaluatorId: parseInt(selectedEvaluatorId, 10),
         dateTime: new Date(dateTime),
       })
 
@@ -87,7 +83,7 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
       setSelectedLeagueId('')
     }
     setSelectedTypeId('')
-    setPoints('0')
+    setSelectedEvaluatorId('')
     setDateTime('')
   }
 
@@ -137,18 +133,21 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="points">Points Value</Label>
-            <Input
-              id="points"
-              type="number"
-              min="0"
-              value={points}
-              onChange={(e) => setPoints(e.target.value)}
-              required
-              aria-label="Points for this special bet"
-            />
+            <Label htmlFor="evaluator">Evaluator</Label>
+            <Select value={selectedEvaluatorId} onValueChange={setSelectedEvaluatorId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select evaluator" />
+              </SelectTrigger>
+              <SelectContent>
+                {evaluators.map((evaluator) => (
+                  <SelectItem key={evaluator.id} value={evaluator.id.toString()}>
+                    {evaluator.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <p className="text-xs text-muted-foreground">
-              Points awarded for correct predictions on this special bet
+              Determines which evaluator type (team/player/value) and points are awarded.
             </p>
           </div>
 

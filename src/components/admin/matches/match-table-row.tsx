@@ -102,20 +102,11 @@ export function MatchTableRow({
         </TableCell>
         <TableCell className="text-center">
           {match.Match.homeRegularScore !== null ? (
-            <div className="flex items-center justify-center gap-1">
-              <span className="font-mono font-bold text-lg">
-                {match.Match.homeRegularScore}
-              </span>
-              <span className="text-muted-foreground">:</span>
-              <span className="font-mono font-bold text-lg">
-                {match.Match.awayRegularScore}
-              </span>
-              {(match.Match.isOvertime || match.Match.isShootout) && (
-                <span className="ml-2 text-xs text-muted-foreground">
-                  {match.Match.isShootout ? '(SO)' : '(OT)'}
-                </span>
-              )}
-            </div>
+            <span className="font-mono font-bold text-base whitespace-nowrap">
+              {match.Match.homeRegularScore}:{match.Match.awayRegularScore}
+              {match.Match.isShootout && ' (SO)'}
+              {match.Match.isOvertime && !match.Match.isShootout && ' (OT)'}
+            </span>
           ) : (
             <span className="text-muted-foreground">-</span>
           )}

@@ -63,6 +63,11 @@ export const leagueMatchWithBetsInclude = {
  */
 export const specialBetInclude = {
   League: true,
+  Evaluator: {
+    include: {
+      EvaluatorType: true,
+    },
+  },
   SpecialBetSingle: {
     include: {
       SpecialBetSingleType: true,

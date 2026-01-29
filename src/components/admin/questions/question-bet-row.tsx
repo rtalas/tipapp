@@ -16,7 +16,7 @@ import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 
 interface UserQuestionBetFormData {
-  userBet: string // 'true' | 'false'
+  userBet: string // 'true' | 'false' | 'null'
 }
 
 interface QuestionBetRowProps {
@@ -38,7 +38,7 @@ export function QuestionBetRow({
 
   const handleStartEdit = () => {
     inlineEdit.startEdit(bet.id, {
-      userBet: bet.userBet !== null ? bet.userBet.toString() : 'true',
+      userBet: bet.userBet !== null ? bet.userBet.toString() : 'null',
     })
   }
 
@@ -49,7 +49,7 @@ export function QuestionBetRow({
     // Convert form data to proper types for validation
     const validationData = {
       id: bet.id,
-      userBet: inlineEdit.form.userBet === 'true',
+      userBet: inlineEdit.form.userBet === 'null' ? null : inlineEdit.form.userBet === 'true',
     }
 
     const validation = validateUserQuestionBetEdit(validationData)
@@ -133,6 +133,12 @@ export function QuestionBetRow({
                 <RadioGroupItem value="false" id={`no-${bet.id}`} />
                 <Label htmlFor={`no-${bet.id}`} className="cursor-pointer">
                   No
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="null" id={`none-${bet.id}`} />
+                <Label htmlFor={`none-${bet.id}`} className="cursor-pointer">
+                  Not Answered
                 </Label>
               </div>
             </RadioGroup>

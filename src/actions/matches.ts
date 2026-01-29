@@ -229,7 +229,7 @@ export async function getMatches(filters?: {
   return prisma.leagueMatch.findMany({
     where: whereConditions,
     include: leagueMatchWithBetsInclude,
-    orderBy: { Match: { dateTime: 'desc' } },
+    orderBy: { Match: { dateTime: 'asc' } },
   })
 }
 

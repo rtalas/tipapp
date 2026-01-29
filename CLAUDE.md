@@ -131,11 +131,12 @@ src/
 - Email normalization: All emails stored in lowercase for consistent authentication
 
 ## Evaluators (src/lib/evaluators/)
-13 modular evaluators with full test coverage:
-1. **exact-score** - Exact match (regulation time)
+14 modular evaluators with full test coverage:
+1. **exact-score** - Exact match (regulation time score + overtime prediction must match)
 2. **score-difference** - Goal diff (excl. exact)
-3. **winner** - Winner (final time, incl. OT/SO)
-4. **scorer** - Predicted scorer in actual scorers
+3. **one-team-score** - One team's score correct (excl. exact & score diff)
+4. **winner** - Winner (final time, incl. OT/SO)
+5. **scorer** - Predicted scorer in actual scorers
    - **Supports two modes:**
      - Simple mode: Boolean (correct/incorrect)
      - Rank-based mode: Variable points based on player ranking (stored in `Evaluator.config`)
@@ -147,21 +148,21 @@ src/
      }
      ```
    - Points awarded based on scorer's ranking at match time. Flexible rank count per league.
-5. **draw** - Draw prediction (soccer, excl. exact)
-6. **soccer-playoff-advance** - Advancing team
-7. **series-exact** - Exact series result
-8. **series-winner** - Series winner (excl. exact)
-9. **exact-player** - Player match (e.g., top scorer)
-10. **exact-team** - Team match (e.g., tournament winner)
-11. **exact-value** - Numeric value exact
-12. **closest-value** - Closest among users (excl. exact)
-13. **question** - Yes/no question (correct = +pts, wrong = -pts/2)
+6. **draw** - Draw prediction (soccer, excl. exact)
+7. **soccer-playoff-advance** - Advancing team
+8. **series-exact** - Exact series result
+9. **series-winner** - Series winner (excl. exact)
+10. **exact-player** - Player match (e.g., top scorer)
+11. **exact-team** - Team match (e.g., tournament winner)
+12. **exact-value** - Numeric value exact
+13. **closest-value** - Tiered scoring: exact = full points (1.0x), closest = 1/3 points (0.33x), not closest = 0 points
+14. **question** - Yes/no question (correct = +pts, wrong = -pts/2)
 
 ## Development Status
 - ✅ **Phase 1:** Infrastructure (Next.js, Prisma, Auth.js v5)
 - ✅ **Phase 2:** Admin Management (CRUD, inline editing, code quality, security audit)
 - ✅ **Phase 3:** Admin User Betting (expandable rows, league-scoped architecture, questions)
-- ✅ **Phase 4:** Evaluation Engine (13 evaluators, 68 tests)
+- ✅ **Phase 4:** Evaluation Engine (14 evaluators, 79 tests)
 - ✅ **Phase 5:** User-Side App (mobile-first, PWA, bottom nav, friend predictions, pull-to-refresh)
 - ✅ **Phase 6:** Polish (configurable prizes, race condition fixes, performance optimization, security hardening)
 - 🔄 **Phase 7:** Production (push notifications, monitoring, final deployment)

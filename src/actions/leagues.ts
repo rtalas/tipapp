@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { AppError } from '@/lib/error-handler'
+import { getEvaluatorEntity } from '@/lib/evaluators'
 import {
   createLeagueSchema,
   updateLeagueSchema,
@@ -22,11 +23,25 @@ import {
 
 // Default scoring rules (T2: Automatic Evaluator Initialization)
 const DEFAULT_EVALUATOR_POINTS: Record<string, number> = {
-  'exact_score': 5,
-  'winner': 2,
-  'goal_difference': 3,
-  'total_goals': 1,
-  'scorer': 2,
+  'exact_score': 10,
+  'one_team_score': 1,
+  'question': 6,
+  'score_difference': 3,
+  'scorer': 0, // Scorer uses config instead of points
+  'series_exact': 14,
+  'series_winner': 8,
+  'winner': 5,
+}
+
+// Default scorer rank-based config
+const DEFAULT_SCORER_CONFIG = {
+  rankedPoints: {
+    '1': 2,
+    '2': 3,
+    '3': 4,
+    '4': 6,
+  },
+  unrankedPoints: 8,
 }
 
 export async function createLeague(input: CreateLeagueInput) {
@@ -59,30 +74,53 @@ export async function createLeague(input: CreateLeagueInput) {
         if (validated.evaluatorRules && validated.evaluatorRules.length > 0) {
           // Use selected evaluator rules
           await tx.evaluator.createMany({
-            data: validated.evaluatorRules.map((rule: { evaluatorTypeId: number; points: number }) => ({
-              evaluatorTypeId: rule.evaluatorTypeId,
-              leagueId: league.id,
-              points: rule.points,
-              entity: 'match',
-              name: typeMap.get(rule.evaluatorTypeId) || 'Rule',
-              createdAt: now,
-              updatedAt: now,
-            })),
+            data: validated.evaluatorRules.map((rule: { evaluatorTypeId: number; points: number }) => {
+              const typeName = typeMap.get(rule.evaluatorTypeId) || 'Rule'
+              return {
+                evaluatorTypeId: rule.evaluatorTypeId,
+                leagueId: league.id,
+                points: rule.points,
+                entity: getEvaluatorEntity(typeName),
+                name: typeName,
+                createdAt: now,
+                updatedAt: now,
+              }
+            }),
           })
         } else {
           // Fall back to defaults if no rules selected
           if (evaluatorTypes.length > 0) {
-            await tx.evaluator.createMany({
-              data: evaluatorTypes.map((type) => ({
+            // Filter to only include types that have default points defined
+            const defaultTypes = evaluatorTypes.filter(type =>
+              DEFAULT_EVALUATOR_POINTS.hasOwnProperty(type.name)
+            )
+
+            // Create evaluators (using individual creates to support JSON config for scorer)
+            for (const type of defaultTypes) {
+              const baseData = {
                 name: type.name,
                 evaluatorTypeId: type.id,
                 leagueId: league.id,
                 points: DEFAULT_EVALUATOR_POINTS[type.name] ?? 1,
-                entity: 'match',
+                entity: getEvaluatorEntity(type.name),
                 createdAt: now,
                 updatedAt: now,
-              })),
-            })
+              }
+
+              // Add config for scorer evaluator
+              if (type.name === 'scorer') {
+                await tx.evaluator.create({
+                  data: {
+                    ...baseData,
+                    config: DEFAULT_SCORER_CONFIG,
+                  },
+                })
+              } else {
+                await tx.evaluator.create({
+                  data: baseData,
+                })
+              }
+            }
           }
         }
 

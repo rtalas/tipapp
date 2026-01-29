@@ -29,6 +29,11 @@ export async function getSpecialBetsWithUserBets(filters?: {
     where: whereConditions,
     include: {
       League: true,
+      Evaluator: {
+        include: {
+          EvaluatorType: true,
+        },
+      },
       SpecialBetSingle: {
         include: {
           SpecialBetSingleType: true,

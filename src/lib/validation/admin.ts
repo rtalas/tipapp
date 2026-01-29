@@ -325,7 +325,7 @@ export type UpdateUserSeriesBetInput = z.infer<typeof updateUserSeriesBetSchema>
 export const createSpecialBetSchema = z.object({
   leagueId: z.number().int().positive('League ID is required'),
   specialBetSingleId: z.number().int().positive('Special Bet Type ID is required'),
-  points: z.number().int().min(0, 'Points must be non-negative').default(0),
+  evaluatorId: z.number().int().positive('Evaluator ID is required'),
   dateTime: z
     .date()
     .refine((date) => date > new Date(), {
@@ -458,7 +458,7 @@ export type UpdateQuestionResultInput = z.infer<typeof updateQuestionResultSchem
 export const createUserQuestionBetSchema = z.object({
   leagueSpecialBetQuestionId: z.number().int().positive('Question ID is required'),
   leagueUserId: z.number().int().positive('League User ID is required'),
-  userBet: z.boolean(),
+  userBet: z.boolean().nullable(),
 })
 
 export type CreateUserQuestionBetInput = z.infer<typeof createUserQuestionBetSchema>

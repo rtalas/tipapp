@@ -43,7 +43,7 @@ export function SpecialBetCard({
   const t = useTranslations('user.specialBets')
   const isLocked = !specialBet.isBettingOpen
   const isEvaluated = specialBet.isEvaluated
-  const betType = specialBet.SpecialBetSingle.SpecialBetSingleType?.name || 'value'
+  const betTypeId = specialBet.SpecialBetSingle.SpecialBetSingleType?.id
 
   const [teamId, setTeamId] = useState<number | null>(
     specialBet.userBet?.teamResultId ?? null
@@ -60,8 +60,14 @@ export function SpecialBetCard({
   const [friendPredictions, setFriendPredictions] = useState<SpecialBetFriendPrediction[]>([])
   const [isLoadingFriends, setIsLoadingFriends] = useState(false)
 
-  const isTeamBet = betType.toLowerCase().includes('team') || betType.toLowerCase().includes('champion')
-  const isPlayerBet = betType.toLowerCase().includes('player') || betType.toLowerCase().includes('scorer')
+  // Map SpecialBetSingleType IDs to input types:
+  // 1: Hráč (Player) -> exact_player
+  // 2: Tým (Team) -> exact_team
+  // 3: Přesná hodnota (Exact value) -> exact_value
+  // 4: Nejbližší hodnota (Closest value) -> closest_value
+  // 5: Otázka (Question) -> question
+  const isTeamBet = betTypeId === 2
+  const isPlayerBet = betTypeId === 1
 
   const handleSave = async () => {
     if (isLocked) return

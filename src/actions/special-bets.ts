@@ -43,12 +43,31 @@ export async function createSpecialBet(input: CreateSpecialBetInput) {
         throw new AppError('Special bet type not found', 'NOT_FOUND', 404)
       }
 
+      // Verify evaluator exists, belongs to league, and has entity='special'
+      const evaluator = await prisma.evaluator.findFirst({
+        where: {
+          id: validated.evaluatorId,
+          leagueId: validated.leagueId,
+          entity: 'special',
+          deletedAt: null,
+        },
+      })
+
+      if (!evaluator) {
+        throw new AppError(
+          'Evaluator not found or does not belong to this league with entity type "special"',
+          'BAD_REQUEST',
+          400
+        )
+      }
+
       // Create the special bet
       const specialBet = await prisma.leagueSpecialBetSingle.create({
         data: {
           leagueId: validated.leagueId,
           specialBetSingleId: validated.specialBetSingleId,
-          points: validated.points,
+          evaluatorId: validated.evaluatorId,
+          points: evaluator.points,
           dateTime: validated.dateTime,
           createdAt: now,
           updatedAt: now,
@@ -123,17 +142,22 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
 
       // Update the special bet result
       // Clear all result fields first, then set the one we want
-      await prisma.leagueSpecialBetSingle.update({
+      // If bet was already evaluated, reset isEvaluated to false (requires re-evaluation)
+      const updatedBet = await prisma.leagueSpecialBetSingle.update({
         where: { id: validated.specialBetId },
         data: {
           specialBetTeamResultId: validated.specialBetTeamResultId ?? null,
           specialBetPlayerResultId: validated.specialBetPlayerResultId ?? null,
           specialBetValue: validated.specialBetValue ?? null,
+          isEvaluated: false, // Reset evaluation status
           updatedAt: now,
         },
       })
 
-      return {}
+      return {
+        wasEvaluated: specialBet.isEvaluated,
+        needsReEvaluation: specialBet.isEvaluated && updatedBet.isEvaluated === false,
+      }
     },
     revalidatePath: '/admin/special-bets',
     requiresAdmin: true,

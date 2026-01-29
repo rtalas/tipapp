@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userMatchBetSchema, type UserMatchBetInput } from '@/lib/validation/user'
-import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { AppError } from '@/lib/error-handler'
 import { SPORT_IDS } from '@/lib/constants'
 import { AuditLogger } from '@/lib/audit-logger'
@@ -263,13 +262,11 @@ export async function saveMatchBet(input: UserMatchBetInput) {
         }
 
         // Check if bet exists to determine action type
-        const existingBet = await tx.userBet.findUnique({
+        const existingBet = await tx.userBet.findFirst({
           where: {
-            leagueMatchId_leagueUserId_deletedAt: nullableUniqueConstraint({
-              leagueMatchId: validated.leagueMatchId,
-              leagueUserId: leagueUser.id,
-              deletedAt: null,
-            }),
+            leagueMatchId: validated.leagueMatchId,
+            leagueUserId: leagueUser.id,
+            deletedAt: null,
           },
         })
 
@@ -278,38 +275,39 @@ export async function saveMatchBet(input: UserMatchBetInput) {
         // Atomic upsert to prevent race conditions
         const now = new Date()
 
-        await tx.userBet.upsert({
-          where: {
-            leagueMatchId_leagueUserId_deletedAt: nullableUniqueConstraint({
+        if (existingBet) {
+          // Update existing bet
+          await tx.userBet.update({
+            where: { id: existingBet.id },
+            data: {
+              homeScore: validated.homeScore,
+              awayScore: validated.awayScore,
+              scorerId: validated.scorerId,
+              noScorer: validated.noScorer,
+              overtime: validated.overtime,
+              homeAdvanced: validated.homeAdvanced,
+              updatedAt: now,
+            },
+          })
+        } else {
+          // Create new bet
+          await tx.userBet.create({
+            data: {
               leagueMatchId: validated.leagueMatchId,
               leagueUserId: leagueUser.id,
-              deletedAt: null,
-            }),
-          },
-          update: {
-            homeScore: validated.homeScore,
-            awayScore: validated.awayScore,
-            scorerId: validated.scorerId,
-            noScorer: validated.noScorer,
-            overtime: validated.overtime,
-            homeAdvanced: validated.homeAdvanced,
-            updatedAt: now,
-          },
-          create: {
-            leagueMatchId: validated.leagueMatchId,
-            leagueUserId: leagueUser.id,
-            homeScore: validated.homeScore,
-            awayScore: validated.awayScore,
-            scorerId: validated.scorerId,
-            noScorer: validated.noScorer,
-            overtime: validated.overtime,
-            homeAdvanced: validated.homeAdvanced,
-            dateTime: now,
-            totalPoints: 0,
-            createdAt: now,
-            updatedAt: now,
-          },
-        })
+              homeScore: validated.homeScore,
+              awayScore: validated.awayScore,
+              scorerId: validated.scorerId,
+              noScorer: validated.noScorer,
+              overtime: validated.overtime,
+              homeAdvanced: validated.homeAdvanced,
+              dateTime: now,
+              totalPoints: 0,
+              createdAt: now,
+              updatedAt: now,
+            },
+          })
+        }
       },
       {
         isolationLevel: 'Serializable',

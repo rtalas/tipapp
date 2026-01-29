@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userSpecialBetSchema, type UserSpecialBetInput } from '@/lib/validation/user'
-import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { AppError } from '@/lib/error-handler'
 import { AuditLogger } from '@/lib/audit-logger'
 
@@ -223,49 +222,45 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
         }
 
         // Check if bet exists to determine action type
-        const existingBet = await tx.userSpecialBetSingle.findUnique({
+        const existingBet = await tx.userSpecialBetSingle.findFirst({
           where: {
-            leagueSpecialBetSingleId_leagueUserId_deletedAt:
-              nullableUniqueConstraint({
-                leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
-                leagueUserId: leagueUser.id,
-                deletedAt: null,
-              }),
+            leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
+            leagueUserId: leagueUser.id,
+            deletedAt: null,
           },
         })
 
         isUpdate = !!existingBet
 
-        // Atomic upsert to prevent race conditions
         const now = new Date()
 
-        await tx.userSpecialBetSingle.upsert({
-          where: {
-            leagueSpecialBetSingleId_leagueUserId_deletedAt:
-              nullableUniqueConstraint({
-                leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
-                leagueUserId: leagueUser.id,
-                deletedAt: null,
-              }),
-          },
-          update: {
-            teamResultId: validated.teamResultId,
-            playerResultId: validated.playerResultId,
-            value: validated.value,
-            updatedAt: now,
-          },
-          create: {
-            leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
-            leagueUserId: leagueUser.id,
-            teamResultId: validated.teamResultId,
-            playerResultId: validated.playerResultId,
-            value: validated.value,
-            totalPoints: 0,
-            dateTime: now,
-            createdAt: now,
-            updatedAt: now,
-          },
-        })
+        if (existingBet) {
+          // Update existing bet
+          await tx.userSpecialBetSingle.update({
+            where: { id: existingBet.id },
+            data: {
+              teamResultId: validated.teamResultId,
+              playerResultId: validated.playerResultId,
+              value: validated.value,
+              updatedAt: now,
+            },
+          })
+        } else {
+          // Create new bet
+          await tx.userSpecialBetSingle.create({
+            data: {
+              leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
+              leagueUserId: leagueUser.id,
+              teamResultId: validated.teamResultId,
+              playerResultId: validated.playerResultId,
+              value: validated.value,
+              totalPoints: 0,
+              dateTime: now,
+              createdAt: now,
+              updatedAt: now,
+            },
+          })
+        }
       },
       {
         isolationLevel: 'Serializable',

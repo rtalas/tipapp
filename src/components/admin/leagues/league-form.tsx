@@ -174,23 +174,35 @@ export function LeagueForm({ sports }: LeagueFormProps) {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="flex items-center justify-between rounded-lg border p-3">
               <span className="text-sm">{t('exactScore')}</span>
-              <span className="font-mono text-sm font-medium">5 pts</span>
+              <span className="font-mono text-sm font-medium">10 pts</span>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <span className="text-sm">{t('oneTeamScore')}</span>
+              <span className="font-mono text-sm font-medium">1 pt</span>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <span className="text-sm">{t('question')}</span>
+              <span className="font-mono text-sm font-medium">6 pts</span>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
               <span className="text-sm">{t('scoreDifference')}</span>
               <span className="font-mono text-sm font-medium">3 pts</span>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">{t('correctWinner')}</span>
-              <span className="font-mono text-sm font-medium">2 pts</span>
+              <span className="text-sm">{t('scorer')}</span>
+              <span className="font-mono text-sm font-medium">R1:2 R2:3 R3:4 R4:6 U:8</span>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">{t('totalGoals')}</span>
-              <span className="font-mono text-sm font-medium">1 pt</span>
+              <span className="text-sm">{t('seriesExact')}</span>
+              <span className="font-mono text-sm font-medium">14 pts</span>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">{t('correctScorer')}</span>
-              <span className="font-mono text-sm font-medium">2 pts</span>
+              <span className="text-sm">{t('seriesWinner')}</span>
+              <span className="font-mono text-sm font-medium">8 pts</span>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <span className="text-sm">{t('winner')}</span>
+              <span className="font-mono text-sm font-medium">5 pts</span>
             </div>
           </div>
         </CardContent>

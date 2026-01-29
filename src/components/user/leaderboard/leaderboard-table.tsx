@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { Trophy } from 'lucide-react'
+import { Trophy, Calendar, TrendingUp, CheckCircle2 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Dialog,
@@ -16,7 +16,12 @@ import { PullToRefresh } from '@/components/user/common/pull-to-refresh'
 import { useRefresh } from '@/hooks/useRefresh'
 import { cn } from '@/lib/utils'
 import type { LeaderboardEntry } from '@/types/user'
-import type { LeaguePrize } from '@/actions/user/leaderboard'
+import type {
+  LeaguePrize,
+  UserPicksData,
+} from '@/actions/user/leaderboard'
+import { getUserPicks } from '@/actions/user/leaderboard'
+import { useParams } from 'next/navigation'
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[]
@@ -26,9 +31,29 @@ interface LeaderboardTableProps {
 export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
   const t = useTranslations('user.leaderboard')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
+  const params = useParams()
+  const leagueId = parseInt(params.leagueId as string, 10)
   const [selectedUser, setSelectedUser] = useState<LeaderboardEntry | null>(
     null
   )
+  const [userPicks, setUserPicks] = useState<UserPicksData | null>(null)
+  const [isLoadingPicks, setIsLoadingPicks] = useState(false)
+
+  // Fetch picks when user is selected
+  useEffect(() => {
+    if (selectedUser) {
+      setIsLoadingPicks(true)
+      getUserPicks(leagueId, selectedUser.leagueUserId)
+        .then(setUserPicks)
+        .catch((error) => {
+          console.error('Failed to fetch user picks:', error)
+          setUserPicks(null)
+        })
+        .finally(() => setIsLoadingPicks(false))
+    } else {
+      setUserPicks(null)
+    }
+  }, [selectedUser, leagueId])
 
   if (entries.length === 0) {
     return (
@@ -128,69 +153,236 @@ export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
             </div>
           </DialogHeader>
           <div className="mt-4">
-            <div className="space-y-2 h-[40vh] overflow-y-auto">
-              {selectedUser && (
-                <div className="space-y-3">
-                  {/* Match Points */}
-                  {selectedUser.matchPoints > 0 && (
-                    <div className="p-3 rounded-lg bg-secondary/30">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">
-                          {t('matchPredictions')}
-                        </span>
-                        <span className="text-sm font-bold text-primary">
-                          +{selectedUser.matchPoints} {t('pointsShort')}
-                        </span>
-                      </div>
+            {isLoadingPicks ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : userPicks ? (
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                {/* Matches */}
+                {userPicks.matches.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t('matchPredictions')} ({userPicks.matches.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {userPicks.matches.map((match) => (
+                        <div
+                          key={match.id}
+                          className={cn(
+                            'p-3 rounded-lg bg-secondary/30 border',
+                            match.totalPoints > 0
+                              ? 'border-green-500/30'
+                              : 'border-transparent'
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <div className="flex-1">
+                              <span className="text-xs font-medium text-foreground">
+                                {match.matchName}
+                              </span>
+                              {match.isEvaluated && match.actualHomeScore !== null && match.actualAwayScore !== null && (
+                                <span className="text-xs font-semibold text-foreground ml-2">
+                                  ({match.actualHomeScore}:{match.actualAwayScore}
+                                  {match.actualOvertime && ' OT'})
+                                </span>
+                              )}
+                            </div>
+                            <span
+                              className={cn(
+                                'text-xs font-bold shrink-0',
+                                match.totalPoints > 0
+                                  ? 'text-green-500'
+                                  : 'text-muted-foreground'
+                              )}
+                            >
+                              {match.totalPoints > 0 ? '+' : ''}
+                              {match.totalPoints}
+                            </span>
+                          </div>
+
+                          {/* User's Prediction */}
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-muted-foreground">Tip:</span>
+                            <span className="font-mono font-medium">
+                              {match.homeScore}:{match.awayScore}
+                              {match.overtime && ' (OT)'}
+                            </span>
+                            {match.scorerName && (
+                              <>
+                                <span className="text-muted-foreground">•</span>
+                                <span className="flex items-center gap-1">
+                                  {match.scorerName}
+                                  {match.scorerCorrect && (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500 inline-block" />
+                                  )}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  {/* Series Points */}
-                  {selectedUser.seriesPoints > 0 && (
-                    <div className="p-3 rounded-lg bg-secondary/30">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">
-                          {t('seriesPredictions')}
-                        </span>
-                        <span className="text-sm font-bold text-primary">
-                          +{selectedUser.seriesPoints} {t('pointsShort')}
-                        </span>
-                      </div>
+                  </div>
+                )}
+
+                {/* Series */}
+                {userPicks.series.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t('seriesPredictions')} ({userPicks.series.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {userPicks.series.map((series) => (
+                        <div
+                          key={series.id}
+                          className={cn(
+                            'p-3 rounded-lg bg-secondary/30 border',
+                            series.totalPoints > 0
+                              ? 'border-green-500/30'
+                              : 'border-transparent'
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <div className="flex-1">
+                              <span className="text-xs font-medium text-foreground">
+                                {series.seriesName}
+                              </span>
+                              {series.isEvaluated && series.actualHomeScore !== null && series.actualAwayScore !== null && (
+                                <span className="text-xs font-semibold text-foreground ml-2">
+                                  ({series.actualHomeScore}:{series.actualAwayScore})
+                                </span>
+                              )}
+                            </div>
+                            <span
+                              className={cn(
+                                'text-xs font-bold shrink-0',
+                                series.totalPoints > 0
+                                  ? 'text-green-500'
+                                  : 'text-muted-foreground'
+                              )}
+                            >
+                              {series.totalPoints > 0 ? '+' : ''}
+                              {series.totalPoints}
+                            </span>
+                          </div>
+
+                          {/* User's Prediction */}
+                          {series.homeScore !== null && series.awayScore !== null && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="text-muted-foreground">Tip:</span>
+                              <span className="font-mono font-medium">
+                                {series.homeScore}:{series.awayScore}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  {/* Special Bet Points */}
-                  {selectedUser.specialBetPoints > 0 && (
-                    <div className="p-3 rounded-lg bg-secondary/30">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">
-                          {t('specialBets')}
-                        </span>
-                        <span className="text-sm font-bold text-primary">
-                          +{selectedUser.specialBetPoints} {t('pointsShort')}
-                        </span>
-                      </div>
+                  </div>
+                )}
+
+                {/* Special Bets */}
+                {userPicks.specialBets.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t('specialBets')} ({userPicks.specialBets.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {userPicks.specialBets.map((bet) => (
+                        <div
+                          key={bet.id}
+                          className={cn(
+                            'p-3 rounded-lg bg-secondary/30 border',
+                            bet.totalPoints > 0
+                              ? 'border-green-500/30'
+                              : 'border-transparent'
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <span className="text-xs font-medium text-foreground flex-1">
+                              {bet.betName}
+                            </span>
+                            <span
+                              className={cn(
+                                'text-xs font-bold shrink-0',
+                                bet.totalPoints > 0
+                                  ? 'text-green-500'
+                                  : 'text-muted-foreground'
+                              )}
+                            >
+                              {bet.totalPoints > 0 ? '+' : ''}
+                              {bet.totalPoints}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {bet.prediction}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  {/* Question Points */}
-                  {selectedUser.questionPoints > 0 && (
-                    <div className="p-3 rounded-lg bg-secondary/30">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">
-                          {t('questions')}
-                        </span>
-                        <span className="text-sm font-bold text-primary">
-                          +{selectedUser.questionPoints} {t('pointsShort')}
-                        </span>
-                      </div>
+                  </div>
+                )}
+
+                {/* Questions */}
+                {userPicks.questions.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t('questions')} ({userPicks.questions.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {userPicks.questions.map((question) => (
+                        <div
+                          key={question.id}
+                          className={cn(
+                            'p-3 rounded-lg bg-secondary/30 border',
+                            question.totalPoints > 0
+                              ? 'border-green-500/30'
+                              : question.totalPoints < 0
+                                ? 'border-red-500/30'
+                                : 'border-transparent'
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <span className="text-xs font-medium text-foreground flex-1">
+                              {question.question}
+                            </span>
+                            <span
+                              className={cn(
+                                'text-xs font-bold shrink-0',
+                                question.totalPoints > 0
+                                  ? 'text-green-500'
+                                  : question.totalPoints < 0
+                                    ? 'text-red-500'
+                                    : 'text-muted-foreground'
+                              )}
+                            >
+                              {question.totalPoints > 0 ? '+' : ''}
+                              {question.totalPoints}
+                            </span>
+                          </div>
+                          {question.answer !== null && (
+                            <div className="text-xs text-muted-foreground">
+                              {question.answer ? t('yes') : t('no')}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  {selectedUser.totalPoints === 0 && (
+                  </div>
+                )}
+
+                {/* Empty state */}
+                {userPicks.matches.length === 0 &&
+                  userPicks.series.length === 0 &&
+                  userPicks.specialBets.length === 0 &&
+                  userPicks.questions.length === 0 && (
                     <p className="text-center text-muted-foreground py-8 text-sm">
-                      {t('noPointsYet')}
+                      {t('noPicksYet')}
                     </p>
                   )}
-                </div>
-              )}
-            </div>
+              </div>
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>

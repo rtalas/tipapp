@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userQuestionBetSchema, type UserQuestionBetInput } from '@/lib/validation/user'
-import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { AppError } from '@/lib/error-handler'
 import { AuditLogger } from '@/lib/audit-logger'
 
@@ -151,45 +150,41 @@ export async function saveQuestionBet(input: UserQuestionBetInput) {
         }
 
         // Check if bet exists to determine action type
-        const existingBet = await tx.userSpecialBetQuestion.findUnique({
+        const existingBet = await tx.userSpecialBetQuestion.findFirst({
           where: {
-            leagueSpecialBetQuestionId_leagueUserId_deletedAt:
-              nullableUniqueConstraint({
-                leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
-                leagueUserId: leagueUser.id,
-                deletedAt: null,
-              }),
+            leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
+            leagueUserId: leagueUser.id,
+            deletedAt: null,
           },
         })
 
         isUpdate = !!existingBet
 
-        // Atomic upsert to prevent race conditions
         const now = new Date()
 
-        await tx.userSpecialBetQuestion.upsert({
-          where: {
-            leagueSpecialBetQuestionId_leagueUserId_deletedAt:
-              nullableUniqueConstraint({
-                leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
-                leagueUserId: leagueUser.id,
-                deletedAt: null,
-              }),
-          },
-          update: {
-            userBet: validated.userBet,
-            updatedAt: now,
-          },
-          create: {
-            leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
-            leagueUserId: leagueUser.id,
-            userBet: validated.userBet,
-            totalPoints: 0,
-            dateTime: now,
-            createdAt: now,
-            updatedAt: now,
-          },
-        })
+        if (existingBet) {
+          // Update existing bet
+          await tx.userSpecialBetQuestion.update({
+            where: { id: existingBet.id },
+            data: {
+              userBet: validated.userBet,
+              updatedAt: now,
+            },
+          })
+        } else {
+          // Create new bet
+          await tx.userSpecialBetQuestion.create({
+            data: {
+              leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
+              leagueUserId: leagueUser.id,
+              userBet: validated.userBet,
+              totalPoints: 0,
+              dateTime: now,
+              createdAt: now,
+              updatedAt: now,
+            },
+          })
+        }
       },
       {
         isolationLevel: 'Serializable',

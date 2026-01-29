@@ -40,12 +40,14 @@ import { type UserBasic } from '@/actions/users'
 type SpecialBet = SpecialBetWithUserBets
 type League = LeagueWithTeams
 type SpecialBetType = { id: number; name: string }
+type Evaluator = { id: number; name: string }
 type User = UserBasic
 
 interface SpecialBetsContentProps {
   specialBets: SpecialBet[]
   leagues: League[]
   specialBetTypes: SpecialBetType[]
+  evaluators: Evaluator[]
   users: User[]
   league?: { id: number; name: string }
 }
@@ -73,7 +75,7 @@ function getResultTypeAndDisplay(specialBet: SpecialBet): { type: string; displa
   return { type: 'none', display: '-' }
 }
 
-export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, users, league }: SpecialBetsContentProps) {
+export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, evaluators, users, league }: SpecialBetsContentProps) {
   const t = useTranslations('admin.specialBets')
   const tCommon = useTranslations('admin.common')
   const tSeries = useTranslations('admin.series')
@@ -310,6 +312,7 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, user
         onOpenChange={setAddDialogOpen}
         leagues={leagues}
         specialBetTypes={specialBetTypes}
+        evaluators={evaluators}
         league={league}
       />
 

@@ -6,6 +6,7 @@
 import {
   evaluateExactScore,
   evaluateScoreDifference,
+  evaluateOneTeamScore,
   evaluateWinner,
   evaluateScorer,
   evaluateDraw,
@@ -26,13 +27,14 @@ import {
 type MatchEvaluatorFn = (context: MatchBetContext) => boolean | number
 type SeriesEvaluatorFn = (context: SeriesBetContext) => boolean
 type SpecialEvaluatorFn = (context: SpecialBetContext) => boolean
-type ClosestValueEvaluatorFn = (context: ClosestValueContext) => boolean
+type ClosestValueEvaluatorFn = (context: ClosestValueContext) => number
 
 
 // Evaluator mapping registries
 const MATCH_EVALUATORS: Record<string, MatchEvaluatorFn> = {
   exact_score: evaluateExactScore,
   score_difference: evaluateScoreDifference,
+  one_team_score: evaluateOneTeamScore,
   winner: evaluateWinner,
   scorer: evaluateScorer,
   draw: evaluateDraw,
@@ -98,4 +100,22 @@ export function isClosestValueEvaluator(evaluatorTypeName: string): boolean {
  */
 export function isQuestionEvaluator(evaluatorTypeName: string): boolean {
   return evaluatorTypeName === 'question'
+}
+
+/**
+ * Get the entity type for an evaluator based on its type name
+ * Returns: 'match' | 'series' | 'special' | 'question'
+ */
+export function getEvaluatorEntity(evaluatorTypeName: string): string {
+  if (SERIES_EVALUATORS[evaluatorTypeName]) {
+    return 'series'
+  }
+  if (SPECIAL_EVALUATORS[evaluatorTypeName] || CLOSEST_VALUE_EVALUATORS[evaluatorTypeName]) {
+    return 'special'
+  }
+  if (isQuestionEvaluator(evaluatorTypeName)) {
+    return 'question'
+  }
+  // Default to match for all other evaluators
+  return 'match'
 }
