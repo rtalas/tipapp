@@ -14,6 +14,7 @@ export interface LeaguePrize {
 export interface LeaderboardData {
   entries: LeaderboardEntry[]
   prizes: LeaguePrize[]
+  fines: LeaguePrize[]
 }
 
 export interface UserMatchPick {
@@ -371,8 +372,8 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
     rank: index + 1,
   }))
 
-  // Fetch prizes for this league
-  const prizes = await prisma.leaguePrize.findMany({
+  // Fetch prizes and fines for this league
+  const prizeRecords = await prisma.leaguePrize.findMany({
     where: {
       leagueId,
       deletedAt: null,
@@ -385,12 +386,29 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
       amount: true,
       currency: true,
       label: true,
+      type: true,
     },
   })
+
+  // Separate prizes and fines
+  const prizes = prizeRecords.filter(p => p.type === 'prize').map(({ rank, amount, currency, label }) => ({
+    rank,
+    amount,
+    currency,
+    label,
+  }))
+
+  const fines = prizeRecords.filter(p => p.type === 'fine').map(({ rank, amount, currency, label }) => ({
+    rank,
+    amount,
+    currency,
+    label,
+  }))
 
   return {
     entries: rankedEntries,
     prizes,
+    fines,
   }
 }
 

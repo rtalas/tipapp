@@ -9,7 +9,7 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
   const { leagueId: leagueIdParam } = await params
   const leagueId = parseInt(leagueIdParam, 10)
 
-  const { entries, prizes } = await getLeaderboard(leagueId)
+  const { entries, prizes, fines } = await getLeaderboard(leagueId)
 
-  return <LeaderboardTable entries={entries} prizes={prizes} />
+  return <LeaderboardTable entries={entries} prizes={prizes} fines={fines} />
 }

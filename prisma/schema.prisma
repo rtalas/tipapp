@@ -158,12 +158,13 @@ model LeaguePrize {
   amount    Int
   currency  String    @default("CZK") @db.VarChar(3)
   label     String?   @db.VarChar(100)
+  type      String    @default("prize") @db.VarChar(10)
   createdAt DateTime  @db.Timestamptz(6)
   updatedAt DateTime  @db.Timestamptz(6)
   deletedAt DateTime? @db.Timestamptz(6)
   League    League    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
-  @@unique([leagueId, rank, deletedAt])
+  @@unique([leagueId, rank, type, deletedAt])
   @@index([leagueId, deletedAt])
 }
 

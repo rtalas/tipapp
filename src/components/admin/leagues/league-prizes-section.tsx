@@ -32,6 +32,7 @@ export function LeaguePrizesSection({ prizes, onChange }: LeaguePrizesSectionPro
       amount: 0,
       currency: 'CZK',
       label: undefined,
+      type: 'prize',
     }
 
     onChange([...prizes, newPrize])

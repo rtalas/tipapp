@@ -69,9 +69,10 @@ Nested JSON organized by namespaces:
 - `npm run test:watch` - Run tests in watch mode (for development)
 - `npm run test:ui` - Run tests with UI
 - `npm run test:coverage` - Generate coverage report
-- `npx prisma db pull` - Sync schema
-- `npx prisma generate` - Update Prisma Client
+- `npx prisma db pull` - Sync schema from database
+- `npx prisma generate` - Update Prisma Client after schema changes
 - `npx prisma studio` - Open DB GUI
+- `psql $DATABASE_URL -f <migration_file>.sql` - Run SQL migration (or use Supabase SQL Editor)
 
 ## Standards
 - Clean, modular, self-documenting code. Strict TypeScript (no `any`).
@@ -85,7 +86,8 @@ Nested JSON organized by namespaces:
 - **DO NOT** rename fields to camelCase. Use introspected schema exactly as-is.
 - **Evaluator.points:** Uses `Int` type (not String) - stored as integers for performance and type safety.
 - **Evaluator.config:** Optional `Json` field storing `ScorerRankedConfig` for rank-based scorer evaluation. When config exists, points field is set to 0.
-- **Unique constraints:** All bet tables have unique constraints on `[foreignKey, leagueUserId, deletedAt]` to prevent duplicates.
+- **LeaguePrize.type:** Enum field ('prize' or 'fine') to distinguish between rewards for top performers and penalties for worst performers. Prizes rank from top (1 = 1st place), fines rank from bottom (1 = last place).
+- **Unique constraints:** All bet tables have unique constraints on `[foreignKey, leagueUserId, deletedAt]` to prevent duplicates. LeaguePrize has unique constraint on `[leagueId, rank, type, deletedAt]`.
 - **Performance indexes:** Critical query paths have composite indexes for fast lookups.
 
 ## Business Logic
@@ -107,11 +109,22 @@ app/
 src/
 ├── actions/            # Server actions (admin + user)
 │   ├── evaluators.ts   # updateEvaluator() supports config for scorer rank-based points
+│   ├── league-prizes.ts # getLeaguePrizes(), updateLeaguePrizes() - handles prizes & fines
+│   └── user/
+│       └── leaderboard.ts # getLeaderboard() returns entries, prizes, fines
 ├── components/         # UI (user + admin)
+│   ├── admin/
+│   │   └── leagues/
+│   │       ├── league-prizes-section.tsx  # Prize management UI
+│   │       ├── league-fines-section.tsx   # Fine management UI (Jan 2026)
+│   │       └── fine-tier-row.tsx          # Individual fine tier component (Jan 2026)
+│   └── user/
+│       └── leaderboard/
+│           └── leaderboard-table.tsx      # Displays prizes & fines
 ├── contexts/           # League context (admin + user)
 ├── hooks/              # useRefresh, useInlineEdit, useDeleteDialog, useCreateDialog, useExpandableRow
 ├── lib/
-│   ├── evaluators/     # 13 bet evaluators
+│   ├── evaluators/     # 14 bet evaluators
 │   ├── constants.ts    # SPORT_IDS.HOCKEY, SPORT_IDS.FOOTBALL
 │   ├── auth-utils.ts   # requireAdmin()
 │   ├── user-auth-utils.ts # requireLeagueMember()
@@ -120,8 +133,12 @@ src/
 │   ├── server-action-utils.ts # executeServerAction()
 │   ├── prisma-utils.ts # nullableUniqueConstraint() for type-safe Prisma
 │   └── validation/     # Zod schemas (admin.ts, user.ts)
-│       └── admin.ts    # scorerRankedConfigSchema, updateEvaluatorSchema with config support
+│       └── admin.ts    # PrizeTier schema with type field, updateLeaguePrizesSchema
 └── types/              # Session + user types
+prisma/
+└── schema.prisma       # LeaguePrize.type field distinguishes prizes from fines
+migration_add_fines_v2.sql  # Migration to add type column (required before using fines)
+FINES_FEATURE.md        # Comprehensive fines feature documentation
 ```
 
 ## Auth
@@ -164,8 +181,23 @@ src/
 - ✅ **Phase 3:** Admin User Betting (expandable rows, league-scoped architecture, questions)
 - ✅ **Phase 4:** Evaluation Engine (14 evaluators, 79 tests)
 - ✅ **Phase 5:** User-Side App (mobile-first, PWA, bottom nav, friend predictions, pull-to-refresh)
-- ✅ **Phase 6:** Polish (configurable prizes, race condition fixes, performance optimization, security hardening)
+- ✅ **Phase 6:** Polish (configurable prizes & fines, race condition fixes, performance optimization, security hardening)
 - 🔄 **Phase 7:** Production (push notifications, monitoring, final deployment)
+
+### Recent Updates (Jan 2026)
+- **Fines System (Jan 29, 2026):** Added penalty system for worst-performing bettors
+  - Extended `LeaguePrize` table with `type` field (prize/fine)
+  - Admin can configure up to 10 fine tiers per league
+  - Fines display automatically on user leaderboard (red badges with negative amounts)
+  - **Migration Required:** `migration_add_fines_v2.sql` must be run before using feature
+    - Adds `type` VARCHAR(10) column with default 'prize'
+    - Adds check constraint: type IN ('prize', 'fine')
+    - Updates unique constraint to include type: `[leagueId, rank, type, deletedAt]`
+    - Idempotent: Safe to run multiple times
+    - Run via Supabase SQL Editor or: `psql $DATABASE_URL -f migration_add_fines_v2.sql`
+  - Components: `LeagueFinesSection`, `FineTierRow` for admin management
+  - Calculation: Position from bottom (14 participants → rank 14 gets fine rank 1)
+  - See `FINES_FEATURE.md` for complete documentation
 
 ## Key Features
 
@@ -173,7 +205,12 @@ src/
 - **Dual routing:** Global (`/admin/teams`) vs. League-scoped (`/admin/[leagueId]/teams`)
 - **Expandable rows:** Matches/Series/Special Bets show user bets inline
 - **League context:** Topbar dropdown, localStorage persistence, URL sync
-- **Prizes:** 1-10 configurable tiers per league (stored in halers)
+- **Prizes & Fines:**
+  - Prizes: 1-10 configurable tiers for top performers (rank 1 = 1st place, rank 2 = 2nd place, etc.)
+  - Fines: 1-10 configurable tiers for worst performers (rank 1 = last place, rank 2 = second-to-last, etc.)
+  - All amounts stored in halers (100 Kč = 10000 halers)
+  - Displayed on user leaderboard automatically
+  - Managed in league settings modal (scrollable dialog with fixed header/footer)
 - **Questions:** Yes/no bets, scoring logic (correct = +pts, wrong = -pts/2)
 - **Evaluator management:**
   - Scorer evaluators support rank-based configuration (UI auto-expands row when editing)
@@ -189,6 +226,10 @@ src/
 - **Betting lock:** Server validates `currentTime < dateTime` before save
 - **Friend predictions:** Visible only after deadline
 - **Match card:** +/- score controls, searchable scorer dropdown with ranking badges
+- **Leaderboard:**
+  - Top performers see prize badges (yellow/silver/bronze styling for top 3)
+  - Worst performers see fine badges (red badges with negative amounts)
+  - Smart calculation: In 14-person league, rank 14 displays fine for "rank 1 from bottom"
 - **Components:** CountdownBadge, RefreshButton, PointsDisplay, PageLoading, PullToRefresh
 
 ---

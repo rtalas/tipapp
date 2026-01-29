@@ -122,9 +122,6 @@ export function SpecialBetTableRow({
         <TableCell>
           {resultInfo.type !== 'none' && (
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">
-                {t(resultInfo.type)}
-              </Badge>
               <span className="text-sm">{resultInfo.display}</span>
             </div>
           )}

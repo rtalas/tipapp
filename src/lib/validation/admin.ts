@@ -537,18 +537,27 @@ const prizeTierSchema = z.object({
   amount: z.number().int().min(0, 'Amount cannot be negative'),
   currency: z.string().length(3, 'Currency must be 3 characters').default('CZK'),
   label: z.string().max(100, 'Label must not exceed 100 characters').optional(),
+  type: z.enum(['prize', 'fine']).default('prize'),
 })
 
 export const updateLeaguePrizesSchema = z.object({
   leagueId: z.number().int().positive('League ID is required'),
   prizes: z.array(prizeTierSchema).max(10, 'Maximum 10 prize tiers allowed'),
+  fines: z.array(prizeTierSchema).max(10, 'Maximum 10 fine tiers allowed'),
 }).refine((data) => {
-  // Ensure unique ranks
-  const ranks = data.prizes.map(p => p.rank)
-  return new Set(ranks).size === ranks.length
+  // Ensure unique ranks within prizes
+  const prizeRanks = data.prizes.map(p => p.rank)
+  return new Set(prizeRanks).size === prizeRanks.length
 }, {
   message: 'Prize ranks must be unique',
   path: ['prizes'],
+}).refine((data) => {
+  // Ensure unique ranks within fines
+  const fineRanks = data.fines.map(f => f.rank)
+  return new Set(fineRanks).size === fineRanks.length
+}, {
+  message: 'Fine ranks must be unique',
+  path: ['fines'],
 })
 
 export type UpdateLeaguePrizesInput = z.infer<typeof updateLeaguePrizesSchema>

@@ -26,9 +26,10 @@ import { useParams } from 'next/navigation'
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[]
   prizes: LeaguePrize[]
+  fines: LeaguePrize[]
 }
 
-export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
+export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTableProps) {
   const t = useTranslations('user.leaderboard')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
   const params = useParams()
@@ -97,6 +98,8 @@ export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
                   entry={entry}
                   index={index}
                   prizes={prizes}
+                  fines={fines}
+                  totalEntries={entries.length}
                   onClick={() => setSelectedUser(entry)}
                 />
               ))}
@@ -111,6 +114,8 @@ export function LeaderboardTable({ entries, prizes }: LeaderboardTableProps) {
                     entry={entry}
                     index={index + 3}
                     prizes={prizes}
+                    fines={fines}
+                    totalEntries={entries.length}
                     onClick={() => setSelectedUser(entry)}
                   />
                 ))}
@@ -394,10 +399,12 @@ interface RankingRowProps {
   entry: LeaderboardEntry
   index: number
   prizes: LeaguePrize[]
+  fines: LeaguePrize[]
+  totalEntries: number
   onClick: () => void
 }
 
-function RankingRow({ entry, index, prizes, onClick }: RankingRowProps) {
+function RankingRow({ entry, index, prizes, fines, totalEntries, onClick }: RankingRowProps) {
   const t = useTranslations('user.leaderboard')
   const initials = getInitials(entry.firstName, entry.lastName, entry.username)
   const displayName = getDisplayName(
@@ -407,6 +414,7 @@ function RankingRow({ entry, index, prizes, onClick }: RankingRowProps) {
   )
   const rankStyle = getRankStyle(entry.rank)
   const prize = getPrize(entry.rank, prizes)
+  const fine = getFine(entry.rank, totalEntries, fines)
 
   return (
     <button
@@ -458,7 +466,7 @@ function RankingRow({ entry, index, prizes, onClick }: RankingRowProps) {
         )}
       </span>
 
-      {/* Prize Badge for top 3 */}
+      {/* Prize Badge for top performers */}
       {prize && (
         <span
           className={cn(
@@ -468,6 +476,15 @@ function RankingRow({ entry, index, prizes, onClick }: RankingRowProps) {
           )}
         >
           {prize}
+        </span>
+      )}
+
+      {/* Fine Badge for worst performers */}
+      {fine && (
+        <span
+          className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-500"
+        >
+          -{fine}
         </span>
       )}
 
@@ -515,6 +532,20 @@ function getPrize(rank: number, prizes: LeaguePrize[]) {
   }).format(prize.amount / 100)
 
   return `${formatted}\u00A0${prize.currency}`
+}
+
+function getFine(rank: number, totalEntries: number, fines: LeaguePrize[]) {
+  // Calculate position from bottom (1 = last place, 2 = second-to-last, etc.)
+  const positionFromBottom = totalEntries - rank + 1
+
+  const fine = fines.find((f) => f.rank === positionFromBottom)
+  if (!fine) return null
+
+  const formatted = new Intl.NumberFormat('cs-CZ', {
+    minimumFractionDigits: 0,
+  }).format(fine.amount / 100)
+
+  return `${formatted}\u00A0${fine.currency}`
 }
 
 function getInitials(
