@@ -128,7 +128,10 @@ export function ProfileInformationForm({
 
       if (result.success) {
         toast.success(variant === 'admin' ? t('profileUpdated') : t('successPersonalInfo'))
-        router.refresh()
+        // Only refresh in admin to avoid PWA navigation issues
+        if (variant === 'admin') {
+          router.refresh()
+        }
       } else {
         toast.error(result.error || (variant === 'admin' ? t('profileUpdateFailed') : t('errorGeneric')))
       }
@@ -295,50 +298,61 @@ export function ProfileInformationForm({
                     <BellRing className="mr-2 inline h-4 w-4" />
                     {t('pushNotifications')}
                   </Label>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      type="button"
-                      variant={pushNotifications.isSubscribed ? 'default' : 'outline'}
-                      size="sm"
-                      disabled={pushNotifications.isLoading || pushNotifications.permissionState === 'denied'}
-                      onClick={async () => {
-                        if (pushNotifications.isSubscribed) {
-                          const success = await pushNotifications.unsubscribe()
-                          if (success) {
-                            toast.success(t('pushDisabled'))
-                          } else {
-                            toast.error(t('pushError'))
-                          }
-                        } else {
-                          const success = await pushNotifications.subscribe()
-                          if (success) {
-                            toast.success(t('pushEnabled'))
-                          } else if (pushNotifications.permissionState === 'denied') {
-                            toast.error(t('pushDenied'))
-                          } else {
-                            toast.error(t('pushError'))
-                          }
-                        }
-                      }}
-                      className="flex-1"
-                    >
-                      {pushNotifications.isLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : pushNotifications.isSubscribed ? (
-                        <BellRing className="mr-2 h-4 w-4" />
-                      ) : (
-                        <BellOff className="mr-2 h-4 w-4" />
-                      )}
-                      {pushNotifications.isSubscribed ? t('pushOn') : t('pushOff')}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {pushNotifications.permissionState === 'denied'
-                      ? t('pushDeniedHelper')
-                      : pushNotifications.isSubscribed
-                        ? t('pushOnHelper')
-                        : t('pushOffHelper')}
-                  </p>
+
+                  {!pushNotifications.isSupported && (
+                    <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                      {t('pushUnsupported')}
+                    </div>
+                  )}
+
+                  {pushNotifications.isSupported && (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          type="button"
+                          variant={pushNotifications.isSubscribed ? 'default' : 'outline'}
+                          size="sm"
+                          disabled={pushNotifications.isLoading || pushNotifications.permissionState === 'denied'}
+                          onClick={async () => {
+                            if (pushNotifications.isSubscribed) {
+                              const success = await pushNotifications.unsubscribe()
+                              if (success) {
+                                toast.success(t('pushDisabled'))
+                              } else {
+                                toast.error(t('pushError'))
+                              }
+                            } else {
+                              const success = await pushNotifications.subscribe()
+                              if (success) {
+                                toast.success(t('pushEnabled'))
+                              } else if (pushNotifications.permissionState === 'denied') {
+                                toast.error(t('pushDenied'))
+                              } else {
+                                toast.error(t('pushError'))
+                              }
+                            }
+                          }}
+                          className="flex-1"
+                        >
+                          {pushNotifications.isLoading ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : pushNotifications.isSubscribed ? (
+                            <BellRing className="mr-2 h-4 w-4" />
+                          ) : (
+                            <BellOff className="mr-2 h-4 w-4" />
+                          )}
+                          {pushNotifications.isSubscribed ? t('pushOn') : t('pushOff')}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {pushNotifications.permissionState === 'denied'
+                          ? t('pushDeniedHelper')
+                          : pushNotifications.isSubscribed
+                            ? t('pushOnHelper')
+                            : t('pushOffHelper')}
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </>

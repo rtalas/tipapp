@@ -132,6 +132,7 @@
       "pushDisabled": "Push notifications disabled",
       "pushDenied": "Notification permission denied",
       "pushError": "Failed to update notification settings",
+      "pushUnsupported": "Push notifications require installing the app to your home screen. Tap Share → Add to Home Screen.",
       "pushUnsupportedIOS": "Push notifications are not supported on iOS Safari. Please use Chrome or another browser."
     }
   },

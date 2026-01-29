@@ -132,6 +132,7 @@
       "pushDisabled": "Push notifikace vypnuty",
       "pushDenied": "Oprávnění pro notifikace zamítnuto",
       "pushError": "Nepodařilo se aktualizovat nastavení notifikací",
+      "pushUnsupported": "Push notifikace vyžadují instalaci aplikace na plochu. Klepněte na Sdílet → Přidat na plochu.",
       "pushUnsupportedIOS": "Push notifikace nejsou podporovány v iOS Safari. Použijte prosím Chrome nebo jiný prohlížeč."
     }
   },
