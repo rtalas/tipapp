@@ -131,7 +131,8 @@
       "pushEnabled": "Push notifications enabled",
       "pushDisabled": "Push notifications disabled",
       "pushDenied": "Notification permission denied",
-      "pushError": "Failed to update notification settings"
+      "pushError": "Failed to update notification settings",
+      "pushUnsupportedIOS": "Push notifications are not supported on iOS Safari. Please use Chrome or another browser."
     }
   },
   "user": {
@@ -488,6 +489,7 @@
       "matchup": "Matchup",
       "score": "Score",
       "status": "Status",
+      "actions": "Actions",
       "vs": "vs",
       "home": "Home",
       "away": "Away",

@@ -131,7 +131,8 @@
       "pushEnabled": "Push notifikace zapnuty",
       "pushDisabled": "Push notifikace vypnuty",
       "pushDenied": "Oprávnění pro notifikace zamítnuto",
-      "pushError": "Nepodařilo se aktualizovat nastavení notifikací"
+      "pushError": "Nepodařilo se aktualizovat nastavení notifikací",
+      "pushUnsupportedIOS": "Push notifikace nejsou podporovány v iOS Safari. Použijte prosím Chrome nebo jiný prohlížeč."
     }
   },
   "user": {
@@ -488,6 +489,7 @@
       "matchup": "Zápas",
       "score": "Skóre",
       "status": "Stav",
+      "actions": "Akce",
       "vs": "vs",
       "home": "Domácí",
       "away": "Hosté",

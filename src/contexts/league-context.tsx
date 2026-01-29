@@ -14,21 +14,27 @@ const LeagueContext = React.createContext<LeagueContextType | undefined>(undefin
 export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
-  // State only for manual selection (initialized from localStorage)
-  const [manuallySelectedLeagueId, setManuallySelectedLeagueId] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('tipapp_selected_league_id')
-    }
-    return null
-  })
+  // State only for manual selection - starts as null to avoid hydration mismatch
+  const [manuallySelectedLeagueId, setManuallySelectedLeagueId] = useState<string | null>(null)
 
   // Derive the current league ID from URL (no effect needed)
   const urlLeagueId = pathname.match(/^\/admin\/(\d+)/)?.[1] ?? null
   const selectedLeagueId = urlLeagueId ?? manuallySelectedLeagueId
 
-  // Update localStorage when URL changes (no state update - that's the key!)
+  // Initialize from localStorage after mount to avoid hydration mismatch
   useEffect(() => {
-    if (typeof window !== 'undefined' && urlLeagueId) {
+    const stored = localStorage.getItem('tipapp_selected_league_id')
+    if (stored) {
+      // This is intentional: we need to read from localStorage after mount
+      // to avoid server/client hydration mismatch
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setManuallySelectedLeagueId(stored)
+    }
+  }, [])
+
+  // Update localStorage when URL changes
+  useEffect(() => {
+    if (urlLeagueId) {
       localStorage.setItem('tipapp_selected_league_id', urlLeagueId)
     }
   }, [urlLeagueId])

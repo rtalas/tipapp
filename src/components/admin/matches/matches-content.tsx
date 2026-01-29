@@ -189,7 +189,7 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                     <TableHead className="text-center">{t('score')}</TableHead>
                     <TableHead>{t('status')}</TableHead>
                     <TableHead className="text-center">{t('userBets')}</TableHead>
-                    <TableHead className="w-[80px]">{t('actions', { ns: 'admin.common' })}</TableHead>
+                    <TableHead className="w-[80px]">{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

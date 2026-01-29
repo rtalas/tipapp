@@ -119,14 +119,15 @@ export function usePushNotifications(): PushNotificationHook {
       // Get VAPID public key from server
       const response = await fetch('/api/push/subscribe')
       if (!response.ok) {
-        console.error('Failed to get VAPID key')
+        const errorText = await response.text()
+        console.error('Failed to get VAPID key:', response.status, errorText)
         setIsLoading(false)
         return false
       }
 
       const { vapidPublicKey } = await response.json()
       if (!vapidPublicKey) {
-        console.error('VAPID key not available')
+        console.error('VAPID key not available in response')
         setIsLoading(false)
         return false
       }
@@ -152,8 +153,9 @@ export function usePushNotifications(): PushNotificationHook {
 
       if (!subscribeResponse.ok) {
         // Rollback subscription on server error
+        const errorText = await subscribeResponse.text()
+        console.error('Failed to save subscription to server:', subscribeResponse.status, errorText)
         await subscription.unsubscribe()
-        console.error('Failed to save subscription to server')
         setIsLoading(false)
         return false
       }

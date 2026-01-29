@@ -289,7 +289,7 @@ export function ProfileInformationForm({
               </div>
 
               {/* Push Notifications Toggle */}
-              {showPushNotifications && pushNotifications.isSupported && notifyMinutes > 0 && (
+              {showPushNotifications && notifyMinutes > 0 && (
                 <div className="space-y-2">
                   <Label>
                     <BellRing className="mr-2 inline h-4 w-4" />

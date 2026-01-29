@@ -181,7 +181,7 @@ export function PlayersContent({ players }: PlayersContentProps) {
       lastName: createDialog.form.lastName,
       position: createDialog.form.position,
       isActive: createDialog.form.isActive,
-      externalId: createDialog.form.externalId,
+      externalId: createDialog.form.externalId ? parseInt(createDialog.form.externalId, 10) : undefined,
     })
 
     if (!validation.success) {
