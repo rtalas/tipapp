@@ -23,9 +23,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-type League = { id: number; name: string }
+type League = {
+  id: number
+  name: string
+  LeagueTeam?: Array<{ id: number; group: string | null; Team: { name: string } }>
+}
 type SpecialBetType = { id: number; name: string }
-type Evaluator = { id: number; name: string }
+type Evaluator = { id: number; name: string; EvaluatorType?: { name: string } }
 
 interface AddSpecialBetDialogProps {
   open: boolean
@@ -33,7 +37,7 @@ interface AddSpecialBetDialogProps {
   leagues: League[]
   specialBetTypes: SpecialBetType[]
   evaluators: Evaluator[]
-  league?: { id: number; name: string }
+  league?: League
 }
 
 export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTypes, evaluators, league }: AddSpecialBetDialogProps) {
@@ -41,15 +45,40 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>(league?.id.toString() || '')
   const [selectedTypeId, setSelectedTypeId] = useState<string>('')
   const [selectedEvaluatorId, setSelectedEvaluatorId] = useState<string>('')
+  const [selectedGroup, setSelectedGroup] = useState<string>('')
   const [dateTime, setDateTime] = useState<string>('')
 
   const effectiveLeagueId = league?.id.toString() || selectedLeagueId
+
+  // Get the selected league to access its teams
+  const selectedLeague = leagues.find((l) => l.id === parseInt(effectiveLeagueId))
+
+  // Get unique groups from teams in the selected league
+  const availableGroups = selectedLeague?.LeagueTeam
+    ? Array.from(
+        new Set(
+          selectedLeague.LeagueTeam
+            .map((lt) => lt.group)
+            .filter((g): g is string => g !== null)
+        )
+      )
+    : []
+
+  // Check if selected evaluator is group_stage_team
+  const selectedEvaluator = evaluators.find((e) => e.id === parseInt(selectedEvaluatorId))
+  const isGroupStageEvaluator = selectedEvaluator?.EvaluatorType?.name === 'group_stage_team'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!effectiveLeagueId || !selectedTypeId || !selectedEvaluatorId || !dateTime) {
       toast.error('Please fill in all required fields')
+      return
+    }
+
+    // Validate group selection for group_stage_team evaluator
+    if (isGroupStageEvaluator && !selectedGroup) {
+      toast.error('Please select a group for group stage prediction')
       return
     }
 
@@ -61,6 +90,7 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
         specialBetSingleId: parseInt(selectedTypeId, 10),
         evaluatorId: parseInt(selectedEvaluatorId, 10),
         dateTime: new Date(dateTime),
+        group: selectedGroup || undefined,
       })
 
       toast.success('Special bet created successfully')
@@ -84,6 +114,7 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
     }
     setSelectedTypeId('')
     setSelectedEvaluatorId('')
+    setSelectedGroup('')
     setDateTime('')
   }
 
@@ -150,6 +181,33 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
               Determines which evaluator type (team/player/value) and points are awarded.
             </p>
           </div>
+
+          {isGroupStageEvaluator && (
+            <div className="space-y-2">
+              <Label htmlFor="group">Group (Required)</Label>
+              <Select value={selectedGroup} onValueChange={setSelectedGroup} required>
+                <SelectTrigger id="group">
+                  <SelectValue placeholder="Select group" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableGroups.length > 0 ? (
+                    availableGroups.map((group) => (
+                      <SelectItem key={group} value={group}>
+                        {group}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-groups" disabled>
+                      No groups available
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Users will only see teams from this group when making predictions.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="dateTime">Deadline Date & Time (UTC)</Label>

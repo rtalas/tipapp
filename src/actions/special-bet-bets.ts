@@ -45,6 +45,10 @@ export async function getSpecialBetsWithUserBets(filters?: {
       LeaguePlayer: {
         include: { Player: true },
       },
+      LeagueSpecialBetSingleTeamAdvanced: {
+        where: { deletedAt: null },
+        select: { leagueTeamId: true },
+      },
       UserSpecialBetSingle: {
         where: { deletedAt: null },
         include: {

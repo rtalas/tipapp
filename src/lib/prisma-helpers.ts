@@ -83,6 +83,12 @@ export const specialBetInclude = {
       Player: true,
     },
   },
+  LeagueSpecialBetSingleTeamAdvanced: {
+    where: { deletedAt: null },
+    select: {
+      leagueTeamId: true,
+    },
+  },
   _count: {
     select: { UserSpecialBetSingle: true },
   },

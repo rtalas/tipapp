@@ -17,10 +17,12 @@ import {
   evaluateExactTeam,
   evaluateExactValue,
   evaluateClosestValue,
+  evaluateGroupStageTeam,
   type MatchBetContext,
   type SeriesBetContext,
   type SpecialBetContext,
   type ClosestValueContext,
+  type GroupStageContext,
 } from './index'
 
 // Type definitions
@@ -28,6 +30,7 @@ type MatchEvaluatorFn = (context: MatchBetContext) => boolean | number
 type SeriesEvaluatorFn = (context: SeriesBetContext) => boolean
 type SpecialEvaluatorFn = (context: SpecialBetContext) => boolean
 type ClosestValueEvaluatorFn = (context: ClosestValueContext) => number
+type GroupStageEvaluatorFn = (context: GroupStageContext) => number
 
 
 // Evaluator mapping registries
@@ -57,6 +60,11 @@ const CLOSEST_VALUE_EVALUATORS: Record<string, ClosestValueEvaluatorFn> = {
   closest_value: evaluateClosestValue,
 }
 
+// group_stage_team requires special handling (needs config + advanced teams)
+const GROUP_STAGE_EVALUATORS: Record<string, GroupStageEvaluatorFn> = {
+  group_stage_team: evaluateGroupStageTeam,
+}
+
 /**
  * Get evaluator function for match bets
  */
@@ -80,10 +88,11 @@ export function getSeriesEvaluator(
  */
 export function getSpecialEvaluator(
   evaluatorTypeName: string
-): SpecialEvaluatorFn | ClosestValueEvaluatorFn | null {
+): SpecialEvaluatorFn | ClosestValueEvaluatorFn | GroupStageEvaluatorFn | null {
   return (
     SPECIAL_EVALUATORS[evaluatorTypeName] ??
     CLOSEST_VALUE_EVALUATORS[evaluatorTypeName] ??
+    GROUP_STAGE_EVALUATORS[evaluatorTypeName] ??
     null
   )
 }
@@ -103,6 +112,13 @@ export function isQuestionEvaluator(evaluatorTypeName: string): boolean {
 }
 
 /**
+ * Check if evaluator type is group_stage_team (requires config and advanced teams)
+ */
+export function isGroupStageEvaluator(evaluatorTypeName: string): boolean {
+  return evaluatorTypeName === 'group_stage_team'
+}
+
+/**
  * Get the entity type for an evaluator based on its type name
  * Returns: 'match' | 'series' | 'special' | 'question'
  */
@@ -110,7 +126,7 @@ export function getEvaluatorEntity(evaluatorTypeName: string): string {
   if (SERIES_EVALUATORS[evaluatorTypeName]) {
     return 'series'
   }
-  if (SPECIAL_EVALUATORS[evaluatorTypeName] || CLOSEST_VALUE_EVALUATORS[evaluatorTypeName]) {
+  if (SPECIAL_EVALUATORS[evaluatorTypeName] || CLOSEST_VALUE_EVALUATORS[evaluatorTypeName] || GROUP_STAGE_EVALUATORS[evaluatorTypeName]) {
     return 'special'
   }
   if (isQuestionEvaluator(evaluatorTypeName)) {

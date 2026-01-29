@@ -22,6 +22,7 @@
  * - `exact-value` - Exact numeric value
  * - `closest-value` - Closest prediction among all users
  * - `question` - Yes/no question answers
+ * - `group_stage_team` - Group stage team prediction (winner + advance fallback)
  *
  * @module evaluators
  * @see {@link ../../CLAUDE.md} for detailed documentation
@@ -33,6 +34,8 @@ export type {
   SeriesBetContext,
   SpecialBetContext,
   ClosestValueContext,
+  GroupStageContext,
+  GroupStageConfig,
 } from "./types";
 
 // Export match bet evaluators
@@ -54,6 +57,7 @@ export { evaluateExactTeam } from "./exact-team";
 export { evaluateExactValue } from "./exact-value";
 export { evaluateClosestValue } from "./closest-value";
 export { evaluateQuestion } from "./question";
+export { evaluateGroupStageTeam } from "./group-stage-team";
 
 // Export evaluator utilities
 export {
@@ -62,6 +66,7 @@ export {
   getSpecialEvaluator,
   isClosestValueEvaluator,
   isQuestionEvaluator,
+  isGroupStageEvaluator,
   getEvaluatorEntity,
 } from "./evaluator-mapper";
 
@@ -71,4 +76,5 @@ export {
   buildSpecialBetContext,
   buildClosestValueContext,
   buildQuestionContext,
+  buildGroupStageContext,
 } from "./context-builders";

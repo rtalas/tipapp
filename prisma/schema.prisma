@@ -208,25 +208,27 @@ model LeagueSpecialBetSerie {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model LeagueSpecialBetSingle {
-  id                       Int                    @id @default(autoincrement())
-  leagueId                 Int
-  specialBetSingleId       Int
-  specialBetTeamResultId   Int?
-  specialBetPlayerResultId Int?
-  specialBetValue          Int?
-  points                   Int
-  dateTime                 DateTime               @db.Timestamptz(6)
-  isEvaluated              Boolean                @default(false)
-  createdAt                DateTime               @db.Timestamptz(6)
-  updatedAt                DateTime               @db.Timestamptz(6)
-  deletedAt                DateTime?              @db.Timestamptz(6)
-  evaluatorId              Int
-  Evaluator                Evaluator              @relation(fields: [evaluatorId], references: [id], onDelete: NoAction)
-  League                   League                 @relation(fields: [leagueId], references: [id], onDelete: NoAction)
-  LeaguePlayer             LeaguePlayer?          @relation(fields: [specialBetPlayerResultId], references: [id])
-  SpecialBetSingle         SpecialBetSingle       @relation(fields: [specialBetSingleId], references: [id], onDelete: NoAction)
-  LeagueTeam               LeagueTeam?            @relation(fields: [specialBetTeamResultId], references: [id])
-  UserSpecialBetSingle     UserSpecialBetSingle[]
+  id                                 Int                                  @id @default(autoincrement())
+  leagueId                           Int
+  specialBetSingleId                 Int
+  specialBetTeamResultId             Int?
+  specialBetPlayerResultId           Int?
+  specialBetValue                    Int?
+  points                             Int
+  dateTime                           DateTime                             @db.Timestamptz(6)
+  isEvaluated                        Boolean                              @default(false)
+  createdAt                          DateTime                             @db.Timestamptz(6)
+  updatedAt                          DateTime                             @db.Timestamptz(6)
+  deletedAt                          DateTime?                            @db.Timestamptz(6)
+  evaluatorId                        Int
+  group                              String?                              @db.VarChar(255)
+  Evaluator                          Evaluator                            @relation(fields: [evaluatorId], references: [id], onDelete: NoAction)
+  League                             League                               @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  LeaguePlayer                       LeaguePlayer?                        @relation(fields: [specialBetPlayerResultId], references: [id])
+  SpecialBetSingle                   SpecialBetSingle                     @relation(fields: [specialBetSingleId], references: [id], onDelete: NoAction)
+  LeagueTeam                         LeagueTeam?                          @relation(fields: [specialBetTeamResultId], references: [id])
+  LeagueSpecialBetSingleTeamAdvanced LeagueSpecialBetSingleTeamAdvanced[]
+  UserSpecialBetSingle               UserSpecialBetSingle[]
 
   @@index([evaluatorId])
   @@index([isEvaluated, deletedAt])
@@ -234,24 +236,41 @@ model LeagueSpecialBetSingle {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model LeagueSpecialBetSingleTeamAdvanced {
+  id                       Int                    @id @default(autoincrement())
+  leagueSpecialBetSingleId Int
+  leagueTeamId             Int
+  createdAt                DateTime               @db.Timestamptz(6)
+  updatedAt                DateTime               @db.Timestamptz(6)
+  deletedAt                DateTime?              @db.Timestamptz(6)
+  LeagueSpecialBetSingle   LeagueSpecialBetSingle @relation(fields: [leagueSpecialBetSingleId], references: [id], onDelete: Cascade)
+  LeagueTeam               LeagueTeam             @relation(fields: [leagueTeamId], references: [id], onDelete: NoAction)
+
+  @@unique([leagueSpecialBetSingleId, leagueTeamId, deletedAt])
+  @@index([leagueSpecialBetSingleId])
+  @@index([leagueTeamId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model LeagueTeam {
-  id                                                                 Int                      @id @default(autoincrement())
+  id                                                                 Int                                  @id @default(autoincrement())
   leagueId                                                           Int
   teamId                                                             Int
-  group                                                              String?                  @db.VarChar(255)
+  group                                                              String?                              @db.VarChar(255)
   leaguePhaseAchievedId                                              Int?
-  createdAt                                                          DateTime                 @db.Timestamptz(6)
-  updatedAt                                                          DateTime                 @db.Timestamptz(6)
-  deletedAt                                                          DateTime?                @db.Timestamptz(6)
+  createdAt                                                          DateTime                             @db.Timestamptz(6)
+  updatedAt                                                          DateTime                             @db.Timestamptz(6)
+  deletedAt                                                          DateTime?                            @db.Timestamptz(6)
   LeaguePlayer                                                       LeaguePlayer[]
-  LeagueSpecialBetSerie_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam LeagueSpecialBetSerie[]  @relation("LeagueSpecialBetSerie_awayTeamIdToLeagueTeam")
-  LeagueSpecialBetSerie_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam LeagueSpecialBetSerie[]  @relation("LeagueSpecialBetSerie_homeTeamIdToLeagueTeam")
+  LeagueSpecialBetSerie_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam LeagueSpecialBetSerie[]              @relation("LeagueSpecialBetSerie_awayTeamIdToLeagueTeam")
+  LeagueSpecialBetSerie_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam LeagueSpecialBetSerie[]              @relation("LeagueSpecialBetSerie_homeTeamIdToLeagueTeam")
   LeagueSpecialBetSingle                                             LeagueSpecialBetSingle[]
-  League                                                             League                   @relation(fields: [leagueId], references: [id], onDelete: NoAction)
-  LeaguePhase                                                        LeaguePhase?             @relation(fields: [leaguePhaseAchievedId], references: [id], onDelete: NoAction)
-  Team                                                               Team                     @relation(fields: [teamId], references: [id], onDelete: NoAction)
-  Match_Match_awayTeamIdToLeagueTeam                                 Match[]                  @relation("Match_awayTeamIdToLeagueTeam")
-  Match_Match_homeTeamIdToLeagueTeam                                 Match[]                  @relation("Match_homeTeamIdToLeagueTeam")
+  LeagueSpecialBetSingleTeamAdvanced                                 LeagueSpecialBetSingleTeamAdvanced[]
+  League                                                             League                               @relation(fields: [leagueId], references: [id], onDelete: NoAction)
+  LeaguePhase                                                        LeaguePhase?                         @relation(fields: [leaguePhaseAchievedId], references: [id], onDelete: NoAction)
+  Team                                                               Team                                 @relation(fields: [teamId], references: [id], onDelete: NoAction)
+  Match_Match_awayTeamIdToLeagueTeam                                 Match[]                              @relation("Match_awayTeamIdToLeagueTeam")
+  Match_Match_homeTeamIdToLeagueTeam                                 Match[]                              @relation("Match_homeTeamIdToLeagueTeam")
   UserSpecialBetSingle                                               UserSpecialBetSingle[]
 }
 

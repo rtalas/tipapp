@@ -28,6 +28,17 @@ export const scorerRankedConfigSchema = z
   })
   .nullable()
 
+// Group stage config schema for winner + advance fallback points
+export const groupStageConfigSchema = z
+  .object({
+    winnerPoints: z.number().int().positive('Winner points must be positive'),
+    advancePoints: z.number().int().positive('Advance points must be positive'),
+  })
+  .refine((data) => data.winnerPoints > data.advancePoints, {
+    message: 'Winner points must be greater than advance points',
+    path: ['winnerPoints'],
+  })
+
 // Evaluator schemas (defined first for use in league schema)
 const evaluatorRuleSchema = z.object({
   evaluatorTypeId: z.number().int().positive(),
@@ -40,7 +51,7 @@ export const createEvaluatorSchema = z.object({
   evaluatorTypeId: z.number().int().positive('Evaluator type is required'),
   name: z.string().min(1, 'Name is required').max(255),
   points: z.number().int().min(0, 'Points cannot be negative').max(100),
-  config: scorerRankedConfigSchema.optional(),
+  config: z.union([scorerRankedConfigSchema, groupStageConfigSchema]).optional().nullable(),
 })
 
 export type CreateEvaluatorInput = z.infer<typeof createEvaluatorSchema>
@@ -63,7 +74,7 @@ export const updateEvaluatorSchema = z.object({
   evaluatorId: z.number().int().positive('Evaluator ID is required'),
   name: z.string().min(1, 'Name cannot be empty').max(255),
   points: z.number().int().min(0, 'Points cannot be negative').max(100),
-  config: scorerRankedConfigSchema.optional().nullable(),
+  config: z.union([scorerRankedConfigSchema, groupStageConfigSchema]).optional().nullable(),
 })
 
 export type UpdateEvaluatorInput = z.infer<typeof updateEvaluatorSchema>
@@ -97,6 +108,13 @@ export const assignTeamSchema = z.object({
   teamId: z.number().int().positive(),
   group: z.string().max(10).optional(),
 })
+
+export const updateLeagueTeamGroupSchema = z.object({
+  leagueTeamId: z.number().int().positive(),
+  group: z.string().max(10).nullable(),
+})
+
+export type UpdateLeagueTeamGroupInput = z.infer<typeof updateLeagueTeamGroupSchema>
 
 export type AssignTeamInput = z.infer<typeof assignTeamSchema>
 
@@ -331,6 +349,7 @@ export const createSpecialBetSchema = z.object({
     .refine((date) => date > new Date(), {
       message: 'Special bet date must be in the future',
     }),
+  group: z.string().max(255).optional(),
 })
 
 export type CreateSpecialBetInput = z.infer<typeof createSpecialBetSchema>
@@ -340,6 +359,7 @@ export const updateSpecialBetResultSchema = z.object({
   specialBetTeamResultId: z.number().int().positive().optional(),
   specialBetPlayerResultId: z.number().int().positive().optional(),
   specialBetValue: z.number().int().optional(),
+  advancedTeamIds: z.array(z.number().int().positive()).max(3).optional(),
 }).refine((data) => {
   const fieldsSet = [
     data.specialBetTeamResultId !== undefined,
@@ -351,7 +371,18 @@ export const updateSpecialBetResultSchema = z.object({
 }, {
   message: 'Exactly one result field must be set (team OR player OR value)',
   path: ['specialBetTeamResultId'],
-})
+}).refine(
+  (data) => {
+    if (data.advancedTeamIds && data.advancedTeamIds.length > 0) {
+      return data.specialBetTeamResultId !== undefined
+    }
+    return true
+  },
+  {
+    message: 'Must provide winner when setting advanced teams',
+    path: ['advancedTeamIds'],
+  }
+)
 
 export type UpdateSpecialBetResultInput = z.infer<typeof updateSpecialBetResultSchema>
 

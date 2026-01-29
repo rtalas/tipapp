@@ -70,6 +70,10 @@ export function EvaluatorCreateDialog({
   ])
   const [unrankedPoints, setUnrankedPoints] = useState<string>('')
 
+  // Group stage config
+  const [winnerPoints, setWinnerPoints] = useState<string>('')
+  const [advancePoints, setAdvancePoints] = useState<string>('')
+
   // Update leagueId when league prop changes
   useEffect(() => {
     if (league) {
@@ -83,9 +87,11 @@ export function EvaluatorCreateDialog({
       return
     }
 
-    const isScorer = evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'scorer'
+    const selectedType = evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)
+    const isScorer = selectedType?.name === 'scorer'
+    const isGroupStage = selectedType?.name === 'group_stage_team'
 
-    // Validate based on mode
+    // Validate based on evaluator type
     if (useRankBased && isScorer) {
       if (rankEntries.length === 0 || !unrankedPoints) {
         toast.error(t('validation.rankConfigRequired'))
@@ -93,6 +99,22 @@ export function EvaluatorCreateDialog({
       }
       if (isNaN(Number(unrankedPoints))) {
         toast.error(t('validation.invalidUnrankedPoints'))
+        return
+      }
+    } else if (isGroupStage) {
+      // Validate group stage config
+      if (!winnerPoints || !advancePoints) {
+        toast.error('Winner points and advance points are required for group stage evaluator')
+        return
+      }
+      const winner = Number(winnerPoints)
+      const advance = Number(advancePoints)
+      if (isNaN(winner) || isNaN(advance)) {
+        toast.error('Points must be valid numbers')
+        return
+      }
+      if (winner <= advance) {
+        toast.error('Winner points must be greater than advance points')
         return
       }
     } else {
@@ -104,14 +126,21 @@ export function EvaluatorCreateDialog({
 
     setIsCreating(true)
     try {
-      const config = useRankBased && isScorer
-        ? {
-            rankedPoints: Object.fromEntries(
-              rankEntries.map(e => [String(e.rank), e.points])
-            ),
-            unrankedPoints: parseInt(unrankedPoints, 10),
-          }
-        : null
+      let config = null
+
+      if (useRankBased && isScorer) {
+        config = {
+          rankedPoints: Object.fromEntries(
+            rankEntries.map(e => [String(e.rank), e.points])
+          ),
+          unrankedPoints: parseInt(unrankedPoints, 10),
+        }
+      } else if (isGroupStage) {
+        config = {
+          winnerPoints: parseInt(winnerPoints, 10),
+          advancePoints: parseInt(advancePoints, 10),
+        }
+      }
 
       await createEvaluator({
         leagueId: parseInt(createForm.leagueId, 10),
@@ -133,6 +162,8 @@ export function EvaluatorCreateDialog({
       setUseRankBased(false)
       setRankEntries([{ rank: 1, points: 0 }])
       setUnrankedPoints('')
+      setWinnerPoints('')
+      setAdvancePoints('')
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
@@ -223,9 +254,69 @@ export function EvaluatorCreateDialog({
               onChange={(e) =>
                 setCreateForm({ ...createForm, points: e.target.value })
               }
-              disabled={useRankBased && evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'scorer'}
+              disabled={
+                (useRankBased && evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'scorer') ||
+                evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'group_stage_team'
+              }
             />
+            {evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'group_stage_team' && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Points are configured separately for winner and advance below
+              </p>
+            )}
           </div>
+
+          {/* Group stage configuration */}
+          {evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'group_stage_team' && (
+            <div className="space-y-3 border-t pt-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Group Stage Points Configuration</Label>
+                <p className="text-xs text-muted-foreground">
+                  Configure tiered scoring for group stage predictions
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="winner-points" className="text-xs">
+                  Winner Points (if predicted team wins group)
+                </Label>
+                <Input
+                  id="winner-points"
+                  type="number"
+                  placeholder="10"
+                  value={winnerPoints}
+                  onChange={(e) => setWinnerPoints(e.target.value)}
+                  min={1}
+                  max={100}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="advance-points" className="text-xs">
+                  Advance Points (if team advances but doesn't win)
+                </Label>
+                <Input
+                  id="advance-points"
+                  type="number"
+                  placeholder="5"
+                  value={advancePoints}
+                  onChange={(e) => setAdvancePoints(e.target.value)}
+                  min={1}
+                  max={100}
+                />
+              </div>
+
+              <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                <strong>Example:</strong> Winner points = 10, Advance points = 5
+                <br />
+                • User predicts Team A, Team A wins group → <strong>10 pts</strong>
+                <br />
+                • User predicts Team B, Team B advances (2nd/3rd) → <strong>5 pts</strong>
+                <br />
+                • User predicts Team C, Team C doesn't advance → <strong>0 pts</strong>
+              </div>
+            </div>
+          )}
 
           {/* Rank-based configuration for scorer */}
           {evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'scorer' && (

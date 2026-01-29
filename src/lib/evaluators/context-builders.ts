@@ -8,6 +8,8 @@ import type {
   SeriesBetContext,
   SpecialBetContext,
   ClosestValueContext,
+  GroupStageContext,
+  GroupStageConfig,
 } from './types'
 import type { QuestionContext } from './question'
 import { getScorerRankingAtTime } from '@/lib/scorer-ranking-utils'
@@ -202,5 +204,33 @@ export function buildQuestionContext(
     actual: {
       correctAnswer,
     },
+  }
+}
+
+/**
+ * Build GroupStageContext from database entities
+ * @param userBet - User's team prediction
+ * @param specialBet - Special bet with winner and advanced teams
+ * @param evaluatorConfig - Config with winnerPoints and advancePoints
+ */
+export function buildGroupStageContext(
+  userBet: UserSpecialBetSingle,
+  specialBet: LeagueSpecialBetSingle & {
+    LeagueSpecialBetSingleTeamAdvanced?: Array<{ leagueTeamId: number }>
+  },
+  evaluatorConfig: GroupStageConfig
+): GroupStageContext {
+  return {
+    prediction: {
+      teamResultId: userBet.teamResultId,
+    },
+    actual: {
+      winnerTeamId: specialBet.specialBetTeamResultId,
+      advancedTeamIds:
+        specialBet.LeagueSpecialBetSingleTeamAdvanced?.map(
+          (adv) => adv.leagueTeamId
+        ) || [],
+    },
+    config: evaluatorConfig,
   }
 }

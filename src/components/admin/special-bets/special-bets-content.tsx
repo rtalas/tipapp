@@ -321,7 +321,8 @@ export function SpecialBetsContent({ specialBets, leagues, specialBetTypes, eval
         <ResultEntryDialog
           specialBet={{
             ...selectedSpecialBet,
-            _count: { UserSpecialBetSingle: selectedSpecialBet.UserSpecialBetSingle.length }
+            _count: { UserSpecialBetSingle: selectedSpecialBet.UserSpecialBetSingle.length },
+            LeagueSpecialBetSingleTeamAdvanced: selectedSpecialBet.LeagueSpecialBetSingleTeamAdvanced || []
           }}
           leagues={leagues}
           open={!!selectedSpecialBet}

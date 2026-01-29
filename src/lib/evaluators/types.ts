@@ -92,3 +92,25 @@ export interface ScorerRankedConfig {
 //   "rankedPoints": { "1": 3, "2": 5, "3": 7 },
 //   "unrankedPoints": 10
 // }
+
+/**
+ * Config for group stage team prediction
+ */
+export interface GroupStageConfig {
+  winnerPoints: number; // Points if predicted team wins group
+  advancePoints: number; // Points if team advances but doesn't win
+}
+
+/**
+ * Group stage evaluation context
+ */
+export interface GroupStageContext {
+  prediction: {
+    teamResultId: number | null;
+  };
+  actual: {
+    winnerTeamId: number | null;
+    advancedTeamIds: number[]; // All advancing teams (including winner)
+  };
+  config: GroupStageConfig;
+}

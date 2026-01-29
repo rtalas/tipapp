@@ -3,8 +3,8 @@
 import React, { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { Plus, Trash2 } from 'lucide-react'
-import { assignTeamToLeague, removeTeamFromLeague } from '@/actions/leagues'
+import { Plus, Trash2, Edit, Check, X } from 'lucide-react'
+import { assignTeamToLeague, removeTeamFromLeague, updateLeagueTeamGroup } from '@/actions/leagues'
 import { logger } from '@/lib/client-logger'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -61,6 +62,9 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
   const t = useTranslations('admin.leagueTeams')
   const [selectedTeamId, setSelectedTeamId] = useState<string>('')
   const [isAddingTeam, setIsAddingTeam] = useState(false)
+  const [editingGroupId, setEditingGroupId] = useState<number | null>(null)
+  const [editGroupValue, setEditGroupValue] = useState<string>('')
+  const [isSavingGroup, setIsSavingGroup] = useState(false)
 
   const handleAddTeam = async () => {
     if (!selectedTeamId) return
@@ -88,6 +92,34 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
     } catch (error) {
       toast.error(t('removeError'))
       logger.error('Failed to remove team from league', { error, leagueTeamId })
+    }
+  }
+
+  const handleStartEditGroup = (leagueTeamId: number, currentGroup: string | null) => {
+    setEditingGroupId(leagueTeamId)
+    setEditGroupValue(currentGroup || '')
+  }
+
+  const handleCancelEditGroup = () => {
+    setEditingGroupId(null)
+    setEditGroupValue('')
+  }
+
+  const handleSaveGroup = async (leagueTeamId: number) => {
+    setIsSavingGroup(true)
+    try {
+      await updateLeagueTeamGroup({
+        leagueTeamId,
+        group: editGroupValue.trim() || null,
+      })
+      toast.success('Group updated successfully')
+      setEditingGroupId(null)
+      setEditGroupValue('')
+    } catch (error) {
+      toast.error('Failed to update group')
+      logger.error('Failed to update league team group', { error, leagueTeamId })
+    } finally {
+      setIsSavingGroup(false)
     }
   }
 
@@ -146,7 +178,50 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
                       )}
                     </TableCell>
                     <TableCell>
-                      {lt.group ? <Badge variant="outline">{lt.group}</Badge> : '-'}
+                      {editingGroupId === lt.id ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="text"
+                            value={editGroupValue}
+                            onChange={(e) => setEditGroupValue(e.target.value)}
+                            placeholder="e.g., Group A"
+                            className="h-8 w-32"
+                            disabled={isSavingGroup}
+                            maxLength={10}
+                            autoFocus
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleSaveGroup(lt.id)}
+                            disabled={isSavingGroup}
+                          >
+                            <Check className="h-4 w-4 text-green-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={handleCancelEditGroup}
+                            disabled={isSavingGroup}
+                          >
+                            <X className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          {lt.group ? <Badge variant="outline">{lt.group}</Badge> : <span className="text-muted-foreground">-</span>}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleStartEditGroup(lt.id, lt.group)}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{lt.LeaguePlayer.length} {t('playersLabel')}</Badge>

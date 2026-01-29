@@ -25,7 +25,7 @@ import type { UserSpecialBet, SpecialBetFriendPrediction } from '@/actions/user/
 
 interface SpecialBetCardProps {
   specialBet: UserSpecialBet
-  teams: Array<{ id: number; Team: { id: number; name: string; shortcut: string } }>
+  teams: Array<{ id: number; group: string | null; Team: { id: number; name: string; shortcut: string } }>
   players: Array<{
     id: number
     Player: { id: number; firstName: string | null; lastName: string | null }
@@ -68,6 +68,11 @@ export function SpecialBetCard({
   // 5: Otázka (Question) -> question
   const isTeamBet = betTypeId === 2
   const isPlayerBet = betTypeId === 1
+
+  // Filter teams by group if special bet has group restriction
+  const availableTeams = specialBet.group
+    ? teams.filter((t) => t.group === specialBet.group)
+    : teams
 
   const handleSave = async () => {
     if (isLocked) return
@@ -176,9 +181,16 @@ export function SpecialBetCard({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold text-sm text-foreground leading-tight flex-1 min-w-0">
-                {specialBet.SpecialBetSingle.name}
-              </h3>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm text-foreground leading-tight">
+                  {specialBet.SpecialBetSingle.name}
+                </h3>
+                {specialBet.group && (
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    Group: <strong>{specialBet.group}</strong>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-1 shrink-0">
                 {isLocked && !isEvaluated && (
                   <span className="badge-locked flex items-center gap-0.5 text-[9px] sm:text-[10px]">
@@ -257,7 +269,7 @@ export function SpecialBetCard({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t('noSelection')}</SelectItem>
-                  {teams.map((t) => (
+                  {availableTeams.map((t) => (
                     <SelectItem key={t.id} value={t.id.toString()}>
                       {t.Team.name}
                     </SelectItem>

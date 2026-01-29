@@ -69,6 +69,7 @@ export async function createSpecialBet(input: CreateSpecialBetInput) {
           evaluatorId: validated.evaluatorId,
           points: evaluator.points,
           dateTime: validated.dateTime,
+          group: validated.group,
           createdAt: now,
           updatedAt: now,
         },
@@ -140,23 +141,63 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
         }
       }
 
-      // Update the special bet result
-      // Clear all result fields first, then set the one we want
-      // If bet was already evaluated, reset isEvaluated to false (requires re-evaluation)
-      const updatedBet = await prisma.leagueSpecialBetSingle.update({
-        where: { id: validated.specialBetId },
-        data: {
-          specialBetTeamResultId: validated.specialBetTeamResultId ?? null,
-          specialBetPlayerResultId: validated.specialBetPlayerResultId ?? null,
-          specialBetValue: validated.specialBetValue ?? null,
-          isEvaluated: false, // Reset evaluation status
-          updatedAt: now,
-        },
+      // Verify advanced teams belong to league if provided
+      if (validated.advancedTeamIds && validated.advancedTeamIds.length > 0) {
+        const teams = await prisma.leagueTeam.findMany({
+          where: {
+            id: { in: validated.advancedTeamIds },
+            leagueId: specialBet.leagueId,
+            deletedAt: null,
+          },
+        })
+
+        if (teams.length !== validated.advancedTeamIds.length) {
+          throw new AppError('One or more advanced teams do not belong to this league', 'BAD_REQUEST', 400)
+        }
+      }
+
+      // Use transaction to update result and advanced teams atomically
+      await prisma.$transaction(async (tx) => {
+        // Update the special bet result
+        // Clear all result fields first, then set the one we want
+        // If bet was already evaluated, reset isEvaluated to false (requires re-evaluation)
+        await tx.leagueSpecialBetSingle.update({
+          where: { id: validated.specialBetId },
+          data: {
+            specialBetTeamResultId: validated.specialBetTeamResultId ?? null,
+            specialBetPlayerResultId: validated.specialBetPlayerResultId ?? null,
+            specialBetValue: validated.specialBetValue ?? null,
+            isEvaluated: false, // Reset evaluation status
+            updatedAt: now,
+          },
+        })
+
+        // Handle advanced teams if provided
+        if (validated.advancedTeamIds && validated.advancedTeamIds.length > 0) {
+          // Soft delete existing advanced teams
+          await tx.leagueSpecialBetSingleTeamAdvanced.updateMany({
+            where: {
+              leagueSpecialBetSingleId: validated.specialBetId,
+              deletedAt: null,
+            },
+            data: { deletedAt: now },
+          })
+
+          // Create new advanced teams
+          await tx.leagueSpecialBetSingleTeamAdvanced.createMany({
+            data: validated.advancedTeamIds.map((teamId) => ({
+              leagueSpecialBetSingleId: validated.specialBetId,
+              leagueTeamId: teamId,
+              createdAt: now,
+              updatedAt: now,
+            })),
+          })
+        }
       })
 
       return {
         wasEvaluated: specialBet.isEvaluated,
-        needsReEvaluation: specialBet.isEvaluated && updatedBet.isEvaluated === false,
+        needsReEvaluation: true, // Always needs re-evaluation after result update
       }
     },
     revalidatePath: '/admin/special-bets',

@@ -66,7 +66,7 @@ export default async function LeagueSpecialBetsPage({
         specialBets={specialBets}
         leagues={leagues}
         specialBetTypes={specialBetTypes}
-        evaluators={evaluators.map(e => ({ id: e.id, name: e.name }))}
+        evaluators={evaluators.map(e => ({ id: e.id, name: e.name, EvaluatorType: e.EvaluatorType }))}
         users={users}
         league={league}
       />

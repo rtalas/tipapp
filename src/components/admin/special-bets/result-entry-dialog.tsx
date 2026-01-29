@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateSpecialBetResult, type SpecialBetWithDetails } from '@/actions/special-bets'
@@ -54,6 +54,23 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
   const [valueResult, setValueResult] = useState<string>(
     specialBet.specialBetValue?.toString() ?? ''
   )
+  const [advancedTeamIds, setAdvancedTeamIds] = useState<number[]>([])
+
+  // Check if evaluator is group_stage_team
+  const isGroupStage = specialBet.Evaluator?.EvaluatorType?.name === 'group_stage_team'
+
+  // Initialize advanced teams from existing data when dialog opens
+  useEffect(() => {
+    if (open && isGroupStage && specialBet.LeagueSpecialBetSingleTeamAdvanced) {
+      const existingAdvancedTeamIds = specialBet.LeagueSpecialBetSingleTeamAdvanced.map(
+        (adv) => adv.leagueTeamId
+      )
+      setAdvancedTeamIds(existingAdvancedTeamIds)
+    } else if (!open) {
+      // Reset when dialog closes
+      setAdvancedTeamIds([])
+    }
+  }, [open, isGroupStage, specialBet.LeagueSpecialBetSingleTeamAdvanced])
 
   // Get teams and players from the selected league
   const league = leagues.find((l) => l.id === specialBet.leagueId)
@@ -87,6 +104,7 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
         specialBetTeamResultId: resultType === 'team' ? parseInt(selectedTeamId, 10) : undefined,
         specialBetPlayerResultId: resultType === 'player' ? parseInt(selectedPlayerId, 10) : undefined,
         specialBetValue: resultType === 'value' ? parseInt(valueResult, 10) : undefined,
+        advancedTeamIds: isGroupStage && advancedTeamIds.length > 0 ? advancedTeamIds : undefined,
       })
 
       if ('needsReEvaluation' in result && result.needsReEvaluation) {
@@ -196,24 +214,59 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
 
           {/* Conditional Result Input */}
           {resultType === 'team' && (
-            <div className="space-y-2">
-              <Label htmlFor="teamResult">Select Team</Label>
-              <Select
-                value={selectedTeamId}
-                onValueChange={setSelectedTeamId}
-              >
-                <SelectTrigger id="teamResult">
-                  <SelectValue placeholder="Select winning team" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTeams.map((lt) => (
-                    <SelectItem key={lt.id} value={lt.id.toString()}>
-                      {lt.Team.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="teamResult">Select Team {isGroupStage && '(Group Winner)'}</Label>
+                <Select
+                  value={selectedTeamId}
+                  onValueChange={setSelectedTeamId}
+                >
+                  <SelectTrigger id="teamResult">
+                    <SelectValue placeholder="Select winning team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTeams.map((lt) => (
+                      <SelectItem key={lt.id} value={lt.id.toString()}>
+                        {lt.Team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {isGroupStage && selectedTeamId && (
+                <div className="space-y-2">
+                  <Label>Advanced Teams (excluding winner)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Select 2-3 teams that advanced from the group.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableTeams
+                      .filter((lt) => lt.id !== parseInt(selectedTeamId))
+                      .map((lt) => (
+                        <button
+                          key={lt.id}
+                          type="button"
+                          onClick={() => {
+                            setAdvancedTeamIds((prev) =>
+                              prev.includes(lt.id)
+                                ? prev.filter((id) => id !== lt.id)
+                                : [...prev, lt.id]
+                            )
+                          }}
+                          className={`p-2 rounded border text-sm transition-colors ${
+                            advancedTeamIds.includes(lt.id)
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          {lt.Team.name}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {resultType === 'player' && (

@@ -125,20 +125,23 @@ export type SpecialBetFriendPrediction = Awaited<
 
 /**
  * Gets teams available for a special bet
+ * @param leagueId - The league ID
+ * @param group - Optional group filter for group stage predictions
  */
-export async function getSpecialBetTeams(leagueId: number) {
+export async function getSpecialBetTeams(leagueId: number, group?: string) {
   await requireLeagueMember(leagueId)
 
   const teams = await prisma.leagueTeam.findMany({
     where: {
       leagueId,
       deletedAt: null,
+      ...(group && { group }),
     },
     include: { Team: true },
     orderBy: { Team: { name: 'asc' } },
   })
 
-  return teams
+  return teams.map((t) => ({ ...t, group: t.group }))
 }
 
 /**

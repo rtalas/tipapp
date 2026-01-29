@@ -39,7 +39,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { EvaluatorCreateDialog } from './evaluator-create-dialog'
-import type { ScorerRankedConfig } from '@/lib/evaluators/types'
+import type { ScorerRankedConfig, GroupStageConfig } from '@/lib/evaluators/types'
 
 interface EvaluatorType {
   id: number
@@ -470,6 +470,13 @@ export function EvaluatorsContent({
                                   .sort(([a], [b]) => parseInt(a) - parseInt(b))
                                   .map(([rank, pts]) => `R${rank}:${pts}`)
                                   .join(' ') + ` U:${config.unrankedPoints}`
+                              })()}
+                            </span>
+                          ) : evaluator.config && evaluator.EvaluatorType.name === 'group_stage_team' ? (
+                            <span className="text-xs font-mono">
+                              {(() => {
+                                const config = evaluator.config as GroupStageConfig
+                                return `W:${config.winnerPoints} A:${config.advancePoints}`
                               })()}
                             </span>
                           ) : (

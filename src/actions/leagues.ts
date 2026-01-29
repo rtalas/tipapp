@@ -11,6 +11,7 @@ import {
   assignPlayerSchema,
   updateTopScorerRankingSchema,
   updateLeagueChatSettingsSchema,
+  updateLeagueTeamGroupSchema,
   deleteByIdSchema,
   type CreateLeagueInput,
   type UpdateLeagueInput,
@@ -18,6 +19,7 @@ import {
   type AssignPlayerInput,
   type UpdateTopScorerRankingInput,
   type UpdateLeagueChatSettingsInput,
+  type UpdateLeagueTeamGroupInput,
   type DeleteByIdInput,
 } from '@/lib/validation/admin'
 
@@ -213,6 +215,25 @@ export async function removeTeamFromLeague(input: DeleteByIdInput) {
       await prisma.leagueTeam.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
+      })
+
+      return {}
+    },
+    revalidatePath: '/admin/leagues',
+    requiresAdmin: true,
+  })
+}
+
+export async function updateLeagueTeamGroup(input: UpdateLeagueTeamGroupInput) {
+  return executeServerAction(input, {
+    validator: updateLeagueTeamGroupSchema,
+    handler: async (validated) => {
+      await prisma.leagueTeam.update({
+        where: { id: validated.leagueTeamId },
+        data: {
+          group: validated.group,
+          updatedAt: new Date(),
+        },
       })
 
       return {}

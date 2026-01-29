@@ -9,12 +9,16 @@ import {
   getSpecialEvaluator,
   isClosestValueEvaluator,
   isQuestionEvaluator,
+  isGroupStageEvaluator,
   buildSpecialBetContext,
   buildClosestValueContext,
   buildQuestionContext,
+  buildGroupStageContext,
   evaluateQuestion,
   type ClosestValueContext,
   type SpecialBetContext,
+  type GroupStageContext,
+  type GroupStageConfig,
 } from '@/lib/evaluators'
 
 interface EvaluateSpecialBetOptions {
@@ -58,6 +62,9 @@ async function evaluateSpecialBet(
         },
       },
       League: true,
+      LeagueSpecialBetSingleTeamAdvanced: {
+        where: { deletedAt: null },
+      },
       UserSpecialBetSingle: {
         where: {
           deletedAt: null,
@@ -126,6 +133,17 @@ async function evaluateSpecialBet(
       const multiplier = (evaluatorFn as (ctx: ClosestValueContext) => number)(context)
       points = Math.round(multiplier * evaluator.points)
       awarded = points !== 0 // For tracking purposes
+    }
+    // Special handling for group_stage_team (returns points directly, requires config)
+    else if (isGroupStageEvaluator(evaluator.EvaluatorType.name)) {
+      if (!evaluator.config) {
+        throw new AppError('Group stage evaluator requires config', 'BAD_REQUEST', 400)
+      }
+
+      const config = evaluator.config as unknown as GroupStageConfig
+      const context = buildGroupStageContext(userBet, specialBet, config)
+      points = (evaluatorFn as (ctx: GroupStageContext) => number)(context)
+      awarded = points > 0
     }
     // Standard special bet evaluators
     else {

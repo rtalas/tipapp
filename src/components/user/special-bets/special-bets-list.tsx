@@ -15,7 +15,7 @@ import type { UserQuestion } from '@/actions/user/questions'
 
 interface SpecialBetsListProps {
   specialBets: UserSpecialBet[]
-  teams: Array<{ id: number; Team: { id: number; name: string; shortcut: string } }>
+  teams: Array<{ id: number; group: string | null; Team: { id: number; name: string; shortcut: string } }>
   players: Array<{
     id: number
     Player: { id: number; firstName: string | null; lastName: string | null }
