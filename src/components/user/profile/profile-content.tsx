@@ -94,7 +94,7 @@ export function ProfileContent({ profile }: ProfileContentProps) {
         }}
         variant="user"
         onUpdate={handleProfileUpdate}
-        showPushNotifications={true}
+        showPushNotifications={false} /* TODO */
       />
 
       {/* Change Password Form */}

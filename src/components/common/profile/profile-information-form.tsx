@@ -226,7 +226,7 @@ export function ProfileInformationForm({
             />
           </div>
 
-          <div className="space-y-2">
+          {showPushNotifications && <div className="space-y-2">
             <Label htmlFor="notifyHours">
               <Bell className="mr-2 inline h-4 w-4" />
               {t('notificationTime')}
@@ -259,7 +259,7 @@ export function ProfileInformationForm({
             <p className="text-xs text-muted-foreground">
               {notifyMinutes === 0 ? t('notifyOffHelper') : t('notificationHelper')}
             </p>
-          </div>
+          </div>}
 
           {variant === 'admin' && (
             <div className="space-y-2">
