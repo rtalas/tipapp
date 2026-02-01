@@ -31,7 +31,7 @@ interface UserMenuDropdownProps {
     lastName?: string | null
     isSuperadmin?: boolean
   }
-  selectedLeagueId: number | null
+  currentLeagueId: number
   onLanguageClick: () => void
 }
 
@@ -40,7 +40,7 @@ interface UserMenuDropdownProps {
  */
 export function UserMenuDropdown({
   user,
-  selectedLeagueId,
+  currentLeagueId,
   onLanguageClick,
 }: UserMenuDropdownProps) {
   const { theme, setTheme } = useTheme()
@@ -102,7 +102,7 @@ export function UserMenuDropdown({
           <Globe className="mr-2 h-4 w-4" />
           {t('language')}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push(`/${selectedLeagueId}/profile`)}>
+        <DropdownMenuItem onClick={() => router.push(`/${currentLeagueId}/profile`)}>
           <User className="mr-2 h-4 w-4" />
           {t('profile')}
         </DropdownMenuItem>

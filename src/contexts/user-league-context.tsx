@@ -4,26 +4,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { AppError } from '@/lib/error-handler'
 
-interface League {
-  leagueUserId: number
-  leagueId: number
-  name: string
-  seasonFrom: number
-  seasonTo: number
-  isTheMostActive: boolean | null
-  infoText: string | null
-  sport: {
-    id: number
-    name: string
-  }
-  isAdmin: boolean
-  isPaid: boolean
-}
-
 interface UserLeagueContextType {
-  leagues: League[]
-  selectedLeagueId: number | null
-  selectedLeague: League | null
+  selectedLeagueId: number
   setSelectedLeagueId: (leagueId: number) => void
   isLoading: boolean
 }
@@ -36,37 +18,16 @@ const STORAGE_KEY = 'tipapp_user_selected_league_id'
 
 interface UserLeagueProviderProps {
   children: React.ReactNode
-  initialLeagues: League[]
-  initialLeagueId?: number | null
+  initialLeagueId: number
 }
 
 export function UserLeagueProvider({
   children,
-  initialLeagues,
   initialLeagueId,
 }: UserLeagueProviderProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const [leagues] = useState<League[]>(initialLeagues)
-  const [selectedLeagueId, setSelectedLeagueIdState] = useState<number | null>(() => {
-    // Initialize from props first
-    if (initialLeagueId) {
-      return initialLeagueId
-    }
-    // Then try localStorage
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const storedId = parseInt(stored, 10)
-        // Only use stored ID if the user is a member of that league
-        const isValidLeague = initialLeagues.some((l) => l.leagueId === storedId)
-        if (isValidLeague) {
-          return storedId
-        }
-      }
-    }
-    return null
-  })
+  const [selectedLeagueId, setSelectedLeagueIdState] = useState<number>(initialLeagueId)
   const [isLoading, setIsLoading] = useState(false)
 
   // Sync with URL when on league-specific routes
@@ -104,20 +65,13 @@ export function UserLeagueProvider({
     [pathname, router]
   )
 
-  const selectedLeague = useMemo(
-    () => leagues.find((l) => l.leagueId === selectedLeagueId) ?? null,
-    [leagues, selectedLeagueId]
-  )
-
   const value = useMemo(
     () => ({
-      leagues,
       selectedLeagueId,
-      selectedLeague,
       setSelectedLeagueId,
       isLoading,
     }),
-    [leagues, selectedLeagueId, selectedLeague, setSelectedLeagueId, isLoading]
+    [selectedLeagueId, setSelectedLeagueId, isLoading]
   )
 
   return (

@@ -23,6 +23,17 @@ interface HeaderProps {
     lastName?: string | null
     isSuperadmin?: boolean
   }
+  currentLeague: {
+    id: number
+    name: string
+    seasonFrom: number
+    seasonTo: number
+    infoText: string | null
+    sport: {
+      id: number
+      name: string
+    }
+  }
   locale?: string
 }
 
@@ -38,10 +49,9 @@ function getSportEmoji(sportId?: number): string {
   }
 }
 
-export function Header({ user, locale }: HeaderProps) {
+export function Header({ user, currentLeague, locale }: HeaderProps) {
   const t = useTranslations('user.header')
-  const { selectedLeagueId, selectedLeague, setSelectedLeagueId } =
-    useUserLeagueContext()
+  const { setSelectedLeagueId } = useUserLeagueContext()
   const [showLeagueDialog, setShowLeagueDialog] = useState(false)
   const [showLanguageDialog, setShowLanguageDialog] = useState(false)
   const [showInfoDialog, setShowInfoDialog] = useState(false)
@@ -60,27 +70,20 @@ export function Header({ user, locale }: HeaderProps) {
               onClick={() => setShowLeagueDialog(true)}
               className="flex items-center gap-2 rounded-xl px-3 py-2 transition-colors hover:bg-secondary/50 active:bg-secondary"
             >
-              {selectedLeague && (
-                <>
-                  <span className="text-lg">
-                    {getSportEmoji(selectedLeague.sport?.id)}
-                  </span>
-                  <div className="flex flex-col items-start">
-                    <span className="font-semibold text-sm leading-tight">
-                      {selectedLeague.name}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {selectedLeague.seasonFrom}/{selectedLeague.seasonTo}
-                    </span>
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
-                </>
-              )}
-              {!selectedLeague && (
-                <span className="text-muted-foreground text-sm">No league</span>
-              )}
+              <span className="text-lg">
+                {getSportEmoji(currentLeague.sport?.id)}
+              </span>
+              <div className="flex flex-col items-start">
+                <span className="font-semibold text-sm leading-tight">
+                  {currentLeague.name}
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  {currentLeague.seasonFrom}/{currentLeague.seasonTo}
+                </span>
+              </div>
+              <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
             </button>
-            {selectedLeague?.infoText && (
+            {currentLeague?.infoText && (
               <button
                 onClick={() => setShowInfoDialog(true)}
                 className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
@@ -95,7 +98,7 @@ export function Header({ user, locale }: HeaderProps) {
           <div className="flex items-center">
             <UserMenuDropdown
               user={user}
-              selectedLeagueId={selectedLeagueId}
+              currentLeagueId={currentLeague.id}
               onLanguageClick={() => setShowLanguageDialog(true)}
             />
           </div>
@@ -106,7 +109,7 @@ export function Header({ user, locale }: HeaderProps) {
       <LeagueSelectionDialog
         open={showLeagueDialog}
         onOpenChange={setShowLeagueDialog}
-        selectedLeagueId={selectedLeagueId}
+        selectedLeagueId={currentLeague.id}
         onLeagueSelect={handleLeagueSelect}
       />
 
@@ -118,20 +121,20 @@ export function Header({ user, locale }: HeaderProps) {
       />
 
       {/* League Info Dialog */}
-      {selectedLeague?.infoText && (
+      {currentLeague?.infoText && (
         <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Info className="h-5 w-5" />
-                {selectedLeague.name}
+                {currentLeague.name}
               </DialogTitle>
               <DialogDescription className="sr-only">
                 {t('leagueInfoDescription')}
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <p className="text-sm whitespace-pre-wrap">{selectedLeague.infoText}</p>
+              <p className="text-sm whitespace-pre-wrap">{currentLeague.infoText}</p>
             </div>
           </DialogContent>
         </Dialog>

@@ -5,20 +5,16 @@ import { Header } from './header'
 import { BottomNav } from './bottom-nav'
 import { UserLeagueProvider } from '@/contexts/user-league-context'
 
-interface League {
-  leagueUserId: number
-  leagueId: number
+interface CurrentLeague {
+  id: number
   name: string
   seasonFrom: number
   seasonTo: number
-  isTheMostActive: boolean | null
   infoText: string | null
   sport: {
     id: number
     name: string
   }
-  isAdmin: boolean
-  isPaid: boolean
 }
 
 interface UserLayoutProps {
@@ -30,8 +26,7 @@ interface UserLayoutProps {
     lastName?: string | null
     isSuperadmin?: boolean
   }
-  leagues: League[]
-  currentLeagueId: number
+  currentLeague: CurrentLeague
   /** Badge counts for bottom navigation */
   badges?: {
     matches?: number
@@ -47,17 +42,16 @@ interface UserLayoutProps {
 export function UserLayout({
   children,
   user,
-  leagues,
-  currentLeagueId,
+  currentLeague,
   badges,
   isChatEnabled,
   locale,
 }: UserLayoutProps) {
   return (
-    <UserLeagueProvider initialLeagues={leagues} initialLeagueId={currentLeagueId}>
+    <UserLeagueProvider initialLeagueId={currentLeague.id}>
       <div className="flex min-h-screen flex-col">
         {/* Header */}
-        <Header user={user} locale={locale} />
+        <Header user={user} currentLeague={currentLeague} locale={locale} />
 
         {/* Main content area with padding for header and bottom nav */}
         <main className="flex-1 pt-14 pb-20">
@@ -65,7 +59,7 @@ export function UserLayout({
         </main>
 
         {/* Bottom navigation */}
-        <BottomNav leagueId={currentLeagueId} badges={badges} isChatEnabled={isChatEnabled} />
+        <BottomNav leagueId={currentLeague.id} badges={badges} isChatEnabled={isChatEnabled} />
       </div>
     </UserLeagueProvider>
   )

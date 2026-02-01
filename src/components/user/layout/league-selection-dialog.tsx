@@ -98,7 +98,7 @@ interface LeagueData {
 interface LeagueSelectionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  selectedLeagueId: number | null
+  selectedLeagueId: number
   onLeagueSelect: (leagueId: number) => void
 }
 

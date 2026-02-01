@@ -27,10 +27,23 @@ export default async function LeagueLayout({
   }
   const userId = parseInt(session.user.id, 10)
 
-  // Verify the league exists and is active
+  // Verify the league exists and is active, and fetch all data needed for Header
   const league = await prisma.league.findUnique({
     where: { id: leagueId, deletedAt: null, isActive: true },
-    select: { id: true, name: true, isChatEnabled: true },
+    select: {
+      id: true,
+      name: true,
+      seasonFrom: true,
+      seasonTo: true,
+      infoText: true,
+      isChatEnabled: true,
+      Sport: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
   })
 
   if (!league) {
@@ -56,55 +69,6 @@ export default async function LeagueLayout({
     // User is not a member of this league
     redirect('/')
   }
-
-  // Fetch all leagues the user is a member of
-  const leagueUsers = await prisma.leagueUser.findMany({
-    where: {
-      userId,
-      active: true,
-      deletedAt: null,
-      League: {
-        deletedAt: null,
-        isActive: true,
-      },
-    },
-    include: {
-      League: {
-        select: {
-          id: true,
-          name: true,
-          seasonFrom: true,
-          seasonTo: true,
-          isTheMostActive: true,
-          infoText: true,
-          Sport: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      League: {
-        seasonTo: 'desc',
-      },
-    },
-  })
-
-  const leagues = leagueUsers.map((lu) => ({
-    leagueUserId: lu.id,
-    leagueId: lu.League.id,
-    name: lu.League.name,
-    seasonFrom: lu.League.seasonFrom,
-    seasonTo: lu.League.seasonTo,
-    isTheMostActive: lu.League.isTheMostActive,
-    infoText: lu.League.infoText,
-    sport: lu.League.Sport,
-    isAdmin: lu.admin ?? false,
-    isPaid: lu.paid,
-  }))
 
   // Fetch user details
   const user = await prisma.user.findUnique({
@@ -217,8 +181,14 @@ export default async function LeagueLayout({
         lastName: user.lastName,
         isSuperadmin: user.isSuperadmin,
       }}
-      leagues={leagues}
-      currentLeagueId={leagueId}
+      currentLeague={{
+        id: league.id,
+        name: league.name,
+        seasonFrom: league.seasonFrom,
+        seasonTo: league.seasonTo,
+        infoText: league.infoText,
+        sport: league.Sport,
+      }}
       badges={{
         matches: upcomingMatchesCount || undefined,
         series: upcomingSeriesCount || undefined,
