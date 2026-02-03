@@ -107,7 +107,6 @@ export default async function ChatPage({ params }: ChatPageProps) {
   return (
     <ChatView
       leagueId={leagueId}
-      leagueName={league.name}
       initialMessages={initialMessages}
       currentUserId={userId}
       isLeagueAdmin={leagueUser.admin === true}

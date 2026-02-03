@@ -276,7 +276,16 @@
       "accessDenied": "Přístup odepřen",
       "accessDeniedDescription": "Nejste členem této ligy.",
       "chatSuspended": "Chat je dočasně pozastaven. Můžete číst zprávy, ale nemůžete odesílat nové.",
-      "chatIsSuspended": "Chat pozastaven"
+      "chatIsSuspended": "Chat pozastaven",
+      "emojiPicker": "Přidat emoji",
+      "emojiCategories": {
+        "smileys": "Emotikony & Emoce",
+        "gestures": "Gesta & Lidé",
+        "sports": "Sport",
+        "objects": "Objekty & Symboly",
+        "hearts": "Srdce & Symboly",
+        "flags": "Vlajky & Ostatní"
+      }
     },
     "common": {
       "refresh": "Obnovit",

@@ -276,7 +276,16 @@
       "accessDenied": "Access Denied",
       "accessDeniedDescription": "You are not a member of this league.",
       "chatSuspended": "Chat is temporarily suspended. You can read messages but cannot send new ones.",
-      "chatIsSuspended": "Chat is suspended"
+      "chatIsSuspended": "Chat is suspended",
+      "emojiPicker": "Add emoji",
+      "emojiCategories": {
+        "smileys": "Smileys & Emotion",
+        "gestures": "Gestures & People",
+        "sports": "Sports",
+        "objects": "Objects & Symbols",
+        "hearts": "Hearts & Symbols",
+        "flags": "Flags & Others"
+      }
     },
     "common": {
       "refresh": "Refresh",

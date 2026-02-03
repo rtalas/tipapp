@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { EmojiPicker } from './emoji-picker'
 
 interface MessageInputProps {
   onSend: (text: string) => Promise<boolean>
@@ -19,6 +20,7 @@ export function MessageInput({
   placeholder = 'Type a message...',
 }: MessageInputProps) {
   const [text, setText] = useState('')
+  const [cursorPosition, setCursorPosition] = useState<number | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Auto-resize textarea
@@ -37,6 +39,7 @@ export function MessageInput({
     const success = await onSend(text)
     if (success) {
       setText('')
+      setCursorPosition(null)
     }
   }
 
@@ -48,12 +51,40 @@ export function MessageInput({
     }
   }
 
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setText(e.target.value)
+    setCursorPosition(e.target.selectionStart)
+  }
+
+  const handleTextareaBlur = () => {
+    setCursorPosition(textareaRef.current?.selectionStart ?? null)
+  }
+
+  const insertEmojiAtCursor = (emoji: string) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    const start = cursorPosition ?? text.length
+    const newText = text.slice(0, start) + emoji + text.slice(start)
+
+    setText(newText)
+
+    // Restore focus and move cursor after emoji
+    setTimeout(() => {
+      textarea.focus()
+      const newPosition = start + emoji.length
+      textarea.setSelectionRange(newPosition, newPosition)
+      setCursorPosition(newPosition)
+    }, 0)
+  }
+
   return (
     <form onSubmit={handleSubmit} className="flex items-end gap-2 p-4">
       <textarea
         ref={textareaRef}
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={handleTextareaChange}
+        onBlur={handleTextareaBlur}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled || isSending}
@@ -66,6 +97,10 @@ export function MessageInput({
           'min-h-[44px] max-h-[120px]'
         )}
         aria-label="Message input"
+      />
+      <EmojiPicker
+        onEmojiSelect={insertEmojiAtCursor}
+        disabled={disabled || isSending}
       />
       <Button
         type="submit"
