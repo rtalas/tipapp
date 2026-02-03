@@ -68,8 +68,20 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
     )
   }
 
-  const topThree = entries.filter((e) => e.rank <= 3)
-  const rest = entries.filter((e) => e.rank > 3)
+  // Determine which ranks have prizes and fines
+  const maxPrizeRank = prizes.length > 0 ? Math.max(...prizes.map(p => p.rank)) : 0
+  const maxFineRank = fines.length > 0 ? Math.max(...fines.map(f => f.rank)) : 0
+
+  // Split entries into three groups
+  const prizeEntries = entries.filter((e) => e.rank <= maxPrizeRank)
+  const fineEntries = entries.filter((e) => {
+    const positionFromBottom = entries.length - e.rank + 1
+    return positionFromBottom <= maxFineRank
+  })
+  const middleEntries = entries.filter((e) => {
+    const positionFromBottom = entries.length - e.rank + 1
+    return e.rank > maxPrizeRank && positionFromBottom > maxFineRank
+  })
 
   return (
     <>
@@ -90,29 +102,48 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
         {/* Content with padding for fixed header */}
         <PullToRefresh onRefresh={refreshAsync}>
           <div className="pt-32 space-y-4">
-            {/* Top 3 */}
-            <div className="glass-card rounded-xl divide-y divide-border/50">
-              {topThree.map((entry, index) => (
-                <RankingRow
-                  key={entry.leagueUserId}
-                  entry={entry}
-                  index={index}
-                  prizes={prizes}
-                  fines={fines}
-                  totalEntries={entries.length}
-                  onClick={() => setSelectedUser(entry)}
-                />
-              ))}
-            </div>
-
-            {/* Rest */}
-            {rest.length > 0 && (
+            {/* Prize winners */}
+            {prizeEntries.length > 0 && (
               <div className="glass-card rounded-xl divide-y divide-border/50">
-                {rest.map((entry, index) => (
+                {prizeEntries.map((entry, index) => (
                   <RankingRow
                     key={entry.leagueUserId}
                     entry={entry}
-                    index={index + 3}
+                    index={index}
+                    prizes={prizes}
+                    fines={fines}
+                    totalEntries={entries.length}
+                    onClick={() => setSelectedUser(entry)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Middle (no prize or fine) */}
+            {middleEntries.length > 0 && (
+              <div className="glass-card rounded-xl divide-y divide-border/50">
+                {middleEntries.map((entry, index) => (
+                  <RankingRow
+                    key={entry.leagueUserId}
+                    entry={entry}
+                    index={index + prizeEntries.length}
+                    prizes={prizes}
+                    fines={fines}
+                    totalEntries={entries.length}
+                    onClick={() => setSelectedUser(entry)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Fined players */}
+            {fineEntries.length > 0 && (
+              <div className="glass-card rounded-xl divide-y divide-border/50">
+                {fineEntries.map((entry, index) => (
+                  <RankingRow
+                    key={entry.leagueUserId}
+                    entry={entry}
+                    index={index + prizeEntries.length + middleEntries.length}
                     prizes={prizes}
                     fines={fines}
                     totalEntries={entries.length}
