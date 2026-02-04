@@ -28,22 +28,20 @@ type League = {
   name: string
   LeagueTeam?: Array<{ id: number; group: string | null; Team: { name: string } }>
 }
-type SpecialBetType = { id: number; name: string }
 type Evaluator = { id: number; name: string; EvaluatorType?: { name: string } }
 
 interface AddSpecialBetDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   leagues: League[]
-  specialBetTypes: SpecialBetType[]
   evaluators: Evaluator[]
   league?: League
 }
 
-export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTypes, evaluators, league }: AddSpecialBetDialogProps) {
+export function AddSpecialBetDialog({ open, onOpenChange, leagues, evaluators, league }: AddSpecialBetDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>(league?.id.toString() || '')
-  const [selectedTypeId, setSelectedTypeId] = useState<string>('')
+  const [name, setName] = useState<string>('')
   const [selectedEvaluatorId, setSelectedEvaluatorId] = useState<string>('')
   const [selectedGroup, setSelectedGroup] = useState<string>('')
   const [dateTime, setDateTime] = useState<string>('')
@@ -71,7 +69,7 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!effectiveLeagueId || !selectedTypeId || !selectedEvaluatorId || !dateTime) {
+    if (!effectiveLeagueId || !name.trim() || !selectedEvaluatorId || !dateTime) {
       toast.error('Please fill in all required fields')
       return
     }
@@ -87,7 +85,7 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
     try {
       await createSpecialBet({
         leagueId: parseInt(effectiveLeagueId, 10),
-        specialBetSingleId: parseInt(selectedTypeId, 10),
+        name: name.trim(),
         evaluatorId: parseInt(selectedEvaluatorId, 10),
         dateTime: new Date(dateTime),
         group: selectedGroup || undefined,
@@ -112,7 +110,7 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
     if (!league) {
       setSelectedLeagueId('')
     }
-    setSelectedTypeId('')
+    setName('')
     setSelectedEvaluatorId('')
     setSelectedGroup('')
     setDateTime('')
@@ -148,19 +146,17 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, specialBetTyp
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="type">Special Bet Type</Label>
-            <Select value={selectedTypeId} onValueChange={setSelectedTypeId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {specialBetTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id.toString()}>
-                    {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Top Scorer, Tournament Winner"
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              The display name for this special bet.
+            </p>
           </div>
 
           <div className="space-y-2">

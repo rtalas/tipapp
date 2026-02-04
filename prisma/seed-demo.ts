@@ -1731,6 +1731,7 @@ async function main() {
     prisma.leagueSpecialBetSingle.create({
       data: {
         leagueId: nhlPlayoffs.id,
+        name: 'NHL Top Scorer',
         specialBetSingleId: nhlTopScorerGlobal.id,
         evaluatorId: evaluatorTypeMap['exact_player'],
         points: 10,
@@ -1744,6 +1745,7 @@ async function main() {
     prisma.leagueSpecialBetSingle.create({
       data: {
         leagueId: nhlPlayoffs.id,
+        name: 'Stanley Cup Winner',
         specialBetSingleId: nhlChampionGlobal.id,
         evaluatorId: evaluatorTypeMap['exact_team'],
         points: 15,
@@ -1757,6 +1759,7 @@ async function main() {
     prisma.leagueSpecialBetSingle.create({
       data: {
         leagueId: nhlPlayoffs.id,
+        name: 'NHL Total Playoff Goals',
         specialBetSingleId: nhlTotalGoalsGlobal.id,
         evaluatorId: evaluatorTypeMap['exact_value'],
         points: 8,
@@ -1774,6 +1777,7 @@ async function main() {
     prisma.leagueSpecialBetSingle.create({
       data: {
         leagueId: euro2024.id,
+        name: 'Euro Golden Boot',
         specialBetSingleId: euroGoldenBootGlobal.id,
         evaluatorId: evaluatorTypeMap['exact_player'],
         points: 10,
@@ -1787,6 +1791,7 @@ async function main() {
     prisma.leagueSpecialBetSingle.create({
       data: {
         leagueId: euro2024.id,
+        name: 'Euro Champion',
         specialBetSingleId: euroChampionGlobal.id,
         evaluatorId: evaluatorTypeMap['exact_team'],
         points: 15,
@@ -1800,6 +1805,7 @@ async function main() {
     prisma.leagueSpecialBetSingle.create({
       data: {
         leagueId: euro2024.id,
+        name: 'Euro Total Goals',
         specialBetSingleId: euroTotalGoalsGlobal.id,
         evaluatorId: evaluatorTypeMap['closest_value'],
         points: 8,
@@ -1813,6 +1819,7 @@ async function main() {
     prisma.leagueSpecialBetSingle.create({
       data: {
         leagueId: euro2024.id,
+        name: 'Euro Group A Winner',
         specialBetSingleId: euroGroupWinnerGlobal.id,
         evaluatorId: evaluatorTypeMap['exact_team'],
         points: 5,

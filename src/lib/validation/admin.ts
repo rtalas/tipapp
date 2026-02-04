@@ -342,7 +342,7 @@ export type UpdateUserSeriesBetInput = z.infer<typeof updateUserSeriesBetSchema>
 // Special Bet validation schemas
 export const createSpecialBetSchema = z.object({
   leagueId: z.number().int().positive('League ID is required'),
-  specialBetSingleId: z.number().int().positive('Special Bet Type ID is required'),
+  name: z.string().min(1, 'Name is required').max(255, 'Name must not exceed 255 characters'),
   evaluatorId: z.number().int().positive('Evaluator ID is required'),
   dateTime: z
     .date()

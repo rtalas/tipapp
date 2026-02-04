@@ -66,7 +66,6 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
     { key: 'teamsGlobal', href: '/admin/teams', icon: Shield },
     { key: 'playersGlobal', href: '/admin/players', icon: User },
     { key: 'usersGlobal', href: '/admin/users', icon: Users },
-    { key: 'specialBetTypes', href: '/admin/special-bet-types', icon: Target },
     { key: 'seriesTypes', href: '/admin/series-types', icon: ListChecks },
     { key: 'matchPhases', href: '/admin/match-phases', icon: Layers },
   ]

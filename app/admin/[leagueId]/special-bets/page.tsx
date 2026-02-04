@@ -14,7 +14,7 @@ export default async function LeagueSpecialBetsPage({
   const { leagueId } = await params
   const league = await validateLeagueAccess(leagueId)
 
-  const [specialBets, leagues, specialBetTypes, evaluators, users] = await Promise.all([
+  const [specialBets, leagues, evaluators, users] = await Promise.all([
     getSpecialBetsWithUserBets({ leagueId: league.id }),
     prisma.league.findMany({
       where: { id: league.id, deletedAt: null },
@@ -31,10 +31,6 @@ export default async function LeagueSpecialBetsPage({
           orderBy: { Team: { name: 'asc' } },
         },
       },
-    }),
-    prisma.specialBetSingle.findMany({
-      where: { deletedAt: null },
-      orderBy: { name: 'asc' },
     }),
     prisma.evaluator.findMany({
       where: {
@@ -65,7 +61,6 @@ export default async function LeagueSpecialBetsPage({
       <SpecialBetsContent
         specialBets={specialBets}
         leagues={leagues}
-        specialBetTypes={specialBetTypes}
         evaluators={evaluators.map(e => ({ id: e.id, name: e.name, EvaluatorType: e.EvaluatorType }))}
         users={users}
         league={league}

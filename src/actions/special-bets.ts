@@ -31,18 +31,6 @@ export async function createSpecialBet(input: CreateSpecialBetInput) {
         throw new AppError('League not found', 'NOT_FOUND', 404)
       }
 
-      // Verify special bet type exists
-      const specialBetType = await prisma.specialBetSingle.findFirst({
-        where: {
-          id: validated.specialBetSingleId,
-          deletedAt: null,
-        },
-      })
-
-      if (!specialBetType) {
-        throw new AppError('Special bet type not found', 'NOT_FOUND', 404)
-      }
-
       // Verify evaluator exists, belongs to league, and has entity='special'
       const evaluator = await prisma.evaluator.findFirst({
         where: {
@@ -61,11 +49,11 @@ export async function createSpecialBet(input: CreateSpecialBetInput) {
         )
       }
 
-      // Create the special bet
+      // Create the special bet with name directly
       const specialBet = await prisma.leagueSpecialBetSingle.create({
         data: {
           leagueId: validated.leagueId,
-          specialBetSingleId: validated.specialBetSingleId,
+          name: validated.name,
           evaluatorId: validated.evaluatorId,
           points: evaluator.points,
           dateTime: validated.dateTime,

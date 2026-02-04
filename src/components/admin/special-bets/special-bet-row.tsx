@@ -12,7 +12,7 @@ import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
 import { validateUserSpecialBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/client-logger'
-import { getSpecialBetType } from '@/lib/special-bet-utils'
+import { getSpecialBetTypeFromEvaluator } from '@/lib/special-bet-utils'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 import { TeamFlag } from '@/components/common/team-flag'
@@ -63,8 +63,9 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated, specialBet
 
   const inlineEdit = useInlineEdit<UserSpecialBetFormData>()
 
-  // Determine type from special bet definition
-  const predictionType = getSpecialBetType(specialBet.SpecialBetSingle.SpecialBetSingleType.id)
+  // Determine type from evaluator type
+  const evaluatorTypeName = specialBet.Evaluator?.EvaluatorType?.name || ''
+  const predictionType = getSpecialBetTypeFromEvaluator(evaluatorTypeName)
 
   // Get teams and players from the league
   const availableTeams = league?.LeagueTeam || []

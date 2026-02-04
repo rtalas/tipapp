@@ -18,7 +18,7 @@ import { createUserSpecialBet, type SpecialBetWithUserBets } from '@/actions/spe
 import { type LeagueWithTeams } from '@/actions/shared-queries'
 import { validateUserSpecialBetCreate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
-import { getSpecialBetType } from '@/lib/special-bet-utils'
+import { getSpecialBetTypeFromEvaluator } from '@/lib/special-bet-utils'
 import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
 type SpecialBetWithBets = SpecialBetWithUserBets
@@ -47,8 +47,9 @@ const initialFormData: CreateSpecialBetFormData = {
 export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, league }: CreateSpecialBetDialogProps) {
   const createDialog = useCreateDialog<CreateSpecialBetFormData>(initialFormData)
 
-  // Determine type from special bet definition
-  const predictionType = getSpecialBetType(specialBet.SpecialBetSingle.SpecialBetSingleType.id)
+  // Determine type from evaluator type
+  const evaluatorTypeName = specialBet.Evaluator?.EvaluatorType?.name || ''
+  const predictionType = getSpecialBetTypeFromEvaluator(evaluatorTypeName)
 
   // Get teams and players from the league
   const availableTeams = league?.LeagueTeam || []
@@ -131,7 +132,7 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
         <div className="space-y-4 py-4">
           {/* Special bet info */}
           <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-800">
-            <p className="font-medium mb-1">Special Bet: {specialBet.SpecialBetSingle.name}</p>
+            <p className="font-medium mb-1">Special Bet: {specialBet.name}</p>
             <p className="text-xs">
               {specialBet.League.name} - {specialBet.points} points
             </p>
@@ -150,7 +151,7 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
             <Label>Prediction Type</Label>
             <div className="rounded-lg bg-muted p-3 text-sm">
               <span className="font-medium">
-                {specialBet.SpecialBetSingle.SpecialBetSingleType.name}
+                {specialBet.Evaluator?.EvaluatorType?.name || 'Unknown'}
               </span>
               <p className="text-xs text-muted-foreground mt-1">
                 Type is defined by the special bet template

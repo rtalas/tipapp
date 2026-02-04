@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { getSpecialBetType } from '@/lib/special-bet-utils'
+import { getSpecialBetTypeFromEvaluator } from '@/lib/special-bet-utils'
 import { type LeagueWithTeams } from '@/actions/shared-queries'
 
 type SpecialBet = SpecialBetWithDetails
@@ -43,8 +43,9 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isEvaluating, setIsEvaluating] = useState(false)
 
-  // Determine type from special bet definition
-  const resultType = getSpecialBetType(specialBet.SpecialBetSingle.SpecialBetSingleType.id)
+  // Determine type from evaluator type
+  const evaluatorTypeName = specialBet.Evaluator?.EvaluatorType?.name || ''
+  const resultType = getSpecialBetTypeFromEvaluator(evaluatorTypeName)
   const [selectedTeamId, setSelectedTeamId] = useState<string>(
     specialBet.specialBetTeamResultId?.toString() ?? ''
   )
@@ -167,7 +168,7 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
         <DialogHeader>
           <DialogTitle>Special Bet Result Entry</DialogTitle>
           <DialogDescription>
-            {specialBet.League.name} - {specialBet.SpecialBetSingle.name}
+            {specialBet.League.name} - {specialBet.name}
           </DialogDescription>
         </DialogHeader>
 
@@ -183,7 +184,7 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
               )}
             </div>
             <div>
-              <span className="text-lg font-semibold">{specialBet.SpecialBetSingle.name}</span>
+              <span className="text-lg font-semibold">{specialBet.name}</span>
             </div>
             <div className="mt-2 text-sm text-muted-foreground">
               {specialBet._count.UserSpecialBetSingle} user prediction{specialBet._count.UserSpecialBetSingle !== 1 ? 's' : ''}
@@ -199,15 +200,15 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
 
           <Separator />
 
-          {/* Result Type (read-only, defined by special bet) */}
+          {/* Result Type (read-only, defined by evaluator) */}
           <div className="space-y-2">
             <Label>Result Type</Label>
             <div className="rounded-lg bg-muted p-3 text-sm">
               <span className="font-medium">
-                {specialBet.SpecialBetSingle.SpecialBetSingleType.name}
+                {specialBet.Evaluator?.EvaluatorType?.name || 'Unknown'}
               </span>
               <p className="text-xs text-muted-foreground mt-1">
-                Type is defined by the special bet template and cannot be changed
+                Type is defined by the evaluator and cannot be changed
               </p>
             </div>
           </div>

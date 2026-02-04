@@ -858,54 +858,6 @@
         "deleted": "Typ série byl smazán"
       }
     },
-    "specialBetTypes": {
-      "title": "Typy speciálních sázek",
-      "description": "Spravujte šablony speciálních sázek ve všech sportech",
-      "searchPlaceholder": "Hledat podle názvu...",
-      "addButton": "Přidat typ speciální sázky",
-      "emptyState": "Žádné typy speciálních sázek nebyly nalezeny",
-      "filters": {
-        "sport": "Sport",
-        "allSports": "Všechny sporty",
-        "type": "Typ",
-        "allTypes": "Všechny typy"
-      },
-      "table": {
-        "name": "Název",
-        "sport": "Sport",
-        "type": "Typ"
-      },
-      "form": {
-        "nameLabel": "Název",
-        "namePlaceholder": "Název speciální sázky",
-        "sportLabel": "Sport",
-        "selectSport": "Vybrat sport",
-        "typeLabel": "Typ",
-        "selectType": "Vybrat typ",
-        "typeHint": "Vyberte typ vyhodnocení pro tuto speciální sázku",
-        "cancelLabel": "Zrušit úpravu typu speciální sázky",
-        "saveLabel": "Uložit změny typu speciální sázky"
-      },
-      "dialog": {
-        "deleteTitle": "Smazat typ speciální sázky",
-        "deleteConfirm": "Opravdu chcete smazat \"{name}\"? Tuto akci nelze vrátit zpět.",
-        "deleteWarning": "Tento typ speciální sázky se používá v {count} {count, plural, one {lize} other {ligách}}. Smazáním budou tyto asociace odstraněny.",
-        "delete": "Smazat",
-        "deleting": "Mazání...",
-        "createTitle": "Přidat typ speciální sázky",
-        "createDescription": "Vytvořit novou šablonu speciální sázky",
-        "create": "Vytvořit",
-        "creating": "Vytváření..."
-      },
-      "validation": {
-        "requiredFields": "Vyplňte prosím všechna povinná pole"
-      },
-      "toast": {
-        "updated": "Typ speciální sázky byl aktualizován",
-        "created": "Typ speciální sázky byl vytvořen",
-        "deleted": "Typ speciální sázky byl smazán"
-      }
-    },
     "profile": {
       "failedToLoad": "Nepodařilo se načíst profil: {error}",
       "title": "Profil",
@@ -1162,7 +1114,6 @@
       "teamsGlobal": "Týmy (Globální)",
       "playersGlobal": "Hráči (Globální)",
       "usersGlobal": "Uživatelé (Globální)",
-      "specialBetTypes": "Typy speciálních sázek",
       "seriesTypes": "Typy sérií",
       "matchPhases": "Fáze zápasů",
       "appName": "TipApp Admin",

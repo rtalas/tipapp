@@ -60,17 +60,13 @@ export const leagueMatchWithBetsInclude = {
 /**
  * Include pattern for LeagueSpecialBetSingle with all related data
  * Prevents N+1 queries when fetching multiple special bets
+ * Note: SpecialBetSingle is optional (nullable) for backward compatibility
  */
 export const specialBetInclude = {
   League: true,
   Evaluator: {
     include: {
       EvaluatorType: true,
-    },
-  },
-  SpecialBetSingle: {
-    include: {
-      SpecialBetSingleType: true,
     },
   },
   LeagueTeam: {

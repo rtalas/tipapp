@@ -54,7 +54,10 @@ export function SpecialBetCard({
   const t = useTranslations('user.specialBets')
   const isLocked = !specialBet.isBettingOpen
   const isEvaluated = specialBet.isEvaluated
-  const betTypeId = specialBet.SpecialBetSingle.SpecialBetSingleType?.id
+
+  // Determine bet type from evaluator type (primary) or fallback to SpecialBetSingleType (legacy)
+  const evaluatorTypeName = specialBet.Evaluator?.EvaluatorType?.name || ''
+  const betTypeId = specialBet.SpecialBetSingle?.SpecialBetSingleType?.id
 
   const [teamId, setTeamId] = useState<number | null>(
     specialBet.userBet?.teamResultId ?? null
@@ -71,14 +74,9 @@ export function SpecialBetCard({
   const [friendPredictions, setFriendPredictions] = useState<SpecialBetFriendPrediction[]>([])
   const [isLoadingFriends, setIsLoadingFriends] = useState(false)
 
-  // Map SpecialBetSingleType IDs to input types:
-  // 1: Hráč (Player) -> exact_player
-  // 2: Tým (Team) -> exact_team
-  // 3: Přesná hodnota (Exact value) -> exact_value
-  // 4: Nejbližší hodnota (Closest value) -> closest_value
-  // 5: Otázka (Question) -> question
-  const isTeamBet = betTypeId === 2
-  const isPlayerBet = betTypeId === 1
+  // Determine bet type from evaluator type (primary) or SpecialBetSingleType (legacy fallback)
+  const isTeamBet = evaluatorTypeName === 'exact_team' || evaluatorTypeName === 'group_stage_team' || betTypeId === 2
+  const isPlayerBet = evaluatorTypeName === 'exact_player' || betTypeId === 1
 
   // Filter teams by group if special bet has group restriction
   const availableTeams = specialBet.group
@@ -196,7 +194,7 @@ export function SpecialBetCard({
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-sm text-foreground leading-tight">
-                  {specialBet.SpecialBetSingle.name}
+                  {specialBet.name}
                 </h3>
                 {specialBet.group && (
                   <div className="text-[10px] text-muted-foreground mt-0.5">
@@ -402,7 +400,7 @@ export function SpecialBetCard({
       <FriendPredictionsModal
         open={showFriendsBets}
         onOpenChange={setShowFriendsBets}
-        title={specialBet.SpecialBetSingle.name}
+        title={specialBet.name}
         subtitle={actualResult ? `${t('winner')}: ${actualResult}` : undefined}
         sectionLabel={t('friendsPredictions')}
         isLocked={isLocked}

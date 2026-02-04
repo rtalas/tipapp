@@ -1,26 +1,25 @@
 /**
  * Special Bet Type Utilities
  *
- * Centralized utilities for working with special bet types and their IDs.
- * Database Type IDs: 1=Player, 2=Team, 3=Exact Value, 4=Closest Value
+ * Centralized utilities for determining special bet types from evaluators.
  */
-
-const SPECIAL_BET_TYPE_IDS = {
-  PLAYER: 1,
-  TEAM: 2,
-  EXACT_VALUE: 3,
-  CLOSEST_VALUE: 4,
-} as const
 
 export type SpecialBetType = 'team' | 'player' | 'value'
 
 /**
- * Determines the prediction type based on special bet type ID
- * @param typeId - The SpecialBetSingleType.id from the database
+ * Determines the prediction type based on evaluator type name
+ * @param evaluatorTypeName - The EvaluatorType.name from the database
  * @returns The prediction type category
  */
-export function getSpecialBetType(typeId: number): SpecialBetType {
-  if (typeId === SPECIAL_BET_TYPE_IDS.TEAM) return 'team'
-  if (typeId === SPECIAL_BET_TYPE_IDS.PLAYER) return 'player'
+export function getSpecialBetTypeFromEvaluator(evaluatorTypeName: string): SpecialBetType {
+  // Team-based evaluators
+  if (evaluatorTypeName === 'exact_team' || evaluatorTypeName === 'group_stage_team') {
+    return 'team'
+  }
+  // Player-based evaluators
+  if (evaluatorTypeName === 'exact_player') {
+    return 'player'
+  }
+  // Value-based evaluators (exact_value, closest_value, etc.)
   return 'value'
 }

@@ -19,6 +19,13 @@ export async function getUserSpecialBets(leagueId: number) {
       deletedAt: null,
     },
     include: {
+      // Include Evaluator for determining bet type
+      Evaluator: {
+        include: {
+          EvaluatorType: true,
+        },
+      },
+      // Keep SpecialBetSingle for backward compatibility (nullable)
       SpecialBetSingle: {
         include: {
           SpecialBetSingleType: true,

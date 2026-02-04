@@ -119,10 +119,12 @@ export function SpecialBetTableRow({
         {showLeagueColumn && <TableCell>{specialBet.League.name}</TableCell>}
         <TableCell>
           <div className="flex flex-col gap-1">
-            <span className="font-medium">{specialBet.SpecialBetSingle.name}</span>
-            <Badge variant="outline" className="w-fit text-xs">
-              {specialBet.SpecialBetSingle.SpecialBetSingleType.name !== 'none' ? specialBet.SpecialBetSingle.SpecialBetSingleType.name : t('notSet')}
-            </Badge>
+            <span className="font-medium">{specialBet.name}</span>
+            {specialBet.group && (
+              <Badge variant="outline" className="w-fit text-xs">
+                Group {specialBet.group}
+              </Badge>
+            )}
           </div>
         </TableCell>
         <TableCell>
@@ -175,7 +177,7 @@ export function SpecialBetTableRow({
                 e.stopPropagation()
                 onEdit()
               }}
-              aria-label={t('editSpecialBet', { name: specialBet.SpecialBetSingle.name })}
+              aria-label={t('editSpecialBet', { name: specialBet.name })}
             >
               <Edit className="h-4 w-4" />
             </Button>
@@ -186,7 +188,7 @@ export function SpecialBetTableRow({
                 e.stopPropagation()
                 onEvaluate()
               }}
-              aria-label={t('evaluateSpecialBet', { name: specialBet.SpecialBetSingle.name })}
+              aria-label={t('evaluateSpecialBet', { name: specialBet.name })}
             >
               <Calculator className="h-4 w-4 text-blue-600" />
             </Button>
@@ -197,7 +199,7 @@ export function SpecialBetTableRow({
                 e.stopPropagation()
                 onDelete()
               }}
-              aria-label={t('deleteSpecialBet', { name: specialBet.SpecialBetSingle.name })}
+              aria-label={t('deleteSpecialBet', { name: specialBet.name })}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>

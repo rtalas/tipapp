@@ -211,7 +211,8 @@ model LeagueSpecialBetSerie {
 model LeagueSpecialBetSingle {
   id                                 Int                                  @id @default(autoincrement())
   leagueId                           Int
-  specialBetSingleId                 Int
+  specialBetSingleId                 Int?
+  name                               String                               @db.VarChar(255)
   specialBetTeamResultId             Int?
   specialBetPlayerResultId           Int?
   specialBetValue                    Int?
@@ -226,7 +227,7 @@ model LeagueSpecialBetSingle {
   Evaluator                          Evaluator                            @relation(fields: [evaluatorId], references: [id], onDelete: NoAction)
   League                             League                               @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   LeaguePlayer                       LeaguePlayer?                        @relation(fields: [specialBetPlayerResultId], references: [id])
-  SpecialBetSingle                   SpecialBetSingle                     @relation(fields: [specialBetSingleId], references: [id], onDelete: NoAction)
+  SpecialBetSingle                   SpecialBetSingle?                    @relation(fields: [specialBetSingleId], references: [id], onDelete: NoAction)
   LeagueTeam                         LeagueTeam?                          @relation(fields: [specialBetTeamResultId], references: [id])
   LeagueSpecialBetSingleTeamAdvanced LeagueSpecialBetSingleTeamAdvanced[]
   UserSpecialBetSingle               UserSpecialBetSingle[]

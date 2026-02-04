@@ -248,7 +248,7 @@ export async function getUserPicks(
 
     return {
       id: bet.id,
-      betName: bet.LeagueSpecialBetSingle.SpecialBetSingle.name,
+      betName: bet.LeagueSpecialBetSingle.name,
       prediction,
       totalPoints: bet.totalPoints,
       deadline: bet.LeagueSpecialBetSingle.dateTime,

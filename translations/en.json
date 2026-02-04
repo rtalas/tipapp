@@ -858,54 +858,6 @@
         "deleted": "Series type deleted"
       }
     },
-    "specialBetTypes": {
-      "title": "Special Bet Types",
-      "description": "Manage special bet templates across all sports",
-      "searchPlaceholder": "Search by name...",
-      "addButton": "Add Special Bet Type",
-      "emptyState": "No special bet types found",
-      "filters": {
-        "sport": "Sport",
-        "allSports": "All Sports",
-        "type": "Type",
-        "allTypes": "All Types"
-      },
-      "table": {
-        "name": "Name",
-        "sport": "Sport",
-        "type": "Type"
-      },
-      "form": {
-        "nameLabel": "Name",
-        "namePlaceholder": "Special bet name",
-        "sportLabel": "Sport",
-        "selectSport": "Select sport",
-        "typeLabel": "Type",
-        "selectType": "Select type",
-        "typeHint": "Choose the evaluation type for this special bet",
-        "cancelLabel": "Cancel editing special bet type",
-        "saveLabel": "Save special bet type changes"
-      },
-      "dialog": {
-        "deleteTitle": "Delete Special Bet Type",
-        "deleteConfirm": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
-        "deleteWarning": "This special bet type is used in {count} {count, plural, one {league} other {leagues}}. Deleting will remove these associations.",
-        "delete": "Delete",
-        "deleting": "Deleting...",
-        "createTitle": "Add Special Bet Type",
-        "createDescription": "Create a new special bet template",
-        "create": "Create",
-        "creating": "Creating..."
-      },
-      "validation": {
-        "requiredFields": "Please fill in all required fields"
-      },
-      "toast": {
-        "updated": "Special bet type updated",
-        "created": "Special bet type created",
-        "deleted": "Special bet type deleted"
-      }
-    },
     "profile": {
       "failedToLoad": "Failed to load profile: {error}",
       "title": "Profile",
@@ -1162,7 +1114,6 @@
       "teamsGlobal": "Teams (Global)",
       "playersGlobal": "Players (Global)",
       "usersGlobal": "Users (Global)",
-      "specialBetTypes": "Special Bet Types",
       "seriesTypes": "Series Types",
       "matchPhases": "Match Phases",
       "appName": "TipApp Admin",
