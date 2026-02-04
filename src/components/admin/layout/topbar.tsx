@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge'
 import { Breadcrumbs } from './breadcrumbs'
 import { LeagueSelector } from './league-selector'
 import { LanguageSwitcher } from '@/components/user/layout/language-switcher'
+import { DemoBanner } from '@/components/demo-banner'
 import { cn } from '@/lib/utils'
 import type { League } from '@prisma/client'
 
@@ -220,7 +221,8 @@ export function Topbar({ sidebarCollapsed, onMenuClick, user, leagues, locale }:
         </div>
       </div>
 
-      {/* Language Switcher Dialog */}
+      <DemoBanner variant="admin" />
+
       <LanguageSwitcher
         currentLocale={locale || 'en'}
         open={showLanguageDialog}

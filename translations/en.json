@@ -1279,5 +1279,18 @@
         "passwordMismatch": "Passwords do not match"
       }
     }
+  },
+  "demo": {
+    "badge": "DEMO",
+    "title": "Demo Application",
+    "message": {
+      "login": "This is a demonstration version of TipApp. Use the credentials below to explore the application.",
+      "admin": "You are viewing the demo version. All administrative actions are functional but operate on sample data.",
+      "user": "This is a demo league with sample data. Explore the features to see how the betting system works!"
+    },
+    "credentials": {
+      "admin": "Admin Login",
+      "user": "User Login"
+    }
   }
 }

@@ -14,6 +14,7 @@ import { useUserLeagueContext } from '@/contexts/user-league-context'
 import { LeagueSelectionDialog } from './league-selection-dialog'
 import { UserMenuDropdown } from './user-menu-dropdown'
 import { LanguageSwitcher } from './language-switcher'
+import { DemoBanner } from '@/components/demo-banner'
 
 interface HeaderProps {
   user: {
@@ -104,6 +105,8 @@ export function Header({ user, currentLeague, locale }: HeaderProps) {
           </div>
         </div>
       </header>
+
+      <DemoBanner variant="user" />
 
       {/* League Selection Dialog */}
       <LeagueSelectionDialog

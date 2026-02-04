@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState, Suspense } from "react";
 import { AlertCircle } from "lucide-react";
 import { useTranslations } from 'next-intl';
+import { DemoBanner } from "@/components/demo-banner";
 
 function LoginForm() {
   const t = useTranslations('auth.login');
@@ -79,6 +80,8 @@ function LoginForm() {
             </Link>
           </p>
         </div>
+
+        <DemoBanner variant="login" />
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (

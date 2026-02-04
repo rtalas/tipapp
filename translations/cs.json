@@ -1279,5 +1279,18 @@
         "passwordMismatch": "Hesla se neshodují"
       }
     }
+  },
+  "demo": {
+    "badge": "DEMO",
+    "title": "Demonstrační Aplikace",
+    "message": {
+      "login": "Toto je demonstrační verze aplikace TipApp. Použijte níže uvedené přihlašovací údaje k prozkoumání aplikace.",
+      "admin": "Prohlížíte si demo verzi. Všechny administrativní akce jsou funkční, ale pracují s ukázkovými daty.",
+      "user": "Toto je demo liga s ukázkovými daty. Prozkoumejte funkce a zjistěte, jak systém sázení funguje!"
+    },
+    "credentials": {
+      "admin": "Přihlášení Administrátora",
+      "user": "Přihlášení Uživatele"
+    }
   }
 }
