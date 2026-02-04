@@ -1,4 +1,5 @@
 import { ScoreInput } from './score-input'
+import { TeamFlag } from '@/components/common/team-flag'
 import type { UserMatch } from '@/actions/user/matches'
 
 interface MatchTeamsDisplayProps {
@@ -30,9 +31,18 @@ export function MatchTeamsDisplay({
     <div className="flex items-center justify-between gap-2 sm:gap-4">
       {/* Home Team */}
       <div className="flex flex-col items-center gap-1 min-w-0 flex-1 p-2">
-        <p className="font-semibold text-xs sm:text-sm text-foreground text-center leading-tight line-clamp-2">
-          {homeTeamName}
-        </p>
+        <div className="flex items-center gap-2">
+          <TeamFlag
+            flagIcon={homeTeam.Team.flagIcon}
+            flagType={homeTeam.Team.flagType}
+            teamName={homeTeam.Team.name}
+            size="sm"
+            className="sm:w-6 sm:h-6"
+          />
+          <p className="font-semibold text-xs sm:text-sm text-foreground text-center leading-tight line-clamp-2">
+            {homeTeamName}
+          </p>
+        </div>
       </div>
 
       {/* Score Selection */}
@@ -73,9 +83,18 @@ export function MatchTeamsDisplay({
 
       {/* Away Team */}
       <div className="flex flex-col items-center gap-1 min-w-0 flex-1 p-2">
-        <p className="font-semibold text-xs sm:text-sm text-foreground text-center leading-tight line-clamp-2">
-          {awayTeamName}
-        </p>
+        <div className="flex items-center gap-2">
+          <TeamFlag
+            flagIcon={awayTeam.Team.flagIcon}
+            flagType={awayTeam.Team.flagType}
+            teamName={awayTeam.Team.name}
+            size="sm"
+            className="sm:w-6 sm:h-6"
+          />
+          <p className="font-semibold text-xs sm:text-sm text-foreground text-center leading-tight line-clamp-2">
+            {awayTeamName}
+          </p>
+        </div>
       </div>
     </div>
   )

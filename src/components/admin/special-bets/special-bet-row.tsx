@@ -15,6 +15,7 @@ import { logger } from '@/lib/client-logger'
 import { getSpecialBetType } from '@/lib/special-bet-utils'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
+import { TeamFlag } from '@/components/common/team-flag'
 type LeagueWithTeams = Prisma.LeagueGetPayload<{
   include: {
     LeagueTeam: {
@@ -190,7 +191,15 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated, specialBet
                   <SelectContent>
                     {availableTeams.map((lt) => (
                       <SelectItem key={lt.id} value={lt.id.toString()}>
-                        {lt.Team.name}
+                        <div className="flex items-center gap-2">
+                          <TeamFlag
+                            flagIcon={lt.Team.flagIcon}
+                            flagType={lt.Team.flagType}
+                            teamName={lt.Team.name}
+                            size="xs"
+                          />
+                          <span>{lt.Team.name}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>

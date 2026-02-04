@@ -12,7 +12,7 @@ import {
 import { UserBetRow } from './user-bet-row'
 import { type UserBet } from '@/actions/user-bets'
 
-type Team = { id: number; name: string; shortcut: string }
+type Team = { id: number; name: string; shortcut: string; flagIcon: string | null; flagType: string | null }
 type LeaguePlayer = { id: number; Player: { id: number; firstName: string | null; lastName: string | null } }
 
 interface ExpandedBetsTableProps {

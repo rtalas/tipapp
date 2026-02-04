@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { TeamFlag } from '@/components/common/team-flag'
 import {
   TableCell,
   TableRow,
@@ -88,8 +89,20 @@ export function SeriesTableRow({
         </TableCell>
         <TableCell>
           <div className="flex items-center gap-2">
+            <TeamFlag
+              flagIcon={homeTeam.flagIcon}
+              flagType={homeTeam.flagType}
+              teamName={homeTeam.name}
+              size="xs"
+            />
             <span className="font-medium">{homeTeam.name}</span>
             <span className="text-muted-foreground">{t('vs')}</span>
+            <TeamFlag
+              flagIcon={awayTeam.flagIcon}
+              flagType={awayTeam.flagType}
+              teamName={awayTeam.name}
+              size="xs"
+            />
             <span className="font-medium">{awayTeam.name}</span>
           </div>
         </TableCell>

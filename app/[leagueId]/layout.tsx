@@ -90,12 +90,13 @@ export default async function LeagueLayout({
   const now = new Date()
   const tenHoursFromNow = new Date(now.getTime() + 10 * 60 * 60 * 1000)
 
-  // Parallelize badge count queries for performance
+  // Parallelize badge count queries and series existence check for performance
   const [
     upcomingMatchesCount,
     upcomingSeriesCount,
     upcomingSpecialBetsCount,
     upcomingQuestionsCount,
+    totalSeriesCount,
   ] = await Promise.all([
     prisma.leagueMatch.count({
       where: {
@@ -164,6 +165,13 @@ export default async function LeagueLayout({
         },
       },
     }),
+    // Check if there are any series in the league at all (to show/hide series tab)
+    prisma.leagueSpecialBetSerie.count({
+      where: {
+        leagueId,
+        deletedAt: null,
+      },
+    }),
   ])
 
   // Combine special bets and questions for the special tab
@@ -195,6 +203,7 @@ export default async function LeagueLayout({
         special: specialTabCount || undefined,
       }}
       isChatEnabled={league.isChatEnabled}
+      hasAnySeries={totalSeriesCount > 0}
       locale={locale}
     >
       {children}

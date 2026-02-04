@@ -70,16 +70,27 @@ interface BottomNavProps {
   }
   /** Whether chat is enabled for the current league */
   isChatEnabled?: boolean
+  /** Whether there are any series in the league */
+  hasAnySeries?: boolean
 }
 
-export function BottomNav({ leagueId, badges, isChatEnabled }: BottomNavProps) {
+export function BottomNav({
+  leagueId,
+  badges,
+  isChatEnabled,
+  hasAnySeries,
+}: BottomNavProps) {
   const pathname = usePathname()
   const t = useTranslations('user.navigation')
 
-  // Filter out chat if disabled
-  const filteredNavItems = isChatEnabled
-    ? navItems
-    : navItems.filter((item) => item.id !== 'chat')
+  // Filter out chat if disabled and series if no series exist
+  let filteredNavItems = navItems
+  if (!isChatEnabled) {
+    filteredNavItems = filteredNavItems.filter((item) => item.id !== 'chat')
+  }
+  if (!hasAnySeries) {
+    filteredNavItems = filteredNavItems.filter((item) => item.id !== 'series')
+  }
 
   return (
     <nav

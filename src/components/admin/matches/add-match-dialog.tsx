@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { TeamFlag } from '@/components/common/team-flag'
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,8 @@ interface Team {
   id: number
   name: string
   shortcut: string
+  flagIcon: string | null
+  flagType: string | null
 }
 
 interface LeagueTeam {
@@ -184,7 +187,15 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
                 <SelectContent>
                   {homeTeamOptions.map((lt) => (
                     <SelectItem key={lt.id} value={lt.id.toString()}>
-                      {lt.Team.name}
+                      <div className="flex items-center gap-2">
+                        <TeamFlag
+                          flagIcon={lt.Team.flagIcon}
+                          flagType={lt.Team.flagType}
+                          teamName={lt.Team.name}
+                          size="sm"
+                        />
+                        <span>{lt.Team.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -204,7 +215,15 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
                 <SelectContent>
                   {awayTeamOptions.map((lt) => (
                     <SelectItem key={lt.id} value={lt.id.toString()}>
-                      {lt.Team.name}
+                      <div className="flex items-center gap-2">
+                        <TeamFlag
+                          flagIcon={lt.Team.flagIcon}
+                          flagType={lt.Team.flagType}
+                          teamName={lt.Team.name}
+                          size="sm"
+                        />
+                        <span>{lt.Team.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>

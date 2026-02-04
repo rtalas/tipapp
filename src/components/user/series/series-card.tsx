@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
+import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
 import { SPORT_IDS } from '@/lib/constants'
 import { getUserDisplayName, getUserInitials } from '@/lib/user-display-utils'
@@ -163,9 +164,18 @@ export function SeriesCard({ series, onSaved }: SeriesCardProps) {
         <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* Home Team */}
           <div className="flex flex-col items-center gap-1 min-w-0 flex-1 p-2">
-            <p className="font-semibold text-xs sm:text-sm text-foreground text-center leading-tight line-clamp-2">
-              {homeTeamName}
-            </p>
+            <div className="flex items-center gap-2">
+              <TeamFlag
+                flagIcon={homeTeam?.Team.flagIcon ?? null}
+                flagType={homeTeam?.Team.flagType ?? null}
+                teamName={homeTeam?.Team.name ?? 'Home'}
+                size="sm"
+                className="sm:w-6 sm:h-6"
+              />
+              <p className="font-semibold text-xs sm:text-sm text-foreground text-center leading-tight line-clamp-2">
+                {homeTeamName}
+              </p>
+            </div>
           </div>
 
           {/* Score Selection */}
@@ -252,9 +262,18 @@ export function SeriesCard({ series, onSaved }: SeriesCardProps) {
 
           {/* Away Team */}
           <div className="flex flex-col items-center gap-1 min-w-0 flex-1 p-2">
-            <p className="font-semibold text-xs sm:text-sm text-foreground text-center leading-tight line-clamp-2">
-              {awayTeamName}
-            </p>
+            <div className="flex items-center gap-2">
+              <TeamFlag
+                flagIcon={awayTeam?.Team.flagIcon ?? null}
+                flagType={awayTeam?.Team.flagType ?? null}
+                teamName={awayTeam?.Team.name ?? 'Away'}
+                size="sm"
+                className="sm:w-6 sm:h-6"
+              />
+              <p className="font-semibold text-xs sm:text-sm text-foreground text-center leading-tight line-clamp-2">
+                {awayTeamName}
+              </p>
+            </div>
           </div>
         </div>
 

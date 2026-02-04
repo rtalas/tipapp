@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
 import { SPORT_IDS } from '@/lib/constants'
 
@@ -24,6 +25,13 @@ interface Player {
   }
 }
 
+interface Team {
+  name: string
+  shortcut: string
+  flagIcon: string | null
+  flagType: string | null
+}
+
 interface ScorerSelectProps {
   value: number | null | undefined
   onChange: (value: number | null) => void
@@ -31,6 +39,8 @@ interface ScorerSelectProps {
   onNoScorerChange: (value: boolean | null) => void
   homePlayers: Player[]
   awayPlayers: Player[]
+  homeTeam: Team
+  awayTeam: Team
   homeTeamName: string
   awayTeamName: string
   sportId: number
@@ -74,6 +84,8 @@ export function ScorerSelect({
   onNoScorerChange,
   homePlayers,
   awayPlayers,
+  homeTeam,
+  awayTeam,
   homeTeamName,
   awayTeamName,
   sportId,
@@ -182,8 +194,14 @@ export function ScorerSelect({
             {/* Home team players */}
             {filteredHomePlayers.length > 0 && (
               <>
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                  {homeTeamName}
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                  <TeamFlag
+                    flagIcon={homeTeam.flagIcon}
+                    flagType={homeTeam.flagType}
+                    teamName={homeTeam.name}
+                    size="xs"
+                  />
+                  <span>{homeTeamName}</span>
                 </div>
                 {filteredHomePlayers.map((player) => (
                   <button
@@ -215,8 +233,14 @@ export function ScorerSelect({
             {/* Away team players */}
             {filteredAwayPlayers.length > 0 && (
               <>
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                  {awayTeamName}
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                  <TeamFlag
+                    flagIcon={awayTeam.flagIcon}
+                    flagType={awayTeam.flagType}
+                    teamName={awayTeam.name}
+                    size="xs"
+                  />
+                  <span>{awayTeamName}</span>
                 </div>
                 {filteredAwayPlayers.map((player) => (
                   <button

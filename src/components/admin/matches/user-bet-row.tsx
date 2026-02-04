@@ -16,7 +16,8 @@ import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/client-logger'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
-type Team = { id: number; name: string; shortcut: string }
+import { TeamFlag } from '@/components/common/team-flag'
+type Team = { id: number; name: string; shortcut: string; flagIcon: string | null; flagType: string | null }
 type LeaguePlayer = { id: number; Player: { id: number; firstName: string | null; lastName: string | null } }
 
 interface UserBetFormData {
@@ -234,13 +235,25 @@ export function UserBetRow({
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="home" id={`home-${bet.id}`} />
-                <Label htmlFor={`home-${bet.id}`} className="text-xs">
+                <Label htmlFor={`home-${bet.id}`} className="text-xs flex items-center gap-1">
+                  <TeamFlag
+                    flagIcon={matchHomeTeam.flagIcon}
+                    flagType={matchHomeTeam.flagType}
+                    teamName={matchHomeTeam.name}
+                    size="xs"
+                  />
                   {matchHomeTeam.shortcut}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="away" id={`away-${bet.id}`} />
-                <Label htmlFor={`away-${bet.id}`} className="text-xs">
+                <Label htmlFor={`away-${bet.id}`} className="text-xs flex items-center gap-1">
+                  <TeamFlag
+                    flagIcon={matchAwayTeam.flagIcon}
+                    flagType={matchAwayTeam.flagType}
+                    teamName={matchAwayTeam.name}
+                    size="xs"
+                  />
                   {matchAwayTeam.shortcut}
                 </Label>
               </div>
@@ -251,8 +264,18 @@ export function UserBetRow({
                 </Label>
               </div>
             </RadioGroup>
+          ) : bet.homeAdvanced !== null ? (
+            <div className="flex items-center gap-1">
+              <TeamFlag
+                flagIcon={bet.homeAdvanced ? matchHomeTeam.flagIcon : matchAwayTeam.flagIcon}
+                flagType={bet.homeAdvanced ? matchHomeTeam.flagType : matchAwayTeam.flagType}
+                teamName={bet.homeAdvanced ? matchHomeTeam.name : matchAwayTeam.name}
+                size="xs"
+              />
+              <span>{advancedDisplay}</span>
+            </div>
           ) : (
-            <span>{advancedDisplay}</span>
+            <span>-</span>
           )}
         </TableCell>
 

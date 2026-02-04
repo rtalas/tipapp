@@ -31,7 +31,7 @@ import { type SeriesWithUserBets } from '@/actions/series-bets'
 import { type UserBasic } from '@/actions/users'
 
 type Series = SeriesWithUserBets
-type League = { id: number; name: string; LeagueTeam: { id: number; Team: { id: number; name: string; shortcut: string } }[] }
+type League = { id: number; name: string; LeagueTeam: { id: number; Team: { id: number; name: string; shortcut: string; flagIcon: string | null; flagType: string | null } }[] }
 type SpecialBetSerie = { id: number; name: string; bestOf: number }
 type User = UserBasic
 

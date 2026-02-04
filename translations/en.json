@@ -1020,6 +1020,7 @@
       "leagueCreateFailed": "Failed to create league"
     },
     "leagueSetup": {
+      "description": "Set up teams and players for this league",
       "teamsSection": "Teams",
       "teamsDescription": "Add teams participating in this league",
       "selectTeam": "Select a team to add",

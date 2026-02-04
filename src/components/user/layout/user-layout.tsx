@@ -36,6 +36,8 @@ interface UserLayoutProps {
   }
   /** Whether chat is enabled for the current league */
   isChatEnabled?: boolean
+  /** Whether there are any series in the league */
+  hasAnySeries?: boolean
   locale?: string
 }
 
@@ -45,6 +47,7 @@ export function UserLayout({
   currentLeague,
   badges,
   isChatEnabled,
+  hasAnySeries,
   locale,
 }: UserLayoutProps) {
   return (
@@ -59,7 +62,12 @@ export function UserLayout({
         </main>
 
         {/* Bottom navigation */}
-        <BottomNav leagueId={currentLeague.id} badges={badges} isChatEnabled={isChatEnabled} />
+        <BottomNav
+          leagueId={currentLeague.id}
+          badges={badges}
+          isChatEnabled={isChatEnabled}
+          hasAnySeries={hasAnySeries}
+        />
       </div>
     </UserLeagueProvider>
   )

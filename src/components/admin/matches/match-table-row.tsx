@@ -10,6 +10,7 @@ import {
   TableCell,
   TableRow,
 } from '@/components/ui/table'
+import { TeamFlag } from '@/components/common/team-flag'
 import { ExpandedBetsTable } from './expanded-bets-table'
 import { type MatchWithUserBets } from '@/actions/user-bets'
 
@@ -90,8 +91,20 @@ export function MatchTableRow({
         )}
         <TableCell>
           <div className="flex items-center gap-2">
+            <TeamFlag
+              flagIcon={homeTeam.flagIcon}
+              flagType={homeTeam.flagType}
+              teamName={homeTeam.name}
+              size="xs"
+            />
             <span className="font-medium">{homeTeam.name}</span>
             <span className="text-muted-foreground">{t('vs')}</span>
+            <TeamFlag
+              flagIcon={awayTeam.flagIcon}
+              flagType={awayTeam.flagType}
+              teamName={awayTeam.name}
+              size="xs"
+            />
             <span className="font-medium">{awayTeam.name}</span>
             {!showLeagueColumn && match.Match.isPlayoffGame && (
               <Badge variant="warning" className="text-xs">

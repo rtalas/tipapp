@@ -97,6 +97,8 @@ export function BetControls({
           onNoScorerChange={onNoScorerChange}
           homePlayers={homeTeam.LeaguePlayer}
           awayPlayers={awayTeam.LeaguePlayer}
+          homeTeam={homeTeam.Team}
+          awayTeam={awayTeam.Team}
           homeTeamName={homeTeamName}
           awayTeamName={awayTeamName}
           sportId={sportId}

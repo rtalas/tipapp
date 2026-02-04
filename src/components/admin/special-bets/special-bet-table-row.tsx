@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { TeamFlag } from '@/components/common/team-flag'
 import {
   TableCell,
   TableHead,
@@ -41,11 +42,16 @@ function getSpecialBetStatus(specialBet: SpecialBet): 'scheduled' | 'finished' |
   return 'scheduled'
 }
 
-function getResultTypeAndDisplay(specialBet: SpecialBet): { type: string; display: string } {
+function getResultTypeAndDisplay(specialBet: SpecialBet): {
+  type: string
+  display: string
+  team?: { name: string; flagIcon: string | null; flagType: string | null }
+} {
   if (specialBet.specialBetTeamResultId) {
     return {
       type: 'team',
       display: specialBet.LeagueTeam?.Team.name || 'Unknown',
+      team: specialBet.LeagueTeam?.Team,
     }
   }
   if (specialBet.specialBetPlayerResultId) {
@@ -120,7 +126,18 @@ export function SpecialBetTableRow({
           </div>
         </TableCell>
         <TableCell>
-          {resultInfo.type !== 'none' && (
+          {resultInfo.type === 'team' && resultInfo.team && (
+            <div className="flex items-center gap-2">
+              <TeamFlag
+                flagIcon={resultInfo.team.flagIcon}
+                flagType={resultInfo.team.flagType}
+                teamName={resultInfo.team.name}
+                size="xs"
+              />
+              <span className="text-sm">{resultInfo.display}</span>
+            </div>
+          )}
+          {resultInfo.type !== 'none' && resultInfo.type !== 'team' && (
             <div className="flex items-center gap-2">
               <span className="text-sm">{resultInfo.display}</span>
             </div>

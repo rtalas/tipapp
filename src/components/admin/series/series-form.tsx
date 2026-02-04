@@ -9,8 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { TeamFlag } from '@/components/common/team-flag'
 
-type League = { id: number; name: string; LeagueTeam: { id: number; Team: { id: number; name: string; shortcut: string } }[] }
+type League = { id: number; name: string; LeagueTeam: { id: number; Team: { id: number; name: string; shortcut: string; flagIcon: string | null; flagType: string | null } }[] }
 type SpecialBetSerie = { id: number; name: string; bestOf: number }
 
 interface SeriesFormData {
@@ -100,7 +101,15 @@ export function SeriesForm({ formData, onChange, leagues, specialBetSeries, disa
           <SelectContent>
             {availableTeams.map((lt) => (
               <SelectItem key={lt.id} value={lt.id.toString()}>
-                {lt.Team.name}
+                <div className="flex items-center gap-2">
+                  <TeamFlag
+                    flagIcon={lt.Team.flagIcon}
+                    flagType={lt.Team.flagType}
+                    teamName={lt.Team.name}
+                    size="xs"
+                  />
+                  <span>{lt.Team.name}</span>
+                </div>
               </SelectItem>
             ))}
           </SelectContent>
@@ -122,7 +131,15 @@ export function SeriesForm({ formData, onChange, leagues, specialBetSeries, disa
               .filter((lt) => lt.id.toString() !== formData.homeTeamId)
               .map((lt) => (
                 <SelectItem key={lt.id} value={lt.id.toString()}>
-                  {lt.Team.name}
+                  <div className="flex items-center gap-2">
+                    <TeamFlag
+                      flagIcon={lt.Team.flagIcon}
+                      flagType={lt.Team.flagType}
+                      teamName={lt.Team.name}
+                      size="xs"
+                    />
+                    <span>{lt.Team.name}</span>
+                  </div>
                 </SelectItem>
               ))}
           </SelectContent>

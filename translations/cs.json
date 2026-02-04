@@ -1020,6 +1020,7 @@
       "leagueCreateFailed": "Nepodařilo se vytvořit ligu"
     },
     "leagueSetup": {
+      "description": "Nastavte týmy a hráče pro tuto ligu",
       "teamsSection": "Týmy",
       "teamsDescription": "Přidejte týmy účastníky ligy",
       "selectTeam": "Vybrat tým k přidání",

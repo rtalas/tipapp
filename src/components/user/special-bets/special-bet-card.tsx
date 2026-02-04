@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
+import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
 import { getUserDisplayName, getUserInitials } from '@/lib/user-display-utils'
 import { saveSpecialBet, getSpecialBetFriendPredictions } from '@/actions/user/special-bets'
@@ -25,7 +26,17 @@ import type { UserSpecialBet, SpecialBetFriendPrediction } from '@/actions/user/
 
 interface SpecialBetCardProps {
   specialBet: UserSpecialBet
-  teams: Array<{ id: number; group: string | null; Team: { id: number; name: string; shortcut: string } }>
+  teams: Array<{
+    id: number
+    group: string | null
+    Team: {
+      id: number
+      name: string
+      shortcut: string
+      flagIcon?: string | null
+      flagType?: string | null
+    }
+  }>
   players: Array<{
     id: number
     Player: { id: number; firstName: string | null; lastName: string | null }
@@ -147,7 +158,8 @@ export function SpecialBetCard({
   }
 
   // Get display values
-  const selectedTeamName = teams.find((t) => t.id === teamId)?.Team.name
+  const selectedTeam = teams.find((t) => t.id === teamId)
+  const selectedTeamName = selectedTeam?.Team.name
   const selectedPlayer = players.find((p) => p.id === playerId)
   const selectedPlayerName = selectedPlayer
     ? `${selectedPlayer.Player.firstName} ${selectedPlayer.Player.lastName}`
@@ -156,8 +168,9 @@ export function SpecialBetCard({
   const userSelection = selectedTeamName || selectedPlayerName || (value !== null ? value.toString() : null)
 
   // Check if correct
+  const actualResultTeam = specialBet.LeagueTeam?.Team
   const actualResult =
-    specialBet.LeagueTeam?.Team.name ||
+    actualResultTeam?.name ||
     (specialBet.LeaguePlayer &&
       `${specialBet.LeaguePlayer.Player.firstName} ${specialBet.LeaguePlayer.Player.lastName}`) ||
     specialBet.specialBetValue?.toString()
@@ -229,14 +242,24 @@ export function SpecialBetCard({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">{t('yourPick')}</span>
-                  <span
-                    className={cn(
-                      'text-sm font-medium',
-                      isCorrect ? 'text-primary' : 'text-foreground'
+                  <div className="flex items-center gap-1.5">
+                    {selectedTeam && (
+                      <TeamFlag
+                        flagIcon={selectedTeam.Team.flagIcon ?? null}
+                        flagType={selectedTeam.Team.flagType ?? null}
+                        teamName={selectedTeam.Team.name}
+                        size="sm"
+                      />
                     )}
-                  >
-                    {userSelection || t('noSelection')}
-                  </span>
+                    <span
+                      className={cn(
+                        'text-sm font-medium',
+                        isCorrect ? 'text-primary' : 'text-foreground'
+                      )}
+                    >
+                      {userSelection || t('noSelection')}
+                    </span>
+                  </div>
                   {isCorrect && (
                     <CheckCircle className="w-4 h-4 text-primary fill-primary/20" />
                   )}
@@ -248,9 +271,19 @@ export function SpecialBetCard({
               <div className="p-3 rounded-lg bg-primary/10">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">{t('winner')}</span>
-                  <span className="text-sm font-semibold text-primary">
-                    {actualResult}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {actualResultTeam && (
+                      <TeamFlag
+                        flagIcon={actualResultTeam.flagIcon}
+                        flagType={actualResultTeam.flagType}
+                        teamName={actualResultTeam.name}
+                        size="sm"
+                      />
+                    )}
+                    <span className="text-sm font-semibold text-primary">
+                      {actualResult}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -271,7 +304,15 @@ export function SpecialBetCard({
                   <SelectItem value="none">{t('noSelection')}</SelectItem>
                   {availableTeams.map((t) => (
                     <SelectItem key={t.id} value={t.id.toString()}>
-                      {t.Team.name}
+                      <div className="flex items-center gap-2">
+                        <TeamFlag
+                          flagIcon={t.Team.flagIcon ?? null}
+                          flagType={t.Team.flagType ?? null}
+                          teamName={t.Team.name}
+                          size="sm"
+                        />
+                        <span>{t.Team.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
