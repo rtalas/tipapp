@@ -542,8 +542,8 @@ const prizeTierSchema = z.object({
 
 export const updateLeaguePrizesSchema = z.object({
   leagueId: z.number().int().positive('League ID is required'),
-  prizes: z.array(prizeTierSchema).max(10, 'Maximum 10 prize tiers allowed'),
-  fines: z.array(prizeTierSchema).max(10, 'Maximum 10 fine tiers allowed'),
+  prizes: z.array(prizeTierSchema).max(10, 'Maximum 10 prize tiers allowed').default([]),
+  fines: z.array(prizeTierSchema).max(10, 'Maximum 10 fine tiers allowed').default([]),
 }).refine((data) => {
   // Ensure unique ranks within prizes
   const prizeRanks = data.prizes.map(p => p.rank)

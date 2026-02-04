@@ -1,14 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Create hoisted mock
-const sendMock = vi.hoisted(() => vi.fn());
+// Create hoisted mock with function implementation
+const sendMock = vi.hoisted(() => vi.fn(function() {}));
 
 vi.mock('resend', () => ({
-  Resend: vi.fn().mockImplementation(() => ({
-    emails: {
-      send: sendMock,
-    },
-  })),
+  Resend: vi.fn(function() {
+    return {
+      emails: {
+        send: sendMock,
+      },
+    }
+  }),
 }));
 
 import { sendPasswordResetEmail } from './email';
