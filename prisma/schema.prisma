@@ -287,6 +287,7 @@ model LeagueUser {
   createdAt              DateTime                 @db.Timestamptz(6)
   updatedAt              DateTime                 @db.Timestamptz(6)
   deletedAt              DateTime?                @db.Timestamptz(6)
+  lastChatReadAt         DateTime?                @db.Timestamptz(6)
   League                 League                   @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   User                   User                     @relation(fields: [userId], references: [id], onDelete: NoAction)
   Message                Message[]

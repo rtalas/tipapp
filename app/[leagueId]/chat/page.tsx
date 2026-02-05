@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { ChatView } from '@/components/chat/ChatView'
+import { markChatAsRead } from '@/actions/messages'
 import type { ChatMessage } from '@/hooks/useMessages'
 
 interface ChatPageProps {
@@ -76,6 +77,9 @@ export default async function ChatPage({ params }: ChatPageProps) {
       </div>
     )
   }
+
+  // Mark chat as read when user opens the page
+  await markChatAsRead(leagueId)
 
   // Fetch initial messages
   const messages = await prisma.message.findMany({

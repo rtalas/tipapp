@@ -62,6 +62,7 @@ export default async function LeagueLayout({
       id: true,
       admin: true,
       paid: true,
+      lastChatReadAt: true,
     },
   })
 
@@ -98,6 +99,7 @@ export default async function LeagueLayout({
     upcomingSpecialBetsCount,
     upcomingQuestionsCount,
     totalSeriesCount,
+    unreadChatCount,
   ] = await Promise.all([
     prisma.leagueMatch.count({
       where: {
@@ -173,6 +175,21 @@ export default async function LeagueLayout({
         deletedAt: null,
       },
     }),
+    // Count unread chat messages (only if chat is enabled)
+    league.isChatEnabled
+      ? prisma.message.count({
+          where: {
+            leagueId,
+            deletedAt: null,
+            // Only count messages from other users
+            leagueUserId: { not: currentLeagueUser.id },
+            // Only count messages created after lastChatReadAt (if set)
+            ...(currentLeagueUser.lastChatReadAt
+              ? { createdAt: { gt: currentLeagueUser.lastChatReadAt } }
+              : {}),
+          },
+        })
+      : Promise.resolve(0),
   ])
 
   // Combine special bets and questions for the special tab
@@ -203,6 +220,7 @@ export default async function LeagueLayout({
         matches: upcomingMatchesCount || undefined,
         series: upcomingSeriesCount || undefined,
         special: specialTabCount || undefined,
+        chat: unreadChatCount || undefined,
       }}
       isChatEnabled={league.isChatEnabled}
       hasAnySeries={totalSeriesCount > 0}

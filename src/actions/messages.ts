@@ -12,6 +12,11 @@ import {
   type GetMessagesInput,
   type DeleteMessageInput,
 } from '@/lib/validation/admin'
+import { z } from 'zod'
+
+const markChatAsReadSchema = z.object({
+  leagueId: z.number().int().positive(),
+})
 
 /**
  * Get the current user's LeagueUser record for a specific league.
@@ -243,6 +248,42 @@ export async function deleteMessage(input: DeleteMessageInput) {
     return {
       success: false,
       error: getErrorMessage(error, 'Failed to delete message'),
+    }
+  }
+}
+
+/**
+ * Mark chat as read for the current user.
+ * Updates the lastChatReadAt timestamp to now.
+ */
+export async function markChatAsRead(leagueId: number) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    const validated = markChatAsReadSchema.parse({ leagueId })
+    const userId = parseInt(session.user.id, 10)
+
+    // Update the lastChatReadAt timestamp for this league user
+    await prisma.leagueUser.updateMany({
+      where: {
+        userId,
+        leagueId: validated.leagueId,
+        active: true,
+        deletedAt: null,
+      },
+      data: {
+        lastChatReadAt: new Date(),
+      },
+    })
+
+    return { success: true }
+  } catch (error) {
+    return {
+      success: false,
+      error: getErrorMessage(error, 'Failed to mark chat as read'),
     }
   }
 }
