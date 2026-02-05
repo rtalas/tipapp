@@ -133,6 +133,7 @@ export async function getMatchFriendPredictions(leagueMatchId: number) {
               firstName: true,
               lastName: true,
               username: true,
+              avatarUrl: true,
             },
           },
         },

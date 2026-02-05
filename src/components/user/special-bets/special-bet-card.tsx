@@ -8,14 +8,14 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { UserAvatar } from '@/components/common/user-avatar'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
 import { StatusBadge } from '@/components/user/common/status-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
 import { SearchableSelect } from '@/components/user/special-bets/searchable-select'
 import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
-import { getUserDisplayName, getUserInitials } from '@/lib/user-display-utils'
+import { getUserDisplayName } from '@/lib/user-display-utils'
 import { saveSpecialBet, getSpecialBetFriendPredictions } from '@/actions/user/special-bets'
 import type { UserSpecialBet, SpecialBetFriendPrediction } from '@/actions/user/special-bets'
 import type { ExactPlayerConfig } from '@/lib/evaluators/types'
@@ -399,7 +399,6 @@ export function SpecialBetCard({
         {friendPredictions.map((prediction) => {
           const user = prediction.LeagueUser.User
           const displayName = getUserDisplayName(user)
-          const initials = getUserInitials(user)
 
           // Get display value for the prediction
           const predictionDisplay =
@@ -415,11 +414,13 @@ export function SpecialBetCard({
               className="flex items-center justify-between p-3 rounded-lg bg-secondary/50"
             >
               <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  avatarUrl={user.avatarUrl}
+                  firstName={user.firstName}
+                  lastName={user.lastName}
+                  username={user.username}
+                  size="sm"
+                />
                 <span className="font-medium text-sm">{displayName}</span>
               </div>
               <div className="flex items-center gap-2">

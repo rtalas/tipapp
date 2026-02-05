@@ -38,12 +38,12 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline'",
               // NOTE: 'unsafe-inline' required for Tailwind v4 runtime CSS injection
               "style-src 'self' 'unsafe-inline'",
-              // Allow images from data URIs and HTTPS
-              "img-src 'self' data: https:",
+              // Allow images from data URIs, HTTPS, and Supabase storage
+              "img-src 'self' data: https: blob:",
               // Allow fonts from data URIs
               "font-src 'self' data:",
-              // Restrict API calls to same origin
-              "connect-src 'self'",
+              // Restrict API calls to same origin and Supabase storage
+              "connect-src 'self' https://*.supabase.co",
               // Media: same origin only
               "media-src 'self'",
               // Workers: same origin only

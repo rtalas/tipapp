@@ -21,7 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { UserAvatar } from '@/components/common/user-avatar'
 
 interface UserMenuDropdownProps {
   user: {
@@ -29,6 +29,7 @@ interface UserMenuDropdownProps {
     username: string
     firstName?: string | null
     lastName?: string | null
+    avatarUrl?: string | null
     isSuperadmin?: boolean
   }
   currentLeagueId: number
@@ -52,14 +53,6 @@ export function UserMenuDropdown({
     router.push('/login')
   }
 
-  // Get user initials
-  const userInitials = useMemo(() => {
-    if (user.firstName && user.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-    }
-    return user.username.slice(0, 2).toUpperCase()
-  }, [user])
-
   // Get display name
   const displayName = useMemo(() => {
     if (user.firstName && user.lastName) {
@@ -75,11 +68,15 @@ export function UserMenuDropdown({
           className="flex items-center gap-1.5 p-1 rounded-full hover:bg-secondary/50 transition-colors"
           aria-label="User menu"
         >
-          <Avatar className="h-8 w-8 ring-2 ring-primary/30">
-            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-              {userInitials}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            avatarUrl={user.avatarUrl}
+            firstName={user.firstName}
+            lastName={user.lastName}
+            username={user.username}
+            size="sm"
+            className="ring-2 ring-primary/30"
+            isCurrentUser
+          />
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>

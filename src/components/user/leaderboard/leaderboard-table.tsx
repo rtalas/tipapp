@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { Trophy, Calendar, TrendingUp, CheckCircle2 } from 'lucide-react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Trophy, CheckCircle2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -13,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { RefreshButton } from '@/components/user/common/refresh-button'
 import { PullToRefresh } from '@/components/user/common/pull-to-refresh'
+import { UserAvatar } from '@/components/common/user-avatar'
 import { useRefresh } from '@/hooks/useRefresh'
 import { cn } from '@/lib/utils'
 import type { LeaderboardEntry } from '@/types/user'
@@ -163,15 +163,14 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
             <div className="flex items-center gap-3">
               {selectedUser && (
                 <>
-                  <Avatar className="w-12 h-12 ring-2 ring-primary">
-                    <AvatarFallback className="text-sm font-bold bg-secondary">
-                      {getInitials(
-                        selectedUser.firstName,
-                        selectedUser.lastName,
-                        selectedUser.username
-                      )}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    avatarUrl={selectedUser.avatarUrl}
+                    firstName={selectedUser.firstName}
+                    lastName={selectedUser.lastName}
+                    username={selectedUser.username}
+                    size="lg"
+                    className="ring-2 ring-primary"
+                  />
                   <div>
                     <DialogTitle>
                       {getDisplayName(
@@ -437,7 +436,6 @@ interface RankingRowProps {
 
 function RankingRow({ entry, index, prizes, fines, totalEntries, onClick }: RankingRowProps) {
   const t = useTranslations('user.leaderboard')
-  const initials = getInitials(entry.firstName, entry.lastName, entry.username)
   const displayName = getDisplayName(
     entry.firstName,
     entry.lastName,
@@ -468,21 +466,18 @@ function RankingRow({ entry, index, prizes, fines, totalEntries, onClick }: Rank
       </div>
 
       {/* Avatar */}
-      <Avatar
+      <UserAvatar
+        avatarUrl={entry.avatarUrl}
+        firstName={entry.firstName}
+        lastName={entry.lastName}
+        username={entry.username}
+        size="md"
         className={cn(
-          'w-10 h-10 ring-2',
+          'ring-2',
           entry.isCurrentUser ? 'ring-primary' : rankStyle.ring
         )}
-      >
-        <AvatarFallback
-          className={cn(
-            'text-xs font-semibold',
-            entry.isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-secondary'
-          )}
-        >
-          {initials}
-        </AvatarFallback>
-      </Avatar>
+        isCurrentUser={entry.isCurrentUser}
+      />
 
       {/* Username */}
       <span
@@ -572,9 +567,10 @@ function getFine(rank: number, totalEntries: number, fines: LeaguePrize[]) {
   const fine = fines.find((f) => f.rank === positionFromBottom)
   if (!fine) return null
 
+  // Use Math.abs to avoid double minus sign (minus is added in display)
   const formatted = new Intl.NumberFormat('cs-CZ', {
     minimumFractionDigits: 0,
-  }).format(fine.amount / 100)
+  }).format(Math.abs(fine.amount) / 100)
 
   return `${formatted}\u00A0${fine.currency}`
 }

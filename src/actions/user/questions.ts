@@ -77,6 +77,7 @@ export async function getQuestionFriendPredictions(leagueSpecialBetQuestionId: n
               firstName: true,
               lastName: true,
               username: true,
+              avatarUrl: true,
             },
           },
         },

@@ -87,6 +87,7 @@ export async function getSeriesFriendPredictions(leagueSpecialBetSerieId: number
               firstName: true,
               lastName: true,
               username: true,
+              avatarUrl: true,
             },
           },
         },

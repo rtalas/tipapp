@@ -78,6 +78,7 @@ export default async function LeagueLayout({
       username: true,
       firstName: true,
       lastName: true,
+      avatarUrl: true,
       isSuperadmin: true,
     },
   })
@@ -187,6 +188,7 @@ export default async function LeagueLayout({
         username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
+        avatarUrl: user.avatarUrl,
         isSuperadmin: user.isSuperadmin,
       }}
       currentLeague={{

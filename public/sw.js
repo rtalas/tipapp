@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tipapp-v2'
+const CACHE_NAME = 'tipapp-v3'
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -83,8 +83,13 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return
 
-  // Skip API requests and auth routes
+  // Skip external URLs (like Supabase storage)
   const url = new URL(event.request.url)
+  if (url.origin !== self.location.origin) {
+    return
+  }
+
+  // Skip API requests and auth routes
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) {
     return
   }

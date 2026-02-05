@@ -6,12 +6,12 @@ import { format } from 'date-fns'
 import { HelpCircle, Clock, Check, Users, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { UserAvatar } from '@/components/common/user-avatar'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
 import { StatusBadge } from '@/components/user/common/status-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
 import { cn } from '@/lib/utils'
-import { getUserDisplayName, getUserInitials } from '@/lib/user-display-utils'
+import { getUserDisplayName } from '@/lib/user-display-utils'
 import { saveQuestionBet, getQuestionFriendPredictions } from '@/actions/user/questions'
 import type { UserQuestion, QuestionFriendPrediction } from '@/actions/user/questions'
 
@@ -275,7 +275,6 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
         {friendPredictions.map((prediction) => {
           const user = prediction.LeagueUser.User
           const displayName = getUserDisplayName(user)
-          const initials = getUserInitials(user)
 
           const answerDisplay =
             prediction.userBet === true
@@ -293,11 +292,13 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
               className="flex items-center justify-between p-3 rounded-lg bg-secondary/50"
             >
               <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  avatarUrl={user.avatarUrl}
+                  firstName={user.firstName}
+                  lastName={user.lastName}
+                  username={user.username}
+                  size="sm"
+                />
                 <span className="font-medium text-sm">{displayName}</span>
               </div>
               <div className="flex items-center gap-2">

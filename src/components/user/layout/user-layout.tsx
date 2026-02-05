@@ -24,6 +24,7 @@ interface UserLayoutProps {
     username: string
     firstName?: string | null
     lastName?: string | null
+    avatarUrl?: string | null
     isSuperadmin?: boolean
   }
   currentLeague: CurrentLeague

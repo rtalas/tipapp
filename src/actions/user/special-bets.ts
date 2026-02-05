@@ -106,6 +106,7 @@ export async function getSpecialBetFriendPredictions(leagueSpecialBetSingleId: n
               firstName: true,
               lastName: true,
               username: true,
+              avatarUrl: true,
             },
           },
         },

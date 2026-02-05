@@ -49,6 +49,7 @@ export async function getUserProfile() {
       notifyHours: true,
       isSuperadmin: true,
       createdAt: true,
+      avatarUrl: true,
     },
   })
 
@@ -108,6 +109,33 @@ export async function updateProfile(input: UpdateProfileInput) {
     return { success: true }
   } catch {
     return { success: false, error: 'Failed to update profile' }
+  }
+}
+
+/**
+ * Updates the current user's avatar URL
+ */
+export async function updateAvatar(avatarUrl: string | null) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  const userId = parseInt(session.user.id)
+
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        avatarUrl,
+        updatedAt: new Date(),
+      },
+    })
+
+    revalidatePath('/profile')
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Failed to update avatar' }
   }
 }
 

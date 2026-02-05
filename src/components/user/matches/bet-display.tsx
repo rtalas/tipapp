@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Check } from 'lucide-react'
 import { SPORT_IDS } from '@/lib/constants'
 import type { UserMatch } from '@/actions/user/matches'
 
@@ -34,24 +34,20 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
           </span>
         </div>
       ) : (
-        /* Overtime/Shootout Display for all non-soccer-playoff games */
-        !isEvaluated && (
-          <div className="flex items-center justify-center space-x-2">
-            <Checkbox
-              checked={match.userBet.overtime}
-              disabled
-              className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-            />
-            <span className="text-xs text-muted-foreground">{t('overtimeShootout')}</span>
+        /* Overtime/Shootout Display for all non-soccer-playoff games - only show if user picked overtime */
+        !isEvaluated && match.userBet.overtime && (
+          <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+            <Check className="w-3.5 h-3.5" />
+            <span>{t('overtimeShootout')}</span>
           </div>
         )
       )}
 
       {/* Hockey Overtime Display (evaluated only) */}
       {isEvaluated && sportId === SPORT_IDS.HOCKEY && match.userBet.overtime && (
-        <div className="flex items-center justify-center gap-1.5 text-xs">
-          <span className="text-muted-foreground">{t('yourBet')}</span>
-          <span className="font-medium text-foreground">{t('overtimeShootout')}</span>
+        <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+          <Check className="w-3.5 h-3.5" />
+          <span>{t('overtimeShootout')}</span>
         </div>
       )}
 

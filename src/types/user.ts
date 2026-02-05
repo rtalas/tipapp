@@ -10,6 +10,7 @@ export interface LeaderboardEntry {
   username: string
   firstName: string | null
   lastName: string | null
+  avatarUrl: string | null
   matchPoints: number
   seriesPoints: number
   specialBetPoints: number

@@ -135,7 +135,18 @@
       "pushDenied": "Notification permission denied",
       "pushError": "Failed to update notification settings",
       "pushUnsupported": "Push notifications require installing the app to your home screen. Tap Share → Add to Home Screen.",
-      "pushUnsupportedIOS": "Push notifications are not supported on iOS Safari. Please use Chrome or another browser."
+      "pushUnsupportedIOS": "Push notifications are not supported on iOS Safari. Please use Chrome or another browser.",
+      "avatar": "Avatar",
+      "changeAvatar": "Change avatar",
+      "removeAvatar": "Remove",
+      "avatarHint": "Tap to change your profile picture",
+      "avatarUpdated": "Profile picture updated",
+      "avatarDeleted": "Profile picture removed",
+      "avatarUploadFailed": "Failed to upload picture",
+      "avatarDeleteFailed": "Failed to remove picture",
+      "avatarInvalidType": "Please select an image file (JPEG, PNG, GIF, or WebP)",
+      "avatarTooLarge": "Image must be smaller than {maxSize}MB",
+      "avatarStorageNotConfigured": "Profile pictures are not available"
     }
   },
   "user": {

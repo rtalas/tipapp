@@ -309,6 +309,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
           username: true,
           firstName: true,
           lastName: true,
+          avatarUrl: true,
         },
       },
       UserBet: {
@@ -354,6 +355,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
       username: lu.User.username,
       firstName: lu.User.firstName,
       lastName: lu.User.lastName,
+      avatarUrl: lu.User.avatarUrl,
       matchPoints,
       seriesPoints,
       specialBetPoints,

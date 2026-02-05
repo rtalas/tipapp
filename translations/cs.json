@@ -135,7 +135,18 @@
       "pushDenied": "Oprávnění pro notifikace zamítnuto",
       "pushError": "Nepodařilo se aktualizovat nastavení notifikací",
       "pushUnsupported": "Push notifikace vyžadují instalaci aplikace na plochu. Klepněte na Sdílet → Přidat na plochu.",
-      "pushUnsupportedIOS": "Push notifikace nejsou podporovány v iOS Safari. Použijte prosím Chrome nebo jiný prohlížeč."
+      "pushUnsupportedIOS": "Push notifikace nejsou podporovány v iOS Safari. Použijte prosím Chrome nebo jiný prohlížeč.",
+      "avatar": "Profilový obrázek",
+      "changeAvatar": "Změnit profilový obrázek",
+      "removeAvatar": "Odstranit",
+      "avatarHint": "Klepnutím změníte profilový obrázek",
+      "avatarUpdated": "Profilový obrázek byl aktualizován",
+      "avatarDeleted": "Profilový obrázek byl odstraněn",
+      "avatarUploadFailed": "Nepodařilo se nahrát obrázek",
+      "avatarDeleteFailed": "Nepodařilo se odstranit obrázek",
+      "avatarInvalidType": "Vyberte prosím obrázek (JPEG, PNG, GIF nebo WebP)",
+      "avatarTooLarge": "Obrázek musí být menší než {maxSize}MB",
+      "avatarStorageNotConfigured": "Profilové obrázky nejsou dostupné"
     }
   },
   "user": {

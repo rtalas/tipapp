@@ -1,13 +1,12 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Card,
   CardContent,
 } from '@/components/ui/card'
-import { updateProfile, changePassword } from '@/actions/user/profile'
+import { updateProfile, changePassword, updateAvatar } from '@/actions/user/profile'
 import {
   ProfileInformationForm,
   type UpdateProfileInput,
@@ -18,6 +17,7 @@ import {
   type UpdatePasswordInput,
   type ActionResult as PasswordActionResult,
 } from '@/components/common/profile/password-change-form'
+import { AvatarUpload } from './avatar-upload'
 
 interface ProfileContentProps {
   profile: {
@@ -29,11 +29,13 @@ interface ProfileContentProps {
     mobileNumber: string | null
     notifyHours: number
     createdAt: Date
+    avatarUrl: string | null
   }
 }
 
 export function ProfileContent({ profile }: ProfileContentProps) {
   const t = useTranslations('auth.profile')
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(profile.avatarUrl)
 
   // Get user initials
   const userInitials = useMemo(() => {
@@ -42,6 +44,15 @@ export function ProfileContent({ profile }: ProfileContentProps) {
     }
     return profile.username.slice(0, 2).toUpperCase()
   }, [profile])
+
+  const handleAvatarChange = async (newUrl: string | null) => {
+    const result = await updateAvatar(newUrl)
+    if (result.success) {
+      setCurrentAvatarUrl(newUrl)
+    } else {
+      throw new Error(result.error || 'Failed to update avatar')
+    }
+  }
 
   const handleProfileUpdate = async (data: UpdateProfileInput): Promise<ProfileActionResult> => {
     const result = await updateProfile(data)
@@ -65,11 +76,11 @@ export function ProfileContent({ profile }: ProfileContentProps) {
       <Card className="glass-card border-0">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center gap-4">
-            <Avatar className="h-20 w-20 ring-4 ring-primary/30">
-              <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-                {userInitials}
-              </AvatarFallback>
-            </Avatar>
+            <AvatarUpload
+              avatarUrl={currentAvatarUrl}
+              initials={userInitials}
+              onAvatarChange={handleAvatarChange}
+            />
             <div className="text-center">
               <p className="text-xl font-bold">
                 {profile.firstName && profile.lastName
