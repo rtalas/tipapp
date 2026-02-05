@@ -39,7 +39,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { EvaluatorCreateDialog } from './evaluator-create-dialog'
-import type { ScorerRankedConfig, GroupStageConfig } from '@/lib/evaluators/types'
+import type { ScorerRankedConfig, GroupStageConfig, ExactPlayerConfig } from '@/lib/evaluators/types'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { POSITIONS_BY_SPORT } from '@/lib/constants'
 
 interface EvaluatorType {
   id: number
@@ -49,6 +52,7 @@ interface EvaluatorType {
 interface League {
   id: number
   name: string
+  sportId: number
 }
 
 interface Evaluator {
@@ -84,7 +88,12 @@ export function EvaluatorsContent({
   const [editPointsValue, setEditPointsValue] = useState<string>('')
   const [editNameValue, setEditNameValue] = useState<string>('')
   const [editConfig, setEditConfig] = useState<ScorerRankedConfig | null>(null)
+  const [editExactPlayerConfig, setEditExactPlayerConfig] = useState<ExactPlayerConfig | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Get sport ID from league
+  const sportId = league?.sportId
+  const availablePositions = sportId ? (POSITIONS_BY_SPORT[sportId] || []) : []
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [evaluatorToDelete, setEvaluatorToDelete] = useState<Evaluator | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -114,6 +123,8 @@ export function EvaluatorsContent({
 
     // Initialize config for scorer evaluators
     const isScorer = evaluator.EvaluatorType.name === 'scorer'
+    const isExactPlayer = evaluator.EvaluatorType.name === 'exact_player'
+
     if (isScorer) {
       if (evaluator.config && typeof evaluator.config === 'object') {
         setEditConfig(evaluator.config as ScorerRankedConfig)
@@ -124,8 +135,17 @@ export function EvaluatorsContent({
           unrankedPoints: evaluator.points,
         })
       }
+      setEditExactPlayerConfig(null)
+    } else if (isExactPlayer) {
+      if (evaluator.config && typeof evaluator.config === 'object' && 'positions' in evaluator.config) {
+        setEditExactPlayerConfig(evaluator.config as ExactPlayerConfig)
+      } else {
+        setEditExactPlayerConfig({ positions: null })
+      }
+      setEditConfig(null)
     } else {
       setEditConfig(null)
+      setEditExactPlayerConfig(null)
     }
   }
 
@@ -134,14 +154,16 @@ export function EvaluatorsContent({
     setEditNameValue('')
     setEditPointsValue('')
     setEditConfig(null)
+    setEditExactPlayerConfig(null)
   }
 
   const handleSave = async (evaluatorId: number, originalName: string, originalPoints: number) => {
     const nameChanged = editNameValue.trim() !== originalName
     const pointsChanged = editPointsValue !== String(originalPoints)
     const hasConfig = editConfig !== null
+    const hasExactPlayerConfig = editExactPlayerConfig !== null
 
-    if (!nameChanged && !pointsChanged && !hasConfig) {
+    if (!nameChanged && !pointsChanged && !hasConfig && !hasExactPlayerConfig) {
       handleCancelEdit()
       return
     }
@@ -175,6 +197,14 @@ export function EvaluatorsContent({
           points: 0,
           config: editConfig,
         })
+      } else if (hasExactPlayerConfig) {
+        // For exact_player with position filter
+        await updateEvaluator({
+          evaluatorId,
+          name: editNameValue.trim(),
+          points: parseInt(editPointsValue, 10),
+          config: editExactPlayerConfig,
+        })
       } else {
         // For non-scorer evaluators, use the old method
         if (nameChanged) {
@@ -190,6 +220,7 @@ export function EvaluatorsContent({
       setEditNameValue('')
       setEditPointsValue('')
       setEditConfig(null)
+      setEditExactPlayerConfig(null)
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
@@ -282,6 +313,108 @@ export function EvaluatorsContent({
                   {filteredEvaluators.map((evaluator) => {
                     const isEditingThisRow = editingId === evaluator.id
                     const isEditingScorer = isEditingThisRow && editConfig !== null
+                    const isEditingExactPlayer = isEditingThisRow && editExactPlayerConfig !== null
+
+                    // For exact_player evaluators being edited, show full-width row
+                    if (isEditingExactPlayer) {
+                      return (
+                        <TableRow key={evaluator.id} className="table-row-hover">
+                          <TableCell colSpan={league ? 4 : 5} className="p-4">
+                            <div className="space-y-4">
+                              <div>
+                                <Label className="text-sm font-medium">Rule Name</Label>
+                                <Input
+                                  type="text"
+                                  value={editNameValue}
+                                  onChange={(e) => setEditNameValue(e.target.value)}
+                                  className="h-8 mt-1"
+                                  disabled={isSaving}
+                                  aria-label="Evaluator name"
+                                />
+                              </div>
+
+                              <div>
+                                <Label className="text-sm font-medium">Points</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={editPointsValue}
+                                  onChange={(e) => setEditPointsValue(e.target.value)}
+                                  className="w-20 h-8 mt-1"
+                                  disabled={isSaving}
+                                  aria-label="Points value"
+                                />
+                              </div>
+
+                              <div>
+                                <Label className="text-sm font-medium">Position Filter (Optional)</Label>
+                                <p className="text-xs text-muted-foreground mb-2">
+                                  Select positions to filter which players can be selected for this bet
+                                </p>
+                                <div className="space-y-2">
+                                  {availablePositions.map((position) => {
+                                    const isChecked = editExactPlayerConfig?.positions?.includes(position.value) ?? false
+                                    return (
+                                      <div key={position.value} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          id={`edit-position-${position.value}`}
+                                          checked={isChecked}
+                                          onCheckedChange={(checked) => {
+                                            const currentPositions = editExactPlayerConfig?.positions || []
+                                            if (checked) {
+                                              setEditExactPlayerConfig({
+                                                positions: [...currentPositions, position.value]
+                                              })
+                                            } else {
+                                              const newPositions = currentPositions.filter(p => p !== position.value)
+                                              setEditExactPlayerConfig({
+                                                positions: newPositions.length > 0 ? newPositions : null
+                                              })
+                                            }
+                                          }}
+                                          disabled={isSaving}
+                                        />
+                                        <Label
+                                          htmlFor={`edit-position-${position.value}`}
+                                          className="text-sm font-normal cursor-pointer"
+                                        >
+                                          {position.label} ({position.value})
+                                        </Label>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                                {(!editExactPlayerConfig?.positions || editExactPlayerConfig.positions.length === 0) && (
+                                  <p className="text-xs text-muted-foreground bg-muted p-2 rounded mt-2">
+                                    No positions selected - all players will be available for this bet
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2 pt-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEdit}
+                                  disabled={isSaving}
+                                >
+                                  {tCommon('cancel')}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
+                                  disabled={isSaving}
+                                >
+                                  {tCommon('save')}
+                                </Button>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    }
 
                     // For scorer evaluators being edited, show full-width row
                     if (isEditingScorer) {
@@ -479,6 +612,21 @@ export function EvaluatorsContent({
                                 return `W:${config.winnerPoints} A:${config.advancePoints}`
                               })()}
                             </span>
+                          ) : evaluator.config && typeof evaluator.config === 'object' && evaluator.config !== null && evaluator.EvaluatorType.name === 'exact_player' && 'positions' in evaluator.config ? (
+                            <div className="text-xs">
+                              <span className="font-mono font-bold">{evaluator.points}</span>
+                              {(() => {
+                                const config = evaluator.config as ExactPlayerConfig
+                                if (config.positions && config.positions.length > 0) {
+                                  return (
+                                    <div className="text-muted-foreground mt-0.5">
+                                      Pos: {config.positions.join(', ')}
+                                    </div>
+                                  )
+                                }
+                                return null
+                              })()}
+                            </div>
                           ) : (
                             <span className="font-mono font-bold">{evaluator.points}</span>
                           )}

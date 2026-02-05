@@ -238,7 +238,11 @@
       "friendsPicks": "Friends' picks",
       "friendsPredictions": "Friends' Predictions",
       "friendsPicksLater": "Friends' picks will be visible after betting closes",
-      "noFriendsPredictions": "No friends' predictions yet"
+      "noFriendsPredictions": "No friends' predictions yet",
+      "searchTeam": "Search team...",
+      "searchPlayer": "Search player...",
+      "noTeamsFound": "No teams found",
+      "noPlayersFound": "No players found"
     },
     "questions": {
       "title": "Questions",

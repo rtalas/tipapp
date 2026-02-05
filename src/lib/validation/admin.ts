@@ -39,6 +39,13 @@ export const groupStageConfigSchema = z
     path: ['winnerPoints'],
   })
 
+// Exact player config schema for position filtering
+export const exactPlayerConfigSchema = z
+  .object({
+    positions: z.array(z.string()).nullable(),
+  })
+  .nullable()
+
 // Evaluator schemas (defined first for use in league schema)
 const evaluatorRuleSchema = z.object({
   evaluatorTypeId: z.number().int().positive(),
@@ -51,7 +58,7 @@ export const createEvaluatorSchema = z.object({
   evaluatorTypeId: z.number().int().positive('Evaluator type is required'),
   name: z.string().min(1, 'Name is required').max(255),
   points: z.number().int().min(0, 'Points cannot be negative').max(100),
-  config: z.union([scorerRankedConfigSchema, groupStageConfigSchema]).optional().nullable(),
+  config: z.union([scorerRankedConfigSchema, groupStageConfigSchema, exactPlayerConfigSchema]).optional().nullable(),
 })
 
 export type CreateEvaluatorInput = z.infer<typeof createEvaluatorSchema>
@@ -74,7 +81,7 @@ export const updateEvaluatorSchema = z.object({
   evaluatorId: z.number().int().positive('Evaluator ID is required'),
   name: z.string().min(1, 'Name cannot be empty').max(255),
   points: z.number().int().min(0, 'Points cannot be negative').max(100),
-  config: z.union([scorerRankedConfigSchema, groupStageConfigSchema]).optional().nullable(),
+  config: z.union([scorerRankedConfigSchema, groupStageConfigSchema, exactPlayerConfigSchema]).optional().nullable(),
 })
 
 export type UpdateEvaluatorInput = z.infer<typeof updateEvaluatorSchema>

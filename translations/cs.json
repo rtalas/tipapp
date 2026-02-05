@@ -238,7 +238,11 @@
       "friendsPicks": "Tipy přátel",
       "friendsPredictions": "Tipy přátel",
       "friendsPicksLater": "Tipy přátel budou viditelné po uzavření sázení",
-      "noFriendsPredictions": "Zatím žádné tipy přátel"
+      "noFriendsPredictions": "Zatím žádné tipy přátel",
+      "searchTeam": "Hledat tým...",
+      "searchPlayer": "Hledat hráče...",
+      "noTeamsFound": "Žádné týmy nenalezeny",
+      "noPlayersFound": "Žádní hráči nenalezeni"
     },
     "questions": {
       "title": "Otázky",

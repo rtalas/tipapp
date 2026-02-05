@@ -18,7 +18,7 @@ interface SpecialBetsListProps {
   teams: Array<{ id: number; group: string | null; Team: { id: number; name: string; shortcut: string } }>
   players: Array<{
     id: number
-    Player: { id: number; firstName: string | null; lastName: string | null }
+    Player: { id: number; firstName: string | null; lastName: string | null; position: string | null }
     LeagueTeam: { Team: { shortcut: string } }
   }>
   questions: UserQuestion[]

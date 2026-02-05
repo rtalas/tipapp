@@ -24,6 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { POSITIONS_BY_SPORT } from '@/lib/constants'
 
 interface EvaluatorType {
   id: number
@@ -33,6 +35,7 @@ interface EvaluatorType {
 interface League {
   id: number
   name: string
+  sportId: number
 }
 
 interface EvaluatorCreateDialogProps {
@@ -74,6 +77,15 @@ export function EvaluatorCreateDialog({
   const [winnerPoints, setWinnerPoints] = useState<string>('')
   const [advancePoints, setAdvancePoints] = useState<string>('')
 
+  // Exact player position filter config
+  const [selectedPositions, setSelectedPositions] = useState<string[]>([])
+
+  // Get sport ID from selected league
+  const selectedLeagueId = createForm.leagueId ? parseInt(createForm.leagueId, 10) : league?.id
+  const selectedLeague = leagues.find(l => l.id === selectedLeagueId) || league
+  const sportId = selectedLeague?.sportId
+  const availablePositions = sportId ? (POSITIONS_BY_SPORT[sportId] || []) : []
+
   // Update leagueId when league prop changes
   useEffect(() => {
     if (league) {
@@ -90,6 +102,7 @@ export function EvaluatorCreateDialog({
     const selectedType = evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)
     const isScorer = selectedType?.name === 'scorer'
     const isGroupStage = selectedType?.name === 'group_stage_team'
+    const isExactPlayer = selectedType?.name === 'exact_player'
 
     // Validate based on evaluator type
     if (useRankBased && isScorer) {
@@ -140,6 +153,10 @@ export function EvaluatorCreateDialog({
           winnerPoints: parseInt(winnerPoints, 10),
           advancePoints: parseInt(advancePoints, 10),
         }
+      } else if (isExactPlayer && selectedPositions.length > 0) {
+        config = {
+          positions: selectedPositions,
+        }
       }
 
       await createEvaluator({
@@ -164,6 +181,7 @@ export function EvaluatorCreateDialog({
       setUnrankedPoints('')
       setWinnerPoints('')
       setAdvancePoints('')
+      setSelectedPositions([])
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
@@ -315,6 +333,48 @@ export function EvaluatorCreateDialog({
                 <br />
                 • User predicts Team C, Team C doesn't advance → <strong>0 pts</strong>
               </div>
+            </div>
+          )}
+
+          {/* Position filter for exact_player */}
+          {evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'exact_player' && availablePositions.length > 0 && (
+            <div className="space-y-3 border-t pt-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Position Filter (Optional)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Select positions to filter which players can be selected for this bet
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                {availablePositions.map((position) => (
+                  <div key={position.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`position-${position.value}`}
+                      checked={selectedPositions.includes(position.value)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedPositions([...selectedPositions, position.value])
+                        } else {
+                          setSelectedPositions(selectedPositions.filter(p => p !== position.value))
+                        }
+                      }}
+                    />
+                    <Label
+                      htmlFor={`position-${position.value}`}
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      {position.label} ({position.value})
+                    </Label>
+                  </div>
+                ))}
+              </div>
+
+              {selectedPositions.length === 0 && (
+                <p className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                  No positions selected - all players will be available for this bet
+                </p>
+              )}
             </div>
           )}
 

@@ -102,6 +102,14 @@ export interface GroupStageConfig {
 }
 
 /**
+ * Config for exact_player evaluator with position filtering
+ * Allows restricting player selection to specific positions (e.g., only goalies)
+ */
+export interface ExactPlayerConfig {
+  positions: string[] | null; // ['G', 'D'] or null for all positions
+}
+
+/**
  * Group stage evaluation context
  */
 export interface GroupStageContext {

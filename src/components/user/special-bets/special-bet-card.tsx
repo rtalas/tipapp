@@ -1,28 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
 import { Trophy, Target, Lock, Clock, Check, Users, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
+import { SearchableSelect } from '@/components/user/special-bets/searchable-select'
 import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
 import { getUserDisplayName, getUserInitials } from '@/lib/user-display-utils'
 import { saveSpecialBet, getSpecialBetFriendPredictions } from '@/actions/user/special-bets'
 import type { UserSpecialBet, SpecialBetFriendPrediction } from '@/actions/user/special-bets'
+import type { ExactPlayerConfig } from '@/lib/evaluators/types'
 
 interface SpecialBetCardProps {
   specialBet: UserSpecialBet
@@ -39,7 +34,7 @@ interface SpecialBetCardProps {
   }>
   players: Array<{
     id: number
-    Player: { id: number; firstName: string | null; lastName: string | null }
+    Player: { id: number; firstName: string | null; lastName: string | null; position: string | null }
     LeagueTeam: { Team: { shortcut: string } }
   }>
   onSaved: () => void
@@ -83,6 +78,28 @@ export function SpecialBetCard({
     ? teams.filter((t) => t.group === specialBet.group)
     : teams
 
+  // Filter players by position if evaluator config has position restriction
+  const availablePlayers = useMemo(() => {
+    // Check if evaluator has position filter config
+    const evaluatorConfig = specialBet.Evaluator?.config
+    if (
+      evaluatorConfig &&
+      typeof evaluatorConfig === 'object' &&
+      evaluatorConfig !== null &&
+      'positions' in evaluatorConfig
+    ) {
+      const config = evaluatorConfig as unknown as ExactPlayerConfig
+      if (config.positions && config.positions.length > 0) {
+        // Filter players by position
+        return players.filter(
+          (p) => p.Player.position && config.positions!.includes(p.Player.position)
+        )
+      }
+    }
+    // No filter - return all players
+    return players
+  }, [players, specialBet.Evaluator?.config])
+
   const handleSave = async () => {
     if (isLocked) return
 
@@ -110,23 +127,19 @@ export function SpecialBetCard({
     }
   }
 
-  const handleTeamChange = (val: string) => {
+  const handleTeamChange = (val: number | null) => {
     setIsSaved(false)
-    if (val === 'none') {
-      setTeamId(null)
-    } else {
-      setTeamId(parseInt(val, 10))
+    setTeamId(val)
+    if (val !== null) {
       setPlayerId(null)
       setValue(null)
     }
   }
 
-  const handlePlayerChange = (val: string) => {
+  const handlePlayerChange = (val: number | null) => {
     setIsSaved(false)
-    if (val === 'none') {
-      setPlayerId(null)
-    } else {
-      setPlayerId(parseInt(val, 10))
+    setPlayerId(val)
+    if (val !== null) {
       setTeamId(null)
       setValue(null)
     }
@@ -290,52 +303,26 @@ export function SpecialBetCard({
           <div className="space-y-2">
             {/* Team selection */}
             {isTeamBet && (
-              <Select
-                value={teamId?.toString() || 'none'}
-                onValueChange={handleTeamChange}
+              <SearchableSelect
+                value={teamId}
+                onChange={handleTeamChange}
+                placeholder={t('selectTeam')}
+                noSelectionLabel={t('noSelection')}
                 disabled={isLocked}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t('selectTeam')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('noSelection')}</SelectItem>
-                  {availableTeams.map((t) => (
-                    <SelectItem key={t.id} value={t.id.toString()}>
-                      <div className="flex items-center gap-2">
-                        <TeamFlag
-                          flagIcon={t.Team.flagIcon ?? null}
-                          flagType={t.Team.flagType ?? null}
-                          teamName={t.Team.name}
-                          size="sm"
-                        />
-                        <span>{t.Team.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                teams={availableTeams}
+              />
             )}
 
             {/* Player selection */}
             {isPlayerBet && (
-              <Select
-                value={playerId?.toString() || 'none'}
-                onValueChange={handlePlayerChange}
+              <SearchableSelect
+                value={playerId}
+                onChange={handlePlayerChange}
+                placeholder={t('selectPlayer')}
+                noSelectionLabel={t('noSelection')}
                 disabled={isLocked}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t('selectPlayer')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('noSelection')}</SelectItem>
-                  {players.map((p) => (
-                    <SelectItem key={p.id} value={p.id.toString()}>
-                      {p.Player.firstName} {p.Player.lastName} ({p.LeagueTeam.Team.shortcut})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                players={availablePlayers}
+              />
             )}
 
             {/* Value input */}
