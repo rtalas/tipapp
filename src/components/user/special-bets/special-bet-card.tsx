@@ -3,13 +3,14 @@
 import { useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
-import { Trophy, Target, Lock, Clock, Check, Users, CheckCircle } from 'lucide-react'
+import { Trophy, Target, Clock, Check, Users, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
+import { StatusBadge } from '@/components/user/common/status-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
 import { SearchableSelect } from '@/components/user/special-bets/searchable-select'
 import { TeamFlag } from '@/components/common/team-flag'
@@ -216,19 +217,17 @@ export function SpecialBetCard({
                 )}
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                {isLocked && !isEvaluated && (
-                  <span className="badge-locked flex items-center gap-0.5 text-[9px] sm:text-[10px]">
-                    <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    <span className="hidden xs:inline">{t('locked')}</span>
-                  </span>
-                )}
-                {!isLocked && <CountdownBadge deadline={specialBet.dateTime} />}
-                {!isLocked && (
+                {/* Status badge: Scheduled or Awaiting evaluation */}
+                <StatusBadge dateTime={specialBet.dateTime} isEvaluated={isEvaluated} />
+                {/* Countdown and time badges - only show for non-evaluated events */}
+                {!isEvaluated && !isLocked && <CountdownBadge deadline={specialBet.dateTime} />}
+                {!isEvaluated && (
                   <span className="badge-upcoming flex items-center gap-0.5 text-[9px] sm:text-[10px]">
                     <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                     {format(specialBet.dateTime, 'HH:mm')}
                   </span>
                 )}
+                {/* Points badge - only show for evaluated special bets */}
                 {isEvaluated && specialBet.userBet && (
                   <span
                     className={cn(

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { Swords } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -8,7 +8,9 @@ import { RefreshButton } from '@/components/user/common/refresh-button'
 import { PullToRefresh } from '@/components/user/common/pull-to-refresh'
 import { SeriesCard } from './series-card'
 import { useRefresh } from '@/hooks/useRefresh'
-import { groupByDate, getDateLabel } from '@/lib/date-grouping-utils'
+import { useDateLocale } from '@/hooks/useDateLocale'
+import { groupByDate, getDateLabel as getBasicDateLabel } from '@/lib/date-grouping-utils'
+import { isCurrentEvent, isPastEvent } from '@/lib/event-status-utils'
 import type { UserSeries } from '@/actions/user/series'
 
 interface SeriesListProps {
@@ -19,12 +21,23 @@ type FilterType = 'current' | 'past'
 
 export function SeriesList({ series }: SeriesListProps) {
   const t = useTranslations('user.series')
+  const tMatches = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
   const [filter, setFilter] = useState<FilterType>('current')
+  const dateLocale = useDateLocale()
 
-  // Filter series
-  const currentSeries = series.filter((s) => !s.isEvaluated)
-  const pastSeries = series.filter((s) => s.isEvaluated)
+  const getDateLabel = useCallback(
+    (date: Date) =>
+      getBasicDateLabel(date, dateLocale, {
+        today: tMatches('today'),
+        tomorrow: tMatches('tomorrow'),
+      }),
+    [dateLocale, tMatches]
+  )
+
+  // Filter series - current: scheduled or within 3 hours after start
+  const currentSeries = series.filter((s) => isCurrentEvent(s.dateTime))
+  const pastSeries = series.filter((s) => isPastEvent(s.dateTime))
   const displayedSeries = filter === 'current' ? currentSeries : pastSeries
 
   // Group by date

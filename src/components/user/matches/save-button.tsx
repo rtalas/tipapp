@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl'
 import { Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -11,6 +12,7 @@ interface SaveButtonProps {
 }
 
 export function SaveButton({ isSaving, isSaved, onClick, sportId }: SaveButtonProps) {
+  const t = useTranslations('user.matches')
   const sportGradient =
     sportId === SPORT_IDS.HOCKEY ? 'gradient-hockey' : 'gradient-football'
 
@@ -25,16 +27,16 @@ export function SaveButton({ isSaving, isSaved, onClick, sportId }: SaveButtonPr
       onClick={onClick}
     >
       {isSaving ? (
-        <span className="animate-pulse">Saving...</span>
+        <span className="animate-pulse">{t('saving')}</span>
       ) : isSaved ? (
         <>
           <Check className="w-4 h-4 mr-2" />
-          Saved
+          {t('saved')}
         </>
       ) : (
         <>
           <Check className="w-4 h-4 mr-2" />
-          Save Prediction
+          {t('savePrediction')}
         </>
       )}
     </Button>

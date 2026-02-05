@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -28,6 +29,7 @@ export function BetControls({
   noScorer,
   onNoScorerChange,
 }: BetControlsProps) {
+  const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
   const homeTeamName = homeTeam.Team.shortcut || homeTeam.Team.name
@@ -40,7 +42,7 @@ export function BetControls({
       {/* Soccer Playoff: Team Advancement Radio Buttons */}
       {sportId === SPORT_IDS.FOOTBALL && isPlayoff ? (
         <div className="space-y-2">
-          <p className="text-xs text-center text-muted-foreground">Who will advance?</p>
+          <p className="text-xs text-center text-muted-foreground">{t('whoWillAdvance')}</p>
           <RadioGroup
             value={
               homeAdvanced === true ? 'home' : homeAdvanced === false ? 'away' : 'none'
@@ -83,7 +85,7 @@ export function BetControls({
             htmlFor={`overtime-${match.id}`}
             className="text-xs text-muted-foreground cursor-pointer select-none"
           >
-            Overtime / Shootout
+            {t('overtimeShootout')}
           </Label>
         </div>
       )}

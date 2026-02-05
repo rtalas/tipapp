@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
-import { HelpCircle, Lock, Clock, Check, Users, CheckCircle, XCircle } from 'lucide-react'
+import { HelpCircle, Clock, Check, Users, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
+import { StatusBadge } from '@/components/user/common/status-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
 import { cn } from '@/lib/utils'
 import { getUserDisplayName, getUserInitials } from '@/lib/user-display-utils'
@@ -100,19 +101,17 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
                 {question.text}
               </h3>
               <div className="flex items-center gap-1 shrink-0">
-                {isLocked && !isEvaluated && (
-                  <span className="badge-locked flex items-center gap-0.5 text-[9px] sm:text-[10px]">
-                    <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    <span className="hidden xs:inline">{t('locked')}</span>
-                  </span>
-                )}
-                {!isLocked && <CountdownBadge deadline={question.dateTime} />}
-                {!isLocked && (
+                {/* Status badge: Scheduled or Awaiting evaluation */}
+                <StatusBadge dateTime={question.dateTime} isEvaluated={isEvaluated} />
+                {/* Countdown and time badges - only show for non-evaluated events */}
+                {!isEvaluated && !isLocked && <CountdownBadge deadline={question.dateTime} />}
+                {!isEvaluated && (
                   <span className="badge-upcoming flex items-center gap-0.5 text-[9px] sm:text-[10px]">
                     <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                     {format(question.dateTime, 'HH:mm')}
                   </span>
                 )}
+                {/* Points badge - only show for evaluated questions */}
                 {isEvaluated && question.userBet && (
                   <span
                     className={cn(

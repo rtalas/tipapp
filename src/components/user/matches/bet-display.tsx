@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl'
 import { Checkbox } from '@/components/ui/checkbox'
 import { SPORT_IDS } from '@/lib/constants'
 import type { UserMatch } from '@/actions/user/matches'
@@ -8,6 +9,7 @@ interface BetDisplayProps {
 }
 
 export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
+  const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
   const homeTeamName = homeTeam.Team.shortcut || homeTeam.Team.name
@@ -25,7 +27,7 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
       match.userBet.homeAdvanced !== null ? (
         <div className="flex items-center justify-center gap-1.5 text-xs">
           <span className="text-muted-foreground">
-            {isEvaluated ? 'Advancing:' : 'Advancing:'}
+            {t('advancing')}
           </span>
           <span className="font-medium text-foreground">
             {match.userBet.homeAdvanced ? homeTeamName : awayTeamName}
@@ -40,7 +42,7 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
               disabled
               className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
             />
-            <span className="text-xs text-muted-foreground">Overtime / Shootout</span>
+            <span className="text-xs text-muted-foreground">{t('overtimeShootout')}</span>
           </div>
         )
       )}
@@ -48,8 +50,8 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
       {/* Hockey Overtime Display (evaluated only) */}
       {isEvaluated && sportId === SPORT_IDS.HOCKEY && match.userBet.overtime && (
         <div className="flex items-center justify-center gap-1.5 text-xs">
-          <span className="text-muted-foreground">Your bet:</span>
-          <span className="font-medium text-foreground">Overtime / Shootout</span>
+          <span className="text-muted-foreground">{t('yourBet')}</span>
+          <span className="font-medium text-foreground">{t('overtimeShootout')}</span>
         </div>
       )}
 
@@ -57,16 +59,16 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
       {match.userBet.noScorer ? (
         <div className="flex items-center justify-center gap-1.5 text-xs">
           <span className="text-muted-foreground">
-            {isEvaluated ? 'Your scorer:' : 'Scorer:'}
+            {isEvaluated ? t('yourScorer') : t('scorer')}
           </span>
-          <span className="font-medium text-foreground italic">No Scorer (0:0)</span>
+          <span className="font-medium text-foreground italic">{t('noScorer')}</span>
         </div>
       ) : (
         match.userBet.scorerId &&
         match.userBet.LeaguePlayer && (
           <div className="flex items-center justify-center gap-1.5 text-xs">
             <span className="text-muted-foreground">
-              {isEvaluated ? 'Your scorer:' : 'Scorer:'}
+              {isEvaluated ? t('yourScorer') : t('scorer')}
             </span>
             <span className="font-medium text-foreground">
               {match.userBet.LeaguePlayer.Player.firstName}{' '}

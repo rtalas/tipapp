@@ -1,3 +1,4 @@
+import { CheckCircle } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { getUserDisplayName, getUserInitials } from '@/lib/user-display-utils'
@@ -17,6 +18,9 @@ export function FriendPredictionsList({
   const hasResult =
     match.Match.homeRegularScore !== null && match.Match.awayRegularScore !== null
 
+  // Get actual scorer IDs from match
+  const actualScorerIds = match.Match.MatchScorer?.map((s) => s.LeaguePlayer?.id) ?? []
+
   return (
     <>
       {predictions.map((prediction) => {
@@ -33,6 +37,12 @@ export function FriendPredictionsList({
           ? `${prediction.LeaguePlayer.Player.firstName || ''} ${prediction.LeaguePlayer.Player.lastName || ''}`.trim()
           : null
 
+        // Check if predicted scorer is in actual scorers
+        const isScorerCorrect =
+          isEvaluated &&
+          prediction.LeaguePlayer?.id &&
+          actualScorerIds.includes(prediction.LeaguePlayer.id)
+
         return (
           <div
             key={prediction.id}
@@ -47,7 +57,12 @@ export function FriendPredictionsList({
               <div className="flex flex-col">
                 <span className="font-medium text-sm">{displayName}</span>
                 {scorerName && (
-                  <span className="text-xs text-muted-foreground">Scorer: {scorerName}</span>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    Scorer: {scorerName}
+                    {isScorerCorrect && (
+                      <CheckCircle className="w-3 h-3 text-primary" />
+                    )}
+                  </span>
                 )}
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl'
 import { ScoreInput } from './score-input'
 import { TeamFlag } from '@/components/common/team-flag'
 import type { UserMatch } from '@/actions/user/matches'
@@ -19,6 +20,7 @@ export function MatchTeamsDisplay({
   onHomeScoreChange,
   onAwayScoreChange,
 }: MatchTeamsDisplayProps) {
+  const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
   const homeTeamName = homeTeam.Team.shortcut || homeTeam.Team.name
@@ -51,7 +53,7 @@ export function MatchTeamsDisplay({
           <div className="flex flex-col items-center gap-1">
             {hasResult && (
               <>
-                <span className="text-[10px] text-muted-foreground uppercase">Result</span>
+                <span className="text-[10px] text-muted-foreground uppercase">{t('result')}</span>
                 <span className="text-lg font-black text-foreground">
                   {match.Match.homeRegularScore} : {match.Match.awayRegularScore}
                 </span>
@@ -65,7 +67,7 @@ export function MatchTeamsDisplay({
             )}
             {match.userBet && (
               <div className="flex items-center gap-1">
-                <span className="text-[10px] text-muted-foreground">Your bet:</span>
+                <span className="text-[10px] text-muted-foreground">{t('yourBetShort')}</span>
                 <span className="text-xs font-semibold text-primary">
                   {match.userBet.homeScore}:{match.userBet.awayScore}
                 </span>

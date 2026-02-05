@@ -1,22 +1,27 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
-import { HelpCircle, Check, X, Lock, Clock, Users, CheckCircle, XCircle } from 'lucide-react'
+import { HelpCircle, Check, X, Clock, Users, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
+import { StatusBadge } from '@/components/user/common/status-badge'
 import { RefreshButton } from '@/components/user/common/refresh-button'
 import { useRefresh } from '@/hooks/useRefresh'
+import { useDateLocale } from '@/hooks/useDateLocale'
 import { cn } from '@/lib/utils'
-import { groupByDate, getDateLabel } from '@/lib/date-grouping-utils'
+import { groupByDate, getDateLabel as getBasicDateLabel } from '@/lib/date-grouping-utils'
+import { isCurrentEvent, isPastEvent } from '@/lib/event-status-utils'
 import { saveQuestionBet } from '@/actions/user/questions'
 import type { UserQuestion } from '@/actions/user/questions'
 
@@ -29,10 +34,21 @@ type FilterType = 'current' | 'past'
 export function QuestionsList({ questions }: QuestionsListProps) {
   const { isRefreshing, refresh } = useRefresh()
   const [filter, setFilter] = useState<FilterType>('current')
+  const dateLocale = useDateLocale()
+  const tMatches = useTranslations('user.matches')
 
-  // Filter questions
-  const currentQuestions = questions.filter((q) => !q.isEvaluated)
-  const pastQuestions = questions.filter((q) => q.isEvaluated)
+  const getDateLabel = useCallback(
+    (date: Date) =>
+      getBasicDateLabel(date, dateLocale, {
+        today: tMatches('today'),
+        tomorrow: tMatches('tomorrow'),
+      }),
+    [dateLocale, tMatches]
+  )
+
+  // Filter questions - current: scheduled or within 3 hours after start
+  const currentQuestions = questions.filter((q) => isCurrentEvent(q.dateTime))
+  const pastQuestions = questions.filter((q) => isPastEvent(q.dateTime))
   const displayedQuestions = filter === 'current' ? currentQuestions : pastQuestions
 
   // Group by date
@@ -132,6 +148,7 @@ function QuestionCard({
   question: UserQuestion
   onSaved: () => void
 }) {
+  const t = useTranslations('user.questions')
   const isLocked = !question.isBettingOpen
   const isEvaluated = question.isEvaluated
   const currentAnswer = question.userBet?.userBet
@@ -188,19 +205,17 @@ function QuestionCard({
                 {question.text}
               </h3>
               <div className="flex items-center gap-1 shrink-0">
-                {isLocked && !isEvaluated && (
-                  <span className="badge-locked flex items-center gap-0.5 text-[9px] sm:text-[10px]">
-                    <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    <span className="hidden xs:inline">Locked</span>
-                  </span>
-                )}
-                {!isLocked && <CountdownBadge deadline={question.dateTime} />}
-                {!isLocked && (
+                {/* Status badge: Scheduled or Awaiting evaluation */}
+                <StatusBadge dateTime={question.dateTime} isEvaluated={isEvaluated} />
+                {/* Countdown and time badges - only show for non-evaluated events */}
+                {!isEvaluated && !isLocked && <CountdownBadge deadline={question.dateTime} />}
+                {!isEvaluated && (
                   <span className="badge-upcoming flex items-center gap-0.5 text-[9px] sm:text-[10px]">
                     <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                     {format(question.dateTime, 'HH:mm')}
                   </span>
                 )}
+                {/* Points badge - only show for evaluated questions */}
                 {isEvaluated && question.userBet && (
                   <span
                     className={cn(
@@ -270,7 +285,7 @@ function QuestionCard({
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>Friends&apos; picks</span>
+                <span>{t('friendsPicks')}</span>
               </button>
             </div>
           </div>
@@ -313,11 +328,11 @@ function QuestionCard({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{question.text}</DialogTitle>
-            {isEvaluated && question.result !== null && (
-              <p className="text-sm text-muted-foreground">
-                Correct answer: {question.result ? 'Yes' : 'No'}
-              </p>
-            )}
+            <DialogDescription>
+              {isEvaluated && question.result !== null
+                ? `Correct answer: ${question.result ? 'Yes' : 'No'}`
+                : "Friends' Answers"}
+            </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
             <div className="flex items-center gap-2 mb-3">

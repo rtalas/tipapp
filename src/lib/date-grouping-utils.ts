@@ -3,6 +3,7 @@
  */
 
 import { format, isToday, isTomorrow, startOfDay } from 'date-fns'
+import type { Locale } from 'date-fns'
 
 /**
  * Group items by date (ignoring time)
@@ -34,13 +35,23 @@ export function groupByDate<T>(
 /**
  * Get a human-readable label for a date
  * Returns "Today", "Tomorrow", or formatted date string
+ * @param date - The date to format
+ * @param locale - Optional date-fns locale for localized day/month names
+ * @param translations - Optional translations for Today/Tomorrow
  */
-export function getDateLabel(date: Date): string {
+export function getDateLabel(
+  date: Date,
+  locale?: Locale,
+  translations?: { today: string; tomorrow: string }
+): string {
   if (isToday(date)) {
-    return 'Today'
+    return translations?.today ?? 'Today'
   }
   if (isTomorrow(date)) {
-    return 'Tomorrow'
+    return translations?.tomorrow ?? 'Tomorrow'
   }
-  return format(date, 'EEEE, MMM d')
+  // Czech format: "pátek, 13.2." - English format: "Friday, Feb 13"
+  const isCzech = locale?.code === 'cs'
+  const dateFormat = isCzech ? 'EEEE, d.M.' : 'EEEE, MMM d'
+  return format(date, dateFormat, { locale })
 }

@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
-import { Swords, Minus, Plus, Check, Lock, Clock, Users } from 'lucide-react'
+import { Swords, Minus, Plus, Check, Clock, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
+import { StatusBadge } from '@/components/user/common/status-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
 import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
@@ -132,19 +133,17 @@ export function SeriesCard({ series, onSaved }: SeriesCardProps) {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            {isLocked && (
-              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-muted-foreground text-[10px] font-medium">
-                <Lock className="w-3 h-3" />
-                {t('locked')}
-              </span>
-            )}
-            {!isLocked && <CountdownBadge deadline={series.dateTime} />}
-            {!isLocked && (
+            {/* Status badge: Scheduled or Awaiting evaluation */}
+            <StatusBadge dateTime={series.dateTime} isEvaluated={isEvaluated} />
+            {/* Countdown and time badges - only show for non-evaluated events */}
+            {!isEvaluated && !isLocked && <CountdownBadge deadline={series.dateTime} />}
+            {!isEvaluated && (
               <span className="badge-upcoming flex items-center gap-1 text-[10px]">
                 <Clock className="w-3 h-3" />
                 {format(series.dateTime, 'HH:mm')}
               </span>
             )}
+            {/* Points badge - only show for evaluated series */}
             {isEvaluated && series.userBet && (
               <span
                 className={cn(

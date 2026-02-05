@@ -9,11 +9,13 @@ import {
 import { Calendar } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { groupByDate, getDateLabel as getBasicDateLabel } from '@/lib/date-grouping-utils'
+import { isCurrentEvent, isPastEvent } from '@/lib/event-status-utils'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MatchCard } from './match-card'
 import { RefreshButton } from '@/components/user/common/refresh-button'
 import { PullToRefresh } from '@/components/user/common/pull-to-refresh'
 import { useRefresh } from '@/hooks/useRefresh'
+import { useDateLocale } from '@/hooks/useDateLocale'
 import type { UserMatch } from '@/actions/user/matches'
 
 interface MatchListProps {
@@ -26,32 +28,34 @@ export function MatchList({ matches }: MatchListProps) {
   const t = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
   const [filter, setFilter] = useState<FilterType>('upcoming')
+  const dateLocale = useDateLocale()
 
   // Extended date label for match list (includes "this week" check)
   const getDateLabel = useCallback((date: Date): string => {
-    const basicLabel = getBasicDateLabel(date)
-    // If it's today or tomorrow, use translated label
-    if (basicLabel === 'Today') {
-      return t('today')
-    }
-    if (basicLabel === 'Tomorrow') {
-      return t('tomorrow')
+    const basicLabel = getBasicDateLabel(date, dateLocale, {
+      today: t('today'),
+      tomorrow: t('tomorrow'),
+    })
+    // If it's today or tomorrow, return the translated label
+    if (basicLabel === t('today') || basicLabel === t('tomorrow')) {
+      return basicLabel
     }
     // For this week, show just the day name
     if (isThisWeek(date)) {
-      return format(date, 'EEEE') // Day name
+      return format(date, 'EEEE', { locale: dateLocale }) // Day name
     }
+    // Otherwise use the locale-aware format from getBasicDateLabel
     return basicLabel
-  }, [t])
+  }, [t, dateLocale])
 
   // Filter matches based on selected tab
+  // Current: scheduled or within 3 hours after start
+  // Past: more than 3 hours after start
   const filteredMatches = useMemo(() => {
-    const now = new Date()
-
     if (filter === 'upcoming') {
-      return matches.filter((m) => m.Match.dateTime > now)
+      return matches.filter((m) => isCurrentEvent(m.Match.dateTime))
     }
-    return matches.filter((m) => m.Match.dateTime <= now)
+    return matches.filter((m) => isPastEvent(m.Match.dateTime))
   }, [matches, filter])
 
   // Sort matches: upcoming ones ascending, past ones descending

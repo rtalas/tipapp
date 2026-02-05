@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
@@ -20,6 +21,7 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ match, onBetSaved }: MatchCardProps) {
+  const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
   const isLocked = !match.isBettingOpen
@@ -213,7 +215,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Friends&apos; picks</span>
+              <span>{t('friendsPicks')}</span>
             </button>
           </div>
         )}
@@ -226,17 +228,17 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
         title={`${homeTeamName} vs ${awayTeamName}`}
         subtitle={
           hasResult
-            ? `Final: ${match.Match.homeRegularScore} - ${match.Match.awayRegularScore}${
+            ? `${t('final')} ${match.Match.homeRegularScore} - ${match.Match.awayRegularScore}${
                 match.Match.isOvertime ? ' (OT)' : ''
               }${match.Match.isShootout ? ' (SO)' : ''}`
             : undefined
         }
-        sectionLabel="Friends' Predictions"
+        sectionLabel={t('friendsPredictions')}
         isLocked={isLocked}
         isLoading={isLoadingFriends}
         predictions={friendPredictions}
-        emptyMessage="No friends' predictions yet"
-        lockedMessage="Friends' picks will be visible after betting closes"
+        emptyMessage={t('noFriendsPredictions')}
+        lockedMessage={t('friendsPicksLater')}
       >
         <FriendPredictionsList
           predictions={friendPredictions}

@@ -17,7 +17,9 @@
     "search": "Hledat...",
     "actions": "Akce",
     "name": "Název",
-    "status": "Stav",
+    "status": {
+      "awaitingEvaluation": "Čeká na vyhodnocení"
+    },
     "noResults": "Žádné výsledky",
     "error": "Chyba",
     "success": "Úspěch"
@@ -156,7 +158,28 @@
       "locked": "Sázení uzavřeno",
       "saveSuccess": "Sázka úspěšně uložena",
       "saveError": "Nepodařilo se uložit sázku",
-      "loading": "Načítání zápasů..."
+      "loading": "Načítání zápasů...",
+      "overtimeShootout": "Prodloužení / Nájezdy",
+      "whoWillAdvance": "Kdo postoupí?",
+      "advancing": "Postoupí:",
+      "yourBet": "Váš tip:",
+      "scorer": "Střelec:",
+      "yourScorer": "Váš střelec:",
+      "noScorer": "Bez střelce (0:0)",
+      "noScorerGame": "Bez střelce (zápas 0:0)",
+      "selectScorer": "Vyberte střelce",
+      "searchPlayer": "Hledat hráče...",
+      "noPlayersFound": "Žádní hráči nenalezeni",
+      "friendsPicks": "Tipy přátel",
+      "friendsPicksLater": "Tipy přátel budou viditelné po uzavření sázení",
+      "friendsPredictions": "Tipy přátel",
+      "noFriendsPredictions": "Zatím žádné tipy přátel",
+      "final": "Výsledek:",
+      "result": "Výsledek",
+      "yourBetShort": "Váš tip:",
+      "saved": "Uloženo",
+      "saving": "Ukládání...",
+      "savePrediction": "Uložit tip"
     },
     "leaderboard": {
       "title": "Žebříček",

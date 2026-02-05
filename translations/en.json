@@ -17,7 +17,9 @@
     "search": "Search...",
     "actions": "Actions",
     "name": "Name",
-    "status": "Status",
+    "status": {
+      "awaitingEvaluation": "Awaiting evaluation"
+    },
     "noResults": "No results found",
     "error": "Error",
     "success": "Success"
@@ -156,7 +158,28 @@
       "locked": "Betting locked",
       "saveSuccess": "Bet saved successfully",
       "saveError": "Failed to save bet",
-      "loading": "Loading matches..."
+      "loading": "Loading matches...",
+      "overtimeShootout": "Overtime / Shootout",
+      "whoWillAdvance": "Who will advance?",
+      "advancing": "Advancing:",
+      "yourBet": "Your bet:",
+      "scorer": "Scorer:",
+      "yourScorer": "Your scorer:",
+      "noScorer": "No Scorer (0:0)",
+      "noScorerGame": "No Scorer (0:0 game)",
+      "selectScorer": "Select scorer",
+      "searchPlayer": "Search player...",
+      "noPlayersFound": "No players found",
+      "friendsPicks": "Friends' picks",
+      "friendsPicksLater": "Friends' picks will be visible after betting closes",
+      "friendsPredictions": "Friends' Predictions",
+      "noFriendsPredictions": "No friends' predictions yet",
+      "final": "Final:",
+      "result": "Result",
+      "yourBetShort": "Your bet:",
+      "saved": "Saved",
+      "saving": "Saving...",
+      "savePrediction": "Save Prediction"
     },
     "leaderboard": {
       "title": "Leaderboard",

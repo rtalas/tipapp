@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { Check, ChevronsUpDown, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -92,6 +93,7 @@ export function ScorerSelect({
   disabled = false,
   className,
 }: ScorerSelectProps) {
+  const t = useTranslations('user.matches')
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
 
@@ -144,7 +146,7 @@ export function ScorerSelect({
         >
           <span className="truncate">
             {noScorer === true ? (
-              <span className="text-muted-foreground italic">No Scorer (0:0)</span>
+              <span className="text-muted-foreground italic">{t('noScorer')}</span>
             ) : selectedPlayer ? (
               <span className="flex items-center">
                 {getPlayerName(selectedPlayer)}
@@ -153,7 +155,7 @@ export function ScorerSelect({
                 )}
               </span>
             ) : (
-              'Select scorer'
+              t('selectScorer')
             )}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -163,7 +165,7 @@ export function ScorerSelect({
         <div className="flex items-center border-b px-3 py-2">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <Input
-            placeholder="Search player..."
+            placeholder={t('searchPlayer')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -187,7 +189,7 @@ export function ScorerSelect({
                     noScorer === true ? 'opacity-100' : 'opacity-0'
                   )}
                 />
-                <span className="italic">No Scorer (0:0 game)</span>
+                <span className="italic">{t('noScorerGame')}</span>
               </button>
             )}
 
@@ -272,7 +274,7 @@ export function ScorerSelect({
             {/* No results */}
             {filteredHomePlayers.length === 0 && filteredAwayPlayers.length === 0 && search && (
               <div className="py-6 text-center text-sm text-muted-foreground">
-                No players found
+                {t('noPlayersFound')}
               </div>
             )}
           </div>

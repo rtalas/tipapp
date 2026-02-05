@@ -1,6 +1,7 @@
-import { Zap, Lock, Clock } from 'lucide-react'
+import { Zap, Clock } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { StatusBadge } from '@/components/user/common/status-badge'
 import type { UserMatch } from '@/actions/user/matches'
 
 interface MatchHeaderProps {
@@ -55,18 +56,16 @@ export function MatchHeader({
             2x
           </span>
         )}
-        {isLocked && (
-          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-muted-foreground text-[10px] font-medium">
-            <Lock className="w-3 h-3" />
-            Locked
-          </span>
-        )}
-        {!isLocked && (
+        {/* Status badge: Scheduled or Awaiting evaluation */}
+        <StatusBadge dateTime={match.Match.dateTime} isEvaluated={isEvaluated} />
+        {/* Time badge - only show for non-evaluated events */}
+        {!isEvaluated && (
           <span className="badge-upcoming flex items-center gap-1 text-[10px]">
             <Clock className="w-3 h-3" />
             {format(match.Match.dateTime, 'HH:mm')}
           </span>
         )}
+        {/* Points badge - only show for evaluated matches */}
         {isEvaluated && match.userBet && (
           <span
             className={cn(

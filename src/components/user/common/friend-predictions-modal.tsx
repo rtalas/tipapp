@@ -3,6 +3,7 @@ import { Users } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -64,11 +65,9 @@ export function FriendPredictionsModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          {subtitle && (
-            <p className="text-sm text-muted-foreground">
-              {subtitle}
-            </p>
-          )}
+          <DialogDescription>
+            {subtitle || sectionLabel}
+          </DialogDescription>
         </DialogHeader>
         <div className="mt-4">
           <div className="flex items-center gap-2 mb-3">

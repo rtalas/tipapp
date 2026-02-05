@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { Trophy } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -9,7 +9,9 @@ import { PullToRefresh } from '@/components/user/common/pull-to-refresh'
 import { SpecialBetCard } from './special-bet-card'
 import { QuestionCard } from '@/components/user/questions/question-card'
 import { useRefresh } from '@/hooks/useRefresh'
-import { groupByDate, getDateLabel } from '@/lib/date-grouping-utils'
+import { useDateLocale } from '@/hooks/useDateLocale'
+import { groupByDate, getDateLabel as getBasicDateLabel } from '@/lib/date-grouping-utils'
+import { isCurrentEvent, isPastEvent } from '@/lib/event-status-utils'
 import type { UserSpecialBet } from '@/actions/user/special-bets'
 import type { UserQuestion } from '@/actions/user/questions'
 
@@ -38,8 +40,19 @@ export function SpecialBetsList({
   questions,
 }: SpecialBetsListProps) {
   const t = useTranslations('user.specialBets')
+  const tMatches = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
   const [filter, setFilter] = useState<FilterType>('current')
+  const dateLocale = useDateLocale()
+
+  const getDateLabel = useCallback(
+    (date: Date) =>
+      getBasicDateLabel(date, dateLocale, {
+        today: tMatches('today'),
+        tomorrow: tMatches('tomorrow'),
+      }),
+    [dateLocale, tMatches]
+  )
 
   // Combine special bets and questions into unified items
   const allItems: UnifiedItem[] = useMemo(() => {
@@ -60,9 +73,9 @@ export function SpecialBetsList({
     return [...betItems, ...questionItems]
   }, [specialBets, questions])
 
-  // Filter items - current = not evaluated, past = evaluated
-  const currentItems = allItems.filter((item) => !item.isEvaluated)
-  const pastItems = allItems.filter((item) => item.isEvaluated)
+  // Filter items - current: scheduled or within 3 hours after start
+  const currentItems = allItems.filter((item) => isCurrentEvent(item.dateTime))
+  const pastItems = allItems.filter((item) => isPastEvent(item.dateTime))
   const displayedItems = filter === 'current' ? currentItems : pastItems
 
   // Group by date
