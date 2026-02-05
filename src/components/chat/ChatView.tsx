@@ -36,7 +36,7 @@ export function ChatView({
   } = useMessages({
     leagueId,
     initialMessages,
-    pollingInterval: 5000000, // todo: make this as config for tournament dates
+    pollingInterval: 30000,
     enabled: true,
   })
 
