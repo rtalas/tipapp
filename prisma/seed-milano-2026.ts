@@ -382,10 +382,44 @@ const rostersData: Record<string, PlayerData[]> = {
   ],
 }
 
+// Questions data: [date, time, text]
+const questionsData: [string, string, string][] = [
+  ['2026-02-11', '16:40', 'Gól do času 4:00'],
+  ['2026-02-12', '12:10', 'Týmy s 3 a více góly > 3'],
+  ['2026-02-13', '12:10', 'Bude prodloužení?'],
+  ['2026-02-14', '12:10', 'Počet vyloučení > 21'],
+  ['2026-02-15', '12:10', 'Gól do prázdné v posl.minutě'],
+]
+
+// Special bets data: [name, evaluatorName, group?]
+// evaluatorName references the evaluators defined below
+// group: null = all teams, 'A'/'B'/'C' = filter to specific group
+const specialBetsData: [string, string, string | null][] = [
+  // Medal bets - all teams can be selected
+  ['Zlato', 'Tým 40b', null],
+  ['Stříbro', 'Tým 30b', null],
+  ['Bronz', 'Tým 20b', null],
+  // Player awards - filtered by position
+  ['Nejlepší brankář', 'Brankář 30b', null],
+  ['Nejlepší obránce', 'Obránce 30b', null],
+  ['Nejlepší útočník', 'Útočník 30b', null],
+  // Player awards - all players
+  ['Nejproduktivnější hráč', 'Hráč 30b', null],
+  ['Nejlepší střelec', 'Hráč 30b', null],
+  ['MVP turnaje', 'Hráč 30b', null],
+  // Tournament stats
+  ['Celkový počet gólů na turnaji', 'Hodnota 50b', null],
+  // Group winners - filter to specific group
+  ['Vítěz skupiny A', 'Tým 14b', 'A'],
+  ['Vítěz skupiny B', 'Tým 14b', 'B'],
+  ['Vítěz skupiny C', 'Tým 14b', 'C'],
+  ['Postupující z 2.místa', 'Tým 14b', null],
+]
+
 // Default evaluators for hockey leagues
 const defaultHockeyEvaluators = [
   // Match evaluators
-  { name: 'Přesný výsledek', type: 'exact_score', entity: 'match', points: 5 },
+  { name: 'Přesný výsledek', type: 'exact_score', entity: 'match', points: 8 },
   { name: 'Skóre rozdíl', type: 'score_difference', entity: 'match', points: 3 },
   { name: 'Skóre jednoho týmu', type: 'one_team_score', entity: 'match', points: 1 },
   { name: 'Vítěz zápasu', type: 'winner', entity: 'match', points: 5 },
@@ -400,7 +434,18 @@ const defaultHockeyEvaluators = [
     },
   },
   // Question evaluator
-  { name: 'Otázka', type: 'question', entity: 'question', points: 6 },
+  { name: 'Otázka', type: 'question', entity: 'question', points: 8 },
+  // Special bet evaluators - separate evaluator for each point value
+  { name: 'Tým 40b', type: 'exact_team', entity: 'special', points: 40 },
+  { name: 'Tým 30b', type: 'exact_team', entity: 'special', points: 30 },
+  { name: 'Tým 20b', type: 'exact_team', entity: 'special', points: 20 },
+  { name: 'Tým 14b', type: 'exact_team', entity: 'special', points: 14 },
+  // Player evaluators with position filtering
+  { name: 'Brankář 30b', type: 'exact_player', entity: 'special', points: 30, config: { positions: ['G'] } },
+  { name: 'Obránce 30b', type: 'exact_player', entity: 'special', points: 30, config: { positions: ['D'] } },
+  { name: 'Útočník 30b', type: 'exact_player', entity: 'special', points: 30, config: { positions: ['F'] } },
+  { name: 'Hráč 30b', type: 'exact_player', entity: 'special', points: 30 },
+  { name: 'Hodnota 50b', type: 'closest_value', entity: 'special', points: 50 },
 ]
 
 async function main() {
@@ -419,16 +464,12 @@ async function main() {
 
   console.log(`   Found ${evaluatorTypes.length} evaluator types`)
 
-  // 2. Check if league already exists
+  // 2. Check if league already exists and delete its data
   console.log('🔍 Checking if league exists...')
   const existingLeague = await prisma.league.findFirst({
     where: {
       name: 'Milano 2026',
       deletedAt: null,
-    },
-    include: {
-      LeagueTeam: true,
-      LeagueMatch: true,
     },
   })
 
@@ -436,16 +477,84 @@ async function main() {
 
   if (existingLeague) {
     console.log('   Found existing league: Milano 2026 (ID: ' + existingLeague.id + ')')
-    console.log(`   Teams: ${existingLeague.LeagueTeam.length}, Matches: ${existingLeague.LeagueMatch.length}`)
+    console.log('🗑️  Deleting existing league data...')
 
-    // Check if league already has data
-    if (existingLeague.LeagueTeam.length > 0 || existingLeague.LeagueMatch.length > 0) {
-      console.log('')
-      console.log('⚠️  League already has data. To re-import, first delete the league teams/matches.')
-      return
+    // Delete in correct order to respect foreign key constraints
+    // 1. User bets on questions
+    const deletedUserQuestionBets = await prisma.userSpecialBetQuestion.deleteMany({
+      where: { LeagueSpecialBetQuestion: { leagueId: existingLeague.id } },
+    })
+    console.log(`   Deleted ${deletedUserQuestionBets.count} user question bets`)
+
+    // 2. User bets on special bets
+    const deletedUserSpecialBets = await prisma.userSpecialBetSingle.deleteMany({
+      where: { LeagueSpecialBetSingle: { leagueId: existingLeague.id } },
+    })
+    console.log(`   Deleted ${deletedUserSpecialBets.count} user special bets`)
+
+    // 3. Questions
+    const deletedQuestions = await prisma.leagueSpecialBetQuestion.deleteMany({
+      where: { leagueId: existingLeague.id },
+    })
+    console.log(`   Deleted ${deletedQuestions.count} questions`)
+
+    // 4. Special bet team options
+    const deletedTeamOptions = await prisma.leagueSpecialBetSingleTeamAdvanced.deleteMany({
+      where: { LeagueSpecialBetSingle: { leagueId: existingLeague.id } },
+    })
+    console.log(`   Deleted ${deletedTeamOptions.count} special bet team options`)
+
+    // 5. Special bets
+    const deletedSpecialBets = await prisma.leagueSpecialBetSingle.deleteMany({
+      where: { leagueId: existingLeague.id },
+    })
+    console.log(`   Deleted ${deletedSpecialBets.count} special bets`)
+
+    // 6. User match bets
+    const deletedUserMatchBets = await prisma.userBet.deleteMany({
+      where: { LeagueMatch: { leagueId: existingLeague.id } },
+    })
+    console.log(`   Deleted ${deletedUserMatchBets.count} user match bets`)
+
+    // 7. Get match IDs before deleting league matches
+    const leagueMatches = await prisma.leagueMatch.findMany({
+      where: { leagueId: existingLeague.id },
+      select: { matchId: true },
+    })
+    const matchIds = leagueMatches.map((lm) => lm.matchId)
+
+    // 8. League matches
+    const deletedLeagueMatches = await prisma.leagueMatch.deleteMany({
+      where: { leagueId: existingLeague.id },
+    })
+    console.log(`   Deleted ${deletedLeagueMatches.count} league matches`)
+
+    // 9. Matches
+    if (matchIds.length > 0) {
+      const deletedMatches = await prisma.match.deleteMany({
+        where: { id: { in: matchIds } },
+      })
+      console.log(`   Deleted ${deletedMatches.count} matches`)
     }
 
-    console.log('   League is empty, adding data...')
+    // 10. League players
+    const deletedLeaguePlayers = await prisma.leaguePlayer.deleteMany({
+      where: { LeagueTeam: { leagueId: existingLeague.id } },
+    })
+    console.log(`   Deleted ${deletedLeaguePlayers.count} league players`)
+
+    // 11. League teams
+    const deletedLeagueTeams = await prisma.leagueTeam.deleteMany({
+      where: { leagueId: existingLeague.id },
+    })
+    console.log(`   Deleted ${deletedLeagueTeams.count} league teams`)
+
+    // 12. Evaluators
+    const deletedEvaluators = await prisma.evaluator.deleteMany({
+      where: { leagueId: existingLeague.id },
+    })
+    console.log(`   Deleted ${deletedEvaluators.count} evaluators`)
+
     league = existingLeague
   }
 
@@ -568,6 +677,8 @@ async function main() {
 
   // 7. Create evaluators for the league
   console.log('⚙️  Creating evaluators...')
+  const evaluatorIdMap: Record<string, number> = {} // evaluator name -> evaluatorId
+
   for (const evalData of defaultHockeyEvaluators) {
     const typeId = evaluatorTypeMap[evalData.type]
     if (!typeId) {
@@ -575,7 +686,7 @@ async function main() {
       continue
     }
 
-    await prisma.evaluator.create({
+    const evaluator = await prisma.evaluator.create({
       data: {
         leagueId: league.id,
         name: evalData.name,
@@ -587,6 +698,7 @@ async function main() {
         updatedAt: now,
       },
     })
+    evaluatorIdMap[evalData.name] = evaluator.id
   }
   console.log(`   Created ${defaultHockeyEvaluators.length} evaluators`)
 
@@ -680,7 +792,63 @@ async function main() {
   }
   console.log(`   Created ${matchesData.length} matches`)
 
-  // 11. Summary
+  // 11. Create questions
+  console.log('❓ Creating questions...')
+
+  for (const [dateStr, timeStr, text] of questionsData) {
+    // Parse date and time (CET timezone for Milan)
+    const [year, month, day] = dateStr.split('-').map(Number)
+    const [hours, minutes] = timeStr.split(':').map(Number)
+
+    // Create date in CET (UTC+1)
+    const questionDate = new Date(Date.UTC(year, month - 1, day, hours - 1, minutes))
+
+    await prisma.leagueSpecialBetQuestion.create({
+      data: {
+        leagueId: league.id,
+        text: text,
+        dateTime: questionDate,
+        isEvaluated: false,
+        createdAt: now,
+        updatedAt: now,
+      },
+    })
+  }
+  console.log(`   Created ${questionsData.length} questions`)
+
+  // 12. Create special bets
+  console.log('🎯 Creating special bets...')
+
+  // Deadline for all special bets: 11.2.2026 16:40 CET
+  const specialBetDeadline = new Date(Date.UTC(2026, 1, 11, 15, 40)) // 16:40 CET = 15:40 UTC
+
+  for (const [name, evaluatorName, group] of specialBetsData) {
+    const evaluatorId = evaluatorIdMap[evaluatorName]
+    if (!evaluatorId) {
+      console.log(`   ⚠️  Evaluator not found: ${evaluatorName}`)
+      continue
+    }
+
+    // Get evaluator to fetch points
+    const evaluator = await prisma.evaluator.findUnique({ where: { id: evaluatorId } })
+
+    await prisma.leagueSpecialBetSingle.create({
+      data: {
+        leagueId: league.id,
+        name: name,
+        points: evaluator!.points,
+        evaluatorId: evaluatorId,
+        dateTime: specialBetDeadline,
+        group: group,
+        isEvaluated: false,
+        createdAt: now,
+        updatedAt: now,
+      },
+    })
+  }
+  console.log(`   Created ${specialBetsData.length} special bets`)
+
+  // 13. Summary
   console.log('')
   console.log('✅ Import completed successfully!')
   console.log('')
@@ -689,6 +857,8 @@ async function main() {
   console.log(`   Teams: ${teamsData.length}`)
   console.log(`   Players: ${leaguePlayerCount}`)
   console.log(`   Matches: ${matchesData.length}`)
+  console.log(`   Questions: ${questionsData.length}`)
+  console.log(`   Special bets: ${specialBetsData.length}`)
   console.log(`   Evaluators: ${defaultHockeyEvaluators.length}`)
   console.log('')
   console.log('🔗 Access the league at: /admin/' + league.id + '/matches')
