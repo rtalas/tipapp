@@ -21,6 +21,7 @@ async function main() {
   await prisma.message.deleteMany()
   await prisma.topScorerRankingVersion.deleteMany()
   await prisma.matchScorer.deleteMany()
+  await prisma.sentNotification.deleteMany()
   await prisma.userSpecialBetQuestion.deleteMany()
   await prisma.userSpecialBetSingle.deleteMany()
   await prisma.userSpecialBetSerie.deleteMany()
@@ -32,13 +33,19 @@ async function main() {
   await prisma.match.deleteMany()
   await prisma.leaguePlayer.deleteMany()
   await prisma.leagueTeam.deleteMany()
+  await prisma.userSetting.deleteMany()
   await prisma.leagueUser.deleteMany()
   await prisma.evaluator.deleteMany()
   await prisma.leaguePrize.deleteMany()
+  await prisma.userRequest.deleteMany()
   await prisma.league.deleteMany()
   await prisma.player.deleteMany()
   await prisma.team.deleteMany()
+  await prisma.pushSubscription.deleteMany()
+  await prisma.passwordResetToken.deleteMany()
   await prisma.user.deleteMany()
+  await prisma.specialBetSingle.deleteMany()
+  await prisma.specialBetSerie.deleteMany()
   await prisma.specialBetSingleType.deleteMany()
   await prisma.leaguePhase.deleteMany()
   await prisma.matchPhase.deleteMany()
@@ -609,7 +616,7 @@ async function main() {
   ])
 
   // NHL Special Bet Evaluators
-  await Promise.all([
+  const [nhlExactPlayerEval, nhlExactTeamEval, nhlExactValueEval] = await Promise.all([
     prisma.evaluator.create({
       data: {
         leagueId: nhlPlayoffs.id,
@@ -777,7 +784,7 @@ async function main() {
   ])
 
   // Euro Special Bet Evaluators
-  await Promise.all([
+  const [euroExactPlayerEval, euroExactTeamEval, euroClosestValueEval, euroGroupStageTeamEval] = await Promise.all([
     prisma.evaluator.create({
       data: {
         leagueId: euro2024.id,
@@ -1734,7 +1741,7 @@ async function main() {
         leagueId: nhlPlayoffs.id,
         name: 'NHL Top Scorer',
         specialBetSingleId: nhlTopScorerGlobal.id,
-        evaluatorId: evaluatorTypeMap['exact_player'],
+        evaluatorId: nhlExactPlayerEval.id,
         points: 10,
         dateTime: createDate(15, 20, 0),
         isEvaluated: false,
@@ -1748,7 +1755,7 @@ async function main() {
         leagueId: nhlPlayoffs.id,
         name: 'Stanley Cup Winner',
         specialBetSingleId: nhlChampionGlobal.id,
-        evaluatorId: evaluatorTypeMap['exact_team'],
+        evaluatorId: nhlExactTeamEval.id,
         points: 15,
         dateTime: createDate(20, 20, 0),
         isEvaluated: false,
@@ -1762,7 +1769,7 @@ async function main() {
         leagueId: nhlPlayoffs.id,
         name: 'NHL Total Playoff Goals',
         specialBetSingleId: nhlTotalGoalsGlobal.id,
-        evaluatorId: evaluatorTypeMap['exact_value'],
+        evaluatorId: nhlExactValueEval.id,
         points: 8,
         dateTime: createDate(20, 20, 0),
         isEvaluated: false,
@@ -1780,7 +1787,7 @@ async function main() {
         leagueId: euro2024.id,
         name: 'Euro Golden Boot',
         specialBetSingleId: euroGoldenBootGlobal.id,
-        evaluatorId: evaluatorTypeMap['exact_player'],
+        evaluatorId: euroExactPlayerEval.id,
         points: 10,
         dateTime: createDate(-30, 20, 0),
         isEvaluated: true,
@@ -1794,7 +1801,7 @@ async function main() {
         leagueId: euro2024.id,
         name: 'Euro Champion',
         specialBetSingleId: euroChampionGlobal.id,
-        evaluatorId: evaluatorTypeMap['exact_team'],
+        evaluatorId: euroExactTeamEval.id,
         points: 15,
         dateTime: createDate(-30, 20, 0),
         isEvaluated: true,
@@ -1808,7 +1815,7 @@ async function main() {
         leagueId: euro2024.id,
         name: 'Euro Total Goals',
         specialBetSingleId: euroTotalGoalsGlobal.id,
-        evaluatorId: evaluatorTypeMap['closest_value'],
+        evaluatorId: euroClosestValueEval.id,
         points: 8,
         dateTime: createDate(-30, 20, 0),
         isEvaluated: true,
@@ -1822,7 +1829,7 @@ async function main() {
         leagueId: euro2024.id,
         name: 'Euro Group A Winner',
         specialBetSingleId: euroGroupWinnerGlobal.id,
-        evaluatorId: evaluatorTypeMap['exact_team'],
+        evaluatorId: euroExactTeamEval.id,
         points: 5,
         dateTime: createDate(-35, 20, 0),
         isEvaluated: true,
