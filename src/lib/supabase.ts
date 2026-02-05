@@ -39,13 +39,3 @@ export function isStorageConfigured(): boolean {
  * Avatar storage bucket name
  */
 export const AVATAR_BUCKET = 'Avatars'
-
-/**
- * Get the public URL for an avatar
- */
-export function getAvatarPublicUrl(path: string): string | null {
-  if (!supabase) return null
-
-  const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path)
-  return data.publicUrl
-}

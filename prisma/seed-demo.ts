@@ -29,6 +29,7 @@ async function main() {
   await prisma.leagueSpecialBetSingle.deleteMany()
   await prisma.leagueSpecialBetSerie.deleteMany()
   await prisma.leagueMatch.deleteMany()
+  await prisma.match.deleteMany()
   await prisma.leaguePlayer.deleteMany()
   await prisma.leagueTeam.deleteMany()
   await prisma.leagueUser.deleteMany()

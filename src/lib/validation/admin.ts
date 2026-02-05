@@ -442,13 +442,9 @@ export const createSpecialBetTypeSchema = z.object({
   specialBetSingleTypeId: z.number().int().positive('Type is required'),
 })
 
-export type CreateSpecialBetTypeInput = z.infer<typeof createSpecialBetTypeSchema>
-
 export const updateSpecialBetTypeSchema = createSpecialBetTypeSchema.partial().extend({
   id: z.number().int().positive(),
 })
-
-export type UpdateSpecialBetTypeInput = z.infer<typeof updateSpecialBetTypeSchema>
 
 // Series Type (Global) validation schemas
 export const createSeriesTypeSchema = z.object({
