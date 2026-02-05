@@ -41,7 +41,7 @@ export function ChatView({
   })
 
   return (
-    <div className="flex flex-col h-[calc(100vh-14rem)]">
+    <div className="flex flex-col h-[calc(100vh-0rem)]">
       {/* Error banner */}
       {error && (
         <div className="flex-shrink-0 -mt-4 -mx-4 mb-4 p-3 bg-destructive/10 border-b border-destructive flex items-center gap-2">

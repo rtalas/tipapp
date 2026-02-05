@@ -20,6 +20,7 @@ export interface ChatMessage {
       firstName: string
       lastName: string
       username: string
+      avatarUrl: string | null
     }
   }
 }

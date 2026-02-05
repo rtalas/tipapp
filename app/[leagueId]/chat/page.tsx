@@ -92,6 +92,7 @@ export default async function ChatPage({ params }: ChatPageProps) {
               firstName: true,
               lastName: true,
               username: true,
+              avatarUrl: true,
             },
           },
         },

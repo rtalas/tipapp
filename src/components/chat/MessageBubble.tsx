@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import { Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { UserAvatar } from '@/components/common/user-avatar'
 import type { ChatMessage } from '@/hooks/useMessages'
 
 interface MessageBubbleProps {
@@ -19,10 +20,6 @@ export function MessageBubble({ message, isOwn, canDelete, onDelete }: MessageBu
     ? `${user.firstName} ${user.lastName}`
     : user.username
 
-  const initials = user.firstName && user.lastName
-    ? `${user.firstName[0]}${user.lastName[0]}`
-    : user.username.slice(0, 2).toUpperCase()
-
   return (
     <div
       className={cn(
@@ -31,17 +28,13 @@ export function MessageBubble({ message, isOwn, canDelete, onDelete }: MessageBu
       )}
     >
       {/* Avatar */}
-      <div
-        className={cn(
-          'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium',
-          isOwn
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-muted-foreground'
-        )}
-        title={displayName}
-      >
-        {initials}
-      </div>
+      <UserAvatar
+        avatarUrl={user.avatarUrl}
+        firstName={user.firstName}
+        lastName={user.lastName}
+        username={user.username}
+        size="sm"
+      />
 
       {/* Message content */}
       <div className={cn('flex flex-col max-w-[75%]', isOwn ? 'items-end' : 'items-start')}>
