@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tipapp-v3'
+const CACHE_NAME = 'tipapp-v6'
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
