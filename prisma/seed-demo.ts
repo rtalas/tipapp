@@ -2196,54 +2196,56 @@ async function main() {
   // Create chat messages
   console.log('💬 Creating chat messages...')
 
-  const chatMessagesData = [
-    { userId: users[0].id, text: 'Good luck everyone! 🏒' },
-    { userId: users[1].id, text: 'FLA vs EDM is going to be epic!' },
-    { userId: users[2].id, text: 'McDavid for the Conn Smythe!' },
-    { userId: users[3].id, text: 'I think Panthers will sweep' },
-    { userId: users[0].id, text: 'No way, Oilers in 6' },
-    { userId: users[4].id, text: 'Who else picked Tkachuk for top scorer?' },
-    { userId: users[5].id, text: 'Me! He\'s been on fire' },
-    { userId: users[6].id, text: 'Anyone watching the game tonight?' },
-    { userId: users[7].id, text: 'Yeah! Should be a great one' },
-    { userId: users[1].id, text: 'My bet on Game 1 was terrible 😅' },
-    { userId: users[2].id, text: 'Same here, totally missed the OT' },
-    { userId: users[8].id, text: 'Who\'s leading the standings?' },
-    { userId: users[9].id, text: 'Check the leaderboard, it\'s close!' },
-    { userId: users[3].id, text: 'I need Game 7 for my question bet' },
-    { userId: users[10].id, text: 'Let\'s go Rangers! 🗽' },
-    { userId: users[11].id, text: 'Canes are looking strong though' },
-    { userId: users[4].id, text: 'Colorado vs Dallas is my favorite series' },
-    { userId: users[12].id, text: 'MacKinnon is unreal this playoffs' },
-    { userId: users[13].id, text: 'Don\'t sleep on the Stars' },
-    { userId: users[5].id, text: 'Anyone else going for VAN?' },
-    { userId: users[6].id, text: 'Hughes has been amazing' },
-    { userId: users[0].id, text: 'Nashville is a tough matchup' },
-    { userId: users[7].id, text: 'Forsberg is clutch in playoffs' },
-    { userId: users[1].id, text: 'Can\'t wait for the Finals!' },
-    { userId: users[8].id, text: 'This is the best playoffs in years' },
+  // replyToIndex: index of the message being replied to (null = no reply)
+  const chatMessagesData: { userId: number; text: string; replyToIndex: number | null }[] = [
+    { userId: users[0].id, text: 'Good luck everyone! 🏒', replyToIndex: null },
+    { userId: users[1].id, text: 'FLA vs EDM is going to be epic!', replyToIndex: null },
+    { userId: users[2].id, text: 'McDavid for the Conn Smythe!', replyToIndex: 1 },
+    { userId: users[3].id, text: 'I think Panthers will sweep', replyToIndex: 1 },
+    { userId: users[0].id, text: 'No way, Oilers in 6', replyToIndex: 3 },
+    { userId: users[4].id, text: 'Who else picked Tkachuk for top scorer?', replyToIndex: null },
+    { userId: users[5].id, text: 'Me! He\'s been on fire', replyToIndex: 5 },
+    { userId: users[6].id, text: 'Anyone watching the game tonight?', replyToIndex: null },
+    { userId: users[7].id, text: 'Yeah! Should be a great one', replyToIndex: 7 },
+    { userId: users[1].id, text: 'My bet on Game 1 was terrible 😅', replyToIndex: null },
+    { userId: users[2].id, text: 'Same here, totally missed the OT', replyToIndex: 9 },
+    { userId: users[8].id, text: 'Who\'s leading the standings?', replyToIndex: null },
+    { userId: users[9].id, text: 'Check the leaderboard, it\'s close!', replyToIndex: 11 },
+    { userId: users[3].id, text: 'I need Game 7 for my question bet', replyToIndex: null },
+    { userId: users[10].id, text: 'Let\'s go Rangers! 🗽', replyToIndex: null },
+    { userId: users[11].id, text: 'Canes are looking strong though', replyToIndex: 14 },
+    { userId: users[4].id, text: 'Colorado vs Dallas is my favorite series', replyToIndex: null },
+    { userId: users[12].id, text: 'MacKinnon is unreal this playoffs', replyToIndex: 16 },
+    { userId: users[13].id, text: 'Don\'t sleep on the Stars', replyToIndex: 16 },
+    { userId: users[5].id, text: 'Anyone else going for VAN?', replyToIndex: null },
+    { userId: users[6].id, text: 'Hughes has been amazing', replyToIndex: 19 },
+    { userId: users[0].id, text: 'Nashville is a tough matchup', replyToIndex: null },
+    { userId: users[7].id, text: 'Forsberg is clutch in playoffs', replyToIndex: 21 },
+    { userId: users[1].id, text: 'Can\'t wait for the Finals!', replyToIndex: null },
+    { userId: users[8].id, text: 'This is the best playoffs in years', replyToIndex: 0 },
   ]
 
-  const chatMessages = []
+  // Create messages sequentially so we can reference earlier message IDs for replies
+  const createdMessageIds: number[] = []
   for (let i = 0; i < chatMessagesData.length; i++) {
     const msg = chatMessagesData[i]
     const leagueUser = nhlPlayoffsLeagueUsers.find(lu => lu.userId === msg.userId)!
     const msgTime = createDate(-15 + i, 10 + (i % 12), 0)
 
-    chatMessages.push({
-      leagueId: nhlPlayoffs.id,
-      leagueUserId: leagueUser.id,
-      text: msg.text,
-      createdAt: msgTime,
-      updatedAt: msgTime,
+    const created = await prisma.message.create({
+      data: {
+        leagueId: nhlPlayoffs.id,
+        leagueUserId: leagueUser.id,
+        text: msg.text,
+        replyToId: msg.replyToIndex !== null ? createdMessageIds[msg.replyToIndex] : null,
+        createdAt: msgTime,
+        updatedAt: msgTime,
+      },
     })
+    createdMessageIds.push(created.id)
   }
 
-  await Promise.all(
-    chatMessages.map(msg => prisma.message.create({ data: msg }))
-  )
-
-  console.log(`✅ Created ${chatMessages.length} chat messages`)
+  console.log(`✅ Created ${createdMessageIds.length} chat messages (with replies)`)
 
   // Create top scorer ranking versions
   console.log('📊 Creating top scorer rankings...')
@@ -2303,7 +2305,7 @@ async function main() {
   console.log(`  - ${specialBetsData.length} special bets`)
   console.log(`  - ${questionBets.length} question bets`)
   console.log(`  - ${matchScorers.length} match scorers`)
-  console.log(`  - ${chatMessages.length} chat messages`)
+  console.log(`  - ${createdMessageIds.length} chat messages`)
   console.log('')
   console.log('🔑 Demo Credentials:')
   console.log('  Admin: demo_admin / demo123')
