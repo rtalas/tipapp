@@ -316,6 +316,10 @@
       "chatSuspended": "Chat je dočasně pozastaven. Můžete číst zprávy, ale nemůžete odesílat nové.",
       "chatIsSuspended": "Chat pozastaven",
       "emojiPicker": "Přidat emoji",
+      "reply": "Odpovědět",
+      "replyingTo": "Odpověď pro {name}",
+      "cancelReply": "Zrušit odpověď",
+      "messageDeleted": "Zpráva byla smazána",
       "emojiCategories": {
         "smileys": "Emotikony & Emoce",
         "gestures": "Gesta & Lidé",

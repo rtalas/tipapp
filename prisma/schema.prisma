@@ -358,13 +358,17 @@ model Message {
   leagueId     Int
   leagueUserId Int
   text         String
+  replyToId    Int?
   createdAt    DateTime   @db.Timestamptz(6)
   updatedAt    DateTime   @db.Timestamptz(6)
   deletedAt    DateTime?  @db.Timestamptz(6)
   League       League     @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   LeagueUser   LeagueUser @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
+  ReplyTo      Message?   @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  Replies      Message[]  @relation("MessageReplies")
 
   @@index([leagueId, createdAt])
+  @@index([replyToId])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

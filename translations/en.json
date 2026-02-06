@@ -316,6 +316,10 @@
       "chatSuspended": "Chat is temporarily suspended. You can read messages but cannot send new ones.",
       "chatIsSuspended": "Chat is suspended",
       "emojiPicker": "Add emoji",
+      "reply": "Reply",
+      "replyingTo": "Replying to {name}",
+      "cancelReply": "Cancel reply",
+      "messageDeleted": "Message was deleted",
       "emojiCategories": {
         "smileys": "Smileys & Emotion",
         "gestures": "Gestures & People",

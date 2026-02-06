@@ -1,9 +1,10 @@
 'use client'
 
+import { useState, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { AlertTriangle } from 'lucide-react'
 import { useMessages, type ChatMessage } from '@/hooks/useMessages'
-import { MessageList } from './MessageList'
+import { MessageList, type MessageListHandle } from './MessageList'
 import { MessageInput } from './MessageInput'
 
 interface ChatViewProps {
@@ -24,6 +25,9 @@ export function ChatView({
   isSuspended,
 }: ChatViewProps) {
   const t = useTranslations('user.chat')
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
+  const messageListRef = useRef<MessageListHandle>(null)
+
   const {
     messages,
     isLoading,
@@ -39,6 +43,29 @@ export function ChatView({
     pollingInterval: 30000,
     enabled: true,
   })
+
+  const handleSend = useCallback(
+    async (text: string): Promise<boolean> => {
+      const success = await send(text, replyingTo?.id)
+      if (success) {
+        setReplyingTo(null)
+      }
+      return success
+    },
+    [send, replyingTo]
+  )
+
+  const handleReply = useCallback((message: ChatMessage) => {
+    setReplyingTo(message)
+  }, [])
+
+  const handleCancelReply = useCallback(() => {
+    setReplyingTo(null)
+  }, [])
+
+  const handleScrollToMessage = useCallback((messageId: number) => {
+    messageListRef.current?.scrollToMessage(messageId)
+  }, [])
 
   return (
     <div className="flex flex-col h-[calc(100vh-0rem)]">
@@ -63,6 +90,7 @@ export function ChatView({
       {/* Scrollable Message list */}
       <div className="flex-1 min-h-0 overflow-y-auto -mx-4 -mt-4">
         <MessageList
+          ref={messageListRef}
           messages={messages}
           currentUserId={currentUserId}
           isLeagueAdmin={isLeagueAdmin}
@@ -71,16 +99,20 @@ export function ChatView({
           hasMore={hasMore}
           onLoadMore={loadMore}
           onDelete={remove}
+          onReply={handleReply}
+          onScrollToMessage={handleScrollToMessage}
         />
       </div>
 
       {/* Fixed Input */}
       <div className="flex-shrink-0 border-t border-border/50 -mx-4 -mb-4 bg-background">
         <MessageInput
-          onSend={send}
+          onSend={handleSend}
           isSending={isSending}
           disabled={isSuspended}
           placeholder={isSuspended ? t('chatIsSuspended') : t('placeholder')}
+          replyingTo={replyingTo}
+          onCancelReply={handleCancelReply}
         />
       </div>
     </div>

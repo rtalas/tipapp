@@ -23,6 +23,16 @@ export interface ChatMessage {
       avatarUrl: string | null
     }
   }
+  ReplyTo: {
+    id: number
+    text: string
+    deletedAt: Date | null
+    LeagueUser: {
+      id: number
+      userId: number
+      User: { id: number; firstName: string; lastName: string; username: string }
+    }
+  } | null
 }
 
 interface UseMessagesOptions {
@@ -37,7 +47,7 @@ interface UseMessagesReturn {
   isLoading: boolean
   isSending: boolean
   error: string | null
-  send: (text: string) => Promise<boolean>
+  send: (text: string, replyToId?: number) => Promise<boolean>
   remove: (messageId: number) => Promise<boolean>
   loadMore: () => Promise<void>
   hasMore: boolean
@@ -119,14 +129,14 @@ export function useMessages({
 
   // Send a new message
   const send = useCallback(
-    async (text: string): Promise<boolean> => {
+    async (text: string, replyToId?: number): Promise<boolean> => {
       if (!text.trim()) return false
 
       setIsSending(true)
       setError(null)
 
       try {
-        const result = await sendMessage({ leagueId, text: text.trim() })
+        const result = await sendMessage({ leagueId, text: text.trim(), replyToId })
 
         if (result.success && result.message) {
           const newMessage = result.message as ChatMessage

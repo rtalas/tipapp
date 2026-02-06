@@ -507,6 +507,7 @@ export type UpdateUserQuestionBetInput = z.infer<typeof updateUserQuestionBetSch
 export const sendMessageSchema = z.object({
   leagueId: z.number().int().positive('League ID is required'),
   text: z.string().min(1, 'Message cannot be empty').max(1000, 'Message must not exceed 1000 characters'),
+  replyToId: z.number().int().positive().optional(),
 })
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>

@@ -18,6 +18,26 @@ const markChatAsReadSchema = z.object({
   leagueId: z.number().int().positive(),
 })
 
+/** Shared include for ReplyTo relation on messages */
+const replyToInclude = {
+  ReplyTo: {
+    include: {
+      LeagueUser: {
+        include: {
+          User: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true,
+            },
+          },
+        },
+      },
+    },
+  },
+} as const
+
 /**
  * Get the current user's LeagueUser record for a specific league.
  * Returns null if user is not a member or not active.
@@ -85,6 +105,7 @@ export async function getMessages(input: GetMessagesInput) {
             },
           },
         },
+        ...replyToInclude,
       },
       orderBy: { createdAt: 'desc' },
       take: validated.limit,
@@ -134,12 +155,27 @@ export async function sendMessage(input: SendMessageInput) {
       return { success: false, error: 'Chat is temporarily suspended' }
     }
 
+    // Validate replyToId if provided
+    if (validated.replyToId) {
+      const replyTarget = await prisma.message.findFirst({
+        where: {
+          id: validated.replyToId,
+          leagueId: validated.leagueId,
+          deletedAt: null,
+        },
+      })
+      if (!replyTarget) {
+        return { success: false, error: 'Reply target message not found' }
+      }
+    }
+
     // Create the message
     const message = await prisma.message.create({
       data: {
         leagueId: validated.leagueId,
         leagueUserId: leagueUser.id,
         text: validated.text,
+        replyToId: validated.replyToId ?? null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -157,6 +193,7 @@ export async function sendMessage(input: SendMessageInput) {
             },
           },
         },
+        ...replyToInclude,
       },
     })
 

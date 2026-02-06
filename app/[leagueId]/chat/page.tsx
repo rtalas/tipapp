@@ -101,6 +101,22 @@ export default async function ChatPage({ params }: ChatPageProps) {
           },
         },
       },
+      ReplyTo: {
+        include: {
+          LeagueUser: {
+            include: {
+              User: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  username: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
     take: 50,
