@@ -12,6 +12,7 @@ import { BetDisplay } from './bet-display'
 import { SaveButton } from './save-button'
 import { FriendPredictionsList } from './friend-predictions-list'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logging/client-logger'
 import { saveMatchBet, getMatchFriendPredictions } from '@/actions/user/matches'
 import type { UserMatch, FriendPrediction } from '@/actions/user/matches'
 
@@ -148,7 +149,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
         const result = await getMatchFriendPredictions(match.id)
         setFriendPredictions(result.predictions)
       } catch (error) {
-        console.error('Failed to load friend predictions:', error)
+        logger.error('Failed to load friend predictions', { error: error instanceof Error ? error.message : String(error), matchId: match.id })
         toast.error(t('friendsLoadError'))
       } finally {
         setIsLoadingFriends(false)

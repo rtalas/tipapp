@@ -3,20 +3,18 @@
 A modern, mobile-first sports betting application built with Next.js 16 for friends and families to compete in predicting football and hockey match outcomes. Track predictions, compete on leaderboards, and have fun with customizable prizes and fines.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-green)](https://supabase.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2D3748)](https://www.prisma.io/)
-[![Vitest](https://img.shields.io/badge/Vitest-403_tests-6E9F18)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-1072_tests-6E9F18)](https://vitest.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8)](https://web.dev/progressive-web-apps/)
-
-🔗 **[Live Demo](https://your-demo-url.vercel.app)** | 📖 **[Technical Documentation](CLAUDE.md)**
 
 ---
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Demo Credentials](#demo-credentials)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
@@ -29,7 +27,6 @@ A modern, mobile-first sports betting application built with Next.js 16 for frie
 - [Testing](#testing)
 - [Internationalization](#internationalization)
 - [Security](#security)
-- [Contributing](#contributing)
 - [License](#license)
 
 ---
@@ -43,10 +40,11 @@ TipApp was designed for small groups of friends and family (dozens of users) who
 - **Mobile-First PWA** - Installable on any device, works offline, supports push notifications
 - **Dual Sport Support** - Football (soccer) and hockey with sport-specific betting options
 - **Flexible Scoring** - 14 configurable evaluators for custom point systems per league
-- **Social Features** - See friends' predictions after match starts, compete on leaderboards
+- **Social Features** - See friends' predictions after match starts, compete on leaderboards, in-app chat with replies
 - **Gamification** - Prize tiers for top performers, fine tiers for worst performers
 - **Multi-League** - Run multiple leagues simultaneously (Euro 2024, NHL Playoffs, etc.)
-- **Bilingual** - Full English and Czech translations with auto-detection
+- **Bilingual** - Full English and Czech translations with auto-detection (~1350 translation keys per language)
+- **Comprehensive Testing** - 1072 tests across 81 files, running in ~6 seconds
 
 ### Who Is This For?
 
@@ -54,21 +52,6 @@ TipApp was designed for small groups of friends and family (dozens of users) who
 - Office pools for major tournaments (World Cup, Euro, NHL Playoffs)
 - Family competitions during sports seasons
 - Anyone who wants a private, customizable betting platform
-
----
-
-## Demo Credentials
-
-| Role  | Username     | Password   | Description                         |
-|-------|--------------|------------|-------------------------------------|
-| Admin | `demo_admin` | `demo123`  | Full admin access, can manage all   |
-| User  | `demo_user1` | `demo123`  | Regular user, can place bets        |
-
-The demo includes:
-- 15 sample users with randomized bets
-- 3 active leagues (Euro 2024, NHL Playoffs, World Cup)
-- 30+ matches with various states (upcoming, in-progress, completed)
-- Sample series bets, special bets, and questions
 
 ---
 
@@ -92,21 +75,21 @@ The demo includes:
 - **Prize Indicators** - Gold/Silver/Bronze badges for top 3
 - **Fine Indicators** - Red badges for bottom performers
 - **Friend Predictions** - See what others bet (only after match deadline)
-- **In-App Chat** - Discuss matches and banter with league members
+- **In-App Chat** - Discuss matches and banter with league members (with reply support)
 
 #### Mobile Experience
 - **Progressive Web App** - Install on home screen like a native app
 - **Pull-to-Refresh** - Swipe down to refresh data
-- **Bottom Navigation** - Easy thumb access to all sections
-- **Offline Support** - View cached data without connection
-- **Push Notifications** - Get reminded before match deadlines (coming soon)
+- **Bottom Navigation** - Easy thumb access to all sections (matches, series, special bets, questions, leaderboard)
+- **Countdown Badges** - Visual indicators for upcoming match deadlines
+- **Push Notifications** - Get reminded before match deadlines (infrastructure ready)
 
 ### For Admins
 
 #### League Management
 - **Multi-League Support** - Create and manage multiple leagues
 - **League Settings** - Configure prizes, fines, and scoring rules
-- **User Management** - Add/remove users from leagues, set permissions
+- **User Management** - Add/remove users from leagues, handle join requests
 - **League Context** - Quick-switch between leagues via topbar dropdown
 
 #### Match & Event Management
@@ -133,6 +116,7 @@ The demo includes:
 - **Dual Routing** - Global routes vs league-scoped routes
 - **Action Buttons** - Direct icon buttons (no dropdown menus)
 - **Soft Delete** - All entities use deletedAt for data recovery
+- **Audit Logs** - Track all admin actions with filterable log viewer
 
 ---
 
@@ -142,19 +126,24 @@ The demo includes:
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | Next.js | 16 | React framework with App Router |
-| React | 19 | UI library |
+| React | 19 | UI library with React Compiler |
 | Tailwind CSS | 4 | Utility-first styling |
-| next-intl | 4 | Internationalization |
-| Lucide Icons | - | Icon library |
+| next-intl | 4 | Internationalization (EN/CS) |
+| Radix UI | latest | Accessible UI primitives (dialogs, dropdowns, tooltips, etc.) |
+| Lucide Icons | latest | Icon library |
+| next-themes | latest | Dark/light theme support |
+| sonner | latest | Toast notifications |
 
 ### Backend
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| Auth.js | 5 | Authentication (credentials + JWT) |
+| Auth.js | 5 (beta) | Authentication (credentials + JWT) |
 | PostgreSQL | - | Database (via Supabase) |
-| Prisma | 6 | Type-safe ORM |
-| Zod | - | Runtime validation |
-| Server Actions | - | API layer |
+| Prisma | 6 | Type-safe ORM (36 models) |
+| Zod | 4 | Runtime validation |
+| Server Actions | - | API layer (CSRF-protected) |
+| web-push | latest | Push notification delivery |
+| Resend | latest | Transactional emails |
 
 ### Infrastructure
 | Technology | Purpose |
@@ -166,10 +155,13 @@ The demo includes:
 ### Quality & Testing
 | Technology | Purpose |
 |------------|---------|
-| TypeScript | Type safety (strict mode) |
-| Vitest | Unit & integration testing |
+| TypeScript 5 | Type safety (strict mode) |
+| Vitest 4 | Unit & integration testing (1072 tests) |
 | Testing Library | Component testing |
+| happy-dom | Test environment |
 | ESLint | Code linting |
+| knip | Dead code detection |
+| React Compiler | Automatic memoization |
 
 ---
 
@@ -182,7 +174,7 @@ The demo includes:
 │                        Client (Browser)                      │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
 │  │ User Pages  │  │Admin Pages  │  │  PWA Service Worker │  │
-│  │ (Mobile UI) │  │(Desktop UI) │  │  (Offline Support)  │  │
+│  │ (Mobile UI) │  │(Desktop UI) │  │  (Offline + Push)   │  │
 │  └──────┬──────┘  └──────┬──────┘  └─────────────────────┘  │
 └─────────┼────────────────┼──────────────────────────────────┘
           │                │
@@ -194,12 +186,16 @@ The demo includes:
 │  │  • Data fetching  • Auth checks  • SSR rendering    │    │
 │  └─────────────────────────────────────────────────────┘    │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │                 Server Actions                       │    │
-│  │  • CSRF protection  • Validation  • Business logic  │    │
+│  │           Server Actions (50 files)                  │    │
+│  │  • CSRF protection  • Zod validation  • Audit log   │    │
 │  └──────────────────────────┬──────────────────────────┘    │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │              Evaluation Engine                       │    │
-│  │  • 14 evaluators  • Point calculation  • Rankings   │    │
+│  │        Evaluation Engine (14 evaluators)             │    │
+│  │  • Point calculation  • Rankings  • Caching          │    │
+│  └─────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │          unstable_cache (tag-based)                  │    │
+│  │  • 20min bet data  • 30min leaderboard  • 12h teams │    │
 │  └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────┼───────────────────────────────┘
                               │
@@ -207,19 +203,19 @@ The demo includes:
 ┌─────────────────────────────────────────────────────────────┐
 │                      Data Layer                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │   Prisma    │  │  PostgreSQL │  │      Supabase       │  │
-│  │    ORM      │◄─┤  (Database) │◄─┤  (Managed Hosting)  │  │
+│  │  Prisma 6   │  │  PostgreSQL │  │      Supabase       │  │
+│  │  (36 models)│◄─┤  (Database) │◄─┤  (Managed Hosting)  │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Dual Routing System
 
-TipApp uses a sophisticated routing system that separates global and league-scoped operations:
+TipApp uses a routing system that separates global and league-scoped operations:
 
 **Global Routes** (`/admin/*`)
 - Cross-league management for superadmins
-- Examples: `/admin/teams`, `/admin/players`, `/admin/leagues`
+- Examples: `/admin/teams`, `/admin/players`, `/admin/leagues`, `/admin/audit-logs`
 - Used for entities shared across all leagues
 
 **League-Scoped Routes** (`/admin/[leagueId]/*`)
@@ -242,7 +238,7 @@ export async function saveMatchBet(data: MatchBetInput) {
   // 1. Auth check
   const session = await requireLeagueMember(leagueId)
 
-  // 2. Validation
+  // 2. Zod validation
   const validated = matchBetSchema.parse(data)
 
   // 3. Business rules
@@ -267,34 +263,13 @@ export async function saveMatchBet(data: MatchBetInput) {
 
 TipApp uses Next.js `unstable_cache` for server-side caching with tag-based invalidation:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Data Fetching Flow                       │
-│                                                              │
-│  User Request                                                │
-│       │                                                      │
-│       ▼                                                      │
-│  ┌─────────────────┐   Cache HIT    ┌──────────────────┐   │
-│  │  unstable_cache │──────────────▶│  Return Cached   │   │
-│  │  (check cache)  │                │     Data         │   │
-│  └────────┬────────┘                └──────────────────┘   │
-│           │ Cache MISS                                      │
-│           ▼                                                  │
-│  ┌─────────────────┐                                        │
-│  │  Prisma Query   │──▶ Store in cache ──▶ Return Data     │
-│  └─────────────────┘                                        │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Cached Data:**
-
-| Data | TTL | Purpose |
-|------|-----|---------|
-| Matches, Series, Special Bets, Questions | 20 min | Shared bet lists (same for all users) |
-| League Selector | 10 hours | User's available leagues |
-| Teams/Players | 12 hours | Rarely change during season |
-| Leaderboard | 30 min | Only changes on evaluation |
-| Badge Counts | 60s | Navigation indicators (short TTL for accuracy) |
+| Data | TTL | Invalidated By |
+|------|-----|----------------|
+| Matches, Series, Special Bets, Questions | 20 min | Admin CRUD, evaluation |
+| League Selector | 10 hours | League CRUD, user membership |
+| Teams/Players | 12 hours | Team/player assignment |
+| Leaderboard | 30 min | Bet evaluation |
+| Badge Counts | 15 min | User bet saves |
 
 **Cache Pattern:**
 - Base data cached (shared across users)
@@ -312,13 +287,13 @@ TipApp uses Next.js `unstable_cache` for server-side caching with tag-based inva
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
 │    User      │────▶│  LeagueUser  │◀────│    League    │
 └──────────────┘     └──────────────┘     └──────────────┘
-                            │                     │
-                            ▼                     ▼
-                     ┌──────────────┐     ┌──────────────┐
-                     │   UserBet    │     │  LeagueMatch │
-                     │  (various)   │     │  LeaguePrize │
-                     └──────────────┘     │   Evaluator  │
-                                          └──────────────┘
+       │                    │                     │
+       ▼                    ▼                     ▼
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  UserRequest │     │   UserBet    │     │  LeagueMatch │
+│  UserSetting │     │  (4 types)   │     │  LeaguePrize │
+│  PushSubscr. │     └──────────────┘     │   Evaluator  │
+└──────────────┘                          └──────────────┘
 
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
 │    Sport     │────▶│     Team     │◀────│    Player    │
@@ -326,33 +301,21 @@ TipApp uses Next.js `unstable_cache` for server-side caching with tag-based inva
                             │
                             ▼
                      ┌──────────────┐
-                     │    Match     │
+                     │    Match     │───▶ MatchScorer
                      └──────────────┘
 ```
 
-### Core Tables
+### 36 Prisma Models
 
-| Table | Description |
-|-------|-------------|
-| `User` | User accounts with auth credentials |
-| `League` | Betting leagues (Euro 2024, NHL Playoffs) |
-| `LeagueUser` | Many-to-many: users in leagues |
-| `Sport` | Sports (Football, Hockey) |
-| `Team` | Teams with sport association |
-| `Player` | Players with team association |
-| `Match` | Global match records |
-| `LeagueMatch` | League-specific match settings (isDoubled) |
-| `Evaluator` | Scoring rules per league |
-| `LeaguePrize` | Prize/fine tiers per league |
-
-### Bet Tables
-
-| Table | Description |
-|-------|-------------|
-| `UserBet` | Match score predictions |
-| `UserBetSerie` | Series predictions (playoff results) |
-| `UserBetSingle` | Special bet predictions |
-| `UserBetQuestion` | Yes/no question predictions |
+| Category | Models |
+|----------|--------|
+| **Core** | User, League, LeagueUser, Sport, Team, Player, Match, LeagueMatch |
+| **Betting** | UserBet, UserSpecialBetSerie, UserSpecialBetSingle, UserSpecialBetQuestion |
+| **League Config** | Evaluator, EvaluatorType, LeaguePrize, LeaguePhase, LeagueTeam, LeaguePlayer |
+| **Special Bets** | SpecialBetSerie, SpecialBetSingle, SpecialBetSingleType, LeagueSpecialBetSerie, LeagueSpecialBetSingle, LeagueSpecialBetSingleTeamAdvanced, LeagueSpecialBetQuestion |
+| **Match** | MatchPhase, MatchScorer, TopScorerRankingVersion |
+| **Features** | Message, UserRequest, UserSetting, PushSubscription, SentNotification |
+| **System** | AuditLog, PasswordResetToken, SequelizeMeta |
 
 ### Key Design Decisions
 
@@ -396,11 +359,11 @@ For more nuanced scorer predictions, leagues can enable rank-based scoring:
 ```json
 {
   "rankedPoints": {
-    "1": 2,   // 1st ranked scorer = 2 points
-    "2": 4,   // 2nd ranked scorer = 4 points
-    "3": 5    // 3rd ranked scorer = 5 points
+    "1": 2,
+    "2": 4,
+    "3": 5
   },
-  "unrankedPoints": 8  // Unranked scorer = 8 points
+  "unrankedPoints": 8
 }
 ```
 
@@ -427,6 +390,7 @@ Match Completed
             ▼
 ┌─────────────────────────┐
 │  Update UserBet.points  │
+│  Invalidate caches      │
 │  Update Leaderboard     │
 └─────────────────────────┘
 ```
@@ -460,7 +424,7 @@ npx prisma db push        # Create tables
 npx prisma generate       # Generate Prisma Client
 
 # 5. Seed demo data (optional but recommended)
-npm run seed:demo         # Creates 15 users, 3 leagues, 30+ matches
+npm run seed:demo         # Creates sample users, leagues, matches
 
 # 6. Start the development server
 npm run dev
@@ -485,7 +449,6 @@ RESEND_FROM_EMAIL="noreply@yourdomain.com"
 
 # Application
 APP_URL="http://localhost:3000"
-NEXT_PUBLIC_DEMO_MODE="true"  # Shows demo banners in UI
 ```
 
 ---
@@ -497,13 +460,14 @@ NEXT_PUBLIC_DEMO_MODE="true"  # Shows demo banners in UI
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start development server with hot reload |
-| `npm run build` | Build production bundle |
+| `npm run build` | Build production bundle (runs `prisma generate` first) |
 | `npm start` | Start production server |
-| `npm test` | Run all tests once (~4.7s for 403 tests) |
+| `npm test` | Run all tests once (~6s for 1072 tests) |
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run test:ui` | Run tests with Vitest UI |
 | `npm run test:coverage` | Generate test coverage report |
 | `npm run lint` | Run ESLint |
+| `npm run knip` | Find unused code and dependencies |
 | `npm run seed:demo` | Seed database with demo data |
 
 ### Database Commands
@@ -523,13 +487,13 @@ NEXT_PUBLIC_DEMO_MODE="true"  # Shows demo banners in UI
 4. **Build check**: `npm run build`
 5. **Manual testing**: Test in browser
 6. **Commit**: `git commit -m "feat: description"`
-7. **Push & PR**: `git push origin feature/my-feature`
 
 ### Code Conventions
 
 - **TypeScript Strict** - No `any` types, full type safety
+- **React Compiler** - Automatic memoization, no manual React.memo/useMemo/useCallback
 - **Server Components Default** - Client components only when needed
-- **Zod Validation** - All inputs validated with Zod schemas
+- **Zod 4 Validation** - All inputs validated with Zod schemas
 - **Error Handling** - Use `AppError` for consistent error responses
 - **Soft Delete** - Always use `deletedAt` instead of hard delete
 - **Atomic Operations** - Use upserts to prevent race conditions
@@ -560,50 +524,17 @@ NEXT_PUBLIC_DEMO_MODE="true"  # Shows demo banners in UI
    - `DIRECT_URL` - From Supabase (port 5432)
    - `AUTH_SECRET` - Generate new: `openssl rand -base64 32`
    - `APP_URL` - Will be provided by Vercel after first deploy
-   - `NEXT_PUBLIC_DEMO_MODE` - `"true"` for demo, `"false"` for production
 5. Click **Deploy**
 6. Update `APP_URL` with your Vercel URL
-
-#### 3. Seed Demo Data
-
-```bash
-# Update local .env with production database URL
-npm run seed:demo
-```
-
-### Production vs Demo Setup
-
-**Recommended:** Maintain separate environments:
-
-| Environment | Database | DEMO_MODE | Purpose |
-|-------------|----------|-----------|---------|
-| Demo | `tipapp-demo` DB | `true` | Public showcase, can be reset |
-| Production | `tipapp-prod` DB | `false` | Real usage, data preserved |
 
 ### Deployment Checklist
 
 - [ ] Database created and migrations applied
 - [ ] All environment variables configured in Vercel
-- [ ] Demo data seeded (for demo deployment)
 - [ ] `npm run build` passes locally
-- [ ] `npm test` passes (403 tests)
+- [ ] `npm test` passes (1072 tests)
 - [ ] PWA manifest and icons present
-- [ ] Service worker configured correctly
-- [ ] Live URL updated in README
-
-### Troubleshooting Deployment
-
-**"Can't reach database" during build**
-- Vercel builds don't need real DB. Add `DATABASE_URL` with mock value if needed.
-
-**"Tenant or user not found"**
-- Double-check Supabase connection string hostname and port.
-
-**Demo banner not showing**
-- Environment variable must be `NEXT_PUBLIC_DEMO_MODE` (with `NEXT_PUBLIC_` prefix).
-
-**Service worker not loading**
-- Verify `vercel.json` has correct headers for `/sw.js`.
+- [ ] Live URL updated
 
 ---
 
@@ -611,65 +542,86 @@ npm run seed:demo
 
 ```
 tipapp/
-├── app/                          # Next.js App Router
+├── app/                          # Next.js App Router (39 pages)
 │   ├── [leagueId]/               # User pages (league-scoped)
 │   │   ├── matches/              # Match list and betting
 │   │   ├── series/               # Series betting
 │   │   ├── special-bets/         # Special bets
-│   │   ├── leaderboard/          # Rankings
-│   │   └── chat/                 # League chat
+│   │   ├── questions/            # Question bets
+│   │   ├── leaderboard/          # Rankings with prizes & fines
+│   │   ├── chat/                 # League chat with replies
+│   │   └── profile/              # User profile
 │   ├── admin/
 │   │   ├── [leagueId]/           # League-scoped admin
 │   │   │   ├── matches/          # Manage league matches
+│   │   │   ├── series/           # Manage league series
+│   │   │   ├── special-bets/     # Manage special bets
+│   │   │   ├── questions/        # Manage questions
 │   │   │   ├── evaluators/       # Configure scoring rules
 │   │   │   ├── teams/            # League teams
-│   │   │   ├── players/          # League players
-│   │   │   └── users/            # League members
-│   │   ├── leagues/              # Global: manage leagues
+│   │   │   └── players/          # League players
+│   │   ├── leagues/              # Global: manage leagues (+ setup, evaluators, users)
 │   │   ├── teams/                # Global: all teams
 │   │   ├── players/              # Global: all players
-│   │   └── users/                # Global: all users
-│   ├── auth/                     # Login, register, reset password
-│   └── api/                      # API routes (minimal)
+│   │   ├── matches/              # Global: all matches
+│   │   ├── series/               # Global: all series
+│   │   ├── special-bets/         # Global: all special bets
+│   │   ├── users/                # Global: all users
+│   │   ├── series-types/         # Global: series type templates
+│   │   ├── evaluators/           # Global: evaluator types
+│   │   ├── match-phases/         # Global: match phases
+│   │   ├── audit-logs/           # Global: audit log viewer
+│   │   └── profile/              # Admin profile
+│   ├── login/                    # Authentication
+│   ├── register/                 # Registration
+│   ├── forgot-password/          # Password reset request
+│   └── reset-password/[token]/   # Password reset form
 │
 ├── src/
-│   ├── actions/                  # Server Actions
-│   │   ├── admin/                # Admin-only actions
-│   │   └── user/                 # User actions
+│   ├── actions/                  # Server Actions (50 files with tests)
+│   │   ├── *.ts                  # Admin actions (matches, teams, players, etc.)
+│   │   ├── evaluate-*.ts         # Evaluation engines (matches, series, special-bets, questions)
+│   │   ├── league-prizes.ts      # Prize & fine management
+│   │   ├── messages.ts           # Chat with reply support
+│   │   ├── shared-queries.ts     # Shared DB query utilities
+│   │   └── user/                 # User actions (betting, leaderboard, leagues, profile, locale)
 │   ├── components/               # React components
-│   │   ├── admin/                # Admin UI components
-│   │   ├── user/                 # User UI components
-│   │   └── ui/                   # Shared UI primitives
-│   ├── contexts/                 # React Context providers
-│   ├── hooks/                    # Custom React hooks
+│   │   ├── admin/                # 17 component groups (layout, common, leagues, matches, etc.)
+│   │   ├── user/                 # 10 component groups (layout, common, matches, leaderboard, etc.)
+│   │   └── ui/                   # Shared UI primitives (Radix-based)
+│   ├── contexts/                 # React Context providers (league-context, user-league-context)
+│   ├── hooks/                    # Custom hooks (7 hooks with tests)
+│   ├── i18n/                     # next-intl configuration
 │   ├── lib/
-│   │   ├── evaluators/           # 14 evaluation modules
-│   │   ├── validation/           # Zod schemas
-│   │   ├── auth-utils.ts         # Auth helpers
-│   │   ├── error-handler.ts      # Error handling
-│   │   └── prisma.ts             # Prisma client
-│   └── types/                    # TypeScript definitions
+│   │   ├── evaluators/           # 14 evaluation modules + types + mapper
+│   │   ├── evaluation/           # Evaluation orchestration (match, series, special-bet, question)
+│   │   ├── validation/           # Zod schemas (admin, user, message)
+│   │   ├── auth/                 # Auth utilities (requireAdmin, requireLeagueMember)
+│   │   ├── logging/              # Audit logger + client logger
+│   │   ├── email/                # Email service (Resend)
+│   │   ├── cache/                # Badge count caching
+│   │   ├── chat/                 # Emoji data
+│   │   └── *.ts                  # Utilities (prisma, errors, server-actions, constants, etc.)
+│   └── types/                    # TypeScript definitions (next-auth.d.ts, user.ts)
 │
 ├── prisma/
-│   ├── schema.prisma             # Database schema
+│   ├── schema.prisma             # Database schema (36 models)
 │   └── seed-demo.ts              # Demo data generator
 │
-├── messages/                     # i18n translations
-│   ├── en.json                   # English
-│   └── cs.json                   # Czech
+├── translations/                 # i18n translations
+│   ├── en.json                   # English (~1350 lines)
+│   └── cs.json                   # Czech (~1350 lines)
 │
-├── public/
-│   ├── icons/                    # PWA icons
-│   └── manifest.json             # PWA manifest
-│
-└── tests/                        # Test files (co-located)
+├── public/                       # Static assets (PWA icons, manifest)
+├── CLAUDE.md                     # Technical documentation
+└── FINES_FEATURE.md              # Fines feature documentation
 ```
 
 ---
 
 ## Testing
 
-TipApp has comprehensive test coverage with **403 tests** that run in approximately 4.7 seconds.
+TipApp has comprehensive test coverage with **1072 tests** across **81 test files** that run in approximately **6 seconds**.
 
 ### Running Tests
 
@@ -702,41 +654,20 @@ src/lib/evaluators/
 
 ### Test Categories
 
-| Category | Count | Description |
-|----------|-------|-------------|
-| Evaluators | 79 | All 14 evaluators with edge cases |
-| Actions | ~100 | Server action validation and logic |
-| Utils | ~50 | Utility function tests |
-| Components | ~100 | React component tests |
-| Integration | ~74 | End-to-end flows |
+| Category | Description |
+|----------|-------------|
+| Evaluators | All 14 evaluators with edge cases |
+| Server Actions | Admin and user action validation, auth, business logic |
+| Evaluation Engine | Match, series, special bet, question evaluation orchestration |
+| Components | React component rendering and interaction tests |
+| Hooks | Custom hook behavior tests |
+| Utilities | Library function tests (error handling, validation, caching, etc.) |
 
-### Example Test
+### Test Infrastructure
 
-```typescript
-import { evaluateScorer } from './scorer'
-import type { ScorerRankedConfig } from './types'
-
-describe('scorer evaluator with rank-based config', () => {
-  const config: ScorerRankedConfig = {
-    rankedPoints: { '1': 2, '2': 4, '3': 5 },
-    unrankedPoints: 8
-  }
-
-  it('awards rank-based points for ranked scorers', () => {
-    const bet = { scorerId: 1, scorerRanking: 2 }
-    const result = { scorerIds: [1], scorerRankings: [2] }
-
-    expect(evaluateScorer(bet, result, config)).toBe(4)  // Rank 2 = 4 points
-  })
-
-  it('awards unranked points for unranked scorers', () => {
-    const bet = { scorerId: 1, scorerRanking: null }
-    const result = { scorerIds: [1] }
-
-    expect(evaluateScorer(bet, result, config)).toBe(8)  // Unranked = 8 points
-  })
-})
-```
+- **Environment:** happy-dom (fast, lightweight)
+- **Global mocks:** Prisma (36 models), audit-logger, next/cache, next/navigation, next-auth/react, @/auth
+- **Pattern:** Co-located test files, no separate test directories
 
 ---
 
@@ -752,9 +683,9 @@ TipApp supports **English** and **Czech** with cookie-based locale storage.
 ### Translation Files
 
 ```
-messages/
-├── en.json    # English translations
-└── cs.json    # Czech translations
+translations/
+├── en.json    # English translations (~1350 lines)
+└── cs.json    # Czech translations (~1350 lines)
 ```
 
 ### Using Translations
@@ -780,31 +711,6 @@ export function MyComponent() {
 }
 ```
 
-### Adding Translations
-
-1. Add key to both `en.json` and `cs.json`:
-```json
-// messages/en.json
-{
-  "user": {
-    "matches": {
-      "newFeature": "New Feature"
-    }
-  }
-}
-
-// messages/cs.json
-{
-  "user": {
-    "matches": {
-      "newFeature": "Nová funkce"
-    }
-  }
-}
-```
-
-2. Use in component: `{t('newFeature')}`
-
 ---
 
 ## Security
@@ -812,71 +718,33 @@ export function MyComponent() {
 TipApp implements multiple security layers to protect user data and prevent attacks.
 
 ### Authentication
-
 - **Password Hashing**: bcryptjs with salt factor 12
 - **JWT Sessions**: Secure session management via Auth.js v5
 - **Email Normalization**: Case-insensitive email storage and lookup
 - **Login Options**: Username or email authentication
 
 ### Input Validation
-
-- **Zod Schemas**: All inputs validated on server
+- **Zod 4 Schemas**: All inputs validated on server
 - **Type Safety**: Strict TypeScript prevents type-related bugs
 - **Parameterized Queries**: Prisma prevents SQL injection
 
 ### Request Protection
-
-- **CSRF Tokens**: Origin + Referer validation on all mutations
-- **Security Headers**: CSP, X-Content-Type-Options, X-Frame-Options
+- **CSRF Tokens**: Origin + Referer validation on all mutations (via `proxy.ts`)
+- **Security Headers**: HSTS, CSP, X-Content-Type-Options, X-Frame-Options, Permissions-Policy
 - **XSS Prevention**: HTML escaping via `escapeHtml()` utility
 
 ### Data Protection
-
 - **Soft Delete**: Data recovery possible, nothing permanently deleted
 - **Unique Constraints**: Database-level duplicate prevention
 - **Atomic Operations**: Race condition prevention with upserts
-- **Serializable Transactions**: Isolation for critical operations
+- **Serializable Transactions**: Isolation for critical betting operations
+- **Error Boundaries**: React error boundaries at app/, league/, and admin/ levels
 
 ### Access Control
-
 - **Admin Checks**: `requireAdmin()` validates superadmin status
 - **League Membership**: `requireLeagueMember()` validates league access
 - **Betting Deadlines**: Server-side deadline enforcement
-
----
-
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-### Getting Started
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes
-4. Run tests: `npm test`
-5. Build check: `npm run build`
-6. Commit: `git commit -m 'feat: add amazing feature'`
-7. Push: `git push origin feature/amazing-feature`
-8. Open a Pull Request
-
-### Code Style
-
-- Follow existing patterns in the codebase
-- Use TypeScript strict mode (no `any`)
-- Add tests for new features
-- Update translations for UI changes
-- Keep components small and focused
-
-### Commit Messages
-
-Follow conventional commits:
-- `feat:` New feature
-- `fix:` Bug fix
-- `docs:` Documentation
-- `test:` Test additions/changes
-- `refactor:` Code refactoring
-- `chore:` Maintenance tasks
+- **Audit Logging**: All admin actions tracked with `AuditLogger`
 
 ---
 
@@ -886,16 +754,4 @@ This project is for portfolio demonstration purposes. Feel free to use it as a r
 
 ---
 
-## Acknowledgments
-
-- [Next.js](https://nextjs.org/) - The React framework
-- [Prisma](https://www.prisma.io/) - Database toolkit
-- [Auth.js](https://authjs.dev/) - Authentication
-- [Supabase](https://supabase.com/) - Database hosting
-- [Vercel](https://vercel.com/) - Deployment platform
-- [Tailwind CSS](https://tailwindcss.com/) - Styling
-- [Lucide](https://lucide.dev/) - Icons
-
----
-
-*Built with care for sports betting enthusiasts*
+*Built with Next.js 16, React 19, and TypeScript for sports betting enthusiasts*

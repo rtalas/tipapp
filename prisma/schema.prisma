@@ -618,6 +618,7 @@ model UserSpecialBetQuestion {
   LeagueUser                 LeagueUser               @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
 
   @@unique([leagueSpecialBetQuestionId, leagueUserId, deletedAt])
+  @@index([leagueUserId, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -636,6 +637,7 @@ model UserSpecialBetSerie {
   LeagueUser              LeagueUser            @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
 
   @@unique([leagueSpecialBetSerieId, leagueUserId, deletedAt])
+  @@index([leagueUserId, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -657,4 +659,5 @@ model UserSpecialBetSingle {
   LeagueTeam               LeagueTeam?            @relation(fields: [teamResultId], references: [id])
 
   @@unique([leagueSpecialBetSingleId, leagueUserId, deletedAt])
+  @@index([leagueUserId, deletedAt])
 }

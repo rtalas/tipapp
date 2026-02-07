@@ -15,6 +15,7 @@ import { FriendPredictionsModal } from '@/components/user/common/friend-predicti
 import { SearchableSelect } from '@/components/user/special-bets/searchable-select'
 import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logging/client-logger'
 import { getUserDisplayName } from '@/lib/user-display-utils'
 import { saveSpecialBet, getSpecialBetFriendPredictions } from '@/actions/user/special-bets'
 import type { UserSpecialBet, SpecialBetFriendPrediction } from '@/actions/user/special-bets'
@@ -162,7 +163,7 @@ export function SpecialBetCard({
         const result = await getSpecialBetFriendPredictions(specialBet.id)
         setFriendPredictions(result.predictions)
       } catch (error) {
-        console.error('Failed to load friend predictions:', error)
+        logger.error('Failed to load friend predictions', { error: error instanceof Error ? error.message : String(error), specialBetId: specialBet.id })
         toast.error(t('friendsLoadError'))
       } finally {
         setIsLoadingFriends(false)

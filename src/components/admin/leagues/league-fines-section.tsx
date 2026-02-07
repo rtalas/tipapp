@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, AlertTriangle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { FineTierRow } from './fine-tier-row'
 import type { PrizeTier } from '@/lib/validation/admin'
@@ -12,6 +13,7 @@ interface LeagueFinesSectionProps {
 }
 
 export function LeagueFinesSection({ fines, onChange }: LeagueFinesSectionProps) {
+  const t = useTranslations('admin.leagueActions.finesSection')
   const [errors, setErrors] = useState<Record<number, string>>({})
 
   // Add a new fine tier with next available rank
@@ -62,7 +64,7 @@ export function LeagueFinesSection({ fines, onChange }: LeagueFinesSectionProps)
       const newErrors: Record<number, string> = {}
       updatedFines.forEach((fine, idx) => {
         if (duplicates.includes(fine.rank)) {
-          newErrors[idx] = `Position ${fine.rank} is already used`
+          newErrors[idx] = t('positionUsed', { rank: fine.rank })
         }
       })
       setErrors(newErrors)
@@ -83,19 +85,19 @@ export function LeagueFinesSection({ fines, onChange }: LeagueFinesSectionProps)
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-destructive" />
-          Fine Settings (Worst Performers)
+          {t('title')}
         </h4>
         <span className="text-xs text-muted-foreground">
-          {fines.length} / 10 tiers
+          {t('tiers', { count: fines.length })}
         </span>
       </div>
 
       <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
         <p className="mb-1">
-          <strong>How it works:</strong> Fines are for the worst-performing bettors.
+          <strong>{t('howItWorks')}</strong> {t('howItWorksText')}
         </p>
         <p>
-          Position 1 = Last place, Position 2 = Second-to-last, etc.
+          {t('positionExplain')}
         </p>
       </div>
 
@@ -117,10 +119,10 @@ export function LeagueFinesSection({ fines, onChange }: LeagueFinesSectionProps)
         <div className="rounded-lg border border-dashed border-destructive/30 bg-destructive/5 p-6 text-center">
           <AlertTriangle className="mx-auto h-8 w-8 text-destructive/50 mb-2" />
           <p className="text-sm text-muted-foreground mb-3">
-            No fines configured for this league
+            {t('noFines')}
           </p>
           <p className="text-xs text-muted-foreground">
-            Add fine tiers for worst-performing bettors
+            {t('noFinesHelper')}
           </p>
         </div>
       )}
@@ -135,14 +137,14 @@ export function LeagueFinesSection({ fines, onChange }: LeagueFinesSectionProps)
         className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
       >
         <Plus className="h-4 w-4 mr-2" />
-        Add Fine Tier
-        {fines.length >= 10 && ' (Maximum reached)'}
+        {t('addTier')}
+        {fines.length >= 10 && t('maximumReached')}
       </Button>
 
       {/* Validation message */}
       {Object.keys(errors).length > 0 && (
         <p className="text-sm text-destructive" role="alert">
-          Please fix duplicate fine positions before saving
+          {t('duplicateError')}
         </p>
       )}
     </div>

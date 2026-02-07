@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { AppError } from '@/lib/error-handler'
@@ -50,6 +51,7 @@ export async function createTeam(input: CreateTeamInput) {
         },
       })
 
+      revalidateTag('special-bet-teams', 'max')
       return { teamId: team.id }
     },
     revalidatePath: '/admin/teams',
@@ -100,6 +102,7 @@ export async function updateTeam(input: UpdateTeamInput) {
         },
       })
 
+      revalidateTag('special-bet-teams', 'max')
       return { success: true }
     },
     revalidatePath: '/admin/teams',
@@ -141,6 +144,7 @@ export async function deleteTeam(id: number) {
           data: { deletedAt: new Date() },
         })
 
+        revalidateTag('special-bet-teams', 'max')
         return { success: true }
       },
       revalidatePath: '/admin/teams',

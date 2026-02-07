@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { LeaderboardTable } from './leaderboard-table'
 import type { LeaderboardEntry } from '@/types/user'
 import type { LeaguePrize } from '@/actions/user/leaderboard'
@@ -81,6 +82,8 @@ function createPrize(overrides: Partial<LeaguePrize> = {}): LeaguePrize {
 }
 
 describe('LeaderboardTable', () => {
+  const user = userEvent.setup()
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -259,14 +262,14 @@ describe('LeaderboardTable', () => {
   })
 
   describe('Click handling', () => {
-    it('calls handler when entry is clicked', () => {
+    it('calls handler when entry is clicked', async () => {
       const entries = [createEntry({ rank: 1, username: 'alice', firstName: 'Alice', lastName: 'Smith' })]
 
       render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} />)
 
       const button = screen.getByText('Alice Smith').closest('button')
       expect(button).toBeInTheDocument()
-      fireEvent.click(button!)
+      await user.click(button!)
     })
   })
 })

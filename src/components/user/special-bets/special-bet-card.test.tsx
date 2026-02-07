@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { SpecialBetCard } from './special-bet-card'
 
 // Mock next-intl
@@ -99,7 +100,6 @@ const defaultPlayers = [
   },
 ]
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createSpecialBet(overrides: Record<string, unknown> = {}): any {
   const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
   return {
@@ -120,6 +120,7 @@ function createSpecialBet(overrides: Record<string, unknown> = {}): any {
 }
 
 describe('SpecialBetCard', () => {
+  const user = userEvent.setup()
   const mockOnSaved = vi.fn()
 
   beforeEach(() => {
@@ -154,7 +155,7 @@ describe('SpecialBetCard', () => {
       expect(screen.getByTestId('select-placeholder')).toHaveTextContent('selectTeam')
     })
 
-    it('enables save button when team selected', () => {
+    it('enables save button when team selected', async () => {
       render(
         <SpecialBetCard
           specialBet={createSpecialBet()}
@@ -164,7 +165,7 @@ describe('SpecialBetCard', () => {
         />
       )
 
-      fireEvent.click(screen.getByTestId('select-option-1'))
+      await user.click(screen.getByTestId('select-option-1'))
 
       const saveButton = screen.getByText('save').closest('button')
       expect(saveButton).not.toBeDisabled()
@@ -194,8 +195,8 @@ describe('SpecialBetCard', () => {
         />
       )
 
-      fireEvent.click(screen.getByTestId('select-option-1'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByTestId('select-option-1'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(mockSaveSpecialBet).toHaveBeenCalledWith({
@@ -243,8 +244,8 @@ describe('SpecialBetCard', () => {
         />
       )
 
-      fireEvent.click(screen.getByTestId('select-option-2'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByTestId('select-option-2'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(mockSaveSpecialBet).toHaveBeenCalledWith({
@@ -294,8 +295,9 @@ describe('SpecialBetCard', () => {
       )
 
       const input = screen.getByPlaceholderText('enterPrediction')
-      fireEvent.change(input, { target: { value: '42' } })
-      fireEvent.click(screen.getByText('save'))
+      await user.clear(input)
+      await user.type(input, '42')
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(mockSaveSpecialBet).toHaveBeenCalledWith({
@@ -319,8 +321,8 @@ describe('SpecialBetCard', () => {
         />
       )
 
-      fireEvent.click(screen.getByTestId('select-option-1'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByTestId('select-option-1'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(mockOnSaved).toHaveBeenCalled()
@@ -337,8 +339,8 @@ describe('SpecialBetCard', () => {
         />
       )
 
-      fireEvent.click(screen.getByTestId('select-option-1'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByTestId('select-option-1'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(screen.getByText('saved')).toBeInTheDocument()
@@ -358,8 +360,8 @@ describe('SpecialBetCard', () => {
         />
       )
 
-      fireEvent.click(screen.getByTestId('select-option-1'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByTestId('select-option-1'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('Bet failed')
@@ -379,8 +381,8 @@ describe('SpecialBetCard', () => {
         />
       )
 
-      fireEvent.click(screen.getByTestId('select-option-1'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByTestId('select-option-1'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('saveError')
@@ -532,7 +534,7 @@ describe('SpecialBetCard', () => {
       expect(screen.getByText('saved')).toBeInTheDocument()
     })
 
-    it('marks as unsaved when selection changes', () => {
+    it('marks as unsaved when selection changes', async () => {
       const bet = createSpecialBet({
         userBet: { teamResultId: 1, playerResultId: null, value: null, totalPoints: 0 },
       })
@@ -546,7 +548,7 @@ describe('SpecialBetCard', () => {
         />
       )
 
-      fireEvent.click(screen.getByTestId('select-option-2'))
+      await user.click(screen.getByTestId('select-option-2'))
 
       expect(screen.getByText('save')).toBeInTheDocument()
     })

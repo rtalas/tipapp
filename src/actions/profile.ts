@@ -85,10 +85,12 @@ export async function updateProfile(input: UpdateProfileInput) {
     handler: async (validated) => {
       const now = new Date()
 
+      const normalizedEmail = validated.email.toLowerCase()
+
       // Check if email is already taken by another user
       const existingUser = await prisma.user.findFirst({
         where: {
-          email: validated.email,
+          email: normalizedEmail,
           id: { not: userId },
           deletedAt: null,
         },
@@ -104,7 +106,7 @@ export async function updateProfile(input: UpdateProfileInput) {
         data: {
           firstName: validated.firstName,
           lastName: validated.lastName,
-          email: validated.email,
+          email: normalizedEmail,
           mobileNumber: validated.mobileNumber || null,
           notifyHours: validated.notifyHours,
           updatedAt: now,

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { SeriesCard } from './series-card'
 
 // Mock next-intl
@@ -73,6 +74,7 @@ function createSeries(overrides: Record<string, unknown> = {}): any {
 }
 
 describe('SeriesCard', () => {
+  const user = userEvent.setup()
   const mockOnSaved = vi.fn()
 
   beforeEach(() => {
@@ -127,7 +129,7 @@ describe('SeriesCard', () => {
       expect(homeDecrementBtn).toBeDefined()
     })
 
-    it('caps home score at winsNeeded (4 for bestOf 7)', () => {
+    it('caps home score at winsNeeded (4 for bestOf 7)', async () => {
       render(<SeriesCard series={createSeries()} onSaved={mockOnSaved} />)
 
       // Find all score-related buttons
@@ -139,13 +141,13 @@ describe('SeriesCard', () => {
       // Click home increment 5 times (should cap at 4)
       const homeIncrement = scoreButtons[1] // Second button is home +
       for (let i = 0; i < 5; i++) {
-        fireEvent.click(homeIncrement)
+        await user.click(homeIncrement)
       }
 
       expect(screen.getByText('4')).toBeInTheDocument()
     })
 
-    it('constrains away score when home reaches winsNeeded', () => {
+    it('constrains away score when home reaches winsNeeded', async () => {
       render(<SeriesCard series={createSeries()} onSaved={mockOnSaved} />)
 
       const buttons = screen.getAllByRole('button')
@@ -154,7 +156,7 @@ describe('SeriesCard', () => {
       // Increment home to 4 (winsNeeded)
       const homeIncrement = scoreButtons[1]
       for (let i = 0; i < 4; i++) {
-        fireEvent.click(homeIncrement)
+        await user.click(homeIncrement)
       }
 
       // Away increment should be disabled
@@ -162,7 +164,7 @@ describe('SeriesCard', () => {
       expect(awayIncrement).toBeDisabled()
     })
 
-    it('enables save button when a team reaches winsNeeded', () => {
+    it('enables save button when a team reaches winsNeeded', async () => {
       render(<SeriesCard series={createSeries()} onSaved={mockOnSaved} />)
 
       const buttons = screen.getAllByRole('button')
@@ -171,7 +173,7 @@ describe('SeriesCard', () => {
       // Increment home to 4
       const homeIncrement = scoreButtons[1]
       for (let i = 0; i < 4; i++) {
-        fireEvent.click(homeIncrement)
+        await user.click(homeIncrement)
       }
 
       const saveButton = screen.getByText('savePrediction').closest('button')
@@ -189,10 +191,10 @@ describe('SeriesCard', () => {
       // Set home=4, away stays 0
       const homeIncrement = scoreButtons[1]
       for (let i = 0; i < 4; i++) {
-        fireEvent.click(homeIncrement)
+        await user.click(homeIncrement)
       }
 
-      fireEvent.click(screen.getByText('savePrediction'))
+      await user.click(screen.getByText('savePrediction'))
 
       await waitFor(() => {
         expect(mockSaveSeriesBet).toHaveBeenCalledWith({
@@ -209,10 +211,10 @@ describe('SeriesCard', () => {
       const buttons = screen.getAllByRole('button')
       const scoreButtons = buttons.filter(b => b.className.includes('score-button'))
       for (let i = 0; i < 4; i++) {
-        fireEvent.click(scoreButtons[1])
+        await user.click(scoreButtons[1])
       }
 
-      fireEvent.click(screen.getByText('savePrediction'))
+      await user.click(screen.getByText('savePrediction'))
 
       await waitFor(() => {
         expect(screen.getByText('saved')).toBeInTheDocument()
@@ -225,10 +227,10 @@ describe('SeriesCard', () => {
       const buttons = screen.getAllByRole('button')
       const scoreButtons = buttons.filter(b => b.className.includes('score-button'))
       for (let i = 0; i < 4; i++) {
-        fireEvent.click(scoreButtons[1])
+        await user.click(scoreButtons[1])
       }
 
-      fireEvent.click(screen.getByText('savePrediction'))
+      await user.click(screen.getByText('savePrediction'))
 
       await waitFor(() => {
         expect(mockOnSaved).toHaveBeenCalled()
@@ -244,10 +246,10 @@ describe('SeriesCard', () => {
       const buttons = screen.getAllByRole('button')
       const scoreButtons = buttons.filter(b => b.className.includes('score-button'))
       for (let i = 0; i < 4; i++) {
-        fireEvent.click(scoreButtons[1])
+        await user.click(scoreButtons[1])
       }
 
-      fireEvent.click(screen.getByText('savePrediction'))
+      await user.click(screen.getByText('savePrediction'))
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('Failed')

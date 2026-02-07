@@ -69,25 +69,32 @@ describe('Users Actions', () => {
   })
 
   describe('approveRequest', () => {
-    it('should approve request and create membership', async () => {
-      mockPrisma.userRequest.findUnique.mockResolvedValue({
-        id: 1,
-        userId: 5,
-        leagueId: 1,
-        decided: false,
-        User: { id: 5 },
-        League: { id: 1 },
-      } as any)
+    const mockRequest = {
+      id: 1,
+      userId: 5,
+      leagueId: 1,
+      decided: false,
+      User: { id: 5 },
+      League: { id: 1 },
+    }
 
-      const txMocks = {
-        leagueUser: {
-          findFirst: vi.fn().mockResolvedValue(null), // not already member
-          create: vi.fn().mockResolvedValue({ id: 10 }),
-        },
+    function makeTxMocks(overrides: { alreadyMember?: boolean; decided?: boolean; notFound?: boolean } = {}) {
+      return {
         userRequest: {
+          findUnique: vi.fn().mockResolvedValue(
+            overrides.notFound ? null : { ...mockRequest, decided: overrides.decided ?? false }
+          ),
           update: vi.fn(),
         },
+        leagueUser: {
+          findFirst: vi.fn().mockResolvedValue(overrides.alreadyMember ? { id: 10 } : null),
+          create: vi.fn().mockResolvedValue({ id: 10 }),
+        },
       }
+    }
+
+    it('should approve request and create membership', async () => {
+      const txMocks = makeTxMocks()
       mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 
       const result = await approveRequest(1)
@@ -102,22 +109,7 @@ describe('Users Actions', () => {
     })
 
     it('should skip membership creation if already member', async () => {
-      mockPrisma.userRequest.findUnique.mockResolvedValue({
-        id: 1,
-        userId: 5,
-        leagueId: 1,
-        decided: false,
-        User: { id: 5 },
-        League: { id: 1 },
-      } as any)
-
-      const txMocks = {
-        leagueUser: {
-          findFirst: vi.fn().mockResolvedValue({ id: 10 }), // already member
-          create: vi.fn(),
-        },
-        userRequest: { update: vi.fn() },
-      }
+      const txMocks = makeTxMocks({ alreadyMember: true })
       mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 
       await approveRequest(1)
@@ -126,70 +118,54 @@ describe('Users Actions', () => {
     })
 
     it('should throw when request not found', async () => {
-      mockPrisma.userRequest.findUnique.mockResolvedValue(null)
+      const txMocks = makeTxMocks({ notFound: true })
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 
       await expect(approveRequest(999)).rejects.toThrow('Request not found')
     })
 
     it('should throw when already decided', async () => {
-      mockPrisma.userRequest.findUnique.mockResolvedValue({
-        id: 1,
-        decided: true,
-      } as any)
+      const txMocks = makeTxMocks({ decided: true })
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 
       await expect(approveRequest(1)).rejects.toThrow('already been decided')
     })
 
-    it('should invalidate league-selector cache', async () => {
-      mockPrisma.userRequest.findUnique.mockResolvedValue({
-        id: 1,
-        userId: 5,
-        leagueId: 1,
-        decided: false,
-        User: { id: 5 },
-        League: { id: 1 },
-      } as any)
-
-      mockPrisma.$transaction.mockImplementation(async (fn: any) =>
-        fn({
-          leagueUser: { findFirst: vi.fn().mockResolvedValue(null), create: vi.fn() },
-          userRequest: { update: vi.fn() },
-        })
-      )
+    it('should invalidate league-selector and leaderboard caches', async () => {
+      const txMocks = makeTxMocks()
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 
       await approveRequest(1)
 
       expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
+      expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
     })
   })
 
   describe('rejectRequest', () => {
-    it('should reject request', async () => {
-      mockPrisma.userRequest.findUnique.mockResolvedValue({
-        id: 1,
-        leagueId: 1,
-        decided: false,
-      } as any)
-      mockPrisma.userRequest.update.mockResolvedValue({ id: 1 } as any)
+    it('should reject request atomically', async () => {
+      mockPrisma.userRequest.updateMany.mockResolvedValue({ count: 1 })
+      mockPrisma.userRequest.findUnique.mockResolvedValue({ leagueId: 1 } as any)
 
       const result = await rejectRequest(1)
 
       expect(result.success).toBe(true)
-      expect(mockPrisma.userRequest.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ decided: true, accepted: false }),
-        })
-      )
+      expect(mockPrisma.userRequest.updateMany).toHaveBeenCalledWith({
+        where: { id: 1, decided: false },
+        data: expect.objectContaining({ decided: true, accepted: false }),
+      })
     })
 
     it('should throw when request not found', async () => {
+      mockPrisma.userRequest.updateMany.mockResolvedValue({ count: 0 })
       mockPrisma.userRequest.findUnique.mockResolvedValue(null)
 
       await expect(rejectRequest(999)).rejects.toThrow('Request not found')
     })
 
     it('should throw when already decided', async () => {
-      mockPrisma.userRequest.findUnique.mockResolvedValue({ id: 1, decided: true } as any)
+      mockPrisma.userRequest.updateMany.mockResolvedValue({ count: 0 })
+      mockPrisma.userRequest.findUnique.mockResolvedValue({ id: 1, leagueId: 1 } as any)
 
       await expect(rejectRequest(1)).rejects.toThrow('already been decided')
     })
@@ -266,6 +242,7 @@ describe('Users Actions', () => {
 
       expect(result.success).toBe(true)
       expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
+      expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
     })
 
     it('should throw when user not found', async () => {
@@ -302,6 +279,7 @@ describe('Users Actions', () => {
         data: { deletedAt: expect.any(Date) },
       })
       expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
+      expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
     })
   })
 })

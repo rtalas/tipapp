@@ -11,6 +11,7 @@ import { CountdownBadge } from '@/components/user/common/countdown-badge'
 import { StatusBadge } from '@/components/user/common/status-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logging/client-logger'
 import { getUserDisplayName } from '@/lib/user-display-utils'
 import { saveQuestionBet, getQuestionFriendPredictions } from '@/actions/user/questions'
 import type { UserQuestion, QuestionFriendPrediction } from '@/actions/user/questions'
@@ -43,7 +44,7 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
         const result = await getQuestionFriendPredictions(question.id)
         setFriendPredictions(result.predictions)
       } catch (error) {
-        console.error('Failed to load friend predictions:', error)
+        logger.error('Failed to load friend predictions', { error: error instanceof Error ? error.message : String(error), questionId: question.id })
         toast.error(t('friendsLoadError'))
       } finally {
         setIsLoadingFriends(false)

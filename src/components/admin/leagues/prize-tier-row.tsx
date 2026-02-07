@@ -1,6 +1,7 @@
 'use client'
 
 import { Trash2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,6 +16,8 @@ interface PrizeTierRowProps {
 }
 
 export function PrizeTierRow({ prize, index, onUpdate, onRemove, error }: PrizeTierRowProps) {
+  const t = useTranslations('admin.leagueActions.prizesSection')
+
   // Format amount with thousands separator for display
   const formatAmount = (value: number) => {
     return new Intl.NumberFormat('cs-CZ', {
@@ -35,7 +38,7 @@ export function PrizeTierRow({ prize, index, onUpdate, onRemove, error }: PrizeT
         {/* Rank */}
         <div className="w-20 flex-shrink-0">
           <Label htmlFor={`prize-rank-${index}`} className="text-xs text-muted-foreground">
-            Position
+            {t('position')}
           </Label>
           <Input
             id={`prize-rank-${index}`}
@@ -45,14 +48,14 @@ export function PrizeTierRow({ prize, index, onUpdate, onRemove, error }: PrizeT
             value={prize.rank}
             onChange={(e) => onUpdate(index, 'rank', parseInt(e.target.value) || 1)}
             className="mt-1"
-            aria-label={`Prize rank ${index + 1}`}
+            aria-label={t('removeTier', { index: index + 1 })}
           />
         </div>
 
         {/* Amount (in Kč) */}
         <div className="flex-1">
           <Label htmlFor={`prize-amount-${index}`} className="text-xs text-muted-foreground">
-            Amount (Kč)
+            {t('amount')}
           </Label>
           <Input
             id={`prize-amount-${index}`}
@@ -64,14 +67,13 @@ export function PrizeTierRow({ prize, index, onUpdate, onRemove, error }: PrizeT
             }}
             className="mt-1"
             placeholder="1 000"
-            aria-label={`Prize amount ${index + 1}`}
           />
         </div>
 
         {/* Label (optional) */}
         <div className="flex-1">
           <Label htmlFor={`prize-label-${index}`} className="text-xs text-muted-foreground">
-            Label (optional)
+            {t('label')}
           </Label>
           <Input
             id={`prize-label-${index}`}
@@ -80,8 +82,7 @@ export function PrizeTierRow({ prize, index, onUpdate, onRemove, error }: PrizeT
             value={prize.label || ''}
             onChange={(e) => onUpdate(index, 'label', e.target.value)}
             className="mt-1"
-            placeholder="Champion"
-            aria-label={`Prize label ${index + 1}`}
+            placeholder={t('labelPlaceholder')}
           />
         </div>
 
@@ -93,7 +94,7 @@ export function PrizeTierRow({ prize, index, onUpdate, onRemove, error }: PrizeT
             size="icon"
             onClick={() => onRemove(index)}
             className="h-9 w-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            aria-label={`Remove prize tier ${index + 1}`}
+            aria-label={t('removeTier', { index: index + 1 })}
           >
             <Trash2 className="h-4 w-4" />
           </Button>

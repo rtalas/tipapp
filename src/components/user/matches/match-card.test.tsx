@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MatchCard } from './match-card'
 
 // Mock next-intl
@@ -98,7 +99,6 @@ function createTeamData(name: string, shortcut: string) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createMatch(overrides: Record<string, unknown> = {}): any {
   const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
   return {
@@ -126,6 +126,7 @@ function createMatch(overrides: Record<string, unknown> = {}): any {
 }
 
 describe('MatchCard', () => {
+  const user = userEvent.setup()
   const mockOnBetSaved = vi.fn()
 
   beforeEach(() => {
@@ -166,23 +167,23 @@ describe('MatchCard', () => {
   })
 
   describe('Score changes', () => {
-    it('updates home score when changed', () => {
+    it('updates home score when changed', async () => {
       render(<MatchCard match={createMatch()} />)
 
-      fireEvent.click(screen.getByTestId('home-inc'))
+      await user.click(screen.getByTestId('home-inc'))
 
       expect(screen.getByTestId('home-score')).toHaveTextContent('1')
     })
 
-    it('updates away score when changed', () => {
+    it('updates away score when changed', async () => {
       render(<MatchCard match={createMatch()} />)
 
-      fireEvent.click(screen.getByTestId('away-inc'))
+      await user.click(screen.getByTestId('away-inc'))
 
       expect(screen.getByTestId('away-score')).toHaveTextContent('1')
     })
 
-    it('marks as unsaved when score changes', () => {
+    it('marks as unsaved when score changes', async () => {
       const match = createMatch({
         userBet: {
           homeScore: 2,
@@ -200,7 +201,7 @@ describe('MatchCard', () => {
 
       expect(screen.getByTestId('save-button')).toHaveTextContent('Saved')
 
-      fireEvent.click(screen.getByTestId('home-inc'))
+      await user.click(screen.getByTestId('home-inc'))
 
       expect(screen.getByTestId('save-button')).toHaveTextContent('Save')
     })
@@ -210,10 +211,10 @@ describe('MatchCard', () => {
     it('calls saveMatchBet with correct data', async () => {
       render(<MatchCard match={createMatch()} onBetSaved={mockOnBetSaved} />)
 
-      fireEvent.click(screen.getByTestId('home-inc'))
-      fireEvent.click(screen.getByTestId('home-inc'))
-      fireEvent.click(screen.getByTestId('away-inc'))
-      fireEvent.click(screen.getByTestId('save-button'))
+      await user.click(screen.getByTestId('home-inc'))
+      await user.click(screen.getByTestId('home-inc'))
+      await user.click(screen.getByTestId('away-inc'))
+      await user.click(screen.getByTestId('save-button'))
 
       await waitFor(() => {
         expect(mockSaveMatchBet).toHaveBeenCalledWith({
@@ -231,7 +232,7 @@ describe('MatchCard', () => {
     it('calls onBetSaved callback on success', async () => {
       render(<MatchCard match={createMatch()} onBetSaved={mockOnBetSaved} />)
 
-      fireEvent.click(screen.getByTestId('save-button'))
+      await user.click(screen.getByTestId('save-button'))
 
       await waitFor(() => {
         expect(mockOnBetSaved).toHaveBeenCalled()
@@ -241,7 +242,7 @@ describe('MatchCard', () => {
     it('shows saved state after successful save', async () => {
       render(<MatchCard match={createMatch()} />)
 
-      fireEvent.click(screen.getByTestId('save-button'))
+      await user.click(screen.getByTestId('save-button'))
 
       await waitFor(() => {
         expect(screen.getByTestId('save-button')).toHaveTextContent('Saved')
@@ -254,7 +255,7 @@ describe('MatchCard', () => {
 
       render(<MatchCard match={createMatch()} />)
 
-      fireEvent.click(screen.getByTestId('save-button'))
+      await user.click(screen.getByTestId('save-button'))
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('Match locked')
@@ -267,7 +268,7 @@ describe('MatchCard', () => {
 
       render(<MatchCard match={createMatch()} />)
 
-      fireEvent.click(screen.getByTestId('save-button'))
+      await user.click(screen.getByTestId('save-button'))
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('Failed to save bet')
@@ -391,7 +392,7 @@ describe('MatchCard', () => {
 
       render(<MatchCard match={match} />)
 
-      fireEvent.click(screen.getByText('friendsPicks'))
+      await user.click(screen.getByText('friendsPicks'))
 
       await waitFor(() => {
         expect(screen.getByTestId('friends-modal')).toBeInTheDocument()
@@ -404,7 +405,7 @@ describe('MatchCard', () => {
 
       render(<MatchCard match={match} />)
 
-      fireEvent.click(screen.getByText('friendsPicks'))
+      await user.click(screen.getByText('friendsPicks'))
 
       await waitFor(() => {
         expect(mockGetFriendPredictions).toHaveBeenCalledWith(1)

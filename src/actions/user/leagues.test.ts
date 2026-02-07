@@ -43,20 +43,40 @@ describe('User Leagues Actions', () => {
   })
 
   describe('joinLeague', () => {
-    it('should join a public active league', async () => {
+    const setupTransaction = (findFirstResult: unknown, createResult?: unknown) => {
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          leagueUser: {
+            findFirst: vi.fn().mockResolvedValue(findFirstResult),
+            create: vi.fn().mockResolvedValue(createResult ?? { id: 10 }),
+          },
+        }
+        return fn(tx)
+      })
+    }
+
+    it('should join a public active league using Serializable transaction', async () => {
       mockPrisma.league.findUnique.mockResolvedValue({
         id: 1,
         isPublic: true,
         isActive: true,
       } as any)
-      mockPrisma.leagueUser.findFirst.mockResolvedValue(null) // not member
-      mockPrisma.leagueUser.create.mockResolvedValue({ id: 10 } as any)
+      setupTransaction(null, { id: 10 })
 
       const result = await joinLeague(1)
 
       expect(result.success).toBe(true)
       expect(result.leagueId).toBe(1)
+      expect(mockPrisma.$transaction).toHaveBeenCalledWith(
+        expect.any(Function),
+        {
+          isolationLevel: 'Serializable',
+          maxWait: 5000,
+          timeout: 10000,
+        }
+      )
       expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
+      expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
     })
 
     it('should throw when league not found', async () => {
@@ -91,7 +111,7 @@ describe('User Leagues Actions', () => {
         isPublic: true,
         isActive: true,
       } as any)
-      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10 } as any)
+      setupTransaction({ id: 10 })
 
       await expect(joinLeague(1)).rejects.toThrow('Already a member')
     })
@@ -100,6 +120,17 @@ describe('User Leagues Actions', () => {
       mockAuth.mockResolvedValue(null as any)
 
       await expect(joinLeague(1)).rejects.toThrow()
+    })
+
+    it('should handle transaction failure', async () => {
+      mockPrisma.league.findUnique.mockResolvedValue({
+        id: 1,
+        isPublic: true,
+        isActive: true,
+      } as any)
+      mockPrisma.$transaction.mockRejectedValue(new Error('Serialization failure'))
+
+      await expect(joinLeague(1)).rejects.toThrow('Serialization failure')
     })
   })
 })

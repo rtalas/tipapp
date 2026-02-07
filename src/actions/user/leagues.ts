@@ -214,35 +214,44 @@ export async function joinLeague(leagueId: number): Promise<{ success: true; lea
       throw new AppError('League is not active', 'BAD_REQUEST', 400)
     }
 
-    // Check if user is already a member
-    const existingMembership = await prisma.leagueUser.findFirst({
-      where: {
-        userId,
-        leagueId: validated.leagueId,
-        deletedAt: null,
-      },
-    })
-
-    if (existingMembership) {
-      throw new AppError('Already a member of this league', 'CONFLICT', 409)
-    }
-
-    // Create league membership
+    // Serializable transaction to prevent duplicate memberships from concurrent requests
     const now = new Date()
-    await prisma.leagueUser.create({
-      data: {
-        userId,
-        leagueId: validated.leagueId,
-        active: true,
-        admin: false,
-        paid: false,
-        createdAt: now,
-        updatedAt: now,
-      },
-    })
+    await prisma.$transaction(
+      async (tx) => {
+        const existingMembership = await tx.leagueUser.findFirst({
+          where: {
+            userId,
+            leagueId: validated.leagueId,
+            deletedAt: null,
+          },
+        })
 
-    // Invalidate league selector cache and revalidate layout
+        if (existingMembership) {
+          throw new AppError('Already a member of this league', 'CONFLICT', 409)
+        }
+
+        await tx.leagueUser.create({
+          data: {
+            userId,
+            leagueId: validated.leagueId,
+            active: true,
+            admin: false,
+            paid: false,
+            createdAt: now,
+            updatedAt: now,
+          },
+        })
+      },
+      {
+        isolationLevel: 'Serializable',
+        maxWait: 5000,
+        timeout: 10000,
+      }
+    )
+
+    // Invalidate league selector cache, leaderboard, and revalidate layout
     revalidateTag('league-selector', 'max')
+    revalidateTag('leaderboard', 'max')
     revalidatePath('/[leagueId]', 'layout')
 
     return { success: true, leagueId: validated.leagueId }

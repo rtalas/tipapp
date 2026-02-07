@@ -29,37 +29,35 @@ export async function approveRequest(requestId: number) {
 
   const now = new Date()
 
-  // Get the request
-  const request = await prisma.userRequest.findUnique({
-    where: { id: requestId },
-    include: { User: true, League: true },
-  })
+  // All checks inside transaction to prevent race conditions
+  const request = await prisma.$transaction(async (tx) => {
+    const req = await tx.userRequest.findUnique({
+      where: { id: requestId },
+      include: { User: true, League: true },
+    })
 
-  if (!request) {
-    throw new AppError('Request not found', 'NOT_FOUND', 404)
-  }
+    if (!req) {
+      throw new AppError('Request not found', 'NOT_FOUND', 404)
+    }
 
-  if (request.decided) {
-    throw new AppError('Request has already been decided', 'CONFLICT', 409)
-  }
+    if (req.decided) {
+      throw new AppError('Request has already been decided', 'CONFLICT', 409)
+    }
 
-  // Transaction: Create LeagueUser and update request
-  await prisma.$transaction(async (tx) => {
     // Check if user is already a member
     const existingMembership = await tx.leagueUser.findFirst({
       where: {
-        userId: request.userId,
-        leagueId: request.leagueId,
+        userId: req.userId,
+        leagueId: req.leagueId,
         deletedAt: null,
       },
     })
 
     if (!existingMembership) {
-      // Create league user membership
       await tx.leagueUser.create({
         data: {
-          userId: request.userId,
-          leagueId: request.leagueId,
+          userId: req.userId,
+          leagueId: req.leagueId,
           paid: false,
           active: true,
           admin: false,
@@ -78,10 +76,12 @@ export async function approveRequest(requestId: number) {
         updatedAt: now,
       },
     })
+
+    return req
   })
 
-  // Invalidate league selector cache for the user who was just approved
   revalidateTag('league-selector', 'max')
+  revalidateTag('leaderboard', 'max')
   revalidatePath('/admin/users')
   revalidatePath(`/admin/leagues/${request.leagueId}/users`)
   return { success: true }
@@ -91,20 +91,9 @@ export async function approveRequest(requestId: number) {
 export async function rejectRequest(requestId: number) {
   await requireAdmin()
 
-  const request = await prisma.userRequest.findUnique({
-    where: { id: requestId },
-  })
-
-  if (!request) {
-    throw new AppError('Request not found', 'NOT_FOUND', 404)
-  }
-
-  if (request.decided) {
-    throw new AppError('Request has already been decided', 'CONFLICT', 409)
-  }
-
-  await prisma.userRequest.update({
-    where: { id: requestId },
+  // Atomic update — decided: false in where prevents race conditions
+  const { count } = await prisma.userRequest.updateMany({
+    where: { id: requestId, decided: false },
     data: {
       decided: true,
       accepted: false,
@@ -112,8 +101,28 @@ export async function rejectRequest(requestId: number) {
     },
   })
 
+  if (count === 0) {
+    // Distinguish not-found from already-decided
+    const exists = await prisma.userRequest.findUnique({
+      where: { id: requestId },
+      select: { id: true, leagueId: true },
+    })
+    if (!exists) {
+      throw new AppError('Request not found', 'NOT_FOUND', 404)
+    }
+    throw new AppError('Request has already been decided', 'CONFLICT', 409)
+  }
+
+  // Need leagueId for revalidation
+  const request = await prisma.userRequest.findUnique({
+    where: { id: requestId },
+    select: { leagueId: true },
+  })
+
   revalidatePath('/admin/users')
-  revalidatePath(`/admin/leagues/${request.leagueId}/users`)
+  if (request) {
+    revalidatePath(`/admin/leagues/${request.leagueId}/users`)
+  }
   return { success: true }
 }
 
@@ -253,8 +262,9 @@ export async function addUserToLeague(userId: number, leagueId: number) {
     },
   })
 
-  // Invalidate league selector cache for the added user
+  // Invalidate league selector and leaderboard caches for the added user
   revalidateTag('league-selector', 'max')
+  revalidateTag('leaderboard', 'max')
   revalidatePath('/admin/users')
   revalidatePath(`/admin/${leagueId}/users`)
   return { success: true }
@@ -272,8 +282,9 @@ export async function removeLeagueUser(leagueUserId: number) {
     },
   })
 
-  // Invalidate league selector cache for the removed user
+  // Invalidate league selector and leaderboard caches for the removed user
   revalidateTag('league-selector', 'max')
+  revalidateTag('leaderboard', 'max')
   revalidatePath('/admin/users')
   revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
   return { success: true }

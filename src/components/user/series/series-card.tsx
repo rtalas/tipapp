@@ -12,6 +12,7 @@ import { StatusBadge } from '@/components/user/common/status-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
 import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logging/client-logger'
 import { SPORT_IDS } from '@/lib/constants'
 import { getUserDisplayName } from '@/lib/user-display-utils'
 import { saveSeriesBet, getSeriesFriendPredictions } from '@/actions/user/series'
@@ -79,7 +80,7 @@ export function SeriesCard({ series, onSaved }: SeriesCardProps) {
         const result = await getSeriesFriendPredictions(series.id)
         setFriendPredictions(result.predictions)
       } catch (error) {
-        console.error('Failed to load friend predictions:', error)
+        logger.error('Failed to load friend predictions', { error: error instanceof Error ? error.message : String(error), seriesId: series.id })
         toast.error(t('friendsLoadError'))
       } finally {
         setIsLoadingFriends(false)

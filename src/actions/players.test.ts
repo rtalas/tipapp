@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPlayer, updatePlayer, deletePlayer } from './players'
 import { prisma } from '@/lib/prisma'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { requireAdmin } from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
@@ -10,6 +10,7 @@ vi.mock('@/lib/auth/auth-utils', () => ({
 
 const mockPrisma = vi.mocked(prisma, true)
 const mockRevalidatePath = vi.mocked(revalidatePath)
+const mockRevalidateTag = vi.mocked(revalidateTag)
 const mockRequireAdmin = vi.mocked(requireAdmin)
 
 describe('Players Actions', () => {
@@ -45,12 +46,13 @@ describe('Players Actions', () => {
       )
     })
 
-    it('should revalidate path on success', async () => {
+    it('should revalidate path and players cache on success', async () => {
       mockPrisma.player.create.mockResolvedValue({ id: 1 } as any)
 
       await createPlayer({ isActive: true, firstName: 'A', lastName: 'B' })
 
       expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/players')
+      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-players', 'max')
     })
 
     it('should handle database error', async () => {
@@ -70,6 +72,7 @@ describe('Players Actions', () => {
       const result = await updatePlayer({ id: 1, firstName: 'Updated' })
 
       expect(result.success).toBe(true)
+      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-players', 'max')
     })
 
     it('should return error when player not found', async () => {
@@ -99,6 +102,7 @@ describe('Players Actions', () => {
         where: { id: 1 },
         data: { deletedAt: expect.any(Date) },
       })
+      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-players', 'max')
     })
 
     it('should return error when player not found', async () => {

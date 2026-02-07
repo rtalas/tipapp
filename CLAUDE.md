@@ -3,17 +3,18 @@
 ## Project Overview
 **TipApp** is a Next.js 16 mobile-first sports betting app for friends to compete in football and hockey predictions.
 - **Target:** Friends/Family (dozens of users), mobile-first.
-- **Features:** Match score predictions, goal scorers, series bets, special bets, questions.
-- **Admin:** Manual league, team, match, and result management.
+- **Features:** Match score predictions, goal scorers, series bets, special bets, questions, in-app chat.
+- **Admin:** Manual league, team, match, and result management with audit logging.
 
 ## Tech Stack
-Next.js 16 (App Router) • Auth.js v5 (CredentialsProvider + JWT) • PostgreSQL (Supabase) • Prisma ORM • Zod • Vitest + Testing Library • Tailwind CSS v4 • Lucide Icons • next-intl v4 (i18n)
+Next.js 16 (App Router) • React 19 • Auth.js v5 (CredentialsProvider + JWT) • PostgreSQL (Supabase) • Prisma 6 • Zod 4 • Vitest 4 + Testing Library • Tailwind CSS v4 • Lucide Icons • next-intl v4 (i18n) • Resend (email) • web-push (notifications)
 
 ## Internationalization (i18n)
 **Supported Languages:** English (en), Czech (cs)
 **Library:** next-intl v4.x for Next.js 16 App Router
 **Locale Storage:** Cookie-based (`NEXT_LOCALE`, 1-year expiry) - no URL routing changes
-**Translation Files:** `/messages/en.json`, `/messages/cs.json`
+**Translation Files:** `/translations/en.json`, `/translations/cs.json`
+**Request Config:** `src/i18n/request.ts`
 
 ### Key Features
 - **Language Switcher:** Available in user menu dropdown (top-right header) and admin topbar
@@ -24,7 +25,7 @@ Next.js 16 (App Router) • Auth.js v5 (CredentialsProvider + JWT) • PostgreSQ
 - **Date/Time Formatting:** Uses Intl API via next-intl (automatic locale-aware formatting)
 
 ### Translation Structure
-Nested JSON organized by namespaces:
+Nested JSON organized by namespaces (~1350 lines each):
 ```json
 {
   "common": { "save": "Save", "cancel": "Cancel" },
@@ -41,18 +42,9 @@ Nested JSON organized by namespaces:
 }
 ```
 
-### Implementation Status
-✅ **Infrastructure:** next-intl installed, proxy.ts integration, locale resolution
-✅ **Language Switcher:** User header + admin topbar with language selection dialog
-✅ **Authentication Pages:** Login, register, password reset, profile (100% translated)
-✅ **User Interface:** Matches, leaderboard, series, special bets, questions, chat (100% translated)
-✅ **Admin Interface:** Topbar, common UI elements (core components translated)
-⚠️ **Admin Pages:** Foundation established, individual admin pages can be translated as needed
-⚠️ **Validation Messages:** Translation keys available, Zod schemas can be extended
-
 ### Adding New Translations
-1. Add English key to `/messages/en.json` in appropriate namespace
-2. Add Czech translation to `/messages/cs.json` (same path)
+1. Add English key to `/translations/en.json` in appropriate namespace
+2. Add Czech translation to `/translations/cs.json` (same path)
 3. Use in component:
    - Server Component: `const t = await getTranslations('namespace')` then `{t('key')}`
    - Client Component: `const t = useTranslations('namespace')` then `{t('key')}`
@@ -64,11 +56,13 @@ Nested JSON organized by namespaces:
 
 ## Commands
 - `npm run dev` - Start dev server
-- `npm run build` - Build production
+- `npm run build` - Build production (`prisma generate && next build`)
 - `npm test` - Run tests once and exit (fast feedback)
 - `npm run test:watch` - Run tests in watch mode (for development)
-- `npm run test:ui` - Run tests with UI
+- `npm run test:ui` - Run tests with Vitest UI
 - `npm run test:coverage` - Generate coverage report
+- `npm run seed:demo` - Seed database with demo data
+- `npm run knip` - Find unused code/dependencies
 - `npx prisma db pull` - Sync schema from database
 - `npx prisma generate` - Update Prisma Client after schema changes
 - `npx prisma studio` - Open DB GUI
@@ -77,18 +71,20 @@ Nested JSON organized by namespaces:
 ## Standards
 - Clean, modular, self-documenting code. Strict TypeScript (no `any`).
 - Default to Server Components. Client only for interactivity.
+- React Compiler enabled (`reactCompiler: true`) — manual React.memo/useMemo/useCallback unnecessary.
 - Every feature must have tests (`.test.ts` / `.test.tsx`).
 - **Testing policy:** Only run `npm test` for significant changes (new features, business logic, evaluators, schema changes, security fixes, core bugs). Skip for minor UI tweaks, documentation, config updates, or small refactoring.
 - Before finishing significant changes: Run `npm run build` + `npm test`, verify in browser.
 
 ## Database Rules (CRITICAL)
-- Tables use PascalCase (`User`, `Match`, `UserBet`), mapped to `prisma.user`, `prisma.match`.
+- **36 models** in Prisma schema. Tables use PascalCase (`User`, `Match`, `UserBet`), mapped to `prisma.user`, `prisma.match`.
 - **DO NOT** rename fields to camelCase. Use introspected schema exactly as-is.
 - **Evaluator.points:** Uses `Int` type (not String) - stored as integers for performance and type safety.
 - **Evaluator.config:** Optional `Json` field storing `ScorerRankedConfig` for rank-based scorer evaluation. When config exists, points field is set to 0.
 - **LeaguePrize.type:** Enum field ('prize' or 'fine') to distinguish between rewards for top performers and penalties for worst performers. Prizes rank from top (1 = 1st place), fines rank from bottom (1 = last place).
 - **Unique constraints:** All bet tables have unique constraints on `[foreignKey, leagueUserId, deletedAt]` to prevent duplicates. LeaguePrize has unique constraint on `[leagueId, rank, type, deletedAt]`.
 - **Performance indexes:** Critical query paths have composite indexes for fast lookups.
+- **Soft delete:** All entities use `deletedAt` timestamp — never hard-delete.
 
 ## Business Logic
 - `/admin/**` requires `isSuperadmin: true` in JWT.
@@ -98,55 +94,97 @@ Nested JSON organized by namespaces:
 - `/admin` redirects to most active league's matches page.
 - If `LeagueMatch.isDoubled = true`, points × 2.
 - Points calculated via league's `Evaluator` table.
+- Users can request to join a league (`UserRequest` model).
+- Per-league user settings stored in `UserSetting` model.
 
 ## Project Structure
 ```
-app/
-├── [leagueId]/         # User pages (matches, series, special-bets, leaderboard, chat)
-└── admin/
-    ├── [leagueId]/     # League-scoped (matches, series, special-bets, questions, teams, players, users, evaluators)
-    └── */              # Global (leagues, teams, players, users, series-types, special-bet-types)
+app/                              # 39 pages
+├── [leagueId]/                   # User pages (matches, series, special-bets, questions, leaderboard, chat, profile)
+├── admin/
+│   ├── [leagueId]/               # League-scoped (matches, series, special-bets, questions, teams, players, evaluators)
+│   └── */                        # Global (leagues, teams, players, users, matches, series, special-bets,
+│                                 #         series-types, evaluators, match-phases, audit-logs, profile)
+├── login/, register/             # Auth pages
+├── forgot-password/              # Password reset request
+└── reset-password/[token]/       # Password reset form
 src/
-├── actions/            # Server actions (admin + user)
-│   ├── evaluators.ts   # updateEvaluator() supports config for scorer rank-based points
-│   ├── league-prizes.ts # getLeaguePrizes(), updateLeaguePrizes() - handles prizes & fines
-│   └── user/
-│       └── leaderboard.ts # getLeaderboard() returns entries, prizes, fines
-├── components/         # UI (user + admin)
-│   ├── admin/
+├── actions/                      # Server actions (50 files with tests)
+│   ├── evaluators.ts             # updateEvaluator() supports config for scorer rank-based points
+│   ├── league-prizes.ts          # getLeaguePrizes(), updateLeaguePrizes() - handles prizes & fines
+│   ├── evaluate-matches.ts       # Match evaluation engine
+│   ├── evaluate-series.ts        # Series evaluation engine
+│   ├── evaluate-special-bets.ts  # Special bet evaluation engine
+│   ├── evaluate-questions.ts     # Question evaluation engine
+│   ├── messages.ts               # Chat messages (with reply support)
+│   ├── shared-queries.ts         # Shared DB query utilities
+│   └── user/                     # User-facing actions
+│       ├── matches.ts            # getCachedMatchData(), saveMatchBet()
+│       ├── series.ts             # getCachedSeriesData(), saveSeriesBet()
+│       ├── special-bets.ts       # getCachedSpecialBetData(), saveSpecialBet()
+│       ├── questions.ts          # getCachedQuestionData(), saveQuestionBet()
+│       ├── leaderboard.ts        # getCachedLeaderboard() returns entries, prizes, fines
+│       ├── leagues.ts            # getCachedLeaguesForSelector()
+│       ├── profile.ts            # User profile operations
+│       └── locale.ts             # Language preference management
+├── components/                   # React components
+│   ├── admin/                    # 17 subdirectories (layout, common, leagues, matches, series, etc.)
 │   │   └── leagues/
 │   │       ├── league-prizes-section.tsx  # Prize management UI
-│   │       ├── league-fines-section.tsx   # Fine management UI (Jan 2026)
-│   │       └── fine-tier-row.tsx          # Individual fine tier component (Jan 2026)
-│   └── user/
+│   │       ├── league-fines-section.tsx   # Fine management UI
+│   │       └── fine-tier-row.tsx          # Individual fine tier component
+│   └── user/                     # 10 subdirectories (layout, common, matches, leaderboard, etc.)
 │       └── leaderboard/
 │           └── leaderboard-table.tsx      # Displays prizes & fines
-├── contexts/           # League context (admin + user)
-├── hooks/              # useRefresh, useInlineEdit, useDeleteDialog, useCreateDialog, useExpandableRow
+├── contexts/                     # league-context.tsx, user-league-context.tsx
+├── hooks/                        # useRefresh, useInlineEdit, useDeleteDialog, useCreateDialog,
+│                                 # useExpandableRow, useMessages, useDateLocale
+├── i18n/                         # request.ts (next-intl config)
 ├── lib/
-│   ├── auth/           # Auth utilities
-│   │   ├── auth-utils.ts   # requireAdmin()
-│   │   └── user-auth-utils.ts # requireLeagueMember()
-│   ├── email/          # Email service
-│   │   └── email.ts    # sendPasswordResetEmail() via Resend
-│   ├── logging/        # Logging & audit
-│   │   ├── audit-logger.ts  # AuditLogger, auditLog()
-│   │   └── client-logger.ts # Client-side error logging
-│   ├── evaluators/     # 14 bet evaluators
-│   ├── evaluation/     # Evaluation engine
-│   ├── cache/          # Cache utilities
-│   ├── validation/     # Zod schemas (admin.ts, user.ts)
-│   │   └── admin.ts    # PrizeTier schema with type field, updateLeaguePrizesSchema
-│   ├── constants.ts    # SPORT_IDS.HOCKEY, SPORT_IDS.FOOTBALL
-│   ├── error-handler.ts # AppError, handleActionError()
-│   ├── server-action-utils.ts # executeServerAction()
-│   └── prisma-utils.ts # nullableUniqueConstraint() for type-safe Prisma
-└── types/              # Session + user types
+│   ├── auth/                     # auth-utils.ts (requireAdmin), user-auth-utils.ts (requireLeagueMember)
+│   ├── email/                    # email.ts (sendPasswordResetEmail via Resend)
+│   ├── logging/                  # audit-logger.ts (AuditLogger), client-logger.ts
+│   ├── evaluators/               # 14 evaluators + types.ts, evaluator-mapper.ts, context-builders.ts
+│   ├── evaluation/               # match-evaluator.ts, series-evaluator.ts, special-bet-evaluator.ts, question-evaluator.ts
+│   ├── cache/                    # badge-counts.ts (getCachedBadgeCounts)
+│   ├── chat/                     # emoji-data.ts
+│   ├── validation/               # admin.ts, user.ts, message.ts (Zod schemas)
+│   ├── constants.ts              # SPORT_IDS.HOCKEY=1, SPORT_IDS.FOOTBALL=2
+│   ├── error-handler.ts          # AppError, handleActionError()
+│   ├── server-action-utils.ts    # executeServerAction() wrapper
+│   ├── prisma.ts                 # Prisma Client singleton
+│   ├── prisma-utils.ts           # nullableUniqueConstraint() helper
+│   ├── prisma-helpers.ts         # Prisma helpers
+│   ├── bet-utils.ts              # Bet computation utilities
+│   ├── match-utils.ts            # Match utilities
+│   ├── event-status-utils.ts     # Event status helpers
+│   ├── league-utils.ts           # League utilities
+│   ├── cached-data-utils.ts      # Data merging for cache pattern
+│   ├── scorer-ranking-utils.ts   # Scorer ranking logic
+│   ├── query-builders.ts         # SQL query builders
+│   ├── token-utils.ts            # Token generation/verification
+│   ├── rate-limit.ts             # Rate limiting
+│   ├── push-notifications.ts     # Push notification service
+│   ├── delete-utils.ts           # Soft delete utilities
+│   ├── date-grouping-utils.ts    # Date grouping for UI
+│   └── user-display-utils.ts     # User display formatting
+└── types/                        # next-auth.d.ts, user.ts
 prisma/
-└── schema.prisma       # LeaguePrize.type field distinguishes prizes from fines
-migration_add_fines_v2.sql  # Migration to add type column (required before using fines)
-FINES_FEATURE.md        # Comprehensive fines feature documentation
+├── schema.prisma                 # 36 models
+└── seed-demo.ts                  # Demo data generator
+translations/
+├── en.json                       # English (~1350 lines)
+└── cs.json                       # Czech (~1350 lines)
 ```
+
+## Database Models (36 total)
+**Core:** User, League, LeagueUser, Sport, Team, Player, Match, LeagueMatch
+**Betting:** UserBet, UserSpecialBetSerie, UserSpecialBetSingle, UserSpecialBetQuestion
+**League Config:** Evaluator, EvaluatorType, LeaguePrize, LeaguePhase, LeagueTeam, LeaguePlayer
+**Special Bets:** SpecialBetSerie, SpecialBetSingle, SpecialBetSingleType, LeagueSpecialBetSerie, LeagueSpecialBetSingle, LeagueSpecialBetSingleTeamAdvanced, LeagueSpecialBetQuestion
+**Match:** MatchPhase, MatchScorer, TopScorerRankingVersion
+**Features:** Message (chat), UserRequest (join requests), UserSetting (preferences), PushSubscription, SentNotification
+**System:** AuditLog, PasswordResetToken, SequelizeMeta
 
 ## Auth
 - bcryptjs (salt: 12)
@@ -186,32 +224,10 @@ FINES_FEATURE.md        # Comprehensive fines feature documentation
 - ✅ **Phase 1:** Infrastructure (Next.js, Prisma, Auth.js v5)
 - ✅ **Phase 2:** Admin Management (CRUD, inline editing, code quality, security audit)
 - ✅ **Phase 3:** Admin User Betting (expandable rows, league-scoped architecture, questions)
-- ✅ **Phase 4:** Evaluation Engine (14 evaluators, 79 tests)
+- ✅ **Phase 4:** Evaluation Engine (14 evaluators with full test coverage)
 - ✅ **Phase 5:** User-Side App (mobile-first, PWA, bottom nav, friend predictions, pull-to-refresh)
-- ✅ **Phase 6:** Polish (configurable prizes & fines, race condition fixes, performance optimization, security hardening)
+- ✅ **Phase 6:** Polish (prizes & fines, race condition fixes, performance caching, security hardening, chat replies, audit logs)
 - 🔄 **Phase 7:** Production (push notifications, monitoring, final deployment)
-
-### Recent Updates (Jan-Feb 2026)
-- **Performance Caching (Feb 7, 2026):** Comprehensive server-side caching with `unstable_cache`
-  - Bet lists (matches, series, special bets, questions): 20 min TTL
-  - League selector: 10 hour TTL (keyed by userId)
-  - Teams/Players: 12 hour TTL
-  - Leaderboard: 30 min TTL
-  - Badge counts: 15 min TTL
-  - Tag-based invalidation on admin CRUD and bet evaluation
-- **Fines System (Jan 29, 2026):** Added penalty system for worst-performing bettors
-  - Extended `LeaguePrize` table with `type` field (prize/fine)
-  - Admin can configure up to 10 fine tiers per league
-  - Fines display automatically on user leaderboard (red badges with negative amounts)
-  - **Migration Required:** `migration_add_fines_v2.sql` must be run before using feature
-    - Adds `type` VARCHAR(10) column with default 'prize'
-    - Adds check constraint: type IN ('prize', 'fine')
-    - Updates unique constraint to include type: `[leagueId, rank, type, deletedAt]`
-    - Idempotent: Safe to run multiple times
-    - Run via Supabase SQL Editor or: `psql $DATABASE_URL -f migration_add_fines_v2.sql`
-  - Components: `LeagueFinesSection`, `FineTierRow` for admin management
-  - Calculation: Position from bottom (14 participants → rank 14 gets fine rank 1)
-  - See `FINES_FEATURE.md` for complete documentation
 
 ## Key Features
 
@@ -219,6 +235,7 @@ FINES_FEATURE.md        # Comprehensive fines feature documentation
 - **Dual routing:** Global (`/admin/teams`) vs. League-scoped (`/admin/[leagueId]/teams`)
 - **Expandable rows:** Matches/Series/Special Bets show user bets inline
 - **League context:** Topbar dropdown, localStorage persistence, URL sync
+- **Audit logs:** Track admin actions with filterable log viewer
 - **Prizes & Fines:**
   - Prizes: 1-10 configurable tiers for top performers (rank 1 = 1st place, rank 2 = 2nd place, etc.)
   - Fines: 1-10 configurable tiers for worst performers (rank 1 = last place, rank 2 = second-to-last, etc.)
@@ -240,6 +257,7 @@ FINES_FEATURE.md        # Comprehensive fines feature documentation
 - **Betting lock:** Server validates `currentTime < dateTime` before save
 - **Friend predictions:** Visible only after deadline
 - **Match card:** +/- score controls, searchable scorer dropdown with ranking badges
+- **Chat:** In-app league chat with reply support and emoji picker
 - **Leaderboard:**
   - Top performers see prize badges (yellow/silver/bronze styling for top 3)
   - Worst performers see fine badges (red badges with negative amounts)
@@ -250,47 +268,44 @@ FINES_FEATURE.md        # Comprehensive fines feature documentation
 
 ## Code Quality & Security
 
-### Refactoring (Phase 2)
-- **Centralized:** auth (`requireAdmin()`), errors (`AppError`, `handleActionError()`), validation (`validation-client.ts`)
-- **Hooks:** `useInlineEdit`, `useDeleteDialog`, `useCreateDialog`, `useExpandableRow`, `useRefresh`
-- **Metrics:** State variables 11→3 (73% reduction), 100% accessibility, single validation source
-- **Utils:** `executeServerAction()` wrapper eliminates duplicate try-catch (89 lines removed)
-- **Type consolidation (Jan 2026):** `ScorerRankedConfig` interface consolidated from 5 duplicates to single source in `lib/evaluators/types.ts`
-- **Test optimization (Jan 2026):** `npm test` runs once and exits (4.73s for 403 tests), `test:watch` available for development
+### Testing
+- **1072 tests** across **81 test files**, runs in ~6 seconds
+- Global mocks in `vitest.setup.ts`: Prisma (36 models + groupBy/aggregate), audit-logger, next/cache, next/navigation, next-auth/react, @/auth
+- Test pattern: Don't add per-file `vi.mock('@/lib/prisma')` — use the global mock, just `vi.mocked(prisma)` for typed refs
+- `executeServerAction` returns `{ success: true, ...result }` (spread), not nested `data`
+- Hook tests use `renderHook`/`act` from `@testing-library/react`
 
-### Security Audit (Jan 2026) - 20/24 issues fixed
-**Fixed (Critical - First Audit):**
+### Refactoring
+- **Centralized:** auth (`requireAdmin()`), errors (`AppError`, `handleActionError()`), validation (`validation-client.ts`)
+- **Hooks:** `useInlineEdit`, `useDeleteDialog`, `useCreateDialog`, `useExpandableRow`, `useRefresh`, `useMessages`, `useDateLocale`
+- **Utils:** `executeServerAction()` wrapper eliminates duplicate try-catch
+- **Type consolidation:** `ScorerRankedConfig` interface consolidated to single source in `lib/evaluators/types.ts`
+
+### Security Audit (Jan 2026)
+**Fixed (Critical):**
 - CSRF protection (origin + referer validation)
 - Email injection prevention (`escapeHtml()`, `escapeText()`)
 - Production error logging (console.error + env context)
-- Security headers (nosniff, DENY, XSS-Protection, CSP, Permissions-Policy)
+- Security headers (HSTS, nosniff, DENY, XSS-Protection, CSP, Permissions-Policy)
 
-**Fixed (Medium - First Audit):**
-- Email unique constraint verified
-- Deduplicated signInSchema
-- Match future date validation
-- Password reset token cleanup
-- Dead code removed (getLogs, clearLogs, sendLogsToServer)
-
-**Fixed (Code Review - Jan 22, 2026):**
-- **Race conditions:** Atomic upserts prevent concurrent bet duplicates (matches, series, special bets, questions)
-- **Console.log leak:** Removed session data logging in login page
-- **Email normalization:** Case-insensitive email authentication
-- **Type safety:** Evaluator.points String → Int migration, nullableUniqueConstraint helper
-- **Database indexes:** Performance optimization for user-facing queries
-- **Unique constraints:** LeagueUser and all bet tables prevent data integrity issues
-- **Error handling:** AppError standardization in auth utilities
-- **Transactions:** Serializable isolation for all user betting actions
+**Fixed (Medium):**
+- Race conditions: Atomic upserts prevent concurrent bet duplicates
+- Email normalization: Case-insensitive email authentication
+- Type safety: Evaluator.points String → Int migration
+- Database indexes: Performance optimization for user-facing queries
+- Unique constraints: LeagueUser and all bet tables prevent data integrity issues
+- Serializable transactions for all user betting actions
+- Error boundaries at app/, app/[leagueId]/, app/admin/
+- DB indexes on isEvaluated+deletedAt for Match and LeagueSpecialBetQuestion
 
 **Backlog:**
-- Login/registration rate limiting
-- Hardcoded email config
-- CORS, audit logging, token blacklist, email retry queue
+- Login/registration rate limiting (infrastructure exists in `rate-limit.ts`)
+- CORS, token blacklist, email retry queue
 
 ### Build Status
-✅ Production build clean (0 errors/warnings) • ✅ 403/403 tests pass • ✅ 37 routes • ✅ PWA ready
+✅ Production build clean (0 errors/warnings) • ✅ 1072 tests pass • ✅ 39 routes • ✅ PWA ready
 
-### Race Condition Prevention (Jan 2026)
+### Race Condition Prevention
 User betting actions use **atomic upserts** to prevent duplicate bets during concurrent submissions:
 - `saveMatchBet()` - Upsert on `[leagueMatchId, leagueUserId, deletedAt]`
 - `saveSeriesBet()` - Upsert on `[leagueSpecialBetSerieId, leagueUserId, deletedAt]`
@@ -313,7 +328,7 @@ Uses Next.js `unstable_cache` for server-side data caching with tag-based invali
 | Teams | 12 hours | `special-bet-teams` | Team assignment |
 | Players | 12 hours | `special-bet-players` | Player assignment |
 | Leaderboard | 30 min | `leaderboard` | Bet evaluation |
-| Badge Counts | 900s | `bet-badges` | User bet saves (short TTL because `now` is computed inside) |
+| Badge Counts | 15 min | `bet-badges` | User bet saves |
 
 **Caching Pattern:**
 - Base bet data is cached (shared across all users)

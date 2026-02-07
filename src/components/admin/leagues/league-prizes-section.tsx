@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, Trophy } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { PrizeTierRow } from './prize-tier-row'
 import type { PrizeTier } from '@/lib/validation/admin'
@@ -12,6 +13,7 @@ interface LeaguePrizesSectionProps {
 }
 
 export function LeaguePrizesSection({ prizes, onChange }: LeaguePrizesSectionProps) {
+  const t = useTranslations('admin.leagueActions.prizesSection')
   const [errors, setErrors] = useState<Record<number, string>>({})
 
   // Add a new prize tier with next available rank
@@ -62,7 +64,7 @@ export function LeaguePrizesSection({ prizes, onChange }: LeaguePrizesSectionPro
       const newErrors: Record<number, string> = {}
       updatedPrizes.forEach((prize, idx) => {
         if (duplicates.includes(prize.rank)) {
-          newErrors[idx] = `Position ${prize.rank} is already used`
+          newErrors[idx] = t('positionUsed', { rank: prize.rank })
         }
       })
       setErrors(newErrors)
@@ -83,10 +85,10 @@ export function LeaguePrizesSection({ prizes, onChange }: LeaguePrizesSectionPro
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium flex items-center gap-2">
           <Trophy className="h-4 w-4" />
-          Prize Settings
+          {t('title')}
         </h4>
         <span className="text-xs text-muted-foreground">
-          {prizes.length} / 10 tiers
+          {t('tiers', { count: prizes.length })}
         </span>
       </div>
 
@@ -108,10 +110,10 @@ export function LeaguePrizesSection({ prizes, onChange }: LeaguePrizesSectionPro
         <div className="rounded-lg border border-dashed border-border p-6 text-center">
           <Trophy className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
           <p className="text-sm text-muted-foreground mb-3">
-            No prizes configured for this league
+            {t('noPrizes')}
           </p>
           <p className="text-xs text-muted-foreground">
-            Add prize tiers to display on the leaderboard
+            {t('noPrizesHelper')}
           </p>
         </div>
       )}
@@ -126,14 +128,14 @@ export function LeaguePrizesSection({ prizes, onChange }: LeaguePrizesSectionPro
         className="w-full"
       >
         <Plus className="h-4 w-4 mr-2" />
-        Add Prize Tier
-        {prizes.length >= 10 && ' (Maximum reached)'}
+        {t('addTier')}
+        {prizes.length >= 10 && t('maximumReached')}
       </Button>
 
       {/* Validation message */}
       {Object.keys(errors).length > 0 && (
         <p className="text-sm text-destructive" role="alert">
-          Please fix duplicate prize positions before saving
+          {t('duplicateError')}
         </p>
       )}
     </div>

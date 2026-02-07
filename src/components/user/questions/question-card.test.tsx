@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QuestionCard } from './question-card'
 
 // Mock next-intl
@@ -38,7 +39,6 @@ vi.mock('@/components/common/user-avatar', () => ({
   UserAvatar: () => null,
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createQuestion(overrides: Record<string, unknown> = {}): any {
   const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
   return {
@@ -54,6 +54,7 @@ function createQuestion(overrides: Record<string, unknown> = {}): any {
 }
 
 describe('QuestionCard', () => {
+  const user = userEvent.setup()
   const mockOnSaved = vi.fn()
 
   beforeEach(() => {
@@ -89,8 +90,8 @@ describe('QuestionCard', () => {
     it('selects Yes answer when Yes button clicked', async () => {
       render(<QuestionCard question={createQuestion()} onSaved={mockOnSaved} />)
 
-      fireEvent.click(screen.getByText('yes'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByText('yes'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(mockSaveQuestionBet).toHaveBeenCalledWith({
@@ -103,8 +104,8 @@ describe('QuestionCard', () => {
     it('selects No answer when No button clicked', async () => {
       render(<QuestionCard question={createQuestion()} onSaved={mockOnSaved} />)
 
-      fireEvent.click(screen.getByText('no'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByText('no'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(mockSaveQuestionBet).toHaveBeenCalledWith({
@@ -120,10 +121,10 @@ describe('QuestionCard', () => {
       })
       render(<QuestionCard question={question} onSaved={mockOnSaved} />)
 
-      fireEvent.click(screen.getByText('noAnswer'))
+      await user.click(screen.getByText('noAnswer'))
 
       // handleSave returns early when selectedAnswer is null, so clicking save does nothing
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(mockSaveQuestionBet).not.toHaveBeenCalled()
@@ -135,8 +136,8 @@ describe('QuestionCard', () => {
     it('calls onSaved after successful save', async () => {
       render(<QuestionCard question={createQuestion()} onSaved={mockOnSaved} />)
 
-      fireEvent.click(screen.getByText('yes'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByText('yes'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(mockOnSaved).toHaveBeenCalled()
@@ -146,8 +147,8 @@ describe('QuestionCard', () => {
     it('shows saved state after successful save', async () => {
       render(<QuestionCard question={createQuestion()} onSaved={mockOnSaved} />)
 
-      fireEvent.click(screen.getByText('yes'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByText('yes'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(screen.getByText('saved')).toBeInTheDocument()
@@ -160,8 +161,8 @@ describe('QuestionCard', () => {
 
       render(<QuestionCard question={createQuestion()} onSaved={mockOnSaved} />)
 
-      fireEvent.click(screen.getByText('yes'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByText('yes'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('Server error')
@@ -174,8 +175,8 @@ describe('QuestionCard', () => {
 
       render(<QuestionCard question={createQuestion()} onSaved={mockOnSaved} />)
 
-      fireEvent.click(screen.getByText('yes'))
-      fireEvent.click(screen.getByText('save'))
+      await user.click(screen.getByText('yes'))
+      await user.click(screen.getByText('save'))
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('saveError')
@@ -274,14 +275,14 @@ describe('QuestionCard', () => {
       expect(screen.getByText('saved')).toBeInTheDocument()
     })
 
-    it('marks as unsaved when answer changed', () => {
+    it('marks as unsaved when answer changed', async () => {
       const question = createQuestion({
         userBet: { userBet: false, totalPoints: 0 },
       })
 
       render(<QuestionCard question={question} onSaved={mockOnSaved} />)
 
-      fireEvent.click(screen.getByText('yes'))
+      await user.click(screen.getByText('yes'))
 
       expect(screen.getByText('save')).toBeInTheDocument()
     })

@@ -86,6 +86,29 @@ describe('Profile Actions', () => {
       expect((result as any).error).toContain('Email is already taken')
     })
 
+    it('should normalize email to lowercase', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue(null)
+      mockPrisma.user.update.mockResolvedValue({ id: 5 } as any)
+
+      await updateProfile({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'John@Test.COM',
+        notifyHours: 2,
+      })
+
+      expect(mockPrisma.user.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ email: 'john@test.com' }),
+        })
+      )
+      expect(mockPrisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ email: 'john@test.com' }),
+        })
+      )
+    })
+
     it('should return error when not authenticated', async () => {
       mockAuth.mockResolvedValue(null as any)
 
