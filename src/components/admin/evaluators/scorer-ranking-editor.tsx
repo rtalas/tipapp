@@ -68,7 +68,7 @@ export function ScorerRankingEditor({
       <TableCell colSpan={colSpan} className="p-4">
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Rule Name</label>
+            <label className="text-sm font-medium">{t('ruleName')}</label>
             <Input
               type="text"
               value={editNameValue}

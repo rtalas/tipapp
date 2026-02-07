@@ -2,12 +2,12 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { evaluateMatchAtomic } from './match-evaluator'
 import { prisma } from '@/lib/prisma'
 
-// Mock scorer ranking lookup (used by buildMatchBetContext)
+// Mock scorer ranking lookup (used by match evaluator for batch fetch)
 vi.mock('@/lib/scorer-ranking-utils', () => ({
-  getScorerRankingAtTime: vi.fn().mockResolvedValue(null),
+  getLeagueRankingsAtTime: vi.fn().mockResolvedValue(new Map()),
 }))
 
-import { getScorerRankingAtTime } from '@/lib/scorer-ranking-utils'
+import { getLeagueRankingsAtTime } from '@/lib/scorer-ranking-utils'
 
 describe('Match Evaluator', () => {
   const mockTx = {
@@ -54,6 +54,7 @@ describe('Match Evaluator', () => {
         ...((overrides.Match as Record<string, unknown>) ?? {}),
       },
       League: {
+        id: 1,
         Evaluator: [
           {
             id: 1,
@@ -288,7 +289,7 @@ describe('Match Evaluator', () => {
 
   describe('Scorer with Rank-Based Config', () => {
     it('should use config-based points for scorer with rank config', async () => {
-      vi.mocked(getScorerRankingAtTime).mockResolvedValue(2) // Rank 2
+      vi.mocked(getLeagueRankingsAtTime).mockResolvedValue(new Map([[10, 2]])) // Scorer 10 = Rank 2
 
       mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
         makeLeagueMatch({
@@ -339,7 +340,7 @@ describe('Match Evaluator', () => {
     })
 
     it('should use unrankedPoints when scorer has no ranking', async () => {
-      vi.mocked(getScorerRankingAtTime).mockResolvedValue(null) // No ranking
+      vi.mocked(getLeagueRankingsAtTime).mockResolvedValue(new Map()) // No rankings
 
       mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
         makeLeagueMatch({
@@ -387,7 +388,7 @@ describe('Match Evaluator', () => {
     })
 
     it('should use boolean mode for scorer without config', async () => {
-      vi.mocked(getScorerRankingAtTime).mockResolvedValue(null)
+      vi.mocked(getLeagueRankingsAtTime).mockResolvedValue(new Map())
 
       mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
         makeLeagueMatch({
@@ -433,7 +434,7 @@ describe('Match Evaluator', () => {
     })
 
     it('should double rank-based scorer points when isDoubled', async () => {
-      vi.mocked(getScorerRankingAtTime).mockResolvedValue(1)
+      vi.mocked(getLeagueRankingsAtTime).mockResolvedValue(new Map([[10, 1]])) // Scorer 10 = Rank 1
 
       mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
         makeLeagueMatch({

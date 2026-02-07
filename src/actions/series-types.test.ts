@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getAllSeriesTypes, createSeriesType, updateSeriesType, deleteSeriesType } from './series-types'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { requireAdmin } from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
@@ -10,7 +9,6 @@ vi.mock('@/lib/auth/auth-utils', () => ({
 
 const mockPrisma = vi.mocked(prisma, true)
 const mockRevalidatePath = vi.mocked(revalidatePath)
-const mockRequireAdmin = vi.mocked(requireAdmin)
 
 describe('Series Types Actions', () => {
   beforeEach(() => {

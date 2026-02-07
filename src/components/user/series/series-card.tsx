@@ -80,6 +80,7 @@ export function SeriesCard({ series, onSaved }: SeriesCardProps) {
         setFriendPredictions(result.predictions)
       } catch (error) {
         console.error('Failed to load friend predictions:', error)
+        toast.error(t('friendsLoadError'))
       } finally {
         setIsLoadingFriends(false)
       }

@@ -3,6 +3,7 @@
 import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 import { AppError } from '@/lib/error-handler'
 import { getEvaluatorEntity } from '@/lib/evaluators'
 import {
@@ -370,6 +371,7 @@ export async function updateTopScorerRanking(input: UpdateTopScorerRankingInput)
 
 // Query functions (can be used in Server Components)
 export async function getLeagues() {
+  await requireAdmin()
   return prisma.league.findMany({
     where: { deletedAt: null },
     include: {
@@ -390,6 +392,7 @@ export async function getLeagues() {
 }
 
 export async function getLeagueById(id: number) {
+  await requireAdmin()
   return prisma.league.findUnique({
     where: { id, deletedAt: null },
     include: {
@@ -414,6 +417,7 @@ export async function getLeagueById(id: number) {
 }
 
 export async function getSports() {
+  await requireAdmin()
   return prisma.sport.findMany({
     where: { deletedAt: null },
     orderBy: { name: 'asc' },

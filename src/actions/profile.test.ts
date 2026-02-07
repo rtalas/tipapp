@@ -110,12 +110,12 @@ describe('Profile Actions', () => {
 
       const result = await updatePassword({
         currentPassword: 'oldpass',
-        newPassword: 'newpassword123',
-        confirmPassword: 'newpassword123',
+        newPassword: 'NewPassword123',
+        confirmPassword: 'NewPassword123',
       })
 
       expect(result.success).toBe(true)
-      expect(mockBcrypt.hash).toHaveBeenCalledWith('newpassword123', 12)
+      expect(mockBcrypt.hash).toHaveBeenCalledWith('NewPassword123', 12)
     })
 
     it('should return error when current password is wrong', async () => {
@@ -124,8 +124,8 @@ describe('Profile Actions', () => {
 
       const result = await updatePassword({
         currentPassword: 'wrongpass',
-        newPassword: 'newpassword123',
-        confirmPassword: 'newpassword123',
+        newPassword: 'NewPassword123',
+        confirmPassword: 'NewPassword123',
       })
 
       expect(result.success).toBe(false)
@@ -137,8 +137,8 @@ describe('Profile Actions', () => {
 
       const result = await updatePassword({
         currentPassword: 'pass',
-        newPassword: 'newpassword123',
-        confirmPassword: 'newpassword123',
+        newPassword: 'NewPassword123',
+        confirmPassword: 'NewPassword123',
       })
 
       expect(result.success).toBe(false)
@@ -148,8 +148,8 @@ describe('Profile Actions', () => {
     it('should reject mismatching passwords', async () => {
       const result = await updatePassword({
         currentPassword: 'pass',
-        newPassword: 'newpassword123',
-        confirmPassword: 'different123',
+        newPassword: 'NewPassword123',
+        confirmPassword: 'Different123',
       })
 
       expect(result.success).toBe(false)
@@ -171,8 +171,8 @@ describe('Profile Actions', () => {
 
       const result = await updatePassword({
         currentPassword: 'pass',
-        newPassword: 'newpassword123',
-        confirmPassword: 'newpassword123',
+        newPassword: 'NewPassword123',
+        confirmPassword: 'NewPassword123',
       })
 
       expect(result.success).toBe(false)

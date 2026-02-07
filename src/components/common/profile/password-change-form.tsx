@@ -55,7 +55,7 @@ export function PasswordChangeForm({ onUpdate, variant }: PasswordChangeFormProp
       return
     }
 
-    if (newPassword.length < (variant === 'admin' ? 8 : 6)) {
+    if (newPassword.length < 8) {
       toast.error(variant === 'admin' ? t('passwordHelper') : t('errorGeneric'))
       return
     }
@@ -150,7 +150,7 @@ export function PasswordChangeForm({ onUpdate, variant }: PasswordChangeFormProp
                 placeholder={t('newPassword')}
                 disabled={isSubmitting}
                 required
-                minLength={variant === 'admin' ? 8 : 6}
+                minLength={8}
                 autoComplete="new-password"
                 className="pr-10"
               />
@@ -184,7 +184,7 @@ export function PasswordChangeForm({ onUpdate, variant }: PasswordChangeFormProp
                 placeholder={t('confirmPassword')}
                 disabled={isSubmitting}
                 required
-                minLength={variant === 'admin' ? 8 : 6}
+                minLength={8}
                 autoComplete="new-password"
                 className="pr-10"
               />

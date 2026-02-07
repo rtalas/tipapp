@@ -9,7 +9,6 @@ import {
 } from './evaluators'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { requireAdmin } from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
@@ -21,7 +20,6 @@ vi.mock('@/lib/evaluators', () => ({
 
 const mockPrisma = vi.mocked(prisma, true)
 const mockRevalidatePath = vi.mocked(revalidatePath)
-const mockRequireAdmin = vi.mocked(requireAdmin)
 
 describe('Evaluators Actions', () => {
   beforeEach(() => {

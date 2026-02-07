@@ -6,6 +6,7 @@
 import { prisma } from '@/lib/prisma'
 import { getMatchEvaluator, buildMatchBetContext } from '@/lib/evaluators'
 import { evaluateScorer } from '@/lib/evaluators/scorer'
+import { getLeagueRankingsAtTime } from '@/lib/scorer-ranking-utils'
 import { AppError } from '@/lib/error-handler'
 import type { ScorerRankedConfig } from '@/lib/evaluators/types'
 
@@ -101,12 +102,17 @@ async function evaluateMatch(
     throw new AppError('No evaluators configured for this league', 'BAD_REQUEST', 400)
   }
 
-  // 4. Evaluate each user bet
+  // 4. Batch-fetch all scorer rankings for this league at match time (single query)
+  const leagueRankings = await getLeagueRankingsAtTime(
+    leagueMatch.League.id,
+    match.dateTime
+  )
+
+  // 5. Evaluate each user bet
   const results: EvaluationResult[] = []
 
   for (const userBet of leagueMatch.UserBet) {
-    // Build context with time-based ranking lookup
-    const context = await buildMatchBetContext(userBet, match, match.dateTime)
+    const context = buildMatchBetContext(userBet, match, leagueRankings)
 
     let totalPoints = 0
     const evaluatorResults = []
@@ -156,7 +162,7 @@ async function evaluateMatch(
       evaluatorResults,
     })
 
-    // 5. Update UserBet.totalPoints in database
+    // 6. Update UserBet.totalPoints in database
     await tx.userBet.update({
       where: { id: userBet.id },
       data: {
@@ -166,7 +172,7 @@ async function evaluateMatch(
     })
   }
 
-  // 6. Mark match as evaluated (only if evaluating all users)
+  // 7. Mark match as evaluated (only if evaluating all users)
   if (!userId) {
     await tx.match.update({
       where: { id: matchId },

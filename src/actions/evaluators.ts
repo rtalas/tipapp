@@ -2,6 +2,7 @@
 
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { getEvaluatorEntity } from '@/lib/evaluators'
 import {
@@ -19,6 +20,7 @@ import {
 
 // Get evaluators for a specific league
 export async function getLeagueEvaluators(leagueId: number) {
+  await requireAdmin()
   return prisma.evaluator.findMany({
     where: {
       leagueId,

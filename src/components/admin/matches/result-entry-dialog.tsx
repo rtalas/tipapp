@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateMatchResult, getMatchById } from '@/actions/matches'
@@ -77,6 +78,8 @@ interface ResultEntryDialogProps {
 }
 
 export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDialogProps) {
+  const t = useTranslations('admin.matches.resultDialog')
+  const tCommon = useTranslations('admin.common')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [homeRegularScore, setHomeRegularScore] = useState(
     match.Match.homeRegularScore?.toString() ?? ''
@@ -186,13 +189,13 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
 
     // Validate required fields
     if (!homeRegularScore || !awayRegularScore) {
-      toast.error('Please enter regular time scores')
+      toast.error(t('regularScoresRequired'))
       return
     }
 
     // If overtime/shootout, validate final scores
     if ((isOvertime || isShootout) && (!homeFinalScore || !awayFinalScore)) {
-      toast.error('Please enter final scores for overtime/shootout')
+      toast.error(t('finalScoresRequired'))
       return
     }
 
@@ -217,13 +220,13 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
           : [],
       })
 
-      toast.success('Match result saved successfully')
+      toast.success(t('saveSuccess'))
       onOpenChange(false)
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error('Failed to save result')
+        toast.error(t('saveFailed'))
       }
       logger.error('Failed to save match result', { error, matchId: match.Match.id })
     } finally {
@@ -235,7 +238,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Enter Match Result</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
             {match.League.name} • {format(new Date(match.Match.dateTime), 'PPP p')}
           </DialogDescription>
@@ -276,13 +279,13 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
             {/* Match info badges */}
             <div className="flex flex-wrap gap-2">
               {match.Match.isPlayoffGame && (
-                <Badge variant="warning">Playoff Game</Badge>
+                <Badge variant="warning">{t('playoffGame')}</Badge>
               )}
               {match.isDoubled && (
-                <Badge variant="default">Double Points</Badge>
+                <Badge variant="default">{t('doublePoints')}</Badge>
               )}
               {match.Match.isEvaluated && (
-                <Badge variant="evaluated">Evaluated</Badge>
+                <Badge variant="evaluated">{t('evaluated')}</Badge>
               )}
             </div>
           </form>
@@ -295,10 +298,10 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save Result'}
+            {isSubmitting ? tCommon('saving') : t('saveResult')}
           </Button>
         </DialogFooter>
       </DialogContent>

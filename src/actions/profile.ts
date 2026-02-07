@@ -8,10 +8,11 @@ import { updateProfileSchema } from '@/lib/validation/user'
 import type { UpdateProfileInput } from '@/lib/validation/user'
 import { z } from 'zod'
 import bcryptjs from 'bcryptjs'
+import { passwordField } from '@/lib/validation'
 
 const updatePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+  newPassword: passwordField,
   confirmPassword: z.string().min(1, 'Please confirm your password'),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: 'Passwords do not match',

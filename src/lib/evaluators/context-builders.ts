@@ -12,7 +12,6 @@ import type {
   GroupStageConfig,
 } from './types'
 import type { QuestionContext } from './question'
-import { getScorerRankingAtTime } from '@/lib/scorer-ranking-utils'
 import { AppError } from '@/lib/error-handler'
 
 // Type imports for Prisma entities
@@ -63,21 +62,20 @@ type UserSpecialBetSingle = {
  * Build MatchBetContext from database entities
  * @param userBet - User's bet prediction
  * @param match - Match with results
- * @param matchDateTime - Match date/time for time-based ranking lookup
+ * @param leagueRankings - Pre-fetched rankings map (leaguePlayerId -> ranking) from getLeagueRankingsAtTime()
  */
-export async function buildMatchBetContext(
+export function buildMatchBetContext(
   userBet: UserBet,
   match: Match,
-  matchDateTime: Date
-): Promise<MatchBetContext> {
+  leagueRankings: Map<number, number>
+): MatchBetContext {
   // Extract scorer IDs from MatchScorer (can have multiple scorers)
   const scorerIds = match.MatchScorer.map((ms) => ms.scorerId)
 
-  // Load time-based rankings for all scorers in the match
+  // Look up rankings from the pre-fetched map
   const scorerRankings = new Map<number, number | null>()
   for (const scorerId of scorerIds) {
-    const ranking = await getScorerRankingAtTime(scorerId, matchDateTime)
-    scorerRankings.set(scorerId, ranking)
+    scorerRankings.set(scorerId, leagueRankings.get(scorerId) ?? null)
   }
 
   return {

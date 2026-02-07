@@ -67,6 +67,8 @@ export function AvatarUpload({
       // Get signed upload URL from our API
       const urlResponse = await fetch('/api/avatar/upload-url', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentType: 'image/jpeg' }),
       })
 
       if (!urlResponse.ok) {
