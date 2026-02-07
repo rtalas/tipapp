@@ -181,6 +181,8 @@ model LeagueSpecialBetQuestion {
   deletedAt              DateTime?                @db.Timestamptz(6)
   League                 League                   @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   UserSpecialBetQuestion UserSpecialBetQuestion[]
+
+  @@index([isEvaluated, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -325,6 +327,8 @@ model Match {
   LeagueTeam_Match_homeTeamIdToLeagueTeam LeagueTeam    @relation("Match_homeTeamIdToLeagueTeam", fields: [homeTeamId], references: [id], onDelete: NoAction)
   MatchPhase                              MatchPhase?   @relation(fields: [matchPhaseId], references: [id])
   MatchScorer                             MatchScorer[]
+
+  @@index([isEvaluated, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

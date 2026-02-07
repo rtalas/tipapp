@@ -80,34 +80,44 @@ export async function updateProfile(input: UpdateProfileInput) {
   const { firstName, lastName, email, mobileNumber, notifyHours } = parsed.data
   const userId = parseInt(session.user.id)
 
-  // Check if email is already taken by another user
-  const existingUser = await prisma.user.findFirst({
-    where: {
-      email,
-      id: { not: userId },
-    },
-  })
-
-  if (existingUser) {
-    return { success: false, error: 'Email is already in use' }
-  }
+  const normalizedEmail = email?.toLowerCase()
 
   try {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        firstName,
-        lastName,
-        email,
-        mobileNumber: mobileNumber || null,
-        notifyHours,
-        updatedAt: new Date(),
-      },
+    await prisma.$transaction(async (tx) => {
+      // Check if email is already taken by another user
+      if (normalizedEmail) {
+        const existingUser = await tx.user.findFirst({
+          where: {
+            email: normalizedEmail,
+            id: { not: userId },
+            deletedAt: null,
+          },
+        })
+
+        if (existingUser) {
+          throw new AppError('Email is already in use', 'CONFLICT', 409)
+        }
+      }
+
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          firstName,
+          lastName,
+          email: normalizedEmail,
+          mobileNumber: mobileNumber || null,
+          notifyHours,
+          updatedAt: new Date(),
+        },
+      })
     })
 
     revalidatePath('/profile')
     return { success: true }
-  } catch {
+  } catch (error) {
+    if (error instanceof AppError) {
+      return { success: false, error: error.message }
+    }
     return { success: false, error: 'Failed to update profile' }
   }
 }

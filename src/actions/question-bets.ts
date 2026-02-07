@@ -1,6 +1,6 @@
 'use server'
 
-import { requireAdmin } from '@/lib/auth-utils'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildQuestionPicksWhere } from '@/lib/query-builders'
@@ -74,11 +74,6 @@ export async function createUserQuestionBet(input: CreateUserQuestionBetInput) {
           throw new AppError('Question not found', 'NOT_FOUND', 404)
         }
 
-        // Check betting deadline - users cannot bet after dateTime
-        if (question.dateTime <= now) {
-          throw new AppError('Betting deadline has passed for this question', 'BAD_REQUEST', 400)
-        }
-
         // Verify leagueUser exists
         const leagueUser = await tx.leagueUser.findUnique({
           where: { id: validated.leagueUserId, deletedAt: null },
@@ -141,11 +136,6 @@ export async function updateUserQuestionBet(input: UpdateUserQuestionBetInput) {
 
       if (!bet) {
         throw new AppError('User bet not found', 'NOT_FOUND', 404)
-      }
-
-      // Check betting deadline - users cannot update bet after dateTime
-      if (bet.LeagueSpecialBetQuestion.dateTime <= now) {
-        throw new AppError('Betting deadline has passed for this question', 'BAD_REQUEST', 400)
       }
 
       await prisma.userSpecialBetQuestion.update({

@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-utils'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildUserPicksWhere } from '@/lib/query-builders'
 import { AppError } from '@/lib/error-handler'
@@ -100,80 +100,89 @@ export async function createUserBet(input: CreateUserBetInput) {
   return executeServerAction(input, {
     validator: createUserBetSchema,
     handler: async (validated) => {
-      // Verify leagueMatch exists
-      const leagueMatch = await prisma.leagueMatch.findUnique({
-        where: { id: validated.leagueMatchId, deletedAt: null },
-        include: { Match: true },
-      })
+      const bet = await prisma.$transaction(
+        async (tx) => {
+          // Verify leagueMatch exists
+          const leagueMatch = await tx.leagueMatch.findUnique({
+            where: { id: validated.leagueMatchId, deletedAt: null },
+            include: { Match: true },
+          })
 
-      if (!leagueMatch) {
-        throw new AppError('Match not found', 'NOT_FOUND', 404)
-      }
+          if (!leagueMatch || leagueMatch.Match.deletedAt !== null) {
+            throw new AppError('Match not found', 'NOT_FOUND', 404)
+          }
 
-      // Verify leagueUser exists
-      const leagueUser = await prisma.leagueUser.findUnique({
-        where: { id: validated.leagueUserId, deletedAt: null },
-      })
+          // Verify leagueUser exists
+          const leagueUser = await tx.leagueUser.findUnique({
+            where: { id: validated.leagueUserId, deletedAt: null },
+          })
 
-      if (!leagueUser) {
-        throw new AppError('User not found', 'NOT_FOUND', 404)
-      }
+          if (!leagueUser) {
+            throw new AppError('User not found', 'NOT_FOUND', 404)
+          }
 
-      // Check if bet already exists (prevent duplicates)
-      const existingBet = await prisma.userBet.findFirst({
-        where: {
-          leagueMatchId: validated.leagueMatchId,
-          leagueUserId: validated.leagueUserId,
-          deletedAt: null,
+          // Check if bet already exists (prevent duplicates)
+          const existingBet = await tx.userBet.findFirst({
+            where: {
+              leagueMatchId: validated.leagueMatchId,
+              leagueUserId: validated.leagueUserId,
+              deletedAt: null,
+            },
+          })
+
+          if (existingBet) {
+            throw new AppError('User already has a bet for this match', 'CONFLICT', 409)
+          }
+
+          // Verify scorer belongs to one of the teams if provided
+          if (validated.scorerId) {
+            const scorer = await tx.leaguePlayer.findUnique({
+              where: { id: validated.scorerId, deletedAt: null },
+            })
+
+            if (!scorer) {
+              throw new AppError('Scorer not found', 'NOT_FOUND', 404)
+            }
+
+            const isValidScorer =
+              scorer.leagueTeamId === leagueMatch.Match.homeTeamId ||
+              scorer.leagueTeamId === leagueMatch.Match.awayTeamId
+
+            if (!isValidScorer) {
+              throw new AppError('Scorer must belong to one of the teams playing', 'BAD_REQUEST', 400)
+            }
+          }
+
+          // Validate mutual exclusivity between scorerId and noScorer
+          if (validated.noScorer === true && validated.scorerId !== undefined) {
+            throw new AppError('Cannot set both scorer and no scorer', 'BAD_REQUEST', 400)
+          }
+
+          const now = new Date()
+
+          return tx.userBet.create({
+            data: {
+              leagueMatchId: validated.leagueMatchId,
+              leagueUserId: validated.leagueUserId,
+              homeScore: validated.homeScore,
+              awayScore: validated.awayScore,
+              scorerId: validated.scorerId,
+              noScorer: validated.noScorer,
+              overtime: validated.overtime,
+              homeAdvanced: validated.homeAdvanced,
+              dateTime: now,
+              totalPoints: 0,
+              createdAt: now,
+              updatedAt: now,
+            },
+          })
         },
-      })
-
-      if (existingBet) {
-        throw new AppError('User already has a bet for this match', 'CONFLICT', 409)
-      }
-
-      // Verify scorer belongs to one of the teams if provided
-      if (validated.scorerId) {
-        const scorer = await prisma.leaguePlayer.findUnique({
-          where: { id: validated.scorerId, deletedAt: null },
-        })
-
-        if (!scorer) {
-          throw new AppError('Scorer not found', 'NOT_FOUND', 404)
+        {
+          isolationLevel: 'Serializable',
+          maxWait: 5000,
+          timeout: 10000,
         }
-
-        const isValidScorer =
-          scorer.leagueTeamId === leagueMatch.Match.homeTeamId ||
-          scorer.leagueTeamId === leagueMatch.Match.awayTeamId
-
-        if (!isValidScorer) {
-          throw new AppError('Scorer must belong to one of the teams playing', 'BAD_REQUEST', 400)
-        }
-      }
-
-      // Validate mutual exclusivity between scorerId and noScorer
-      if (validated.noScorer === true && validated.scorerId !== undefined) {
-        throw new AppError('Cannot set both scorer and no scorer', 'BAD_REQUEST', 400)
-      }
-
-      const now = new Date()
-
-      const bet = await prisma.userBet.create({
-        data: {
-          leagueMatchId: validated.leagueMatchId,
-          leagueUserId: validated.leagueUserId,
-          homeScore: validated.homeScore,
-          awayScore: validated.awayScore,
-          scorerId: validated.scorerId,
-          noScorer: validated.noScorer,
-          overtime: validated.overtime,
-          homeAdvanced: validated.homeAdvanced,
-          dateTime: now,
-          totalPoints: 0,
-          createdAt: now,
-          updatedAt: now,
-        },
-      })
+      )
 
       return { betId: bet.id, success: true }
     },
@@ -195,7 +204,7 @@ export async function updateUserBet(input: UpdateUserBetInput) {
         include: { LeagueMatch: { include: { Match: true } } },
       })
 
-      if (!bet) {
+      if (!bet || bet.LeagueMatch.Match.deletedAt !== null) {
         throw new AppError('Bet not found', 'NOT_FOUND', 404)
       }
 

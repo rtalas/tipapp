@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
-import { getMostActiveLeagueId } from '@/lib/user-auth-utils'
+import { getMostActiveLeagueId } from '@/lib/auth/user-auth-utils'
 import { AvailableLeaguesContent } from '@/components/user/landing/available-leagues-content'
 
 export default async function Home() {

@@ -69,7 +69,7 @@ export async function createEvaluator(input: CreateEvaluatorInput) {
         data: {
           leagueId: validated.leagueId,
           evaluatorTypeId: validated.evaluatorTypeId,
-          name: validated.name,
+          name: validated.name.trim(),
           points: validated.points,
           ...(validated.config && { config: validated.config }),
           entity,

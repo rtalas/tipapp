@@ -4,8 +4,8 @@ import { revalidateTag } from 'next/cache'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { evaluateQuestionAtomic } from '@/lib/evaluation/question-evaluator'
 import { z } from 'zod'
-import { AuditLogger } from '@/lib/audit-logger'
-import { requireAdmin } from '@/lib/auth-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 
 const evaluateQuestionSchema = z.object({
   questionId: z.number().int().positive(),

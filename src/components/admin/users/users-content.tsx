@@ -13,7 +13,7 @@ import {
   addUserToLeague,
   getUsers,
 } from '@/actions/users'
-import { logger } from '@/lib/client-logger'
+import { logger } from '@/lib/logging/client-logger'
 import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
 import { PendingRequestsTable } from './pending-requests-table'
 import { LeagueUsersTable } from './league-users-table'

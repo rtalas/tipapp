@@ -11,7 +11,7 @@ import { updateUserSpecialBet, deleteUserSpecialBet, type UserSpecialBet, type S
 import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
 import { validateUserSpecialBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
-import { logger } from '@/lib/client-logger'
+import { logger } from '@/lib/logging/client-logger'
 import { getSpecialBetTypeFromEvaluator } from '@/lib/special-bet-utils'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'

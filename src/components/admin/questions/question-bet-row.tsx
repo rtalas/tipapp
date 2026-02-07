@@ -11,7 +11,7 @@ import { updateUserQuestionBet, deleteUserQuestionBet, type UserQuestionBet } fr
 import { evaluateQuestionBets } from '@/actions/evaluate-questions'
 import { validateUserQuestionBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
-import { logger } from '@/lib/client-logger'
+import { logger } from '@/lib/logging/client-logger'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 

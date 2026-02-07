@@ -1,4 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { prisma } from "@/lib/prisma";
+
+// Use real audit-logger (overrides global mock) since we're testing it
+vi.unmock("@/lib/logging/audit-logger");
+
 import {
   auditLog,
   AuditLogger,
@@ -6,16 +11,6 @@ import {
   EventCategory,
   LogSeverity,
 } from "./audit-logger";
-import { prisma } from "@/lib/prisma";
-
-// Mock Prisma
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    auditLog: {
-      create: vi.fn(),
-    },
-  },
-}));
 
 describe("audit-logger", () => {
   const originalNodeEnv = process.env.NODE_ENV;

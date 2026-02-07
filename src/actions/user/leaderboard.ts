@@ -2,7 +2,7 @@
 
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireLeagueMember } from '@/lib/user-auth-utils'
+import { requireLeagueMember } from '@/lib/auth/user-auth-utils'
 import type { LeaderboardEntry } from '@/types/user'
 
 export interface LeaguePrize {
@@ -299,7 +299,7 @@ export async function getUserPicks(
  */
 const getCachedLeaderboardData = unstable_cache(
   async (leagueId: number) => {
-    // Fetch all league users with their bets
+    // Fetch league users (without bet includes)
     const leagueUsers = await prisma.leagueUser.findMany({
       where: {
         leagueId,
@@ -316,42 +316,47 @@ const getCachedLeaderboardData = unstable_cache(
             avatarUrl: true,
           },
         },
-        UserBet: {
-          where: { deletedAt: null },
-          select: { totalPoints: true },
-        },
-        UserSpecialBetSerie: {
-          where: { deletedAt: null },
-          select: { totalPoints: true },
-        },
-        UserSpecialBetSingle: {
-          where: { deletedAt: null },
-          select: { totalPoints: true },
-        },
-        UserSpecialBetQuestion: {
-          where: { deletedAt: null },
-          select: { totalPoints: true },
-        },
       },
     })
 
-    // Calculate totals and sort
+    const leagueUserIds = leagueUsers.map((lu) => lu.id)
+
+    // Aggregate points in database instead of loading all bet rows
+    const [matchTotals, seriesTotals, specialBetTotals, questionTotals] = await Promise.all([
+      prisma.userBet.groupBy({
+        by: ['leagueUserId'],
+        where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
+        _sum: { totalPoints: true },
+      }),
+      prisma.userSpecialBetSerie.groupBy({
+        by: ['leagueUserId'],
+        where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
+        _sum: { totalPoints: true },
+      }),
+      prisma.userSpecialBetSingle.groupBy({
+        by: ['leagueUserId'],
+        where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
+        _sum: { totalPoints: true },
+      }),
+      prisma.userSpecialBetQuestion.groupBy({
+        by: ['leagueUserId'],
+        where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
+        _sum: { totalPoints: true },
+      }),
+    ])
+
+    // Build lookup maps for O(1) access
+    const matchMap = new Map(matchTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
+    const seriesMap = new Map(seriesTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
+    const specialBetMap = new Map(specialBetTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
+    const questionMap = new Map(questionTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
+
+    // Merge user data with aggregated points
     const entries = leagueUsers.map((lu) => {
-      const matchPoints = lu.UserBet.reduce((sum, b) => sum + (b.totalPoints || 0), 0)
-      const seriesPoints = lu.UserSpecialBetSerie.reduce(
-        (sum, b) => sum + (b.totalPoints || 0),
-        0
-      )
-      const specialBetPoints = lu.UserSpecialBetSingle.reduce(
-        (sum, b) => sum + (b.totalPoints || 0),
-        0
-      )
-      const questionPoints = lu.UserSpecialBetQuestion.reduce(
-        (sum, b) => sum + (b.totalPoints || 0),
-        0
-      )
-      const totalPoints =
-        matchPoints + seriesPoints + specialBetPoints + questionPoints
+      const matchPoints = matchMap.get(lu.id) || 0
+      const seriesPoints = seriesMap.get(lu.id) || 0
+      const specialBetPoints = specialBetMap.get(lu.id) || 0
+      const questionPoints = questionMap.get(lu.id) || 0
 
       return {
         leagueUserId: lu.id,
@@ -364,7 +369,7 @@ const getCachedLeaderboardData = unstable_cache(
         seriesPoints,
         specialBetPoints,
         questionPoints,
-        totalPoints,
+        totalPoints: matchPoints + seriesPoints + specialBetPoints + questionPoints,
       }
     })
 

@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { updateLeague, updateLeagueChatSettings } from '@/actions/leagues'
 import { getLeaguePrizes, updateLeaguePrizes } from '@/actions/league-prizes'
-import { logger } from '@/lib/client-logger'
+import { logger } from '@/lib/logging/client-logger'
 import type { PrizeTier } from '@/lib/validation/admin'
 import { Button } from '@/components/ui/button'
 import {

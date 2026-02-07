@@ -1,27 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { requestPasswordReset, resetPassword } from './password-reset';
 import { prisma } from '@/lib/prisma';
-import * as emailModule from '@/lib/email';
+import * as emailModule from '@/lib/email/email';
 import * as rateLimitModule from '@/lib/rate-limit';
 
 // Mock dependencies
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-    passwordResetToken: {
-      create: vi.fn(),
-      findUnique: vi.fn(),
-      update: vi.fn(),
-      deleteMany: vi.fn(),
-    },
-    $transaction: vi.fn(),
-  },
-}));
-
-vi.mock('@/lib/email', () => ({
+vi.mock('@/lib/email/email', () => ({
   sendPasswordResetEmail: vi.fn(),
 }));
 

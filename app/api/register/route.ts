@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validation";
 import { isPrismaError, handlePrismaError } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
-import { AuditLogger } from "@/lib/audit-logger";
-import { sendRegistrationConfirmationEmail } from "@/lib/email";
+import { AuditLogger } from "@/lib/logging/audit-logger";
+import { sendRegistrationConfirmationEmail } from "@/lib/email/email";
 
 export async function POST(request: NextRequest) {
   try {

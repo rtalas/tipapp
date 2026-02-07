@@ -2,13 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { evaluateQuestionAtomic } from './question-evaluator'
 import { prisma } from '@/lib/prisma'
 
-// Mock Prisma
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    $transaction: vi.fn(),
-  },
-}))
-
 describe('Question Evaluator', () => {
   const mockTx = {
     leagueSpecialBetQuestion: {

@@ -9,7 +9,7 @@ import { updateUserSeriesBet, deleteUserSeriesBet, type UserSeriesBet } from '@/
 import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { validateUserSeriesBetEdit } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
-import { logger } from '@/lib/client-logger'
+import { logger } from '@/lib/logging/client-logger'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 type Team = { id: number; name: string; shortcut: string }

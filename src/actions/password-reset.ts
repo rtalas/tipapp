@@ -5,10 +5,10 @@ import { env } from '@/lib/env';
 import { forgotPasswordSchema, resetPasswordSchema } from '@/lib/validation';
 import { generateSecureToken, hashToken, isTokenExpired, getTokenExpirationTime } from '@/lib/token-utils';
 import { isPasswordResetRateLimited } from '@/lib/rate-limit';
-import { sendPasswordResetEmail } from '@/lib/email';
+import { sendPasswordResetEmail } from '@/lib/email/email';
 import { AppError, handleActionError, logError } from '@/lib/error-handler';
 import bcryptjs from 'bcryptjs';
-import { AuditLogger } from '@/lib/audit-logger';
+import { AuditLogger } from '@/lib/logging/audit-logger';
 
 const APP_URL = env.APP_URL;
 

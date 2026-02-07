@@ -2,10 +2,10 @@
 
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
+import { requireLeagueMember, isBettingOpen } from '@/lib/auth/user-auth-utils'
 import { userSeriesBetSchema, type UserSeriesBetInput } from '@/lib/validation/user'
 import { AppError } from '@/lib/error-handler'
-import { AuditLogger } from '@/lib/audit-logger'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 
 /**
  * Cached base series data (20 min TTL)

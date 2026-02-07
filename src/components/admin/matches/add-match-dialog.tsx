@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { createMatch } from '@/actions/matches'
-import { logger } from '@/lib/client-logger'
+import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'

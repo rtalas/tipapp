@@ -7,16 +7,6 @@ import {
 } from './scorer-ranking-utils'
 import { prisma } from '@/lib/prisma'
 
-// Mock Prisma
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    topScorerRankingVersion: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-    },
-  },
-}))
-
 describe('Scorer Ranking Utils', () => {
   beforeEach(() => {
     vi.clearAllMocks()

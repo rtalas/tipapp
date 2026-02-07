@@ -10,7 +10,7 @@ import {
   updateEvaluator,
   deleteEvaluator,
 } from '@/actions/evaluators'
-import { logger } from '@/lib/client-logger'
+import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'

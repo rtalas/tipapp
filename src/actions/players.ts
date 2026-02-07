@@ -12,8 +12,8 @@ export async function createPlayer(input: CreatePlayerInput) {
     handler: async (validated) => {
       const player = await prisma.player.create({
         data: {
-          firstName: validated.firstName || null,
-          lastName: validated.lastName || null,
+          firstName: validated.firstName?.trim() || null,
+          lastName: validated.lastName?.trim() || null,
           position: validated.position,
           isActive: validated.isActive ?? true,
           externalId: validated.externalId,
@@ -50,8 +50,8 @@ export async function updatePlayer(input: UpdatePlayerInput) {
       await prisma.player.update({
         where: { id: validated.id },
         data: {
-          firstName: validated.firstName,
-          lastName: validated.lastName,
+          firstName: validated.firstName?.trim(),
+          lastName: validated.lastName?.trim(),
           position: validated.position,
           isActive: validated.isActive,
           externalId: validated.externalId,

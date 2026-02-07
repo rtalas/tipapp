@@ -6,12 +6,14 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 
 /**
  * Get all evaluator types
  * Used in: evaluator pages, league setup
  */
 export async function getEvaluatorTypes() {
+  await requireAdmin()
   return prisma.evaluatorType.findMany({
     where: { deletedAt: null },
     orderBy: { name: 'asc' },
@@ -23,6 +25,7 @@ export async function getEvaluatorTypes() {
  * Used in: global players page, league setup
  */
 export async function getAllPlayers() {
+  await requireAdmin()
   return prisma.player.findMany({
     where: { deletedAt: null },
     include: {
@@ -39,6 +42,7 @@ export async function getAllPlayers() {
  * Used in: league setup, team management
  */
 export async function getTeamsBySport(sportId: number) {
+  await requireAdmin()
   return prisma.team.findMany({
     where: {
       sportId,
@@ -56,6 +60,7 @@ export async function getTeamsBySport(sportId: number) {
  * Used in: matches, special bets dialogs (where player selection is needed)
  */
 export async function getLeaguesWithTeams() {
+  await requireAdmin()
   return prisma.league.findMany({
     where: {
       deletedAt: null,

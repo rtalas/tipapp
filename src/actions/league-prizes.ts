@@ -1,8 +1,9 @@
 'use server'
 
 import { z } from 'zod'
+import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-utils'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import {
   updateLeaguePrizesSchema,
@@ -117,6 +118,9 @@ export async function updateLeaguePrizes(input: UpdateLeaguePrizesInput) {
           })
         }
       })
+
+      // Invalidate leaderboard cache so prize/fine changes appear immediately
+      revalidateTag('leaderboard', 'max')
 
       return { success: true }
     },

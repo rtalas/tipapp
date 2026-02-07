@@ -2,14 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { isPasswordResetRateLimited, getRemainingResetAttempts, getRateLimitConfig } from './rate-limit';
 import { prisma } from '@/lib/prisma';
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    passwordResetToken: {
-      count: vi.fn(),
-    },
-  },
-}));
-
 const mockPrisma = vi.mocked(prisma);
 
 // Get the actual config values to keep tests in sync with implementation

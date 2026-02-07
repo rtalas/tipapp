@@ -124,16 +124,23 @@ src/
 ├── contexts/           # League context (admin + user)
 ├── hooks/              # useRefresh, useInlineEdit, useDeleteDialog, useCreateDialog, useExpandableRow
 ├── lib/
+│   ├── auth/           # Auth utilities
+│   │   ├── auth-utils.ts   # requireAdmin()
+│   │   └── user-auth-utils.ts # requireLeagueMember()
+│   ├── email/          # Email service
+│   │   └── email.ts    # sendPasswordResetEmail() via Resend
+│   ├── logging/        # Logging & audit
+│   │   ├── audit-logger.ts  # AuditLogger, auditLog()
+│   │   └── client-logger.ts # Client-side error logging
 │   ├── evaluators/     # 14 bet evaluators
+│   ├── evaluation/     # Evaluation engine
+│   ├── cache/          # Cache utilities
+│   ├── validation/     # Zod schemas (admin.ts, user.ts)
+│   │   └── admin.ts    # PrizeTier schema with type field, updateLeaguePrizesSchema
 │   ├── constants.ts    # SPORT_IDS.HOCKEY, SPORT_IDS.FOOTBALL
-│   ├── auth-utils.ts   # requireAdmin()
-│   ├── user-auth-utils.ts # requireLeagueMember()
-│   ├── league-utils.ts # validateLeagueAccess()
 │   ├── error-handler.ts # AppError, handleActionError()
 │   ├── server-action-utils.ts # executeServerAction()
-│   ├── prisma-utils.ts # nullableUniqueConstraint() for type-safe Prisma
-│   └── validation/     # Zod schemas (admin.ts, user.ts)
-│       └── admin.ts    # PrizeTier schema with type field, updateLeaguePrizesSchema
+│   └── prisma-utils.ts # nullableUniqueConstraint() for type-safe Prisma
 └── types/              # Session + user types
 prisma/
 └── schema.prisma       # LeaguePrize.type field distinguishes prizes from fines

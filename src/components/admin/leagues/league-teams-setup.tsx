@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Trash2, Edit, Check, X } from 'lucide-react'
 import { assignTeamToLeague, removeTeamFromLeague, updateLeagueTeamGroup } from '@/actions/leagues'
-import { logger } from '@/lib/client-logger'
+import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {

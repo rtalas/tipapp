@@ -35,9 +35,9 @@ export async function createTeam(input: CreateTeamInput) {
 
       const team = await prisma.team.create({
         data: {
-          name: validated.name,
-          nickname: validated.nickname,
-          shortcut: validated.shortcut,
+          name: validated.name.trim(),
+          nickname: validated.nickname?.trim(),
+          shortcut: validated.shortcut.trim(),
           flagIcon: validated.flagIcon,
           flagType: validated.flagType,
           sportId: validated.sportId,
@@ -89,9 +89,9 @@ export async function updateTeam(input: UpdateTeamInput) {
       await prisma.team.update({
         where: { id: validated.id },
         data: {
-          name: validated.name,
-          nickname: validated.nickname,
-          shortcut: validated.shortcut,
+          name: validated.name?.trim(),
+          nickname: validated.nickname?.trim(),
+          shortcut: validated.shortcut?.trim(),
           flagIcon: validated.flagIcon,
           flagType: validated.flagType,
           sportId: validated.sportId,

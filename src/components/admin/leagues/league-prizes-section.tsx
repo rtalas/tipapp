@@ -95,7 +95,7 @@ export function LeaguePrizesSection({ prizes, onChange }: LeaguePrizesSectionPro
         <div className="space-y-3">
           {prizes.map((prize, index) => (
             <PrizeTierRow
-              key={index}
+              key={prize.rank}
               prize={prize}
               index={index}
               onUpdate={handleUpdatePrize}

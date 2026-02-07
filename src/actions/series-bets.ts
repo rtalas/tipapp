@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-utils'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildSeriesPicksWhere } from '@/lib/query-builders'
 import { AppError } from '@/lib/error-handler'
@@ -74,51 +74,60 @@ export async function createUserSeriesBet(input: CreateUserSeriesBetInput) {
   return executeServerAction(input, {
     validator: createUserSeriesBetSchema,
     handler: async (validated) => {
-      // Verify series exists
-      const series = await prisma.leagueSpecialBetSerie.findUnique({
-        where: { id: validated.leagueSpecialBetSerieId, deletedAt: null },
-      })
+      const bet = await prisma.$transaction(
+        async (tx) => {
+          // Verify series exists
+          const series = await tx.leagueSpecialBetSerie.findUnique({
+            where: { id: validated.leagueSpecialBetSerieId, deletedAt: null },
+          })
 
-      if (!series) {
-        throw new AppError('Series not found', 'NOT_FOUND', 404)
-      }
+          if (!series) {
+            throw new AppError('Series not found', 'NOT_FOUND', 404)
+          }
 
-      // Verify leagueUser exists
-      const leagueUser = await prisma.leagueUser.findUnique({
-        where: { id: validated.leagueUserId, deletedAt: null },
-      })
+          // Verify leagueUser exists
+          const leagueUser = await tx.leagueUser.findUnique({
+            where: { id: validated.leagueUserId, deletedAt: null },
+          })
 
-      if (!leagueUser) {
-        throw new AppError('League user not found', 'NOT_FOUND', 404)
-      }
+          if (!leagueUser) {
+            throw new AppError('League user not found', 'NOT_FOUND', 404)
+          }
 
-      // Check for duplicate bet
-      const existingBet = await prisma.userSpecialBetSerie.findFirst({
-        where: {
-          leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
-          leagueUserId: validated.leagueUserId,
-          deletedAt: null,
+          // Check for duplicate bet
+          const existingBet = await tx.userSpecialBetSerie.findFirst({
+            where: {
+              leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
+              leagueUserId: validated.leagueUserId,
+              deletedAt: null,
+            },
+          })
+
+          if (existingBet) {
+            throw new AppError('User already has a bet for this series', 'CONFLICT', 409)
+          }
+
+          const now = new Date()
+
+          return tx.userSpecialBetSerie.create({
+            data: {
+              leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
+              leagueUserId: validated.leagueUserId,
+              homeTeamScore: validated.homeTeamScore,
+              awayTeamScore: validated.awayTeamScore,
+              dateTime: now,
+              totalPoints: 0,
+              createdAt: now,
+              updatedAt: now,
+            },
+          })
         },
-      })
-
-      if (existingBet) {
-        throw new AppError('User already has a bet for this series', 'CONFLICT', 409)
-      }
-
-      const now = new Date()
-
-      const bet = await prisma.userSpecialBetSerie.create({
-        data: {
-          leagueSpecialBetSerieId: validated.leagueSpecialBetSerieId,
-          leagueUserId: validated.leagueUserId,
-          homeTeamScore: validated.homeTeamScore,
-          awayTeamScore: validated.awayTeamScore,
-          dateTime: now,
-          totalPoints: 0,
-          createdAt: now,
-          updatedAt: now,
-        },
-      })
+        {
+          isolationLevel: 'Serializable',
+          maxWait: 5000,
+          timeout: 10000,
+        }
+      )
 
       return { betId: bet.id, success: true }
     },

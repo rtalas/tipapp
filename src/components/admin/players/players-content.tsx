@@ -10,7 +10,7 @@ import {
   deletePlayer,
 } from '@/actions/players'
 import { getErrorMessage } from '@/lib/error-handler'
-import { logger } from '@/lib/client-logger'
+import { logger } from '@/lib/logging/client-logger'
 import { validatePlayerCreate, validatePlayerEdit } from '@/lib/validation-client'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'

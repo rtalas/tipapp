@@ -104,7 +104,7 @@ export function LeagueFinesSection({ fines, onChange }: LeagueFinesSectionProps)
         <div className="space-y-3">
           {fines.map((fine, index) => (
             <FineTierRow
-              key={index}
+              key={fine.rank}
               fine={fine}
               index={index}
               onUpdate={handleUpdateFine}

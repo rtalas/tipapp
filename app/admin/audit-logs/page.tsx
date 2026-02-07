@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { AuditLogsContent } from "@/components/admin/audit-logs/audit-logs-content";
 import { getRecentAuditLogs } from "@/lib/audit-queries";
-import { EventCategory } from "@/lib/audit-logger";
+import { EventCategory } from "@/lib/logging/audit-logger";
 
 export default async function AuditLogsPage({
   searchParams,

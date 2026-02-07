@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
-import { EventCategory } from "./audit-logger";
+import { EventCategory } from "./logging/audit-logger";
 
 export interface AuditLogFilters {
   limit?: number;

@@ -2,12 +2,13 @@
 
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-utils'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 import { buildLeagueUserWhere } from '@/lib/query-builders'
 import { AppError } from '@/lib/error-handler'
 
 // Get pending user requests
 export async function getPendingRequests(filters?: { leagueId?: number }) {
+  await requireAdmin()
   return prisma.userRequest.findMany({
     where: {
       decided: false,
@@ -118,6 +119,7 @@ export async function rejectRequest(requestId: number) {
 
 // Get all users (for filter dropdowns)
 export async function getUsers() {
+  await requireAdmin()
   return prisma.user.findMany({
     where: { deletedAt: null },
     select: {
@@ -135,6 +137,7 @@ export type UserBasic = Awaited<ReturnType<typeof getUsers>>[number]
 
 // Get league users with filters
 export async function getLeagueUsers(filters?: { leagueId?: number }) {
+  await requireAdmin()
   const whereConditions = buildLeagueUserWhere(filters)
 
   return prisma.leagueUser.findMany({

@@ -10,15 +10,7 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
-// Mock Prisma
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    league: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-    },
-  },
-}))
+
 
 describe('league-utils', () => {
   const mockLeague: League = {

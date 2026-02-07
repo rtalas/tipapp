@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signInSchema } from "@/lib/validation";
-import { AuditLogger } from "@/lib/audit-logger";
+import { AuditLogger } from "@/lib/logging/audit-logger";
 
 export const { handlers, auth } = NextAuth({
   providers: [

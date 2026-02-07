@@ -4,8 +4,8 @@ import { revalidateTag } from 'next/cache'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { evaluateMatchAtomic } from '@/lib/evaluation/match-evaluator'
 import { z } from 'zod'
-import { AuditLogger } from '@/lib/audit-logger'
-import { requireAdmin } from '@/lib/auth-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 
 // Validation schemas
 const evaluateMatchSchema = z.object({

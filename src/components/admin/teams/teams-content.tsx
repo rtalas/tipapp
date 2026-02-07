@@ -9,7 +9,7 @@ import {
   deleteTeam,
 } from '@/actions/teams'
 import { getErrorMessage } from '@/lib/error-handler'
-import { logger } from '@/lib/client-logger'
+import { logger } from '@/lib/logging/client-logger'
 import { validateTeamCreate, validateTeamEdit } from '@/lib/validation-client'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
