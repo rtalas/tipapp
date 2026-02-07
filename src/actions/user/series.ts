@@ -157,7 +157,7 @@ export async function saveSeriesBet(input: UserSeriesBetInput) {
   })
 
   if (!seriesInfo) {
-    return { success: false, error: 'Series not found' }
+    return { success: false as const, error: 'Series not found' }
   }
 
   // Verify league membership (outside transaction)
@@ -263,7 +263,7 @@ export async function saveSeriesBet(input: UserSeriesBetInput) {
     return { success: true }
   } catch (error) {
     if (error instanceof AppError) {
-      return { success: false, error: error.message }
+      return { success: false as const, error: error.message }
     }
     throw error
   }

@@ -68,12 +68,12 @@ export async function executeServerAction<T, R extends Record<string, unknown>>(
     }
 
     return {
-      success: true,
+      success: true as const,
       ...result,
     }
   } catch (error) {
     return {
-      success: false,
+      success: false as const,
       error: getErrorMessage(error, 'Operation failed'),
     }
   }

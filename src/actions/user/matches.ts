@@ -207,7 +207,7 @@ export async function saveMatchBet(input: UserMatchBetInput) {
   })
 
   if (!matchInfo) {
-    return { success: false, error: 'Match not found' }
+    return { success: false as const, error: 'Match not found' }
   }
 
   // Verify league membership (outside transaction)
@@ -376,7 +376,7 @@ export async function saveMatchBet(input: UserMatchBetInput) {
     return { success: true }
   } catch (error) {
     if (error instanceof AppError) {
-      return { success: false, error: error.message }
+      return { success: false as const, error: error.message }
     }
     throw error
   }

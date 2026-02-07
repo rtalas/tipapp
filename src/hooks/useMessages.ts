@@ -84,7 +84,7 @@ export function useMessages({
     try {
       const result = await getMessages({ leagueId, limit: 50 })
 
-      if (result.success && result.messages) {
+      if (result.success) {
         const newMessages = result.messages as ChatMessage[]
 
         // Merge new messages, avoiding duplicates
@@ -138,15 +138,14 @@ export function useMessages({
       try {
         const result = await sendMessage({ leagueId, text: text.trim(), replyToId })
 
-        if (result.success && result.message) {
-          const newMessage = result.message as ChatMessage
-          setMessages((prev) => [...prev, newMessage])
-          newestTimestamp.current = new Date(newMessage.createdAt)
-          return true
-        } else {
+        if (!result.success) {
           setError(result.error || 'Failed to send message')
           return false
         }
+        const newMessage = result.message as ChatMessage
+        setMessages((prev) => [...prev, newMessage])
+        newestTimestamp.current = new Date(newMessage.createdAt)
+        return true
       } catch {
         setError('Failed to send message')
         return false
@@ -190,12 +189,12 @@ export function useMessages({
         before: oldestMessage ? new Date(oldestMessage.createdAt) : undefined,
       })
 
-      if (result.success && result.messages) {
+      if (!result.success) {
+        setError(result.error || 'Failed to load messages')
+      } else {
         const olderMessages = result.messages as ChatMessage[]
         setMessages((prev) => [...olderMessages, ...prev])
         setHasMore(result.hasMore ?? false)
-      } else {
-        setError(result.error || 'Failed to load messages')
       }
     } catch {
       setError('Failed to load messages')
@@ -212,11 +211,11 @@ export function useMessages({
     try {
       const result = await getMessages({ leagueId, limit: 50 })
 
-      if (result.success && result.messages) {
+      if (!result.success) {
+        setError(result.error || 'Failed to refresh messages')
+      } else {
         setMessages(result.messages as ChatMessage[])
         setHasMore(result.hasMore ?? false)
-      } else {
-        setError(result.error || 'Failed to refresh messages')
       }
     } catch {
       setError('Failed to refresh messages')

@@ -59,7 +59,7 @@ export async function getUserProfile() {
 export async function updateProfile(input: UpdateProfileInput) {
   const session = await auth()
   if (!session?.user?.id) {
-    return { success: false, error: 'Not authenticated' }
+    return { success: false as const, error: 'Not authenticated' }
   }
 
   const userId = parseInt(session.user.id)
@@ -109,7 +109,7 @@ export async function updateProfile(input: UpdateProfileInput) {
 export async function updateAvatar(avatarUrl: string | null) {
   const session = await auth()
   if (!session?.user?.id) {
-    return { success: false, error: 'Not authenticated' }
+    return { success: false as const, error: 'Not authenticated' }
   }
 
   const userId = parseInt(session.user.id)

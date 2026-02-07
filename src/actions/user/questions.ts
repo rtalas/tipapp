@@ -145,7 +145,7 @@ export async function saveQuestionBet(input: UserQuestionBetInput) {
   })
 
   if (!questionInfo) {
-    return { success: false, error: 'Question not found' }
+    return { success: false as const, error: 'Question not found' }
   }
 
   // Verify league membership (outside transaction)
@@ -248,7 +248,7 @@ export async function saveQuestionBet(input: UserQuestionBetInput) {
     return { success: true }
   } catch (error) {
     if (error instanceof AppError) {
-      return { success: false, error: error.message }
+      return { success: false as const, error: error.message }
     }
     throw error
   }

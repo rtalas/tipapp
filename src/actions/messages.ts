@@ -72,7 +72,7 @@ async function getLeagueUser(userId: number, leagueId: number) {
 export async function getMessages(input: GetMessagesInput) {
   const session = await auth()
   if (!session?.user?.id) {
-    return { success: false, error: 'Authentication required' }
+    return { success: false as const, error: 'Authentication required' }
   }
 
   const userId = parseInt(session.user.id, 10)
@@ -126,7 +126,7 @@ export async function getMessages(input: GetMessagesInput) {
 export async function sendMessage(input: SendMessageInput) {
   const session = await auth()
   if (!session?.user?.id) {
-    return { success: false, error: 'Authentication required' }
+    return { success: false as const, error: 'Authentication required' }
   }
 
   const userId = parseInt(session.user.id, 10)
@@ -202,7 +202,7 @@ export async function sendMessage(input: SendMessageInput) {
 export async function deleteMessage(input: DeleteMessageInput) {
   const session = await auth()
   if (!session?.user?.id) {
-    return { success: false, error: 'Authentication required' }
+    return { success: false as const, error: 'Authentication required' }
   }
 
   const userId = parseInt(session.user.id, 10)
@@ -272,7 +272,7 @@ export async function deleteMessage(input: DeleteMessageInput) {
 export async function markChatAsRead(leagueId: number) {
   const session = await auth()
   if (!session?.user?.id) {
-    return { success: false, error: 'Authentication required' }
+    return { success: false as const, error: 'Authentication required' }
   }
 
   const userId = parseInt(session.user.id, 10)

@@ -256,7 +256,7 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
   })
 
   if (!specialBetInfo) {
-    return { success: false, error: 'Special bet not found' }
+    return { success: false as const, error: 'Special bet not found' }
   }
 
   // Verify league membership (outside transaction)
@@ -365,7 +365,7 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
     return { success: true }
   } catch (error) {
     if (error instanceof AppError) {
-      return { success: false, error: error.message }
+      return { success: false as const, error: error.message }
     }
     throw error
   }
