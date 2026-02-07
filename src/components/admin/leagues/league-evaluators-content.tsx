@@ -115,7 +115,7 @@ export function LeagueEvaluatorsContent({
     // Validate config if it exists
     if (inlineEdit.form.config) {
       if (Object.keys(inlineEdit.form.config.rankedPoints).length === 0) {
-        toast.error('At least one ranking level is required')
+        toast.error(t('atLeastOneRank'))
         return
       }
     } else {

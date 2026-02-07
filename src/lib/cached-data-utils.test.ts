@@ -37,11 +37,11 @@ describe('createCachedEntityFetcher', () => {
       fetchUserBets: vi.fn().mockResolvedValue([
         { entityId: 1, score: 5 },
       ]),
-      getUserBetEntityId: (bet) => bet.entityId,
-      getDateTime: (entity) => entity.dateTime,
+      getUserBetEntityId: (bet: any) => bet.entityId,
+      getDateTime: (entity: any) => entity.dateTime,
     })
 
-    const result = await fetcher(1)
+    const result = await fetcher(1) as any[]
 
     expect(result).toHaveLength(2)
     expect(result[0].userBet).toEqual({ entityId: 1, score: 5 })
@@ -63,10 +63,10 @@ describe('createCachedEntityFetcher', () => {
       ]),
       fetchUserBets: vi.fn().mockResolvedValue([]),
       getUserBetEntityId: (bet: any) => bet.entityId,
-      getDateTime: (entity) => entity.dateTime,
+      getDateTime: (entity: any) => entity.dateTime,
     })
 
-    const result = await fetcher(1)
+    const result = await fetcher(1) as any[]
 
     expect(result[0].isBettingOpen).toBe(true)
     expect(result[1].isBettingOpen).toBe(false)
@@ -121,10 +121,10 @@ describe('createCachedEntityFetcher', () => {
       ]),
       fetchUserBets: vi.fn().mockResolvedValue([]),
       getUserBetEntityId: (bet: any) => bet.id,
-      getDateTime: (entity) => entity.dateTime,
+      getDateTime: (entity: any) => entity.dateTime,
     })
 
-    const result = await fetcher(1)
+    const result = await fetcher(1) as any[]
 
     expect(result[0].name).toBe('Test')
     expect(result[0].nested).toEqual({ a: 1 })

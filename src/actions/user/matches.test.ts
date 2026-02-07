@@ -9,7 +9,7 @@ vi.mock('@/lib/auth/user-auth-utils', () => ({
   isBettingOpen: vi.fn(),
 }))
 
-const mockPrisma = vi.mocked(prisma)
+const mockPrisma = vi.mocked(prisma, true)
 const mockRequireLeagueMember = vi.mocked(userAuthUtils.requireLeagueMember)
 const mockIsBettingOpen = vi.mocked(userAuthUtils.isBettingOpen)
 
@@ -198,7 +198,6 @@ describe('User Matches Actions', () => {
     beforeEach(() => {
       // Default: match exists and user is a member
       mockPrisma.leagueMatch.findUnique.mockResolvedValue({
-        leagueId: 1,
         ...mockLeagueMatch,
       } as any)
       mockRequireLeagueMember.mockResolvedValue(mockMemberResult)
@@ -249,7 +248,7 @@ describe('User Matches Actions', () => {
       const result = await saveMatchBet(validInput)
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('Match not found')
+      expect((result as any).error).toBe('Match not found')
     })
 
     it('should return error when betting is closed', async () => {
@@ -269,7 +268,7 @@ describe('User Matches Actions', () => {
       const result = await saveMatchBet(validInput)
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('Betting is closed')
+      expect((result as any).error).toContain('Betting is closed')
     })
 
     it('should reject invalid input (negative score)', async () => {
@@ -298,7 +297,7 @@ describe('User Matches Actions', () => {
       })
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('Cannot set both scorer and no scorer')
+      expect((result as any).error).toContain('Cannot set both scorer and no scorer')
     })
 
     it('should reject noScorer for non-football matches', async () => {
@@ -322,7 +321,7 @@ describe('User Matches Actions', () => {
       })
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('only available for soccer')
+      expect((result as any).error).toContain('only available for soccer')
     })
 
     it('should reject scorer not belonging to playing teams', async () => {
@@ -343,7 +342,7 @@ describe('User Matches Actions', () => {
       })
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('Scorer must belong to one of the teams')
+      expect((result as any).error).toContain('Scorer must belong to one of the teams')
     })
 
     it('should reject non-existent scorer', async () => {
@@ -362,7 +361,7 @@ describe('User Matches Actions', () => {
       })
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('Scorer not found')
+      expect((result as any).error).toContain('Scorer not found')
     })
 
     it('should accept valid scorer from home team', async () => {
@@ -451,7 +450,7 @@ describe('User Matches Actions', () => {
       const result = await saveMatchBet(validInput)
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('Betting is closed for this match')
+      expect((result as any).error).toBe('Betting is closed for this match')
     })
   })
 })

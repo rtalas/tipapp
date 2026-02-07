@@ -21,6 +21,10 @@ export interface LeaderboardData {
 export interface UserMatchPick {
   id: number
   matchName: string
+  homeTeamName: string
+  awayTeamName: string
+  homeTeamFlag: string | null
+  awayTeamFlag: string | null
   homeScore: number
   awayScore: number
   scorerName: string | null
@@ -227,10 +231,16 @@ export async function getUserPicks(
     }
 
     const match = bet.LeagueMatch.Match
+    const homeTeam = match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team
+    const awayTeam = match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team
 
     return {
       id: bet.id,
-      matchName: `${match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name} vs ${match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name}`,
+      matchName: `${homeTeam.name} vs ${awayTeam.name}`,
+      homeTeamName: homeTeam.name,
+      awayTeamName: awayTeam.name,
+      homeTeamFlag: homeTeam.flagIcon,
+      awayTeamFlag: awayTeam.flagIcon,
       homeScore: bet.homeScore,
       awayScore: bet.awayScore,
       scorerName,

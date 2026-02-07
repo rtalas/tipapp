@@ -27,9 +27,47 @@ const teamsData = [
   { name: 'Denmark', shortcut: 'DEN', flagIcon: '🇩🇰', group: 'C' },
 ]
 
-// Matches data: [date, time, homeTeam, awayTeam]
+// Match phases for IIHF World Championship
+// rank determines display order (lower = earlier in tournament)
+const matchPhasesData = [
+  { name: 'Group A', rank: 1, bestOf: null },
+  { name: 'Group B', rank: 2, bestOf: null },
+  { name: 'Group C', rank: 3, bestOf: null },
+  { name: 'Playoff Preliminary', rank: 4, bestOf: null },
+  { name: 'Quarter-final', rank: 5, bestOf: null },
+  { name: 'Semi-final', rank: 6, bestOf: null },
+  { name: '3rd place', rank: 7, bestOf: null },
+  { name: 'Gold medal game', rank: 8, bestOf: null },
+]
+
+// Map group letter to phase name
+const groupPhaseMap: Record<string, string> = {
+  A: 'Group A',
+  B: 'Group B',
+  C: 'Group C',
+}
+
+// Team group lookup (built from teamsData)
+const teamGroupMap: Record<string, string> = {}
+for (const t of teamsData) {
+  teamGroupMap[t.name] = t.group
+}
+
+// Determine match phase from home/away team groups
+function getMatchPhase(homeTeam: string, awayTeam: string): string {
+  const homeGroup = teamGroupMap[homeTeam]
+  const awayGroup = teamGroupMap[awayTeam]
+  if (homeGroup && awayGroup && homeGroup === awayGroup) {
+    return groupPhaseMap[homeGroup]
+  }
+  // Cross-group matches in group stage shouldn't exist; future playoff matches will specify phase directly
+  return 'Group A' // fallback, shouldn't happen for current data
+}
+
+// Matches data: [date, time, homeTeam, awayTeam, phase?]
 // Timezone: CET (Central European Time) - matches are in Milan, Italy
-const matchesData: [string, string, string, string][] = [
+// phase is optional — if omitted, it's derived from team groups
+const matchesData: [string, string, string, string, string?][] = [
   ['2026-02-11', '16:40', 'Slovakia', 'Finland'],
   ['2026-02-11', '21:10', 'Sweden', 'Italy'],
   ['2026-02-12', '12:10', 'Switzerland', 'France'],
@@ -747,10 +785,38 @@ async function main() {
   }
   console.log(`   Created ${leaguePlayerCount} league players`)
 
-  // 10. Create matches
+  // 10. Create or find match phases
+  console.log('🏷️  Processing match phases...')
+  const matchPhaseIdMap: Record<string, number> = {} // phase name -> id
+
+  for (const phaseData of matchPhasesData) {
+    // Check if phase already exists by name
+    let phase = await prisma.matchPhase.findFirst({
+      where: { name: phaseData.name, deletedAt: null },
+    })
+
+    if (!phase) {
+      phase = await prisma.matchPhase.create({
+        data: {
+          name: phaseData.name,
+          rank: phaseData.rank,
+          bestOf: phaseData.bestOf,
+          createdAt: now,
+          updatedAt: now,
+        },
+      })
+      console.log(`   Created phase: ${phaseData.name}`)
+    } else {
+      console.log(`   Found existing phase: ${phaseData.name}`)
+    }
+
+    matchPhaseIdMap[phaseData.name] = phase.id
+  }
+
+  // 11. Create matches
   console.log('📅 Creating matches...')
 
-  for (const [dateStr, timeStr, homeTeamName, awayTeamName] of matchesData) {
+  for (const [dateStr, timeStr, homeTeamName, awayTeamName, explicitPhase] of matchesData) {
     const homeLeagueTeamId = leagueTeamIdMap[homeTeamName]
     const awayLeagueTeamId = leagueTeamIdMap[awayTeamName]
 
@@ -766,13 +832,19 @@ async function main() {
     // Create date in CET (UTC+1)
     const matchDate = new Date(Date.UTC(year, month - 1, day, hours - 1, minutes))
 
+    // Determine match phase
+    const phaseName = explicitPhase || getMatchPhase(homeTeamName, awayTeamName)
+    const matchPhaseId = matchPhaseIdMap[phaseName]
+    const isPlayoff = !phaseName.startsWith('Group')
+
     // Create the match
     const match = await prisma.match.create({
       data: {
         homeTeamId: homeLeagueTeamId,
         awayTeamId: awayLeagueTeamId,
         dateTime: matchDate,
-        isPlayoffGame: false,
+        matchPhaseId: matchPhaseId,
+        isPlayoffGame: isPlayoff,
         isEvaluated: false,
         createdAt: now,
         updatedAt: now,
@@ -792,7 +864,7 @@ async function main() {
   }
   console.log(`   Created ${matchesData.length} matches`)
 
-  // 11. Create questions
+  // 12. Create questions
   console.log('❓ Creating questions...')
 
   for (const [dateStr, timeStr, text] of questionsData) {
@@ -816,7 +888,7 @@ async function main() {
   }
   console.log(`   Created ${questionsData.length} questions`)
 
-  // 12. Create special bets
+  // 13. Create special bets
   console.log('🎯 Creating special bets...')
 
   // Deadline for all special bets: 11.2.2026 16:40 CET
@@ -848,12 +920,13 @@ async function main() {
   }
   console.log(`   Created ${specialBetsData.length} special bets`)
 
-  // 13. Summary
+  // 14. Summary
   console.log('')
   console.log('✅ Import completed successfully!')
   console.log('')
   console.log('📊 Summary:')
   console.log(`   League ID: ${league.id}`)
+  console.log(`   Match phases: ${matchPhasesData.length}`)
   console.log(`   Teams: ${teamsData.length}`)
   console.log(`   Players: ${leaguePlayerCount}`)
   console.log(`   Matches: ${matchesData.length}`)

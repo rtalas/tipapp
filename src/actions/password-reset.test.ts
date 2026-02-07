@@ -19,7 +19,7 @@ vi.mock('bcryptjs', () => ({
   },
 }));
 
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 const mockSendEmail = vi.mocked(emailModule.sendPasswordResetEmail);
 const mockRateLimit = vi.mocked(rateLimitModule.isPasswordResetRateLimited);
 
@@ -171,7 +171,7 @@ describe('Password Reset Actions', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Invalid or expired');
+      expect((result as any).error).toContain('Invalid or expired');
     });
 
     it('should reject expired token', async () => {
@@ -194,7 +194,7 @@ describe('Password Reset Actions', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('expired');
+      expect((result as any).error).toContain('expired');
     });
 
     it('should reject already used token', async () => {
@@ -217,7 +217,7 @@ describe('Password Reset Actions', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('already been used');
+      expect((result as any).error).toContain('already been used');
     });
 
     it('should validate password requirements', async () => {
@@ -228,7 +228,7 @@ describe('Password Reset Actions', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      expect((result as any).error).toBeDefined();
     });
 
     it('should validate password confirmation', async () => {
@@ -239,7 +239,7 @@ describe('Password Reset Actions', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("don't match");
+      expect((result as any).error).toContain("don't match");
     });
 
     it('should use atomic transaction', async () => {
@@ -263,7 +263,7 @@ describe('Password Reset Actions', () => {
       });
 
       expect(mockPrisma.$transaction).toHaveBeenCalledWith(expect.any(Array));
-      const transactionCalls = (mockPrisma.$transaction.mock.calls[0][0] as any[]);
+      const transactionCalls = (mockPrisma.$transaction.mock.calls[0][0] as unknown as any[]);
       expect(transactionCalls.length).toBe(3); // Update user, mark token used, delete others
     });
   });

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Create hoisted mock with function implementation
-const sendMock = vi.hoisted(() => vi.fn(function() {}));
+const sendMock = vi.hoisted(() => vi.fn<(...args: any[]) => any>());
 
 vi.mock('resend', () => ({
   Resend: vi.fn(function() {
@@ -71,7 +71,7 @@ describe('Email Utilities', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Invalid email address');
+      expect((result as any).error).toBe('Invalid email address');
     });
 
     it('should handle unexpected errors gracefully', async () => {
@@ -84,7 +84,7 @@ describe('Email Utilities', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Failed to send email');
+      expect((result as any).error).toBe('Failed to send email');
     });
 
     it('should include reset link in both HTML and plain text', async () => {

@@ -98,22 +98,23 @@ export type SpecialBetFriendPrediction = Awaited<
  * Cached teams data (12 hour TTL)
  * Fetches all teams for a league - group filtering happens at runtime
  */
-const getCachedTeams = unstable_cache(
-  async (leagueId: number) => {
-    const teams = await prisma.leagueTeam.findMany({
-      where: { leagueId, deletedAt: null },
-      include: { Team: true },
-      orderBy: { Team: { name: 'asc' } },
-    })
+const getCachedTeams = (leagueId: number) =>
+  unstable_cache(
+    async () => {
+      const teams = await prisma.leagueTeam.findMany({
+        where: { leagueId, deletedAt: null },
+        include: { Team: true },
+        orderBy: { Team: { name: 'asc' } },
+      })
 
-    return teams.map((t) => ({ ...t, group: t.group }))
-  },
-  ['special-bet-teams'],
-  {
-    revalidate: 43200,
-    tags: ['special-bet-teams'],
-  }
-)
+      return teams.map((t) => ({ ...t, group: t.group }))
+    },
+    ['special-bet-teams', String(leagueId)],
+    {
+      revalidate: 43200,
+      tags: ['special-bet-teams'],
+    }
+  )()
 
 /**
  * Gets teams available for a special bet
@@ -127,28 +128,29 @@ export async function getSpecialBetTeams(leagueId: number, group?: string) {
 /**
  * Cached players data (12 hour TTL)
  */
-const getCachedPlayers = unstable_cache(
-  async (leagueId: number) => {
-    const players = await prisma.leaguePlayer.findMany({
-      where: {
-        deletedAt: null,
-        LeagueTeam: { leagueId, deletedAt: null },
-      },
-      include: {
-        Player: true,
-        LeagueTeam: { include: { Team: true } },
-      },
-      orderBy: { Player: { lastName: 'asc' } },
-    })
+const getCachedPlayers = (leagueId: number) =>
+  unstable_cache(
+    async () => {
+      const players = await prisma.leaguePlayer.findMany({
+        where: {
+          deletedAt: null,
+          LeagueTeam: { leagueId, deletedAt: null },
+        },
+        include: {
+          Player: true,
+          LeagueTeam: { include: { Team: true } },
+        },
+        orderBy: { Player: { lastName: 'asc' } },
+      })
 
-    return players
-  },
-  ['special-bet-players'],
-  {
-    revalidate: 43200,
-    tags: ['special-bet-players'],
-  }
-)
+      return players
+    },
+    ['special-bet-players', String(leagueId)],
+    {
+      revalidate: 43200,
+      tags: ['special-bet-players'],
+    }
+  )()
 
 /**
  * Gets players available for a special bet

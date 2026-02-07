@@ -84,3 +84,14 @@ export type UserQuestionBetInput = z.infer<typeof userQuestionBetSchema>
 export const joinLeagueSchema = z.object({
   leagueId: z.number().int().positive('League ID is required'),
 })
+
+// Profile update schema (shared by admin and user profile)
+export const updateProfileSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').max(255),
+  lastName: z.string().min(1, 'Last name is required').max(255),
+  email: z.string().email('Invalid email address').max(255),
+  mobileNumber: z.string().max(255).optional().nullable(),
+  notifyHours: z.number().int().min(0).max(1440).default(0),
+})
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>

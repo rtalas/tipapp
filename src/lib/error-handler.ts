@@ -183,16 +183,5 @@ export function logError(error: unknown, context?: Record<string, unknown>): voi
     // PRODUCTION: Always log errors to stdout/stderr
     // This ensures visibility in production logs/monitoring systems
     console.error('[PROD_ERROR]', errorData)
-
-    // TODO: Integrate with external logging service (Sentry, LogRocket, etc.)
-    // Example integration (when ready):
-    // try {
-    //   Sentry.captureException(error, {
-    //     contexts: { custom: context },
-    //     level: 'error',
-    //   })
-    // } catch (sentryError) {
-    //   console.error('[SENTRY_FAILURE]', sentryError)
-    // }
   }
 }

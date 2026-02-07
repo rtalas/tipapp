@@ -1,0 +1,191 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { getMessages, sendMessage, deleteMessage, markChatAsRead } from './messages'
+import { prisma } from '@/lib/prisma'
+import { auth } from '@/auth'
+
+vi.mock('@/lib/auth/auth-utils', () => ({
+  requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
+}))
+
+const mockPrisma = vi.mocked(prisma, true)
+const mockAuth = vi.mocked(auth)
+
+const mockSession = { user: { id: '5', isSuperadmin: false } }
+
+describe('Messages Actions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockAuth.mockResolvedValue(mockSession as any)
+  })
+
+  describe('getMessages', () => {
+    it('should return messages for league member', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10 } as any)
+      mockPrisma.message.findMany.mockResolvedValue([
+        { id: 1, text: 'Hello' },
+        { id: 2, text: 'World' },
+      ] as any)
+
+      const result = await getMessages({ leagueId: 1, limit: 50 })
+
+      expect(result.success).toBe(true)
+      expect((result as any).messages).toHaveLength(2)
+    })
+
+    it('should return error when not authenticated', async () => {
+      mockAuth.mockResolvedValue(null as any)
+
+      const result = await getMessages({ leagueId: 1, limit: 50 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Authentication required')
+    })
+
+    it('should return error when not league member', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue(null) // not a member
+
+      const result = await getMessages({ leagueId: 1, limit: 50 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('not a member')
+    })
+  })
+
+  describe('sendMessage', () => {
+    it('should send message', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10, User: { isSuperadmin: false } } as any)
+      mockPrisma.league.findUnique.mockResolvedValue({ chatSuspendedAt: null } as any)
+      mockPrisma.message.create.mockResolvedValue({ id: 1, text: 'Hello' } as any)
+
+      const result = await sendMessage({ leagueId: 1, text: 'Hello' })
+
+      expect(result.success).toBe(true)
+      expect((result as any).message).toBeDefined()
+    })
+
+    it('should return error when chat suspended', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10 } as any)
+      mockPrisma.league.findUnique.mockResolvedValue({ chatSuspendedAt: new Date() } as any)
+
+      const result = await sendMessage({ leagueId: 1, text: 'Hello' })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('suspended')
+    })
+
+    it('should return error when not authenticated', async () => {
+      mockAuth.mockResolvedValue(null as any)
+
+      const result = await sendMessage({ leagueId: 1, text: 'Hello' })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Authentication required')
+    })
+
+    it('should validate reply target exists', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10 } as any)
+      mockPrisma.league.findUnique.mockResolvedValue({ chatSuspendedAt: null } as any)
+      mockPrisma.message.findFirst.mockResolvedValue(null) // reply target not found
+
+      const result = await sendMessage({ leagueId: 1, text: 'Reply', replyToId: 999 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Reply target')
+    })
+  })
+
+  describe('deleteMessage', () => {
+    it('should delete own message', async () => {
+      mockPrisma.message.findUnique.mockResolvedValue({
+        id: 1,
+        leagueId: 1,
+        LeagueUser: { userId: 5, User: { isSuperadmin: false } },
+        League: { id: 1, isChatEnabled: true },
+      } as any)
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ admin: false } as any)
+      mockPrisma.message.update.mockResolvedValue({ id: 1 } as any)
+
+      const result = await deleteMessage({ id: 1 })
+
+      expect(result.success).toBe(true)
+    })
+
+    it('should allow superadmin to delete any message', async () => {
+      mockAuth.mockResolvedValue({ user: { id: '5', isSuperadmin: true } } as any)
+      mockPrisma.message.findUnique.mockResolvedValue({
+        id: 1,
+        leagueId: 1,
+        LeagueUser: { userId: 99, User: { isSuperadmin: false } }, // different user
+        League: { id: 1, isChatEnabled: true },
+      } as any)
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ admin: false } as any)
+      mockPrisma.message.update.mockResolvedValue({ id: 1 } as any)
+
+      const result = await deleteMessage({ id: 1 })
+
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject non-author non-admin delete', async () => {
+      mockPrisma.message.findUnique.mockResolvedValue({
+        id: 1,
+        leagueId: 1,
+        LeagueUser: { userId: 99, User: { isSuperadmin: false } }, // different user
+        League: { id: 1, isChatEnabled: true },
+      } as any)
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ admin: false } as any)
+
+      const result = await deleteMessage({ id: 1 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('only delete your own')
+    })
+
+    it('should return error when message not found', async () => {
+      mockPrisma.message.findUnique.mockResolvedValue(null)
+
+      const result = await deleteMessage({ id: 999 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Message not found')
+    })
+
+    it('should reject when chat is disabled', async () => {
+      mockPrisma.message.findUnique.mockResolvedValue({
+        id: 1,
+        leagueId: 1,
+        LeagueUser: { userId: 5, User: {} },
+        League: { id: 1, isChatEnabled: false },
+      } as any)
+
+      const result = await deleteMessage({ id: 1 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Chat is disabled')
+    })
+  })
+
+  describe('markChatAsRead', () => {
+    it('should update lastChatReadAt', async () => {
+      mockPrisma.leagueUser.updateMany.mockResolvedValue({ count: 1 } as any)
+
+      const result = await markChatAsRead(1)
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.leagueUser.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ userId: 5, leagueId: 1 }),
+          data: expect.objectContaining({ lastChatReadAt: expect.any(Date) }),
+        })
+      )
+    })
+
+    it('should return error when not authenticated', async () => {
+      mockAuth.mockResolvedValue(null as any)
+
+      const result = await markChatAsRead(1)
+
+      expect(result.success).toBe(false)
+    })
+  })
+})

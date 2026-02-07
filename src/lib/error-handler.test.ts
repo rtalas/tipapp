@@ -272,12 +272,12 @@ describe('error-handler', () => {
     })
 
     afterEach(() => {
-      consoleErrorSpy.mockRestore()
-      process.env.NODE_ENV = originalEnv
+      consoleErrorSpy.mockRestore();
+      (process.env as any).NODE_ENV = originalEnv
     })
 
     it('should log error in development mode', () => {
-      process.env.NODE_ENV = 'development'
+      (process.env as any).NODE_ENV = 'development'
       const error = new Error('Test error')
       const context = { userId: 123 }
 
@@ -294,7 +294,7 @@ describe('error-handler', () => {
     })
 
     it('should log error in production mode', () => {
-      process.env.NODE_ENV = 'production'
+      (process.env as any).NODE_ENV = 'production'
       const error = new Error('Prod error')
 
       logError(error)

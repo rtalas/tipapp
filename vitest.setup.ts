@@ -44,7 +44,7 @@ vi.mock('@/auth', () => ({
 vi.mock('next/cache', () => ({
   revalidateTag: vi.fn(),
   revalidatePath: vi.fn(),
-  unstable_cache: vi.fn((fn: Function) => fn),
+  unstable_cache: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
 }));
 
 // Mock Prisma globally — covers all models used across tests
@@ -63,6 +63,8 @@ vi.mock('@/lib/prisma', () => {
     findUniqueOrThrow: vi.fn(),
     findFirstOrThrow: vi.fn(),
     upsert: vi.fn(),
+    groupBy: vi.fn(),
+    aggregate: vi.fn(),
   });
 
   return {
@@ -79,6 +81,23 @@ vi.mock('@/lib/prisma', () => {
       league: createModelMock(),
       leagueSpecialBetQuestion: createModelMock(),
       userSpecialBetQuestion: createModelMock(),
+      team: createModelMock(),
+      sport: createModelMock(),
+      player: createModelMock(),
+      specialBetSerie: createModelMock(),
+      matchPhase: createModelMock(),
+      evaluatorType: createModelMock(),
+      evaluator: createModelMock(),
+      leagueTeam: createModelMock(),
+      match: createModelMock(),
+      matchScorer: createModelMock(),
+      message: createModelMock(),
+      userRequest: createModelMock(),
+      leagueSpecialBetSerie: createModelMock(),
+      leagueSpecialBetSingle: createModelMock(),
+      leagueSpecialBetSingleTeamAdvanced: createModelMock(),
+      userSpecialBetSingle: createModelMock(),
+      userSpecialBetSerie: createModelMock(),
       $transaction: vi.fn(),
       $connect: vi.fn(),
       $disconnect: vi.fn(),

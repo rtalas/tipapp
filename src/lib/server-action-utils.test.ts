@@ -68,7 +68,7 @@ describe('executeServerAction', () => {
       )
 
       expect(result.success).toBe(false)
-      expect(result.error).toBeDefined()
+      expect((result as any).error).toBeDefined()
       expect(handler).not.toHaveBeenCalled()
     })
 
@@ -148,7 +148,7 @@ describe('executeServerAction', () => {
       )
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('Unauthorized')
+      expect((result as any).error).toBe('Unauthorized')
       expect(handler).not.toHaveBeenCalled()
     })
   })
@@ -220,7 +220,7 @@ describe('executeServerAction', () => {
       )
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('Operation failed')
+      expect((result as any).error).toBe('Operation failed')
     })
   })
 

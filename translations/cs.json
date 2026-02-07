@@ -217,7 +217,8 @@
       "noPointsYet": "Zatím žádné body",
       "noPicksYet": "Zatím žádné tipy",
       "yes": "Ano",
-      "no": "Ne"
+      "no": "Ne",
+      "picksLoadError": "Nepodařilo se načíst tipy"
     },
     "series": {
       "title": "Série",
@@ -1081,7 +1082,14 @@
       "fillValidation": "Prosím vyplňte všechna pole",
       "evaluatorUpdateFailed": "Nepodařilo se aktualizovat vyhodnocovací pravidlo",
       "evaluatorCreateFailed": "Nepodařilo se vytvořit vyhodnocovací pravidlo",
-      "evaluatorDeleteFailed": "Nepodařilo se smazat vyhodnocovací pravidlo"
+      "evaluatorDeleteFailed": "Nepodařilo se smazat vyhodnocovací pravidlo",
+      "rankingPoints": "Body podle hodnocení",
+      "rank": "Rank {rank}:",
+      "pts": "b",
+      "addRank": "Přidat rank",
+      "unrankedPoints": "Body bez ranku",
+      "ptsForUnranked": "b pro nehodnocené střelce",
+      "atLeastOneRank": "Je vyžadována alespoň jedna úroveň hodnocení"
     },
     "evaluators": {
       "searchPlaceholder": "Hledat podle názvu nebo ligy...",
@@ -1098,13 +1106,20 @@
         "type": "Typ",
         "points": "Body"
       },
+      "rankingPoints": "Body podle hodnocení",
+      "rank": "Rank {rank}:",
+      "pts": "b",
+      "addRank": "Přidat rank",
+      "unrankedPoints": "Body bez ranku",
+      "ptsForUnranked": "b pro nehodnocené střelce",
       "validation": {
         "invalidNumber": "Prosím zadejte platné číslo",
         "nameRequired": "Název nemůže být prázdný",
         "requiredFields": "Prosím vyplňte všechna pole",
         "pointsInvalid": "Body musí být platné číslo",
         "rankConfigRequired": "Prosím nakonfigurujte body pro hodnocené a nehodnocené hráče",
-        "invalidUnrankedPoints": "Neplatná hodnota bodů pro nehodnocené hráče"
+        "invalidUnrankedPoints": "Neplatná hodnota bodů pro nehodnocené hráče",
+        "atLeastOneRank": "Je vyžadována alespoň jedna úroveň hodnocení"
       },
       "toast": {
         "updated": "Hodnotitel aktualizován",

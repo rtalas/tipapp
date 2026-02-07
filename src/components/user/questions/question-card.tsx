@@ -50,7 +50,7 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
     }
   }
 
-  const handleAnswer = async (answer: boolean | null) => {
+  const handleAnswer = (answer: boolean | null) => {
     if (isLocked) return
 
     setSelectedAnswer(answer)

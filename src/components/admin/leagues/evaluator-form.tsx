@@ -155,13 +155,13 @@ export function EvaluatorForm({
       {hasConfig && formData.config ? (
         <div className="space-y-3">
           <div>
-            <label className="text-sm font-medium">Ranking Points</label>
+            <label className="text-sm font-medium">{t('rankingPoints')}</label>
             <div className="space-y-2 mt-2">
               {Object.entries(formData.config.rankedPoints)
                 .sort(([a], [b]) => Number(a) - Number(b))
                 .map(([rank, points]) => (
                   <div key={rank} className="flex items-center gap-2">
-                    <span className="text-sm font-medium w-16">Rank {rank}:</span>
+                    <span className="text-sm font-medium w-16">{t('rank', { rank })}</span>
                     <Input
                       type="number"
                       min="0"
@@ -172,7 +172,7 @@ export function EvaluatorForm({
                       disabled={disabled}
                       aria-label={`Points for rank ${rank}`}
                     />
-                    <span className="text-sm text-muted-foreground">pts</span>
+                    <span className="text-sm text-muted-foreground">{t('pts')}</span>
                     <Button
                       type="button"
                       variant="ghost"
@@ -194,13 +194,13 @@ export function EvaluatorForm({
                 className="mt-2"
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Add Rank
+                {t('addRank')}
               </Button>
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium">Unranked Points</label>
+            <label className="text-sm font-medium">{t('unrankedPoints')}</label>
             <div className="flex items-center gap-2 mt-2">
               <Input
                 type="number"
@@ -212,7 +212,7 @@ export function EvaluatorForm({
                 disabled={disabled}
                 aria-label="Points for unranked scorers"
               />
-              <span className="text-sm text-muted-foreground">pts for unranked scorers</span>
+              <span className="text-sm text-muted-foreground">{t('ptsForUnranked')}</span>
             </div>
           </div>
         </div>

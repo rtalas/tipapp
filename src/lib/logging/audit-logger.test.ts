@@ -23,7 +23,7 @@ describe("audit-logger", () => {
   });
 
   afterEach(() => {
-    process.env.NODE_ENV = originalNodeEnv;
+    (process.env as any).NODE_ENV = originalNodeEnv;
     vi.restoreAllMocks();
   });
 
@@ -268,7 +268,7 @@ describe("audit-logger", () => {
     });
 
     it("should log to console in production mode", async () => {
-      process.env.NODE_ENV = "production";
+      (process.env as any).NODE_ENV = "production";
       vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
 
       await auditLog({
@@ -292,7 +292,7 @@ describe("audit-logger", () => {
     });
 
     it("should not log to console in development mode", async () => {
-      process.env.NODE_ENV = "development";
+      (process.env as any).NODE_ENV = "development";
       vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
 
       await auditLog({

@@ -213,7 +213,6 @@ export async function updateMatchResult(input: UpdateMatchResultInput) {
 }
 
 export async function deleteMatch(id: number) {
-  'use server'
   return executeServerAction({ id }, {
     validator: z.object({ id: z.number().int().positive() }),
     handler: async (validated) => {

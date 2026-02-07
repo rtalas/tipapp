@@ -11,7 +11,7 @@ vi.mock('@/lib/auth/user-auth-utils', () => ({
 
 const { saveUserBet, getFriendPredictions } = await import('./bet-utils')
 
-const mockPrisma = vi.mocked(prisma)
+const mockPrisma = vi.mocked(prisma, true)
 const mockRequireLeagueMember = vi.mocked(userAuthUtils.requireLeagueMember)
 const mockIsBettingOpen = vi.mocked(userAuthUtils.isBettingOpen)
 
@@ -66,7 +66,7 @@ describe('saveUserBet', () => {
 
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error).toBe('Test not found')
+      expect((result as any).error).toBe('Test not found')
     }
   })
 
@@ -165,7 +165,7 @@ describe('saveUserBet', () => {
 
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error).toBe('Betting is closed')
+      expect((result as any).error).toBe('Betting is closed')
     }
   })
 
@@ -223,7 +223,7 @@ describe('getFriendPredictions', () => {
       entityId: 1,
       entityLabel: 'Match',
       findEntity: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }),
-      getLeagueId: (e) => e.leagueId,
+      getLeagueId: (e: any) => e.leagueId,
       getDateTime: () => new Date('2099-01-01'),
       findPredictions: vi.fn(),
     })
@@ -243,7 +243,7 @@ describe('getFriendPredictions', () => {
       entityId: 1,
       entityLabel: 'Match',
       findEntity: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }),
-      getLeagueId: (e) => e.leagueId,
+      getLeagueId: (e: any) => e.leagueId,
       getDateTime: () => new Date('2020-01-01'),
       findPredictions: vi.fn().mockResolvedValue(mockPredictions),
     })
@@ -260,7 +260,7 @@ describe('getFriendPredictions', () => {
       entityId: 42,
       entityLabel: 'Series',
       findEntity: vi.fn().mockResolvedValue({ id: 42, leagueId: 1 }),
-      getLeagueId: (e) => e.leagueId,
+      getLeagueId: (e: any) => e.leagueId,
       getDateTime: () => new Date('2020-01-01'),
       findPredictions,
     })
@@ -275,7 +275,7 @@ describe('getFriendPredictions', () => {
       entityId: 1,
       entityLabel: 'Question',
       findEntity: vi.fn().mockResolvedValue({ id: 1, leagueId: 7 }),
-      getLeagueId: (e) => e.leagueId,
+      getLeagueId: (e: any) => e.leagueId,
       getDateTime: () => new Date('2099-01-01'),
       findPredictions: vi.fn(),
     })

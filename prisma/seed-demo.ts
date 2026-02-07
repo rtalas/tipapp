@@ -507,88 +507,6 @@ async function main() {
     }
   })
 
-  // NHL Evaluators with scorer rank-based config
-  const nhlEvaluators = await Promise.all([
-    prisma.evaluator.create({
-      data: {
-        leagueId: nhlPlayoffs.id,
-        name: 'Exact Score',
-        evaluatorTypeId: evaluatorTypeMap['exact_score'],
-        points: 5,
-        createdAt: now,
-        updatedAt: now,
-      }
-    }),
-    prisma.evaluator.create({
-      data: {
-        leagueId: nhlPlayoffs.id,
-        name: 'Score Difference',
-        evaluatorTypeId: evaluatorTypeMap['score_difference'],
-        points: 3,
-        createdAt: now,
-        updatedAt: now,
-      }
-    }),
-    prisma.evaluator.create({
-      data: {
-        leagueId: nhlPlayoffs.id,
-        name: 'One Team Score',
-        evaluatorTypeId: evaluatorTypeMap['one_team_score'],
-        points: 2,
-        createdAt: now,
-        updatedAt: now,
-      }
-    }),
-    prisma.evaluator.create({
-      data: {
-        leagueId: nhlPlayoffs.id,
-        name: 'Winner',
-        evaluatorTypeId: evaluatorTypeMap['winner'],
-        points: 2,
-        createdAt: now,
-        updatedAt: now,
-      }
-    }),
-    prisma.evaluator.create({
-      data: {
-        leagueId: nhlPlayoffs.id,
-        name: 'Scorer',
-        evaluatorTypeId: evaluatorTypeMap['scorer'],
-        points: 0, // Points set to 0 when using config
-        config: {
-          rankedPoints: {
-            '1': 2,
-            '2': 4,
-            '3': 5,
-          },
-          unrankedPoints: 8,
-        },
-        createdAt: now,
-        updatedAt: now,
-      }
-    }),
-    prisma.evaluator.create({
-      data: {
-        leagueId: nhlPlayoffs.id,
-        name: 'Playoff Advance',
-        evaluatorTypeId: evaluatorTypeMap['soccer_playoff_advance'],
-        points: 3,
-        createdAt: now,
-        updatedAt: now,
-      }
-    }),
-    prisma.evaluator.create({
-      data: {
-        leagueId: nhlPlayoffs.id,
-        name: 'Draw',
-        evaluatorTypeId: evaluatorTypeMap['draw'],
-        points: 1,
-        createdAt: now,
-        updatedAt: now,
-      }
-    }),
-  ])
-
   // NHL Series Evaluators
   await Promise.all([
     prisma.evaluator.create({
@@ -784,7 +702,7 @@ async function main() {
   ])
 
   // Euro Special Bet Evaluators
-  const [euroExactPlayerEval, euroExactTeamEval, euroClosestValueEval, euroGroupStageTeamEval] = await Promise.all([
+  const [euroExactPlayerEval, euroExactTeamEval, euroClosestValueEval] = await Promise.all([
     prisma.evaluator.create({
       data: {
         leagueId: euro2024.id,
@@ -923,7 +841,7 @@ async function main() {
 
   // 13. Assign all users to NHL Playoffs
   const nhlPlayoffsLeagueUsers = await Promise.all(
-    allUsers.map((user, index) =>
+    allUsers.map((user) =>
       prisma.leagueUser.create({
         data: {
           leagueId: nhlPlayoffs.id,
@@ -937,7 +855,7 @@ async function main() {
 
   // Assign 10 users to Euro 2024
   const euro2024LeagueUsers = await Promise.all(
-    allUsers.slice(0, 10).map((user, index) =>
+    allUsers.slice(0, 10).map((user) =>
       prisma.leagueUser.create({
         data: {
           leagueId: euro2024.id,
@@ -969,7 +887,7 @@ async function main() {
 
   // 14. Assign NHL teams to NHL Playoffs
   const nhlLeagueTeams = await Promise.all(
-    nhlTeams.map((team, index) =>
+    nhlTeams.map((team) =>
       prisma.leagueTeam.create({
         data: {
           leagueId: nhlPlayoffs.id,
@@ -2076,7 +1994,7 @@ async function main() {
       const betDateTime = createDate(-20)
 
       // Determine bet type by checking which fields are set on the special bet
-      const betData: any = {
+      const betData: any = { // eslint-disable-line @typescript-eslint/no-explicit-any
         leagueSpecialBetSingleId: specialBet.id,
         leagueUserId: leagueUser.id,
         dateTime: betDateTime,

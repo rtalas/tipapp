@@ -201,7 +201,6 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
 }
 
 export async function deleteSpecialBet(id: number) {
-  'use server'
   return executeServerAction({ id }, {
     validator: z.object({ id: z.number().int().positive() }),
     handler: async (validated) => {

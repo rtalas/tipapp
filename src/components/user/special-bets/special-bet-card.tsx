@@ -20,6 +20,15 @@ import { saveSpecialBet, getSpecialBetFriendPredictions } from '@/actions/user/s
 import type { UserSpecialBet, SpecialBetFriendPrediction } from '@/actions/user/special-bets'
 import type { ExactPlayerConfig } from '@/lib/evaluators/types'
 
+function isExactPlayerConfig(value: unknown): value is ExactPlayerConfig {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'positions' in value &&
+    (Array.isArray((value as ExactPlayerConfig).positions) || (value as ExactPlayerConfig).positions === null)
+  )
+}
+
 interface SpecialBetCardProps {
   specialBet: UserSpecialBet
   teams: Array<{
@@ -82,20 +91,11 @@ export function SpecialBetCard({
   // Filter players by position if evaluator config has position restriction
   const availablePlayers = useMemo(() => {
     // Check if evaluator has position filter config
-    const evaluatorConfig = specialBet.Evaluator?.config
-    if (
-      evaluatorConfig &&
-      typeof evaluatorConfig === 'object' &&
-      evaluatorConfig !== null &&
-      'positions' in evaluatorConfig
-    ) {
-      const config = evaluatorConfig as unknown as ExactPlayerConfig
-      if (config.positions && config.positions.length > 0) {
-        // Filter players by position
-        return players.filter(
-          (p) => p.Player.position && config.positions!.includes(p.Player.position)
-        )
-      }
+    const config = specialBet.Evaluator?.config
+    if (isExactPlayerConfig(config) && config.positions && config.positions.length > 0) {
+      return players.filter(
+        (p) => p.Player.position && config.positions!.includes(p.Player.position)
+      )
     }
     // No filter - return all players
     return players

@@ -26,9 +26,9 @@ describe('Match Evaluator', () => {
     vi.clearAllMocks()
 
     vi.mocked(prisma.$transaction).mockImplementation(
-      async <T>(callback: (tx: typeof mockTx) => Promise<T>) => {
+      (async <T>(callback: (tx: typeof mockTx) => Promise<T>) => {
         return await callback(mockTx)
-      }
+      }) as any
     )
 
     mockTx.userBet.update.mockResolvedValue({})

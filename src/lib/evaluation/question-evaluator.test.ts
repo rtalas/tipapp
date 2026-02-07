@@ -18,9 +18,9 @@ describe('Question Evaluator', () => {
 
     // Mock $transaction to execute the callback immediately with mockTx
     vi.mocked(prisma.$transaction).mockImplementation(
-      async <T>(callback: (tx: typeof mockTx) => Promise<T>) => {
+      (async <T>(callback: (tx: typeof mockTx) => Promise<T>) => {
         return await callback(mockTx)
-      }
+      }) as any
     )
   })
 

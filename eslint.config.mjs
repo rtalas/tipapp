@@ -27,6 +27,14 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // Disable no-explicit-any in test files (mocks frequently require `as any`)
+  {
+    files: ["**/*.test.ts", "**/*.test.tsx", "vitest.setup.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unsafe-function-type": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
@@ -34,6 +42,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "coverage/**",
   ]),
 ]);
 

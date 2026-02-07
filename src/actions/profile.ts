@@ -4,19 +4,10 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { AppError } from '@/lib/error-handler'
+import { updateProfileSchema } from '@/lib/validation/user'
+import type { UpdateProfileInput } from '@/lib/validation/user'
 import { z } from 'zod'
 import bcryptjs from 'bcryptjs'
-
-// Validation schemas
-const updateProfileSchema = z.object({
-  firstName: z.string().min(1, 'First name is required').max(255),
-  lastName: z.string().min(1, 'Last name is required').max(255),
-  email: z.string().email('Invalid email address').max(255),
-  mobileNumber: z.string().max(255).optional().nullable(),
-  notifyHours: z.number().int().min(0).max(1440).default(0), // Stored as minutes (0-1440 = 24 hours)
-})
-
-export type UpdateProfileInput = z.infer<typeof updateProfileSchema>
 
 const updatePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),

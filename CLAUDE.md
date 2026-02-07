@@ -313,7 +313,7 @@ Uses Next.js `unstable_cache` for server-side data caching with tag-based invali
 | Teams | 12 hours | `special-bet-teams` | Team assignment |
 | Players | 12 hours | `special-bet-players` | Player assignment |
 | Leaderboard | 30 min | `leaderboard` | Bet evaluation |
-| Badge Counts | 60s | `bet-badges` | User bet saves (short TTL because `now` is computed inside) |
+| Badge Counts | 900s | `bet-badges` | User bet saves (short TTL because `now` is computed inside) |
 
 **Caching Pattern:**
 - Base bet data is cached (shared across all users)

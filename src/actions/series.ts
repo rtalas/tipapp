@@ -89,7 +89,6 @@ export async function updateSeriesResult(input: UpdateSeriesResultInput) {
 }
 
 export async function deleteSeries(id: number) {
-  'use server'
   return executeServerAction({ id }, {
     validator: z.object({ id: z.number().int().positive() }),
     handler: async (validated) => {

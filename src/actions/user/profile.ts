@@ -4,22 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { AppError } from '@/lib/error-handler'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { updateProfileSchema } from '@/lib/validation/user'
+import type { UpdateProfileInput } from '@/lib/validation/user'
 import { z } from 'zod'
-
-// Validation schemas
-const updateProfileSchema = z.object({
-  firstName: z.string().min(1, 'First name is required').max(50),
-  lastName: z.string().min(1, 'Last name is required').max(50),
-  email: z.string().email('Invalid email address'),
-  mobileNumber: z.string().optional(),
-  notifyHours: z.number().int().min(0).max(1440).default(0),
-})
 
 const updateAvatarSchema = z.object({
   avatarUrl: z.string().url().nullable(),
 })
-
-export type UpdateProfileInput = z.infer<typeof updateProfileSchema>
 
 /**
  * Gets the current user's profile data

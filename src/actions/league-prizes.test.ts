@@ -8,7 +8,7 @@ vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn(),
 }))
 
-const mockPrisma = vi.mocked(prisma)
+const mockPrisma = vi.mocked(prisma, true)
 const mockRequireAdmin = vi.mocked(authUtils.requireAdmin)
 const mockRevalidateTag = vi.mocked(revalidateTag)
 const mockRevalidatePath = vi.mocked(revalidatePath)
@@ -29,6 +29,7 @@ describe('League Prizes Actions', () => {
 
       const result = await getLeaguePrizes(1)
 
+      expect(mockRequireAdmin).toHaveBeenCalled()
       expect(result.success).toBe(true)
       expect(result.prizes).toHaveLength(2)
       expect(result.fines).toHaveLength(1)
@@ -73,7 +74,7 @@ describe('League Prizes Actions', () => {
       const result = await getLeaguePrizes(1)
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('Unauthorized')
+      expect((result as any).error).toContain('Unauthorized')
     })
 
     it('should return error for invalid leagueId', async () => {
@@ -96,7 +97,7 @@ describe('League Prizes Actions', () => {
       const result = await getLeaguePrizes(1)
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('Connection failed')
+      expect((result as any).error).toContain('Connection failed')
     })
   })
 
@@ -115,8 +116,8 @@ describe('League Prizes Actions', () => {
 
       const result = await updateLeaguePrizes({
         leagueId: 1,
-        prizes: [{ rank: 1, amount: 10000, currency: 'CZK' }],
-        fines: [{ rank: 1, amount: 2000, currency: 'CZK' }],
+        prizes: [{ rank: 1, amount: 10000, currency: 'CZK', type: 'prize' }],
+        fines: [{ rank: 1, amount: 2000, currency: 'CZK', type: 'fine' }],
       })
 
       expect(result.success).toBe(true)
@@ -135,7 +136,7 @@ describe('League Prizes Actions', () => {
 
       await updateLeaguePrizes({
         leagueId: 5,
-        prizes: [{ rank: 1, amount: 10000, currency: 'CZK' }],
+        prizes: [{ rank: 1, amount: 10000, currency: 'CZK', type: 'prize' }],
         fines: [],
       })
 
@@ -176,7 +177,7 @@ describe('League Prizes Actions', () => {
       await updateLeaguePrizes({
         leagueId: 1,
         prizes: [],
-        fines: [{ rank: 1, amount: 3000, currency: 'CZK', label: 'Loser pays' }],
+        fines: [{ rank: 1, amount: 3000, currency: 'CZK', label: 'Loser pays', type: 'fine' }],
       })
 
       expect(txMocks.leaguePrize.createMany).toHaveBeenCalledWith({
@@ -224,7 +225,7 @@ describe('League Prizes Actions', () => {
 
       await updateLeaguePrizes({
         leagueId: 1,
-        prizes: [{ rank: 1, amount: 10000, currency: 'CZK' }],
+        prizes: [{ rank: 1, amount: 10000, currency: 'CZK', type: 'prize' }],
         fines: [],
       })
 
@@ -268,15 +269,15 @@ describe('League Prizes Actions', () => {
       })
 
       expect(result.success).toBe(false)
-      expect(result.error).toBeDefined()
+      expect((result as any).error).toBeDefined()
     })
 
     it('should reject duplicate prize ranks', async () => {
       const result = await updateLeaguePrizes({
         leagueId: 1,
         prizes: [
-          { rank: 1, amount: 10000, currency: 'CZK' },
-          { rank: 1, amount: 5000, currency: 'CZK' },
+          { rank: 1, amount: 10000, currency: 'CZK', type: 'prize' },
+          { rank: 1, amount: 5000, currency: 'CZK', type: 'prize' },
         ],
         fines: [],
       })
@@ -289,8 +290,8 @@ describe('League Prizes Actions', () => {
         leagueId: 1,
         prizes: [],
         fines: [
-          { rank: 1, amount: 2000, currency: 'CZK' },
-          { rank: 1, amount: 1000, currency: 'CZK' },
+          { rank: 1, amount: 2000, currency: 'CZK', type: 'fine' },
+          { rank: 1, amount: 1000, currency: 'CZK', type: 'fine' },
         ],
       })
 
@@ -303,12 +304,12 @@ describe('League Prizes Actions', () => {
 
       const result = await updateLeaguePrizes({
         leagueId: 1,
-        prizes: [{ rank: 1, amount: 10000, currency: 'CZK' }],
+        prizes: [{ rank: 1, amount: 10000, currency: 'CZK', type: 'prize' }],
         fines: [],
       })
 
       expect(result.success).toBe(false)
-      expect(result.error).toBeDefined()
+      expect((result as any).error).toBeDefined()
     })
 
     it('should set null label when not provided', async () => {
@@ -324,7 +325,7 @@ describe('League Prizes Actions', () => {
 
       await updateLeaguePrizes({
         leagueId: 1,
-        prizes: [{ rank: 1, amount: 10000, currency: 'CZK' }],
+        prizes: [{ rank: 1, amount: 10000, currency: 'CZK', type: 'prize' }],
         fines: [],
       })
 

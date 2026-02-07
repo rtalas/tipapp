@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { isPasswordResetRateLimited, getRemainingResetAttempts, getRateLimitConfig } from './rate-limit';
 import { prisma } from '@/lib/prisma';
 
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 // Get the actual config values to keep tests in sync with implementation
 const { maxAttempts } = getRateLimitConfig();

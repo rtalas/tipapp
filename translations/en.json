@@ -217,7 +217,8 @@
       "noPointsYet": "No points earned yet",
       "noPicksYet": "No predictions yet",
       "yes": "Yes",
-      "no": "No"
+      "no": "No",
+      "picksLoadError": "Failed to load predictions"
     },
     "series": {
       "title": "Series",
@@ -1081,7 +1082,14 @@
       "fillValidation": "Please fill in all fields",
       "evaluatorUpdateFailed": "Failed to update evaluator",
       "evaluatorCreateFailed": "Failed to create evaluator",
-      "evaluatorDeleteFailed": "Failed to delete evaluator"
+      "evaluatorDeleteFailed": "Failed to delete evaluator",
+      "rankingPoints": "Ranking Points",
+      "rank": "Rank {rank}:",
+      "pts": "pts",
+      "addRank": "Add Rank",
+      "unrankedPoints": "Unranked Points",
+      "ptsForUnranked": "pts for unranked scorers",
+      "atLeastOneRank": "At least one ranking level is required"
     },
     "evaluators": {
       "searchPlaceholder": "Search by name or league...",
@@ -1098,13 +1106,20 @@
         "type": "Type",
         "points": "Points"
       },
+      "rankingPoints": "Ranking Points",
+      "rank": "Rank {rank}:",
+      "pts": "pts",
+      "addRank": "Add Rank",
+      "unrankedPoints": "Unranked Points",
+      "ptsForUnranked": "pts for unranked scorers",
       "validation": {
         "invalidNumber": "Please enter a valid number",
         "nameRequired": "Name cannot be empty",
         "requiredFields": "Please fill in all fields",
         "pointsInvalid": "Points must be a valid number",
         "rankConfigRequired": "Please configure rank points and unranked points",
-        "invalidUnrankedPoints": "Invalid unranked points value"
+        "invalidUnrankedPoints": "Invalid unranked points value",
+        "atLeastOneRank": "At least one ranking level is required"
       },
       "toast": {
         "updated": "Evaluator updated",
