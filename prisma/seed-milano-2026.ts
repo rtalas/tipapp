@@ -486,11 +486,44 @@ const defaultHockeyEvaluators = [
   { name: 'Hodnota 50b', type: 'closest_value', entity: 'special', points: 50 },
 ]
 
+// All evaluator type names used by this script
+const allEvaluatorTypeNames = [
+  'exact_score', 'score_difference', 'one_team_score', 'winner', 'scorer',
+  'draw', 'soccer_playoff_advance', 'series_exact', 'series_winner',
+  'exact_player', 'exact_team', 'exact_value', 'closest_value', 'question',
+  'group_stage_team', 'group_stage_advance',
+]
+
+async function ensureFoundationData() {
+  // Ensure Sport exists
+  const existingSport = await prisma.sport.findUnique({ where: { id: HOCKEY_SPORT_ID } })
+  if (!existingSport) {
+    await prisma.sport.create({
+      data: { id: HOCKEY_SPORT_ID, name: 'Hockey', createdAt: now, updatedAt: now },
+    })
+    console.log('   Created Sport: Hockey (ID: 1)')
+  }
+
+  // Ensure all EvaluatorTypes exist
+  const existingTypes = await prisma.evaluatorType.findMany({ where: { deletedAt: null } })
+  const existingNames = new Set(existingTypes.map((et) => et.name))
+
+  for (const name of allEvaluatorTypeNames) {
+    if (!existingNames.has(name)) {
+      await prisma.evaluatorType.create({
+        data: { name, createdAt: now, updatedAt: now },
+      })
+    }
+  }
+}
+
 async function main() {
   console.log('🏒 Starting Milano 2026 import...')
 
-  // 1. Get existing evaluator types
-  console.log('📋 Fetching evaluator types...')
+  // 1. Ensure foundation data exists (Sport, EvaluatorTypes)
+  console.log('📋 Ensuring foundation data...')
+  await ensureFoundationData()
+
   const evaluatorTypes = await prisma.evaluatorType.findMany({
     where: { deletedAt: null },
   })

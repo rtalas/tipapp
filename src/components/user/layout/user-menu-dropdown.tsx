@@ -44,7 +44,7 @@ export function UserMenuDropdown({
   currentLeagueId,
   onLanguageClick,
 }: UserMenuDropdownProps) {
-  const { theme, setTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
   const router = useRouter()
   const t = useTranslations('user.header')
 
@@ -86,14 +86,14 @@ export function UserMenuDropdown({
           <p className="text-xs text-muted-foreground">@{user.username}</p>
         </div>
         <DropdownMenuItem
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
         >
-          {theme === 'dark' ? (
+          {resolvedTheme === 'dark' ? (
             <Sun className="mr-2 h-4 w-4" />
           ) : (
             <Moon className="mr-2 h-4 w-4" />
           )}
-          {theme === 'dark' ? t('lightMode') : t('darkMode')}
+          {resolvedTheme === 'dark' ? t('lightMode') : t('darkMode')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onLanguageClick}>
           <Globe className="mr-2 h-4 w-4" />
