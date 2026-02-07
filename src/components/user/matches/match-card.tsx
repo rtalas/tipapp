@@ -165,7 +165,6 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
       >
         <MatchHeader
           match={match}
-          isLocked={isLocked}
           isEvaluated={isEvaluated}
           isDoubled={isDoubled}
         />

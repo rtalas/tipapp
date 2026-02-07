@@ -22,7 +22,13 @@
     },
     "noResults": "No results found",
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "errorBoundary": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred. Please try again.",
+      "tryAgain": "Try again",
+      "errorDetails": "Error details"
+    }
   },
   "auth": {
     "login": {

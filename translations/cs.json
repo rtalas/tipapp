@@ -22,7 +22,13 @@
     },
     "noResults": "Žádné výsledky",
     "error": "Chyba",
-    "success": "Úspěch"
+    "success": "Úspěch",
+    "errorBoundary": {
+      "title": "Něco se pokazilo",
+      "description": "Došlo k neočekávané chybě. Zkuste to prosím znovu.",
+      "tryAgain": "Zkusit znovu",
+      "errorDetails": "Podrobnosti o chybě"
+    }
   },
   "auth": {
     "login": {
