@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { Trophy, CheckCircle2 } from 'lucide-react'
 import {
@@ -40,20 +40,28 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
   const [userPicks, setUserPicks] = useState<UserPicksData | null>(null)
   const [isLoadingPicks, setIsLoadingPicks] = useState(false)
 
-  // Fetch picks when user is selected
-  useEffect(() => {
-    if (selectedUser) {
+  const handleSelectUser = useCallback((entry: LeaderboardEntry | null) => {
+    setSelectedUser(entry)
+    if (entry) {
       setIsLoadingPicks(true)
-      getUserPicks(leagueId, selectedUser.leagueUserId)
-        .then(setUserPicks)
-        .catch((error) => {
-          console.error('Failed to fetch user picks:', error)
-          setUserPicks(null)
-        })
-        .finally(() => setIsLoadingPicks(false))
+      setUserPicks(null)
     } else {
       setUserPicks(null)
     }
+  }, [])
+
+  // Fetch picks when user is selected
+  useEffect(() => {
+    if (!selectedUser) return
+    let cancelled = false
+    getUserPicks(leagueId, selectedUser.leagueUserId)
+      .then((data) => { if (!cancelled) setUserPicks(data) })
+      .catch((error) => {
+        console.error('Failed to fetch user picks:', error)
+        if (!cancelled) setUserPicks(null)
+      })
+      .finally(() => { if (!cancelled) setIsLoadingPicks(false) })
+    return () => { cancelled = true }
   }, [selectedUser, leagueId])
 
   if (entries.length === 0) {
@@ -113,7 +121,7 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
                     prizes={prizes}
                     fines={fines}
                     totalEntries={entries.length}
-                    onClick={() => setSelectedUser(entry)}
+                    onClick={() => handleSelectUser(entry)}
                   />
                 ))}
               </div>
@@ -130,7 +138,7 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
                     prizes={prizes}
                     fines={fines}
                     totalEntries={entries.length}
-                    onClick={() => setSelectedUser(entry)}
+                    onClick={() => handleSelectUser(entry)}
                   />
                 ))}
               </div>
@@ -147,7 +155,7 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
                     prizes={prizes}
                     fines={fines}
                     totalEntries={entries.length}
-                    onClick={() => setSelectedUser(entry)}
+                    onClick={() => handleSelectUser(entry)}
                   />
                 ))}
               </div>
@@ -157,7 +165,7 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
       </div>
 
       {/* User History Modal */}
-      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+      <Dialog open={!!selectedUser} onOpenChange={() => handleSelectUser(null)}>
         <DialogContent className="sm:max-w-md bg-card border-border">
           <DialogHeader>
             <div className="flex items-center gap-3">
@@ -573,17 +581,6 @@ function getFine(rank: number, totalEntries: number, fines: LeaguePrize[]) {
   }).format(Math.abs(fine.amount) / 100)
 
   return `${formatted}\u00A0${fine.currency}`
-}
-
-function getInitials(
-  firstName: string | null,
-  lastName: string | null,
-  username: string
-): string {
-  if (firstName && lastName) {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase()
-  }
-  return username.slice(0, 2).toUpperCase()
 }
 
 function getDisplayName(

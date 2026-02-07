@@ -24,7 +24,6 @@ interface MatchPhaseFormProps {
 
 export function MatchPhaseForm({ formData, onChange, disabled = false, mode }: MatchPhaseFormProps) {
   const t = useTranslations('admin.matchPhases')
-  const tCommon = useTranslations('admin.common')
 
   const inputClassName = mode === 'inline' ? 'h-8' : ''
 

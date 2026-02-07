@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useTranslations } from 'next-intl'
 import {
   Card,
   CardContent,
@@ -34,7 +33,6 @@ interface ProfileContentProps {
 }
 
 export function ProfileContent({ profile }: ProfileContentProps) {
-  const t = useTranslations('auth.profile')
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(profile.avatarUrl)
 
   // Get user initials

@@ -54,7 +54,6 @@ export function EvaluatorTableRow({
   isSaving,
   evaluatorTypes,
 }: EvaluatorTableRowProps) {
-  const t = useTranslations('admin.leagueEvaluators')
   const tCommon = useTranslations('admin.common')
 
   return (

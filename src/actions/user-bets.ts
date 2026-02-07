@@ -18,7 +18,7 @@ import {
  * Includes full nested data: League, Match (teams, scorers), UserBets (user, scorer)
  * (internal use only)
  */
-async function getMatchesWithUserBets(filters?: {
+export async function getMatchesWithUserBets(filters?: {
   leagueId?: number
   status?: 'evaluated' | 'unevaluated' | 'all'
 }) {

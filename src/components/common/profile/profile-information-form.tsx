@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { User, Mail, Phone, Bell, ChevronLeft, ChevronRight, BellRing, BellOff, Loader2, Check } from 'lucide-react'

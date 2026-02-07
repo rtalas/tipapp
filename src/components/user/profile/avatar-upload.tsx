@@ -73,7 +73,7 @@ export function AvatarUpload({
         throw new Error('Failed to get upload URL')
       }
 
-      const { signedUrl, token, path, publicUrl } = await urlResponse.json()
+      const { token, path, publicUrl } = await urlResponse.json()
 
       // Upload to Supabase Storage using signed URL
       const { error: uploadError } = await supabase.storage

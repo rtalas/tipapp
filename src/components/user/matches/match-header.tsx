@@ -6,14 +6,12 @@ import type { UserMatch } from '@/actions/user/matches'
 
 interface MatchHeaderProps {
   match: UserMatch
-  isLocked: boolean
   isEvaluated: boolean
   isDoubled: boolean
 }
 
 export function MatchHeader({
   match,
-  isLocked,
   isEvaluated,
   isDoubled,
 }: MatchHeaderProps) {

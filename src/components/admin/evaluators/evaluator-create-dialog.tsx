@@ -311,7 +311,7 @@ export function EvaluatorCreateDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="advance-points" className="text-xs">
-                  Advance Points (if team advances but doesn't win)
+                  Advance Points (if team advances but doesn&apos;t win)
                 </Label>
                 <Input
                   id="advance-points"
@@ -331,7 +331,7 @@ export function EvaluatorCreateDialog({
                 <br />
                 • User predicts Team B, Team B advances (2nd/3rd) → <strong>5 pts</strong>
                 <br />
-                • User predicts Team C, Team C doesn't advance → <strong>0 pts</strong>
+                • User predicts Team C, Team C doesn&apos;t advance → <strong>0 pts</strong>
               </div>
             </div>
           )}

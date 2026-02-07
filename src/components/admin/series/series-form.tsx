@@ -1,7 +1,6 @@
 import React from 'react'
 import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
-import { format } from 'date-fns'
 import {
   Select,
   SelectContent,
@@ -36,7 +35,6 @@ interface SeriesFormProps {
 
 export function SeriesForm({ formData, onChange, leagues, specialBetSeries, disabled = false, mode, league }: SeriesFormProps) {
   const t = useTranslations('admin.series')
-  const tCommon = useTranslations('admin.common')
 
   const inputClassName = mode === 'inline' ? 'h-8' : ''
 
