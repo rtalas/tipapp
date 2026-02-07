@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { AppError } from '@/lib/error-handler'
@@ -129,6 +130,9 @@ export async function createLeague(input: CreateLeagueInput) {
         return league
       })
 
+      // Invalidate league selector cache for all users
+      revalidateTag('league-selector', 'max')
+
       return { leagueId: result.id }
     },
     revalidatePath: '/admin/leagues',
@@ -150,6 +154,9 @@ export async function updateLeague(input: UpdateLeagueInput) {
         },
       })
 
+      // Invalidate league selector cache (name, isActive, etc. could change)
+      revalidateTag('league-selector', 'max')
+
       return {}
     },
     revalidatePath: '/admin/leagues',
@@ -165,6 +172,9 @@ export async function deleteLeague(input: DeleteByIdInput) {
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
+
+      // Invalidate league selector cache
+      revalidateTag('league-selector', 'max')
 
       return {}
     },
@@ -201,6 +211,7 @@ export async function assignTeamToLeague(input: AssignTeamInput) {
         },
       })
 
+      revalidateTag('special-bet-teams', 'max')
       return {}
     },
     revalidatePath: `/admin/leagues/${input.leagueId}/setup`,
@@ -217,6 +228,7 @@ export async function removeTeamFromLeague(input: DeleteByIdInput) {
         data: { deletedAt: new Date() },
       })
 
+      revalidateTag('special-bet-teams', 'max')
       return {}
     },
     revalidatePath: '/admin/leagues',
@@ -236,6 +248,7 @@ export async function updateLeagueTeamGroup(input: UpdateLeagueTeamGroupInput) {
         },
       })
 
+      revalidateTag('special-bet-teams', 'max')
       return {}
     },
     revalidatePath: '/admin/leagues',
@@ -273,6 +286,7 @@ export async function assignPlayerToLeagueTeam(input: AssignPlayerInput) {
         },
       })
 
+      revalidateTag('special-bet-players', 'max')
       return {}
     },
     revalidatePath: '/admin/leagues',
@@ -289,6 +303,7 @@ export async function removePlayerFromLeagueTeam(input: DeleteByIdInput) {
         data: { deletedAt: new Date() },
       })
 
+      revalidateTag('special-bet-players', 'max')
       return {}
     },
     revalidatePath: '/admin/leagues',

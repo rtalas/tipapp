@@ -2,6 +2,7 @@
 
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
+import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { specialBetInclude } from '@/lib/prisma-helpers'
@@ -62,6 +63,9 @@ export async function createSpecialBet(input: CreateSpecialBetInput) {
           updatedAt: now,
         },
       })
+
+      // Invalidate user-facing special bet cache
+      revalidateTag('special-bet-data', 'max')
 
       return { specialBetId: specialBet.id }
     },
@@ -183,6 +187,9 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
         }
       })
 
+      // Invalidate user-facing special bet cache
+      revalidateTag('special-bet-data', 'max')
+
       return {
         wasEvaluated: specialBet.isEvaluated,
         needsReEvaluation: true, // Always needs re-evaluation after result update
@@ -202,6 +209,10 @@ export async function deleteSpecialBet(id: number) {
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
+
+      // Invalidate user-facing special bet cache
+      revalidateTag('special-bet-data', 'max')
+
       return {}
     },
     revalidatePath: '/admin/special-bets',

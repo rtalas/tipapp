@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { AppError } from '@/lib/error-handler'
@@ -45,6 +46,9 @@ export async function createQuestion(input: CreateQuestionInput) {
         },
       })
 
+      // Invalidate user-facing question cache
+      revalidateTag('question-data', 'max')
+
       return { questionId: question.id }
     },
     revalidatePath: '/admin/questions',
@@ -80,6 +84,9 @@ export async function updateQuestion(input: UpdateQuestionInput) {
         },
       })
 
+      // Invalidate user-facing question cache
+      revalidateTag('question-data', 'max')
+
       return {}
     },
     revalidatePath: '/admin/questions',
@@ -114,6 +121,9 @@ export async function updateQuestionResult(input: UpdateQuestionResultInput) {
         },
       })
 
+      // Invalidate user-facing question cache
+      revalidateTag('question-data', 'max')
+
       return {}
     },
     revalidatePath: '/admin/questions',
@@ -142,6 +152,9 @@ export async function deleteQuestion(id: number) {
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
+
+      // Invalidate user-facing question cache
+      revalidateTag('question-data', 'max')
 
       return {}
     },

@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userQuestionBetSchema, type UserQuestionBetInput } from '@/lib/validation/user'
@@ -8,32 +8,57 @@ import { AppError } from '@/lib/error-handler'
 import { AuditLogger } from '@/lib/audit-logger'
 
 /**
+ * Cached base question data (20 min TTL)
+ * Shared across all users - excludes user-specific bets
+ */
+const getCachedQuestionData = unstable_cache(
+  async (leagueId: number) => {
+    const questions = await prisma.leagueSpecialBetQuestion.findMany({
+      where: {
+        leagueId,
+        deletedAt: null,
+      },
+      orderBy: { dateTime: 'asc' },
+    })
+
+    return questions
+  },
+  ['question-data'],
+  {
+    revalidate: 1200, // 20 minutes
+    tags: ['question-data'],
+  }
+)
+
+/**
  * Fetches questions for a league with the current user's answers
  */
 export async function getUserQuestions(leagueId: number) {
   const { leagueUser } = await requireLeagueMember(leagueId)
 
-  const questions = await prisma.leagueSpecialBetQuestion.findMany({
-    where: {
-      leagueId,
-      deletedAt: null,
-    },
-    include: {
-      UserSpecialBetQuestion: {
-        where: {
-          leagueUserId: leagueUser.id,
+  // Fetch cached base data and user's bets in parallel
+  const [questions, userBets] = await Promise.all([
+    getCachedQuestionData(leagueId),
+    prisma.userSpecialBetQuestion.findMany({
+      where: {
+        leagueUserId: leagueUser.id,
+        deletedAt: null,
+        LeagueSpecialBetQuestion: {
+          leagueId,
           deletedAt: null,
         },
-        take: 1,
       },
-    },
-    orderBy: { dateTime: 'asc' },
-  })
+    }),
+  ])
 
+  // Create a map of user bets by leagueSpecialBetQuestionId for fast lookup
+  const userBetMap = new Map(userBets.map((bet) => [bet.leagueSpecialBetQuestionId, bet]))
+
+  // Transform the data to include betting status and user's bet
   return questions.map((q) => ({
     ...q,
     isBettingOpen: isBettingOpen(q.dateTime),
-    userBet: q.UserSpecialBetQuestion[0] || null,
+    userBet: userBetMap.get(q.id) || null,
   }))
 }
 
@@ -218,6 +243,7 @@ export async function saveQuestionBet(input: UserQuestionBetInput) {
       ).catch((err) => console.error('Audit log failed:', err))
     }
 
+    revalidateTag('bet-badges', 'max')
     revalidatePath(`/${questionInfo.leagueId}/questions`)
     return { success: true }
   } catch (error) {

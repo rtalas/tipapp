@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-utils'
 import { buildLeagueUserWhere } from '@/lib/query-builders'
@@ -79,6 +79,8 @@ export async function approveRequest(requestId: number) {
     })
   })
 
+  // Invalidate league selector cache for the user who was just approved
+  revalidateTag('league-selector', 'max')
   revalidatePath('/admin/users')
   revalidatePath(`/admin/leagues/${request.leagueId}/users`)
   return { success: true }
@@ -174,6 +176,8 @@ export async function updateLeagueUserActive(leagueUserId: number, isActive: boo
     },
   })
 
+  // Invalidate league selector cache (active status affects user's available leagues)
+  revalidateTag('league-selector', 'max')
   revalidatePath('/admin/users')
   revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
   return { success: true }
@@ -246,6 +250,8 @@ export async function addUserToLeague(userId: number, leagueId: number) {
     },
   })
 
+  // Invalidate league selector cache for the added user
+  revalidateTag('league-selector', 'max')
   revalidatePath('/admin/users')
   revalidatePath(`/admin/${leagueId}/users`)
   return { success: true }
@@ -263,6 +269,8 @@ export async function removeLeagueUser(leagueUserId: number) {
     },
   })
 
+  // Invalidate league selector cache for the removed user
+  revalidateTag('league-selector', 'max')
   revalidatePath('/admin/users')
   revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
   return { success: true }

@@ -68,10 +68,10 @@ export function ChatView({
   }, [])
 
   return (
-    <div className="flex flex-col h-[calc(100vh-0rem)]">
+    <>
       {/* Error banner */}
       {error && (
-        <div className="flex-shrink-0 -mt-4 -mx-4 mb-4 p-3 bg-destructive/10 border-b border-destructive flex items-center gap-2">
+        <div className="-mt-4 -mx-4 mb-4 p-3 bg-destructive/10 border-b border-destructive flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-destructive" />
           <span className="text-sm text-destructive">{error}</span>
         </div>
@@ -79,7 +79,7 @@ export function ChatView({
 
       {/* Suspended banner */}
       {isSuspended && (
-        <div className="flex-shrink-0 -mt-4 -mx-4 mb-4 p-3 bg-yellow-50 dark:bg-yellow-950 border-b border-yellow-500 flex items-center gap-2">
+        <div className="-mt-4 -mx-4 mb-4 p-3 bg-yellow-50 dark:bg-yellow-950 border-b border-yellow-500 flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-yellow-600" />
           <span className="text-sm text-yellow-800 dark:text-yellow-200">
             {t('chatSuspended')}
@@ -87,8 +87,8 @@ export function ChatView({
         </div>
       )}
 
-      {/* Scrollable Message list */}
-      <div className="flex-1 min-h-0 overflow-y-auto -mx-4 -mt-4">
+      {/* Scrollable Message list - pb-20 to make room for fixed input */}
+      <div className="-mx-4 -mt-4 pb-20">
         <MessageList
           ref={messageListRef}
           messages={messages}
@@ -104,17 +104,19 @@ export function ChatView({
         />
       </div>
 
-      {/* Fixed Input */}
-      <div className="flex-shrink-0 border-t border-border/50 -mx-4 -mb-4 bg-background">
-        <MessageInput
-          onSend={handleSend}
-          isSending={isSending}
-          disabled={isSuspended}
-          placeholder={isSuspended ? t('chatIsSuspended') : t('placeholder')}
-          replyingTo={replyingTo}
-          onCancelReply={handleCancelReply}
-        />
+      {/* Fixed Input - positioned above bottom nav (bottom-20 = 80px) */}
+      <div className="fixed bottom-20 left-0 right-0 z-40 border-t border-border/50 bg-background">
+        <div className="max-w-2xl mx-auto">
+          <MessageInput
+            onSend={handleSend}
+            isSending={isSending}
+            disabled={isSuspended}
+            placeholder={isSuspended ? t('chatIsSuspended') : t('placeholder')}
+            replyingTo={replyingTo}
+            onCancelReply={handleCancelReply}
+          />
+        </div>
       </div>
-    </div>
+    </>
   )
 }

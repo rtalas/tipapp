@@ -151,8 +151,11 @@ export async function getMostActiveLeagueId(): Promise<number | null> {
  *
  * @param deadline - The deadline datetime
  * @returns {boolean} True if betting is still open, false if locked
+ *
+ * Note: Accepts string because dates from unstable_cache are serialized to strings
  */
-export function isBettingOpen(deadline: Date): boolean {
-  return new Date() < deadline
+export function isBettingOpen(deadline: Date | string): boolean {
+  const deadlineDate = deadline instanceof Date ? deadline : new Date(deadline)
+  return new Date() < deadlineDate
 }
 

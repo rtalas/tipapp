@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userMatchBetSchema, type UserMatchBetInput } from '@/lib/validation/user'
@@ -9,85 +9,110 @@ import { SPORT_IDS } from '@/lib/constants'
 import { AuditLogger } from '@/lib/audit-logger'
 
 /**
+ * Cached base match data (20 min TTL)
+ * Shared across all users - excludes user-specific bets
+ */
+const getCachedMatchData = unstable_cache(
+  async (leagueId: number) => {
+    const matches = await prisma.leagueMatch.findMany({
+      where: {
+        leagueId,
+        deletedAt: null,
+        Match: {
+          deletedAt: null,
+        },
+      },
+      include: {
+        League: {
+          select: {
+            id: true,
+            name: true,
+            sportId: true,
+            Sport: { select: { id: true, name: true } },
+          },
+        },
+        Match: {
+          include: {
+            LeagueTeam_Match_homeTeamIdToLeagueTeam: {
+              include: {
+                Team: true,
+                LeaguePlayer: {
+                  where: { deletedAt: null },
+                  include: { Player: true },
+                  orderBy: { Player: { lastName: 'asc' } },
+                },
+              },
+            },
+            LeagueTeam_Match_awayTeamIdToLeagueTeam: {
+              include: {
+                Team: true,
+                LeaguePlayer: {
+                  where: { deletedAt: null },
+                  include: { Player: true },
+                  orderBy: { Player: { lastName: 'asc' } },
+                },
+              },
+            },
+            MatchScorer: {
+              include: {
+                LeaguePlayer: {
+                  include: { Player: true },
+                },
+              },
+            },
+            MatchPhase: true,
+          },
+        },
+      },
+      orderBy: { Match: { dateTime: 'asc' } },
+    })
+
+    return matches
+  },
+  ['match-data'],
+  {
+    revalidate: 1200, // 20 minutes
+    tags: ['match-data'],
+  }
+)
+
+/**
  * Fetches matches for a league with the current user's bets
  * Returns matches grouped with betting status and deadline info
  */
 export async function getUserMatches(leagueId: number) {
   const { leagueUser } = await requireLeagueMember(leagueId)
 
-  const matches = await prisma.leagueMatch.findMany({
-    where: {
-      leagueId,
-      deletedAt: null,
-      Match: {
+  // Fetch cached base data and user's bets in parallel
+  const [matches, userBets] = await Promise.all([
+    getCachedMatchData(leagueId),
+    prisma.userBet.findMany({
+      where: {
+        leagueUserId: leagueUser.id,
         deletedAt: null,
-      },
-    },
-    include: {
-      League: {
-        select: {
-          id: true,
-          name: true,
-          sportId: true,
-          Sport: { select: { id: true, name: true } },
-        },
-      },
-      Match: {
-        include: {
-          LeagueTeam_Match_homeTeamIdToLeagueTeam: {
-            include: {
-              Team: true,
-              LeaguePlayer: {
-                where: { deletedAt: null },
-                include: { Player: true },
-                orderBy: { Player: { lastName: 'asc' } },
-              },
-            },
-          },
-          LeagueTeam_Match_awayTeamIdToLeagueTeam: {
-            include: {
-              Team: true,
-              LeaguePlayer: {
-                where: { deletedAt: null },
-                include: { Player: true },
-                orderBy: { Player: { lastName: 'asc' } },
-              },
-            },
-          },
-          MatchScorer: {
-            include: {
-              LeaguePlayer: {
-                include: { Player: true },
-              },
-            },
-          },
-          MatchPhase: true,
-        },
-      },
-      // Get only the current user's bet
-      UserBet: {
-        where: {
-          leagueUserId: leagueUser.id,
+        LeagueMatch: {
+          leagueId,
           deletedAt: null,
         },
-        include: {
-          LeaguePlayer: {
-            include: {
-              Player: true,
-            },
+      },
+      include: {
+        LeaguePlayer: {
+          include: {
+            Player: true,
           },
         },
-        take: 1,
       },
-    },
-    orderBy: { Match: { dateTime: 'asc' } },
-  })
+    }),
+  ])
 
-  // Transform the data to include betting status
+  // Create a map of user bets by leagueMatchId for fast lookup
+  const userBetMap = new Map(userBets.map((bet) => [bet.leagueMatchId, bet]))
+
+  // Transform the data to include betting status and user's bet
   return matches.map((match) => ({
     ...match,
     isBettingOpen: isBettingOpen(match.Match.dateTime),
-    userBet: match.UserBet[0] || null,
+    userBet: userBetMap.get(match.id) || null,
   }))
 }
 
@@ -346,6 +371,7 @@ export async function saveMatchBet(input: UserMatchBetInput) {
       ).catch((err) => console.error('Audit log failed:', err))
     }
 
+    revalidateTag('bet-badges', 'max')
     revalidatePath(`/${matchInfo.leagueId}/matches`)
     return { success: true }
   } catch (error) {

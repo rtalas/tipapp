@@ -184,7 +184,14 @@ FINES_FEATURE.md        # Comprehensive fines feature documentation
 - ✅ **Phase 6:** Polish (configurable prizes & fines, race condition fixes, performance optimization, security hardening)
 - 🔄 **Phase 7:** Production (push notifications, monitoring, final deployment)
 
-### Recent Updates (Jan 2026)
+### Recent Updates (Jan-Feb 2026)
+- **Performance Caching (Feb 7, 2026):** Comprehensive server-side caching with `unstable_cache`
+  - Bet lists (matches, series, special bets, questions): 20 min TTL
+  - League selector: 10 hour TTL (keyed by userId)
+  - Teams/Players: 12 hour TTL
+  - Leaderboard: 30 min TTL
+  - Badge counts: 15 min TTL
+  - Tag-based invalidation on admin CRUD and bet evaluation
 - **Fines System (Jan 29, 2026):** Added penalty system for worst-performing bettors
   - Extended `LeaguePrize` table with `type` field (prize/fine)
   - Admin can configure up to 10 fine tiers per league
@@ -284,3 +291,39 @@ User betting actions use **atomic upserts** to prevent duplicate bets during con
 - `saveQuestionBet()` - Upsert on `[leagueQuestionId, leagueUserId, deletedAt]`
 
 All bet tables have unique constraints ensuring database-level prevention of duplicates.
+
+### Caching Strategy (Feb 2026)
+Uses Next.js `unstable_cache` for server-side data caching with tag-based invalidation.
+
+**Cached Data with TTL:**
+| Data | TTL | Cache Tag | Invalidated By |
+|------|-----|-----------|----------------|
+| Matches | 20 min | `match-data` | Admin CRUD, evaluation |
+| Series | 20 min | `series-data` | Admin CRUD, evaluation |
+| Special Bets | 20 min | `special-bet-data` | Admin CRUD, evaluation |
+| Questions | 20 min | `question-data` | Admin CRUD, evaluation |
+| League Selector | 10 hours | `league-selector` | League CRUD, user membership changes |
+| Teams | 12 hours | `special-bet-teams` | Team assignment |
+| Players | 12 hours | `special-bet-players` | Player assignment |
+| Leaderboard | 30 min | `leaderboard` | Bet evaluation |
+| Badge Counts | 60s | `bet-badges` | User bet saves (short TTL because `now` is computed inside) |
+
+**Caching Pattern:**
+- Base bet data is cached (shared across all users)
+- User's own bets are fetched fresh (fast query by userId)
+- Data merged using `Map` for O(1) lookup
+- `isBettingOpen` computed at runtime from cached `dateTime`
+
+**Key Files:**
+- `src/actions/user/matches.ts` - `getCachedMatchData()`
+- `src/actions/user/series.ts` - `getCachedSeriesData()`
+- `src/actions/user/special-bets.ts` - `getCachedSpecialBetData()`
+- `src/actions/user/questions.ts` - `getCachedQuestionData()`
+- `src/actions/user/leagues.ts` - `getCachedLeaguesForSelector()`
+- `src/actions/user/leaderboard.ts` - `getCachedLeaderboard()`
+- `src/lib/cache/badge-counts.ts` - `getCachedBadgeCounts()`
+
+**Invalidation:**
+- Use `revalidateTag('tag-name', 'max')` in admin actions and evaluation functions
+- All admin CRUD operations invalidate relevant caches
+- Bet evaluation invalidates both data cache and leaderboard

@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidateTag } from 'next/cache'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { evaluateSpecialBetAtomic } from '@/lib/evaluation/special-bet-evaluator'
 import { z } from 'zod'
@@ -45,6 +46,10 @@ export async function evaluateSpecialBetBets(input: EvaluateSpecialBetInput) {
         totalPoints,
         durationMs
       ).catch((err) => console.error('Audit log failed:', err))
+
+      // Invalidate user-facing caches (special bet data + leaderboard)
+      revalidateTag('special-bet-data', 'max')
+      revalidateTag('leaderboard', 'max')
 
       return result
     },

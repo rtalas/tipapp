@@ -5,17 +5,18 @@ import { Clock, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface CountdownBadgeProps {
-  deadline: Date
+  deadline: Date | string
   className?: string
 }
 
-function formatTimeRemaining(deadline: Date): {
+function formatTimeRemaining(deadline: Date | string): {
   text: string
   urgency: 'low' | 'medium' | 'high' | 'locked'
   showPulse: boolean
 } {
   const now = new Date()
-  const diff = deadline.getTime() - now.getTime()
+  const deadlineDate = deadline instanceof Date ? deadline : new Date(deadline)
+  const diff = deadlineDate.getTime() - now.getTime()
 
   if (diff <= 0) {
     return { text: 'Locked', urgency: 'locked', showPulse: false }

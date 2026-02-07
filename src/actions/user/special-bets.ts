@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userSpecialBetSchema, type UserSpecialBetInput } from '@/lib/validation/user'
@@ -8,61 +8,87 @@ import { AppError } from '@/lib/error-handler'
 import { AuditLogger } from '@/lib/audit-logger'
 
 /**
+ * Cached base special bet data (20 min TTL)
+ * Shared across all users - excludes user-specific bets
+ */
+const getCachedSpecialBetData = unstable_cache(
+  async (leagueId: number) => {
+    const specialBets = await prisma.leagueSpecialBetSingle.findMany({
+      where: {
+        leagueId,
+        deletedAt: null,
+      },
+      include: {
+        // Include Evaluator for determining bet type
+        Evaluator: {
+          include: {
+            EvaluatorType: true,
+          },
+        },
+        // Keep SpecialBetSingle for backward compatibility (nullable)
+        SpecialBetSingle: {
+          include: {
+            SpecialBetSingleType: true,
+            Sport: true,
+          },
+        },
+        // Actual results
+        LeagueTeam: {
+          include: { Team: true },
+        },
+        LeaguePlayer: {
+          include: { Player: true },
+        },
+      },
+      orderBy: { dateTime: 'asc' },
+    })
+
+    return specialBets
+  },
+  ['special-bet-data'],
+  {
+    revalidate: 1200, // 20 minutes
+    tags: ['special-bet-data'],
+  }
+)
+
+/**
  * Fetches special bets for a league with the current user's picks
  */
 export async function getUserSpecialBets(leagueId: number) {
   const { leagueUser } = await requireLeagueMember(leagueId)
 
-  const specialBets = await prisma.leagueSpecialBetSingle.findMany({
-    where: {
-      leagueId,
-      deletedAt: null,
-    },
-    include: {
-      // Include Evaluator for determining bet type
-      Evaluator: {
-        include: {
-          EvaluatorType: true,
-        },
-      },
-      // Keep SpecialBetSingle for backward compatibility (nullable)
-      SpecialBetSingle: {
-        include: {
-          SpecialBetSingleType: true,
-          Sport: true,
-        },
-      },
-      // Actual results
-      LeagueTeam: {
-        include: { Team: true },
-      },
-      LeaguePlayer: {
-        include: { Player: true },
-      },
-      // User's bet
-      UserSpecialBetSingle: {
-        where: {
-          leagueUserId: leagueUser.id,
+  // Fetch cached base data and user's bets in parallel
+  const [specialBets, userBets] = await Promise.all([
+    getCachedSpecialBetData(leagueId),
+    prisma.userSpecialBetSingle.findMany({
+      where: {
+        leagueUserId: leagueUser.id,
+        deletedAt: null,
+        LeagueSpecialBetSingle: {
+          leagueId,
           deletedAt: null,
         },
-        include: {
-          LeagueTeam: {
-            include: { Team: true },
-          },
-          LeaguePlayer: {
-            include: { Player: true },
-          },
-        },
-        take: 1,
       },
-    },
-    orderBy: { dateTime: 'asc' },
-  })
+      include: {
+        LeagueTeam: {
+          include: { Team: true },
+        },
+        LeaguePlayer: {
+          include: { Player: true },
+        },
+      },
+    }),
+  ])
 
+  // Create a map of user bets by leagueSpecialBetSingleId for fast lookup
+  const userBetMap = new Map(userBets.map((bet) => [bet.leagueSpecialBetSingleId, bet]))
+
+  // Transform the data to include betting status and user's bet
   return specialBets.map((sb) => ({
     ...sb,
     isBettingOpen: isBettingOpen(sb.dateTime),
-    userBet: sb.UserSpecialBetSingle[0] || null,
+    userBet: userBetMap.get(sb.id) || null,
   }))
 }
 
@@ -132,50 +158,78 @@ export type SpecialBetFriendPrediction = Awaited<
 >['predictions'][number]
 
 /**
+ * Cached teams data (1 hour TTL)
+ * Teams rarely change during a season
+ */
+const getCachedTeams = unstable_cache(
+  async (leagueId: number, group: string | null) => {
+    const teams = await prisma.leagueTeam.findMany({
+      where: {
+        leagueId,
+        deletedAt: null,
+        ...(group && { group }),
+      },
+      include: { Team: true },
+      orderBy: { Team: { name: 'asc' } },
+    })
+
+    return teams.map((t) => ({ ...t, group: t.group }))
+  },
+  ['special-bet-teams'],
+  {
+    revalidate: 43200, // 12 hours
+    tags: ['special-bet-teams'],
+  }
+)
+
+/**
  * Gets teams available for a special bet
  * @param leagueId - The league ID
  * @param group - Optional group filter for group stage predictions
  */
 export async function getSpecialBetTeams(leagueId: number, group?: string) {
   await requireLeagueMember(leagueId)
-
-  const teams = await prisma.leagueTeam.findMany({
-    where: {
-      leagueId,
-      deletedAt: null,
-      ...(group && { group }),
-    },
-    include: { Team: true },
-    orderBy: { Team: { name: 'asc' } },
-  })
-
-  return teams.map((t) => ({ ...t, group: t.group }))
+  return getCachedTeams(leagueId, group ?? null)
 }
+
+/**
+ * Cached players data (1 hour TTL)
+ * Players rarely change during a season
+ */
+const getCachedPlayers = unstable_cache(
+  async (leagueId: number) => {
+    const players = await prisma.leaguePlayer.findMany({
+      where: {
+        deletedAt: null,
+        LeagueTeam: {
+          leagueId,
+          deletedAt: null,
+        },
+      },
+      include: {
+        Player: true,
+        LeagueTeam: {
+          include: { Team: true },
+        },
+      },
+      orderBy: { Player: { lastName: 'asc' } },
+    })
+
+    return players
+  },
+  ['special-bet-players'],
+  {
+    revalidate: 43200, // 12 hours
+    tags: ['special-bet-players'],
+  }
+)
 
 /**
  * Gets players available for a special bet
  */
 export async function getSpecialBetPlayers(leagueId: number) {
   await requireLeagueMember(leagueId)
-
-  const players = await prisma.leaguePlayer.findMany({
-    where: {
-      deletedAt: null,
-      LeagueTeam: {
-        leagueId,
-        deletedAt: null,
-      },
-    },
-    include: {
-      Player: true,
-      LeagueTeam: {
-        include: { Team: true },
-      },
-    },
-    orderBy: { Player: { lastName: 'asc' } },
-  })
-
-  return players
+  return getCachedPlayers(leagueId)
 }
 
 /**
@@ -306,6 +360,7 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
       ).catch((err) => console.error('Audit log failed:', err))
     }
 
+    revalidateTag('bet-badges', 'max')
     revalidatePath(`/${specialBetInfo.leagueId}/special-bets`)
     return { success: true }
   } catch (error) {

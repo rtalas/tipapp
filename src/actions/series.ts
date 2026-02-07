@@ -1,6 +1,7 @@
 'use server'
 
 import { z } from 'zod'
+import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { AppError } from '@/lib/error-handler'
@@ -51,6 +52,9 @@ export async function createSeries(input: CreateSeriesInput) {
         },
       })
 
+      // Invalidate user-facing series cache
+      revalidateTag('series-data', 'max')
+
       return { seriesId: series.id }
     },
     revalidatePath: '/admin/series',
@@ -74,6 +78,9 @@ export async function updateSeriesResult(input: UpdateSeriesResultInput) {
         },
       })
 
+      // Invalidate user-facing series cache
+      revalidateTag('series-data', 'max')
+
       return {}
     },
     revalidatePath: '/admin/series',
@@ -90,6 +97,10 @@ export async function deleteSeries(id: number) {
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
+
+      // Invalidate user-facing series cache
+      revalidateTag('series-data', 'max')
+
       return {}
     },
     revalidatePath: '/admin/series',

@@ -4,7 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { joinLeagueSchema } from '@/lib/validation/user'
 import { AppError, handleActionError } from '@/lib/error-handler'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 
 type LeagueWithSport = {
   id: number
@@ -26,18 +26,11 @@ type AllLeaguesResult = {
 }
 
 /**
- * Get all leagues for the league selector dropdown
- * Returns active leagues, past leagues where user participated, and public leagues they can join
+ * Cached league selector data (1 hour TTL)
+ * Keyed by userId since each user has different leagues
  */
-export async function getAllLeaguesForSelector(): Promise<AllLeaguesResult> {
-  try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      throw new AppError('Authentication required', 'UNAUTHORIZED', 401)
-    }
-
-    const userId = parseInt(session.user.id)
-
+const getCachedLeaguesForSelector = unstable_cache(
+  async (userId: number): Promise<AllLeaguesResult> => {
     // Get active leagues user is a member of
     const userLeagues = await prisma.leagueUser.findMany({
       where: {
@@ -69,10 +62,7 @@ export async function getAllLeaguesForSelector(): Promise<AllLeaguesResult> {
         userId,
         deletedAt: null,
         League: {
-          OR: [
-            { isActive: false },
-            { isFinished: true },
-          ],
+          OR: [{ isActive: false }, { isFinished: true }],
           deletedAt: null,
         },
       },
@@ -143,23 +133,46 @@ export async function getAllLeaguesForSelector(): Promise<AllLeaguesResult> {
     }))
 
     // Transform available leagues to match the expected format
-    const formattedAvailableLeagues: LeagueWithSport[] = availableLeagues.map((league) => ({
-      id: league.id,
-      name: league.name,
-      seasonFrom: league.seasonFrom,
-      seasonTo: league.seasonTo,
-      sportId: league.sportId,
-      sport: {
-        id: league.Sport.id,
-        name: league.Sport.name,
-      },
-    }))
+    const formattedAvailableLeagues: LeagueWithSport[] = availableLeagues.map(
+      (league) => ({
+        id: league.id,
+        name: league.name,
+        seasonFrom: league.seasonFrom,
+        seasonTo: league.seasonTo,
+        sportId: league.sportId,
+        sport: {
+          id: league.Sport.id,
+          name: league.Sport.name,
+        },
+      })
+    )
 
     return {
       userLeagues: formattedUserLeagues,
       pastLeagues: formattedPastLeagues,
       availableLeagues: formattedAvailableLeagues,
     }
+  },
+  ['league-selector'],
+  {
+    revalidate: 36000, // 10 hours
+    tags: ['league-selector'],
+  }
+)
+
+/**
+ * Get all leagues for the league selector dropdown
+ * Returns active leagues, past leagues where user participated, and public leagues they can join
+ */
+export async function getAllLeaguesForSelector(): Promise<AllLeaguesResult> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      throw new AppError('Authentication required', 'UNAUTHORIZED', 401)
+    }
+
+    const userId = parseInt(session.user.id)
+    return getCachedLeaguesForSelector(userId)
   } catch (error) {
     throw handleActionError(error, 'Failed to load leagues')
   }
@@ -228,7 +241,8 @@ export async function joinLeague(leagueId: number): Promise<{ success: true; lea
       },
     })
 
-    // Revalidate league context
+    // Invalidate league selector cache and revalidate layout
+    revalidateTag('league-selector', 'max')
     revalidatePath('/[leagueId]', 'layout')
 
     return { success: true, leagueId: validated.leagueId }

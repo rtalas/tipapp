@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { getLocale } from 'next-intl/server'
 import { UserLayout } from '@/components/user/layout/user-layout'
+import { getBetBadges, getCachedChatBadge } from '@/lib/cache/badge-counts'
 
 interface LeagueLayoutProps {
   children: React.ReactNode
@@ -88,112 +89,20 @@ export default async function LeagueLayout({
     redirect('/login')
   }
 
-  // Calculate badge counts for events in the next 10 hours
-  const now = new Date()
-  const tenHoursFromNow = new Date(now.getTime() + 10 * 60 * 60 * 1000)
-
-  // Parallelize badge count queries and series existence check for performance
-  const [
-    upcomingMatchesCount,
-    upcomingSeriesCount,
-    upcomingSpecialBetsCount,
-    upcomingQuestionsCount,
-    totalSeriesCount,
-    unreadChatCount,
-  ] = await Promise.all([
-    prisma.leagueMatch.count({
-      where: {
-        leagueId,
-        deletedAt: null,
-        Match: {
-          dateTime: {
-            gt: now,
-            lte: tenHoursFromNow,
-          },
-          deletedAt: null,
-        },
-        UserBet: {
-          none: {
-            leagueUserId: currentLeagueUser.id,
-            deletedAt: null,
-          },
-        },
-      },
-    }),
-    prisma.leagueSpecialBetSerie.count({
-      where: {
-        leagueId,
-        deletedAt: null,
-        dateTime: {
-          gt: now,
-          lte: tenHoursFromNow,
-        },
-        UserSpecialBetSerie: {
-          none: {
-            leagueUserId: currentLeagueUser.id,
-            deletedAt: null,
-          },
-        },
-      },
-    }),
-    prisma.leagueSpecialBetSingle.count({
-      where: {
-        leagueId,
-        deletedAt: null,
-        dateTime: {
-          gt: now,
-          lte: tenHoursFromNow,
-        },
-        UserSpecialBetSingle: {
-          none: {
-            leagueUserId: currentLeagueUser.id,
-            deletedAt: null,
-          },
-        },
-      },
-    }),
-    prisma.leagueSpecialBetQuestion.count({
-      where: {
-        leagueId,
-        deletedAt: null,
-        dateTime: {
-          gt: now,
-          lte: tenHoursFromNow,
-        },
-        UserSpecialBetQuestion: {
-          none: {
-            leagueUserId: currentLeagueUser.id,
-            deletedAt: null,
-          },
-        },
-      },
-    }),
-    // Check if there are any series in the league at all (to show/hide series tab)
-    prisma.leagueSpecialBetSerie.count({
-      where: {
-        leagueId,
-        deletedAt: null,
-      },
-    }),
-    // Count unread chat messages (only if chat is enabled)
+  // Get badge counts (15 min cache for bet dateTimes, 60s for chat)
+  const [betBadges, chatBadge] = await Promise.all([
+    getBetBadges(leagueId, currentLeagueUser.id),
     league.isChatEnabled
-      ? prisma.message.count({
-          where: {
-            leagueId,
-            deletedAt: null,
-            // Only count messages from other users
-            leagueUserId: { not: currentLeagueUser.id },
-            // Only count messages created after lastChatReadAt (if set)
-            ...(currentLeagueUser.lastChatReadAt
-              ? { createdAt: { gt: currentLeagueUser.lastChatReadAt } }
-              : {}),
-          },
-        })
-      : Promise.resolve(0),
+      ? getCachedChatBadge(
+          leagueId,
+          currentLeagueUser.id,
+          currentLeagueUser.lastChatReadAt?.toISOString() ?? null
+        )
+      : Promise.resolve({ unread: 0 }),
   ])
 
   // Combine special bets and questions for the special tab
-  const specialTabCount = upcomingSpecialBetsCount + upcomingQuestionsCount
+  const specialTabCount = betBadges.specialBets + betBadges.questions
 
   // Get current locale for i18n
   const locale = await getLocale()
@@ -217,13 +126,13 @@ export default async function LeagueLayout({
         sport: league.Sport,
       }}
       badges={{
-        matches: upcomingMatchesCount || undefined,
-        series: upcomingSeriesCount || undefined,
+        matches: betBadges.matches || undefined,
+        series: betBadges.series || undefined,
         special: specialTabCount || undefined,
-        chat: unreadChatCount || undefined,
+        chat: chatBadge.unread || undefined,
       }}
       isChatEnabled={league.isChatEnabled}
-      hasAnySeries={totalSeriesCount > 0}
+      hasAnySeries={betBadges.totalSeries > 0}
       locale={locale}
     >
       {children}

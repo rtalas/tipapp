@@ -442,10 +442,6 @@ export const createSpecialBetTypeSchema = z.object({
   specialBetSingleTypeId: z.number().int().positive('Type is required'),
 })
 
-export const updateSpecialBetTypeSchema = createSpecialBetTypeSchema.partial().extend({
-  id: z.number().int().positive(),
-})
-
 // Series Type (Global) validation schemas
 export const createSeriesTypeSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),

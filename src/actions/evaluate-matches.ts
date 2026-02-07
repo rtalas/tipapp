@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidateTag } from 'next/cache'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { evaluateMatchAtomic } from '@/lib/evaluation/match-evaluator'
 import { z } from 'zod'
@@ -48,6 +49,10 @@ export async function evaluateMatchBets(input: EvaluateMatchInput) {
         totalPoints,
         durationMs
       ).catch((err) => console.error('Audit log failed:', err))
+
+      // Invalidate user-facing caches (match data + leaderboard)
+      revalidateTag('match-data', 'max')
+      revalidateTag('leaderboard', 'max')
 
       return result
     },

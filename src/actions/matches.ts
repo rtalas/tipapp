@@ -1,6 +1,7 @@
 'use server'
 
 import { z } from 'zod'
+import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildLeagueMatchWhere } from '@/lib/query-builders'
@@ -91,6 +92,9 @@ export async function createMatch(input: CreateMatchInput) {
         return match
       })
 
+      // Invalidate user-facing match cache
+      revalidateTag('match-data', 'max')
+
       return { matchId: result.id }
     },
     revalidatePath: '/admin/matches',
@@ -145,6 +149,9 @@ export async function updateMatch(input: UpdateMatchInput) {
         data: updateData,
       })
 
+      // Invalidate user-facing match cache
+      revalidateTag('match-data', 'max')
+
       return {}
     },
     revalidatePath: '/admin/matches',
@@ -195,6 +202,9 @@ export async function updateMatchResult(input: UpdateMatchResultInput) {
         }
       })
 
+      // Invalidate user-facing match cache (results updated)
+      revalidateTag('match-data', 'max')
+
       return {}
     },
     revalidatePath: '/admin/matches',
@@ -211,6 +221,10 @@ export async function deleteMatch(id: number) {
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
+
+      // Invalidate user-facing match cache
+      revalidateTag('match-data', 'max')
+
       return {}
     },
     revalidatePath: '/admin/matches',

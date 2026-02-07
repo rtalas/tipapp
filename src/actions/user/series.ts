@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/user-auth-utils'
 import { userSeriesBetSchema, type UserSeriesBetInput } from '@/lib/validation/user'
@@ -8,42 +8,69 @@ import { AppError } from '@/lib/error-handler'
 import { AuditLogger } from '@/lib/audit-logger'
 
 /**
+ * Cached base series data (20 min TTL)
+ * Shared across all users - excludes user-specific bets
+ */
+const getCachedSeriesData = unstable_cache(
+  async (leagueId: number) => {
+    const series = await prisma.leagueSpecialBetSerie.findMany({
+      where: {
+        leagueId,
+        deletedAt: null,
+      },
+      include: {
+        SpecialBetSerie: true,
+        League: {
+          include: { Sport: true },
+        },
+        LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam: {
+          include: { Team: true },
+        },
+        LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam: {
+          include: { Team: true },
+        },
+      },
+      orderBy: { dateTime: 'asc' },
+    })
+
+    return series
+  },
+  ['series-data'],
+  {
+    revalidate: 1200, // 20 minutes
+    tags: ['series-data'],
+  }
+)
+
+/**
  * Fetches series for a league with the current user's bets
  */
 export async function getUserSeries(leagueId: number) {
   const { leagueUser } = await requireLeagueMember(leagueId)
 
-  const series = await prisma.leagueSpecialBetSerie.findMany({
-    where: {
-      leagueId,
-      deletedAt: null,
-    },
-    include: {
-      SpecialBetSerie: true,
-      League: {
-        include: { Sport: true },
-      },
-      LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam: {
-        include: { Team: true },
-      },
-      LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam: {
-        include: { Team: true },
-      },
-      UserSpecialBetSerie: {
-        where: {
-          leagueUserId: leagueUser.id,
+  // Fetch cached base data and user's bets in parallel
+  const [series, userBets] = await Promise.all([
+    getCachedSeriesData(leagueId),
+    prisma.userSpecialBetSerie.findMany({
+      where: {
+        leagueUserId: leagueUser.id,
+        deletedAt: null,
+        LeagueSpecialBetSerie: {
+          leagueId,
           deletedAt: null,
         },
-        take: 1,
       },
-    },
-    orderBy: { dateTime: 'asc' },
-  })
+    }),
+  ])
 
+  // Create a map of user bets by leagueSpecialBetSerieId for fast lookup
+  const userBetMap = new Map(userBets.map((bet) => [bet.leagueSpecialBetSerieId, bet]))
+
+  // Transform the data to include betting status and user's bet
   return series.map((s) => ({
     ...s,
     isBettingOpen: isBettingOpen(s.dateTime),
-    userBet: s.UserSpecialBetSerie[0] || null,
+    userBet: userBetMap.get(s.id) || null,
   }))
 }
 
@@ -231,6 +258,7 @@ export async function saveSeriesBet(input: UserSeriesBetInput) {
       ).catch((err) => console.error('Audit log failed:', err))
     }
 
+    revalidateTag('bet-badges', 'max')
     revalidatePath(`/${seriesInfo.leagueId}/series`)
     return { success: true }
   } catch (error) {

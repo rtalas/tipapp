@@ -1,5 +1,6 @@
 'use server'
 
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember } from '@/lib/user-auth-utils'
 import type { LeaderboardEntry } from '@/types/user'
@@ -77,53 +78,138 @@ export async function getUserPicks(
 ): Promise<UserPicksData> {
   await requireLeagueMember(leagueId)
 
-  // Fetch match bets (only for this league)
-  const matchBets = await prisma.userBet.findMany({
-    where: {
-      leagueUserId,
-      deletedAt: null,
-      LeagueMatch: {
-        leagueId, // Filter by league to prevent showing bets from other leagues
+  // Fetch all bets in parallel (4 independent queries)
+  const [matchBets, seriesBets, specialBetResults, questionBets] = await Promise.all([
+    // Match bets (only for this league)
+    prisma.userBet.findMany({
+      where: {
+        leagueUserId,
         deletedAt: null,
+        LeagueMatch: {
+          leagueId, // Filter by league to prevent showing bets from other leagues
+          deletedAt: null,
+        },
       },
-    },
-    include: {
-      LeagueMatch: {
-        include: {
-          Match: {
-            include: {
-              LeagueTeam_Match_homeTeamIdToLeagueTeam: {
-                include: {
-                  Team: true,
+      include: {
+        LeagueMatch: {
+          include: {
+            Match: {
+              include: {
+                LeagueTeam_Match_homeTeamIdToLeagueTeam: {
+                  include: {
+                    Team: true,
+                  },
                 },
-              },
-              LeagueTeam_Match_awayTeamIdToLeagueTeam: {
-                include: {
-                  Team: true,
+                LeagueTeam_Match_awayTeamIdToLeagueTeam: {
+                  include: {
+                    Team: true,
+                  },
                 },
-              },
-              MatchScorer: {
-                where: {
-                  deletedAt: null,
-                },
-                select: {
-                  scorerId: true,
+                MatchScorer: {
+                  where: {
+                    deletedAt: null,
+                  },
+                  select: {
+                    scorerId: true,
+                  },
                 },
               },
             },
           },
         },
-      },
-      LeaguePlayer: {
-        include: {
-          Player: true,
+        LeaguePlayer: {
+          include: {
+            Player: true,
+          },
         },
       },
-    },
-    orderBy: {
-      dateTime: 'desc',
-    },
-  })
+      orderBy: {
+        dateTime: 'desc',
+      },
+    }),
+
+    // Series bets (only for this league)
+    prisma.userSpecialBetSerie.findMany({
+      where: {
+        leagueUserId,
+        deletedAt: null,
+        LeagueSpecialBetSerie: {
+          leagueId, // Filter by league to prevent showing bets from other leagues
+          deletedAt: null,
+        },
+      },
+      include: {
+        LeagueSpecialBetSerie: {
+          include: {
+            SpecialBetSerie: true,
+            LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam: {
+              include: {
+                Team: true,
+              },
+            },
+            LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam: {
+              include: {
+                Team: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        dateTime: 'desc',
+      },
+    }),
+
+    // Special bets (only for this league)
+    prisma.userSpecialBetSingle.findMany({
+      where: {
+        leagueUserId,
+        deletedAt: null,
+        LeagueSpecialBetSingle: {
+          leagueId, // Filter by league to prevent showing bets from other leagues
+          deletedAt: null,
+        },
+      },
+      include: {
+        LeagueSpecialBetSingle: {
+          include: {
+            SpecialBetSingle: true,
+          },
+        },
+        LeagueTeam: {
+          include: {
+            Team: true,
+          },
+        },
+        LeaguePlayer: {
+          include: {
+            Player: true,
+          },
+        },
+      },
+      orderBy: {
+        dateTime: 'desc',
+      },
+    }),
+
+    // Question bets (only for this league)
+    prisma.userSpecialBetQuestion.findMany({
+      where: {
+        leagueUserId,
+        deletedAt: null,
+        LeagueSpecialBetQuestion: {
+          leagueId, // Filter by league to prevent showing bets from other leagues
+          deletedAt: null,
+        },
+      },
+      include: {
+        LeagueSpecialBetQuestion: true,
+      },
+      orderBy: {
+        dateTime: 'desc',
+      },
+    }),
+  ])
 
   const matches: UserMatchPick[] = matchBets.map((bet) => {
     let scorerName: string | null = null
@@ -159,38 +245,6 @@ export async function getUserPicks(
     }
   })
 
-  // Fetch series bets (only for this league)
-  const seriesBets = await prisma.userSpecialBetSerie.findMany({
-    where: {
-      leagueUserId,
-      deletedAt: null,
-      LeagueSpecialBetSerie: {
-        leagueId, // Filter by league to prevent showing bets from other leagues
-        deletedAt: null,
-      },
-    },
-    include: {
-      LeagueSpecialBetSerie: {
-        include: {
-          SpecialBetSerie: true,
-          LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam: {
-            include: {
-              Team: true,
-            },
-          },
-          LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam: {
-            include: {
-              Team: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      dateTime: 'desc',
-    },
-  })
-
   const series: UserSeriesPick[] = seriesBets.map((bet) => ({
     id: bet.id,
     seriesName: `${bet.LeagueSpecialBetSerie.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team.name} vs ${bet.LeagueSpecialBetSerie.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team.name}`,
@@ -202,38 +256,6 @@ export async function getUserPicks(
     actualAwayScore: bet.LeagueSpecialBetSerie.awayTeamScore,
     isEvaluated: bet.LeagueSpecialBetSerie.isEvaluated,
   }))
-
-  // Fetch special bets (only for this league)
-  const specialBetResults = await prisma.userSpecialBetSingle.findMany({
-    where: {
-      leagueUserId,
-      deletedAt: null,
-      LeagueSpecialBetSingle: {
-        leagueId, // Filter by league to prevent showing bets from other leagues
-        deletedAt: null,
-      },
-    },
-    include: {
-      LeagueSpecialBetSingle: {
-        include: {
-          SpecialBetSingle: true,
-        },
-      },
-      LeagueTeam: {
-        include: {
-          Team: true,
-        },
-      },
-      LeaguePlayer: {
-        include: {
-          Player: true,
-        },
-      },
-    },
-    orderBy: {
-      dateTime: 'desc',
-    },
-  })
 
   const specialBets: UserSpecialBetPick[] = specialBetResults.map((bet) => {
     let prediction = ''
@@ -255,24 +277,6 @@ export async function getUserPicks(
     }
   })
 
-  // Fetch question bets (only for this league)
-  const questionBets = await prisma.userSpecialBetQuestion.findMany({
-    where: {
-      leagueUserId,
-      deletedAt: null,
-      LeagueSpecialBetQuestion: {
-        leagueId, // Filter by league to prevent showing bets from other leagues
-        deletedAt: null,
-      },
-    },
-    include: {
-      LeagueSpecialBetQuestion: true,
-    },
-    orderBy: {
-      dateTime: 'desc',
-    },
-  })
-
   const questions: UserQuestionPick[] = questionBets.map((bet) => ({
     id: bet.id,
     question: bet.LeagueSpecialBetQuestion.text,
@@ -290,127 +294,158 @@ export async function getUserPicks(
 }
 
 /**
+ * Cached leaderboard data (30 min TTL)
+ * Same data for all users in a league - only isCurrentUser differs
+ */
+const getCachedLeaderboardData = unstable_cache(
+  async (leagueId: number) => {
+    // Fetch all league users with their bets
+    const leagueUsers = await prisma.leagueUser.findMany({
+      where: {
+        leagueId,
+        active: true,
+        deletedAt: null,
+      },
+      include: {
+        User: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+        UserBet: {
+          where: { deletedAt: null },
+          select: { totalPoints: true },
+        },
+        UserSpecialBetSerie: {
+          where: { deletedAt: null },
+          select: { totalPoints: true },
+        },
+        UserSpecialBetSingle: {
+          where: { deletedAt: null },
+          select: { totalPoints: true },
+        },
+        UserSpecialBetQuestion: {
+          where: { deletedAt: null },
+          select: { totalPoints: true },
+        },
+      },
+    })
+
+    // Calculate totals and sort
+    const entries = leagueUsers.map((lu) => {
+      const matchPoints = lu.UserBet.reduce((sum, b) => sum + (b.totalPoints || 0), 0)
+      const seriesPoints = lu.UserSpecialBetSerie.reduce(
+        (sum, b) => sum + (b.totalPoints || 0),
+        0
+      )
+      const specialBetPoints = lu.UserSpecialBetSingle.reduce(
+        (sum, b) => sum + (b.totalPoints || 0),
+        0
+      )
+      const questionPoints = lu.UserSpecialBetQuestion.reduce(
+        (sum, b) => sum + (b.totalPoints || 0),
+        0
+      )
+      const totalPoints =
+        matchPoints + seriesPoints + specialBetPoints + questionPoints
+
+      return {
+        leagueUserId: lu.id,
+        odataUserId: lu.User.id,
+        username: lu.User.username,
+        firstName: lu.User.firstName,
+        lastName: lu.User.lastName,
+        avatarUrl: lu.User.avatarUrl,
+        matchPoints,
+        seriesPoints,
+        specialBetPoints,
+        questionPoints,
+        totalPoints,
+      }
+    })
+
+    // Sort by total points descending
+    entries.sort((a, b) => b.totalPoints - a.totalPoints)
+
+    // Add ranks
+    const rankedEntries = entries.map((entry, index) => ({
+      ...entry,
+      rank: index + 1,
+    }))
+
+    // Fetch prizes and fines for this league
+    const prizeRecords = await prisma.leaguePrize.findMany({
+      where: {
+        leagueId,
+        deletedAt: null,
+      },
+      orderBy: {
+        rank: 'asc',
+      },
+      select: {
+        rank: true,
+        amount: true,
+        currency: true,
+        label: true,
+        type: true,
+      },
+    })
+
+    // Separate prizes and fines
+    const prizes = prizeRecords
+      .filter((p) => p.type === 'prize')
+      .map(({ rank, amount, currency, label }) => ({
+        rank,
+        amount,
+        currency,
+        label,
+      }))
+
+    const fines = prizeRecords
+      .filter((p) => p.type === 'fine')
+      .map(({ rank, amount, currency, label }) => ({
+        rank,
+        amount,
+        currency,
+        label,
+      }))
+
+    return { entries: rankedEntries, prizes, fines }
+  },
+  ['leaderboard'],
+  {
+    revalidate: 1800, // 30 minutes
+    tags: ['leaderboard'],
+  }
+)
+
+/**
  * Fetches leaderboard for a league with aggregated points and prizes
  */
 export async function getLeaderboard(leagueId: number): Promise<LeaderboardData> {
   const { userId } = await requireLeagueMember(leagueId)
 
-  // Fetch all league users with their bets
-  const leagueUsers = await prisma.leagueUser.findMany({
-    where: {
-      leagueId,
-      active: true,
-      deletedAt: null,
-    },
-    include: {
-      User: {
-        select: {
-          id: true,
-          username: true,
-          firstName: true,
-          lastName: true,
-          avatarUrl: true,
-        },
-      },
-      UserBet: {
-        where: { deletedAt: null },
-        select: { totalPoints: true },
-      },
-      UserSpecialBetSerie: {
-        where: { deletedAt: null },
-        select: { totalPoints: true },
-      },
-      UserSpecialBetSingle: {
-        where: { deletedAt: null },
-        select: { totalPoints: true },
-      },
-      UserSpecialBetQuestion: {
-        where: { deletedAt: null },
-        select: { totalPoints: true },
-      },
-    },
-  })
+  // Get cached leaderboard data (shared across all users)
+  const cachedData = await getCachedLeaderboardData(leagueId)
 
-  // Calculate totals and sort
-  const entries = leagueUsers.map((lu) => {
-    const matchPoints = lu.UserBet.reduce((sum, b) => sum + (b.totalPoints || 0), 0)
-    const seriesPoints = lu.UserSpecialBetSerie.reduce(
-      (sum, b) => sum + (b.totalPoints || 0),
-      0
-    )
-    const specialBetPoints = lu.UserSpecialBetSingle.reduce(
-      (sum, b) => sum + (b.totalPoints || 0),
-      0
-    )
-    const questionPoints = lu.UserSpecialBetQuestion.reduce(
-      (sum, b) => sum + (b.totalPoints || 0),
-      0
-    )
-    const totalPoints =
-      matchPoints + seriesPoints + specialBetPoints + questionPoints
-
+  // Add isCurrentUser flag for this specific user
+  const entries = cachedData.entries.map((entry) => {
+    const { odataUserId, ...rest } = entry
     return {
-      leagueUserId: lu.id,
-      userId: lu.User.id,
-      username: lu.User.username,
-      firstName: lu.User.firstName,
-      lastName: lu.User.lastName,
-      avatarUrl: lu.User.avatarUrl,
-      matchPoints,
-      seriesPoints,
-      specialBetPoints,
-      questionPoints,
-      totalPoints,
-      isCurrentUser: lu.userId === userId,
+      ...rest,
+      userId: odataUserId,
+      isCurrentUser: odataUserId === userId,
     }
   })
 
-  // Sort by total points descending
-  entries.sort((a, b) => b.totalPoints - a.totalPoints)
-
-  // Add ranks
-  const rankedEntries = entries.map((entry, index) => ({
-    ...entry,
-    rank: index + 1,
-  }))
-
-  // Fetch prizes and fines for this league
-  const prizeRecords = await prisma.leaguePrize.findMany({
-    where: {
-      leagueId,
-      deletedAt: null,
-    },
-    orderBy: {
-      rank: 'asc',
-    },
-    select: {
-      rank: true,
-      amount: true,
-      currency: true,
-      label: true,
-      type: true,
-    },
-  })
-
-  // Separate prizes and fines
-  const prizes = prizeRecords.filter(p => p.type === 'prize').map(({ rank, amount, currency, label }) => ({
-    rank,
-    amount,
-    currency,
-    label,
-  }))
-
-  const fines = prizeRecords.filter(p => p.type === 'fine').map(({ rank, amount, currency, label }) => ({
-    rank,
-    amount,
-    currency,
-    label,
-  }))
-
   return {
-    entries: rankedEntries,
-    prizes,
-    fines,
+    entries,
+    prizes: cachedData.prizes,
+    fines: cachedData.fines,
   }
 }
 

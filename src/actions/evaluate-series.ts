@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidateTag } from 'next/cache'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { evaluateSeriesAtomic } from '@/lib/evaluation/series-evaluator'
 import { z } from 'zod'
@@ -45,6 +46,10 @@ export async function evaluateSeriesBets(input: EvaluateSeriesInput) {
         totalPoints,
         durationMs
       ).catch((err) => console.error('Audit log failed:', err))
+
+      // Invalidate user-facing caches (series data + leaderboard)
+      revalidateTag('series-data', 'max')
+      revalidateTag('leaderboard', 'max')
 
       return result
     },

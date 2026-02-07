@@ -81,10 +81,12 @@ export function SpecialBetsList({
   // Group by date
   const groupedItems = useMemo(() => {
     const sorted = [...displayedItems].sort((a, b) => {
+      const aTime = new Date(a.dateTime).getTime()
+      const bTime = new Date(b.dateTime).getTime()
       if (filter === 'past') {
-        return b.dateTime.getTime() - a.dateTime.getTime()
+        return bTime - aTime
       }
-      return a.dateTime.getTime() - b.dateTime.getTime()
+      return aTime - bTime
     })
     return groupByDate(sorted)
   }, [displayedItems, filter])
