@@ -1,26 +1,28 @@
 'use server'
 
-import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireLeagueMember, isBettingOpen } from '@/lib/auth/user-auth-utils'
+import { isBettingOpen } from '@/lib/auth/user-auth-utils'
 import { userMatchBetSchema, type UserMatchBetInput } from '@/lib/validation/user'
 import { AppError } from '@/lib/error-handler'
 import { SPORT_IDS } from '@/lib/constants'
 import { AuditLogger } from '@/lib/logging/audit-logger'
+import { saveUserBet, getFriendPredictions, type TransactionClient } from '@/lib/bet-utils'
+import { createCachedEntityFetcher } from '@/lib/cached-data-utils'
 
 /**
- * Cached base match data (20 min TTL)
- * Shared across all users - excludes user-specific bets
+ * Fetches matches for a league with the current user's bets
+ * Returns matches grouped with betting status and deadline info
  */
-const getCachedMatchData = unstable_cache(
-  async (leagueId: number) => {
-    const matches = await prisma.leagueMatch.findMany({
+export const getUserMatches = createCachedEntityFetcher({
+  cacheKey: 'match-data',
+  cacheTags: ['match-data'],
+  revalidateSeconds: 1200,
+  fetchEntities: (leagueId) =>
+    prisma.leagueMatch.findMany({
       where: {
         leagueId,
         deletedAt: null,
-        Match: {
-          deletedAt: null,
-        },
+        Match: { deletedAt: null },
       },
       include: {
         League: {
@@ -65,56 +67,21 @@ const getCachedMatchData = unstable_cache(
         },
       },
       orderBy: { Match: { dateTime: 'asc' } },
-    })
-
-    return matches
-  },
-  ['match-data'],
-  {
-    revalidate: 1200, // 20 minutes
-    tags: ['match-data'],
-  }
-)
-
-/**
- * Fetches matches for a league with the current user's bets
- * Returns matches grouped with betting status and deadline info
- */
-export async function getUserMatches(leagueId: number) {
-  const { leagueUser } = await requireLeagueMember(leagueId)
-
-  // Fetch cached base data and user's bets in parallel
-  const [matches, userBets] = await Promise.all([
-    getCachedMatchData(leagueId),
+    }),
+  fetchUserBets: (leagueUserId, leagueId) =>
     prisma.userBet.findMany({
       where: {
-        leagueUserId: leagueUser.id,
+        leagueUserId,
         deletedAt: null,
-        LeagueMatch: {
-          leagueId,
-          deletedAt: null,
-        },
+        LeagueMatch: { leagueId, deletedAt: null },
       },
       include: {
-        LeaguePlayer: {
-          include: {
-            Player: true,
-          },
-        },
+        LeaguePlayer: { include: { Player: true } },
       },
     }),
-  ])
-
-  // Create a map of user bets by leagueMatchId for fast lookup
-  const userBetMap = new Map(userBets.map((bet) => [bet.leagueMatchId, bet]))
-
-  // Transform the data to include betting status and user's bet
-  return matches.map((match) => ({
-    ...match,
-    isBettingOpen: isBettingOpen(match.Match.dateTime),
-    userBet: userBetMap.get(match.id) || null,
-  }))
-}
+  getUserBetEntityId: (bet) => bet.leagueMatchId,
+  getDateTime: (match) => match.Match.dateTime,
+})
 
 export type UserMatch = Awaited<ReturnType<typeof getUserMatches>>[number]
 
@@ -123,59 +90,44 @@ export type UserMatch = Awaited<ReturnType<typeof getUserMatches>>[number]
  * Only returns predictions if the betting is closed (match has started)
  */
 export async function getMatchFriendPredictions(leagueMatchId: number) {
-  const match = await prisma.leagueMatch.findUnique({
-    where: { id: leagueMatchId, deletedAt: null },
-    include: { Match: true },
-  })
-
-  if (!match) {
-    throw new AppError('Match not found', 'NOT_FOUND', 404)
-  }
-
-  const { leagueUser } = await requireLeagueMember(match.leagueId)
-
-  // Only show friend predictions after betting is closed
-  if (isBettingOpen(match.Match.dateTime)) {
-    return {
-      isLocked: false,
-      predictions: [],
-    }
-  }
-
-  const predictions = await prisma.userBet.findMany({
-    where: {
-      leagueMatchId,
-      deletedAt: null,
-      // Exclude current user's bet
-      leagueUserId: { not: leagueUser.id },
-    },
-    include: {
-      LeagueUser: {
+  return getFriendPredictions({
+    entityId: leagueMatchId,
+    entityLabel: 'Match',
+    findEntity: (id) =>
+      prisma.leagueMatch.findUnique({
+        where: { id, deletedAt: null },
+        include: { Match: true },
+      }),
+    getLeagueId: (match) => match.leagueId,
+    getDateTime: (match) => match.Match.dateTime,
+    findPredictions: (entityId, excludeLeagueUserId) =>
+      prisma.userBet.findMany({
+        where: {
+          leagueMatchId: entityId,
+          deletedAt: null,
+          leagueUserId: { not: excludeLeagueUserId },
+        },
         include: {
-          User: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              username: true,
-              avatarUrl: true,
+          LeagueUser: {
+            include: {
+              User: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  username: true,
+                  avatarUrl: true,
+                },
+              },
             },
           },
+          LeaguePlayer: {
+            include: { Player: true },
+          },
         },
-      },
-      LeaguePlayer: {
-        include: {
-          Player: true,
-        },
-      },
-    },
-    orderBy: { totalPoints: 'desc' },
+        orderBy: { totalPoints: 'desc' },
+      }),
   })
-
-  return {
-    isLocked: true,
-    predictions,
-  }
 }
 
 export type FriendPrediction = Awaited<
@@ -188,197 +140,125 @@ export type FriendPrediction = Awaited<
  * Uses Serializable transaction for data consistency
  */
 export async function saveMatchBet(input: UserMatchBetInput) {
-  const startTime = Date.now()
-  const parsed = userMatchBetSchema.safeParse(input)
-
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: parsed.error.issues[0]?.message || 'Invalid input',
-    }
-  }
-
-  const validated = parsed.data
-
-  // Get the match leagueId for membership check (outside transaction)
-  const matchInfo = await prisma.leagueMatch.findUnique({
-    where: { id: validated.leagueMatchId, deletedAt: null },
-    select: { leagueId: true },
-  })
-
-  if (!matchInfo) {
-    return { success: false as const, error: 'Match not found' }
-  }
-
-  // Verify league membership (outside transaction)
-  const { leagueUser } = await requireLeagueMember(matchInfo.leagueId)
-
-  // Wrap database operations in Serializable transaction
-  try {
-    let isUpdate = false
-
-    await prisma.$transaction(
-      async (tx) => {
-        // Fetch match details within transaction for consistency
-        const leagueMatch = await tx.leagueMatch.findUnique({
-          where: { id: validated.leagueMatchId, deletedAt: null },
-          include: {
-            League: { select: { sportId: true } },
-            Match: {
-              include: {
-                LeagueTeam_Match_homeTeamIdToLeagueTeam: true,
-                LeagueTeam_Match_awayTeamIdToLeagueTeam: true,
-              },
+  return saveUserBet({
+    input,
+    schema: userMatchBetSchema,
+    entityLabel: 'Match',
+    findLeagueId: async (validated) => {
+      const info = await prisma.leagueMatch.findUnique({
+        where: { id: validated.leagueMatchId, deletedAt: null },
+        select: { leagueId: true },
+      })
+      return info?.leagueId ?? null
+    },
+    runTransaction: async (tx: TransactionClient, validated, leagueUserId) => {
+      const leagueMatch = await tx.leagueMatch.findUnique({
+        where: { id: validated.leagueMatchId, deletedAt: null },
+        include: {
+          League: { select: { sportId: true } },
+          Match: {
+            include: {
+              LeagueTeam_Match_homeTeamIdToLeagueTeam: true,
+              LeagueTeam_Match_awayTeamIdToLeagueTeam: true,
             },
           },
-        })
+        },
+      })
 
-        if (!leagueMatch) {
-          throw new AppError('Match not found', 'NOT_FOUND', 404)
-        }
-
-        // Check betting lock
-        if (!isBettingOpen(leagueMatch.Match.dateTime)) {
-          throw new AppError(
-            'Betting is closed for this match',
-            'BETTING_CLOSED',
-            400
-          )
-        }
-
-        // Validate mutual exclusivity between scorerId and noScorer
-        if (validated.noScorer === true && validated.scorerId !== null) {
-          throw new AppError(
-            'Cannot set both scorer and no scorer',
-            'VALIDATION_ERROR',
-            400
-          )
-        }
-
-        // Validate that noScorer can only be set for soccer matches
-        if (validated.noScorer === true && leagueMatch.League.sportId !== SPORT_IDS.FOOTBALL) {
-          throw new AppError(
-            'No scorer option is only available for soccer matches',
-            'VALIDATION_ERROR',
-            400
-          )
-        }
-
-        // Verify scorer belongs to one of the teams if provided
-        if (validated.scorerId) {
-          const scorer = await tx.leaguePlayer.findUnique({
-            where: { id: validated.scorerId, deletedAt: null },
-          })
-
-          if (!scorer) {
-            throw new AppError('Scorer not found', 'NOT_FOUND', 404)
-          }
-
-          const isValidScorer =
-            scorer.leagueTeamId === leagueMatch.Match.homeTeamId ||
-            scorer.leagueTeamId === leagueMatch.Match.awayTeamId
-
-          if (!isValidScorer) {
-            throw new AppError(
-              'Scorer must belong to one of the teams playing',
-              'VALIDATION_ERROR',
-              400
-            )
-          }
-        }
-
-        // Check if bet exists to determine action type
-        const existingBet = await tx.userBet.findFirst({
-          where: {
-            leagueMatchId: validated.leagueMatchId,
-            leagueUserId: leagueUser.id,
-            deletedAt: null,
-          },
-        })
-
-        isUpdate = !!existingBet
-
-        // Atomic upsert to prevent race conditions
-        const now = new Date()
-
-        if (existingBet) {
-          // Update existing bet
-          await tx.userBet.update({
-            where: { id: existingBet.id },
-            data: {
-              homeScore: validated.homeScore,
-              awayScore: validated.awayScore,
-              scorerId: validated.scorerId,
-              noScorer: validated.noScorer,
-              overtime: validated.overtime,
-              homeAdvanced: validated.homeAdvanced,
-              updatedAt: now,
-            },
-          })
-        } else {
-          // Create new bet
-          await tx.userBet.create({
-            data: {
-              leagueMatchId: validated.leagueMatchId,
-              leagueUserId: leagueUser.id,
-              homeScore: validated.homeScore,
-              awayScore: validated.awayScore,
-              scorerId: validated.scorerId,
-              noScorer: validated.noScorer,
-              overtime: validated.overtime,
-              homeAdvanced: validated.homeAdvanced,
-              dateTime: now,
-              totalPoints: 0,
-              createdAt: now,
-              updatedAt: now,
-            },
-          })
-        }
-      },
-      {
-        isolationLevel: 'Serializable',
-        maxWait: 5000, // 5s max wait for lock
-        timeout: 10000, // 10s max transaction time
+      if (!leagueMatch) {
+        throw new AppError('Match not found', 'NOT_FOUND', 404)
       }
-    )
 
-    // Audit log (fire-and-forget)
-    const durationMs = Date.now() - startTime
-    const metadata = {
-      homeScore: validated.homeScore,
-      awayScore: validated.awayScore,
-      scorerId: validated.scorerId,
-      noScorer: validated.noScorer,
-      overtime: validated.overtime,
-      homeAdvanced: validated.homeAdvanced,
-    }
+      if (!isBettingOpen(leagueMatch.Match.dateTime)) {
+        throw new AppError('Betting is closed for this match', 'BETTING_CLOSED', 400)
+      }
 
-    if (isUpdate) {
-      AuditLogger.userBetUpdated(
-        leagueUser.userId,
-        matchInfo.leagueId,
-        validated.leagueMatchId,
-        metadata,
-        durationMs
-      ).catch((err) => console.error('Audit log failed:', err))
-    } else {
-      AuditLogger.userBetCreated(
-        leagueUser.userId,
-        matchInfo.leagueId,
-        validated.leagueMatchId,
-        metadata,
-        durationMs
-      ).catch((err) => console.error('Audit log failed:', err))
-    }
+      // Validate mutual exclusivity between scorerId and noScorer
+      if (validated.noScorer === true && validated.scorerId !== null) {
+        throw new AppError('Cannot set both scorer and no scorer', 'VALIDATION_ERROR', 400)
+      }
 
-    revalidateTag('bet-badges', 'max')
-    revalidatePath(`/${matchInfo.leagueId}/matches`)
-    return { success: true }
-  } catch (error) {
-    if (error instanceof AppError) {
-      return { success: false as const, error: error.message }
-    }
-    throw error
-  }
+      // Validate that noScorer can only be set for soccer matches
+      if (validated.noScorer === true && leagueMatch.League.sportId !== SPORT_IDS.FOOTBALL) {
+        throw new AppError('No scorer option is only available for soccer matches', 'VALIDATION_ERROR', 400)
+      }
+
+      // Verify scorer belongs to one of the teams if provided
+      if (validated.scorerId) {
+        const scorer = await tx.leaguePlayer.findUnique({
+          where: { id: validated.scorerId, deletedAt: null },
+        })
+
+        if (!scorer) {
+          throw new AppError('Scorer not found', 'NOT_FOUND', 404)
+        }
+
+        const isValidScorer =
+          scorer.leagueTeamId === leagueMatch.Match.homeTeamId ||
+          scorer.leagueTeamId === leagueMatch.Match.awayTeamId
+
+        if (!isValidScorer) {
+          throw new AppError('Scorer must belong to one of the teams playing', 'VALIDATION_ERROR', 400)
+        }
+      }
+
+      const existingBet = await tx.userBet.findFirst({
+        where: {
+          leagueMatchId: validated.leagueMatchId,
+          leagueUserId,
+          deletedAt: null,
+        },
+      })
+
+      const now = new Date()
+
+      if (existingBet) {
+        await tx.userBet.update({
+          where: { id: existingBet.id },
+          data: {
+            homeScore: validated.homeScore,
+            awayScore: validated.awayScore,
+            scorerId: validated.scorerId,
+            noScorer: validated.noScorer,
+            overtime: validated.overtime,
+            homeAdvanced: validated.homeAdvanced,
+            updatedAt: now,
+          },
+        })
+        return true
+      }
+
+      await tx.userBet.create({
+        data: {
+          leagueMatchId: validated.leagueMatchId,
+          leagueUserId,
+          homeScore: validated.homeScore,
+          awayScore: validated.awayScore,
+          scorerId: validated.scorerId,
+          noScorer: validated.noScorer,
+          overtime: validated.overtime,
+          homeAdvanced: validated.homeAdvanced,
+          dateTime: now,
+          totalPoints: 0,
+          createdAt: now,
+          updatedAt: now,
+        },
+      })
+      return false
+    },
+    audit: {
+      getEntityId: (validated) => validated.leagueMatchId,
+      getMetadata: (validated) => ({
+        homeScore: validated.homeScore,
+        awayScore: validated.awayScore,
+        scorerId: validated.scorerId,
+        noScorer: validated.noScorer,
+        overtime: validated.overtime,
+        homeAdvanced: validated.homeAdvanced,
+      }),
+      onCreated: AuditLogger.userBetCreated,
+      onUpdated: AuditLogger.userBetUpdated,
+    },
+    revalidatePathSuffix: '/matches',
+  })
 }
-

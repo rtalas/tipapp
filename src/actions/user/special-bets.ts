@@ -1,96 +1,49 @@
 'use server'
 
-import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/auth/user-auth-utils'
 import { userSpecialBetSchema, type UserSpecialBetInput } from '@/lib/validation/user'
 import { AppError } from '@/lib/error-handler'
 import { AuditLogger } from '@/lib/logging/audit-logger'
-
-/**
- * Cached base special bet data (20 min TTL)
- * Shared across all users - excludes user-specific bets
- */
-const getCachedSpecialBetData = unstable_cache(
-  async (leagueId: number) => {
-    const specialBets = await prisma.leagueSpecialBetSingle.findMany({
-      where: {
-        leagueId,
-        deletedAt: null,
-      },
-      include: {
-        // Include Evaluator for determining bet type
-        Evaluator: {
-          include: {
-            EvaluatorType: true,
-          },
-        },
-        // Keep SpecialBetSingle for backward compatibility (nullable)
-        SpecialBetSingle: {
-          include: {
-            SpecialBetSingleType: true,
-            Sport: true,
-          },
-        },
-        // Actual results
-        LeagueTeam: {
-          include: { Team: true },
-        },
-        LeaguePlayer: {
-          include: { Player: true },
-        },
-      },
-      orderBy: { dateTime: 'asc' },
-    })
-
-    return specialBets
-  },
-  ['special-bet-data'],
-  {
-    revalidate: 1200, // 20 minutes
-    tags: ['special-bet-data'],
-  }
-)
+import { saveUserBet, getFriendPredictions, type TransactionClient } from '@/lib/bet-utils'
+import { createCachedEntityFetcher } from '@/lib/cached-data-utils'
 
 /**
  * Fetches special bets for a league with the current user's picks
  */
-export async function getUserSpecialBets(leagueId: number) {
-  const { leagueUser } = await requireLeagueMember(leagueId)
-
-  // Fetch cached base data and user's bets in parallel
-  const [specialBets, userBets] = await Promise.all([
-    getCachedSpecialBetData(leagueId),
+export const getUserSpecialBets = createCachedEntityFetcher({
+  cacheKey: 'special-bet-data',
+  cacheTags: ['special-bet-data'],
+  revalidateSeconds: 1200,
+  fetchEntities: (leagueId) =>
+    prisma.leagueSpecialBetSingle.findMany({
+      where: { leagueId, deletedAt: null },
+      include: {
+        Evaluator: { include: { EvaluatorType: true } },
+        SpecialBetSingle: {
+          include: { SpecialBetSingleType: true, Sport: true },
+        },
+        LeagueTeam: { include: { Team: true } },
+        LeaguePlayer: { include: { Player: true } },
+      },
+      orderBy: { dateTime: 'asc' },
+    }),
+  fetchUserBets: (leagueUserId, leagueId) =>
     prisma.userSpecialBetSingle.findMany({
       where: {
-        leagueUserId: leagueUser.id,
+        leagueUserId,
         deletedAt: null,
-        LeagueSpecialBetSingle: {
-          leagueId,
-          deletedAt: null,
-        },
+        LeagueSpecialBetSingle: { leagueId, deletedAt: null },
       },
       include: {
-        LeagueTeam: {
-          include: { Team: true },
-        },
-        LeaguePlayer: {
-          include: { Player: true },
-        },
+        LeagueTeam: { include: { Team: true } },
+        LeaguePlayer: { include: { Player: true } },
       },
     }),
-  ])
-
-  // Create a map of user bets by leagueSpecialBetSingleId for fast lookup
-  const userBetMap = new Map(userBets.map((bet) => [bet.leagueSpecialBetSingleId, bet]))
-
-  // Transform the data to include betting status and user's bet
-  return specialBets.map((sb) => ({
-    ...sb,
-    isBettingOpen: isBettingOpen(sb.dateTime),
-    userBet: userBetMap.get(sb.id) || null,
-  }))
-}
+  getUserBetEntityId: (bet) => bet.leagueSpecialBetSingleId,
+  getDateTime: (sb) => sb.dateTime,
+})
 
 export type UserSpecialBet = Awaited<ReturnType<typeof getUserSpecialBets>>[number]
 
@@ -99,58 +52,42 @@ export type UserSpecialBet = Awaited<ReturnType<typeof getUserSpecialBets>>[numb
  * Only returns predictions if the betting is closed
  */
 export async function getSpecialBetFriendPredictions(leagueSpecialBetSingleId: number) {
-  const specialBet = await prisma.leagueSpecialBetSingle.findUnique({
-    where: { id: leagueSpecialBetSingleId, deletedAt: null },
-  })
-
-  if (!specialBet) {
-    throw new AppError('Special bet not found', 'NOT_FOUND', 404)
-  }
-
-  const { leagueUser } = await requireLeagueMember(specialBet.leagueId)
-
-  // Only show friend predictions after betting is closed
-  if (isBettingOpen(specialBet.dateTime)) {
-    return {
-      isLocked: false,
-      predictions: [],
-    }
-  }
-
-  const predictions = await prisma.userSpecialBetSingle.findMany({
-    where: {
-      leagueSpecialBetSingleId,
-      deletedAt: null,
-      leagueUserId: { not: leagueUser.id },
-    },
-    include: {
-      LeagueUser: {
+  return getFriendPredictions({
+    entityId: leagueSpecialBetSingleId,
+    entityLabel: 'Special bet',
+    findEntity: (id) =>
+      prisma.leagueSpecialBetSingle.findUnique({
+        where: { id, deletedAt: null },
+      }),
+    getLeagueId: (sb) => sb.leagueId,
+    getDateTime: (sb) => sb.dateTime,
+    findPredictions: (entityId, excludeLeagueUserId) =>
+      prisma.userSpecialBetSingle.findMany({
+        where: {
+          leagueSpecialBetSingleId: entityId,
+          deletedAt: null,
+          leagueUserId: { not: excludeLeagueUserId },
+        },
         include: {
-          User: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              username: true,
-              avatarUrl: true,
+          LeagueUser: {
+            include: {
+              User: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  username: true,
+                  avatarUrl: true,
+                },
+              },
             },
           },
+          LeagueTeam: { include: { Team: true } },
+          LeaguePlayer: { include: { Player: true } },
         },
-      },
-      LeagueTeam: {
-        include: { Team: true },
-      },
-      LeaguePlayer: {
-        include: { Player: true },
-      },
-    },
-    orderBy: { totalPoints: 'desc' },
+        orderBy: { totalPoints: 'desc' },
+      }),
   })
-
-  return {
-    isLocked: true,
-    predictions,
-  }
 }
 
 export type SpecialBetFriendPrediction = Awaited<
@@ -164,10 +101,7 @@ export type SpecialBetFriendPrediction = Awaited<
 const getCachedTeams = unstable_cache(
   async (leagueId: number) => {
     const teams = await prisma.leagueTeam.findMany({
-      where: {
-        leagueId,
-        deletedAt: null,
-      },
+      where: { leagueId, deletedAt: null },
       include: { Team: true },
       orderBy: { Team: { name: 'asc' } },
     })
@@ -176,15 +110,13 @@ const getCachedTeams = unstable_cache(
   },
   ['special-bet-teams'],
   {
-    revalidate: 43200, // 12 hours
+    revalidate: 43200,
     tags: ['special-bet-teams'],
   }
 )
 
 /**
  * Gets teams available for a special bet
- * @param leagueId - The league ID
- * @param group - Optional group filter for group stage predictions
  */
 export async function getSpecialBetTeams(leagueId: number, group?: string) {
   await requireLeagueMember(leagueId)
@@ -193,24 +125,18 @@ export async function getSpecialBetTeams(leagueId: number, group?: string) {
 }
 
 /**
- * Cached players data (1 hour TTL)
- * Players rarely change during a season
+ * Cached players data (12 hour TTL)
  */
 const getCachedPlayers = unstable_cache(
   async (leagueId: number) => {
     const players = await prisma.leaguePlayer.findMany({
       where: {
         deletedAt: null,
-        LeagueTeam: {
-          leagueId,
-          deletedAt: null,
-        },
+        LeagueTeam: { leagueId, deletedAt: null },
       },
       include: {
         Player: true,
-        LeagueTeam: {
-          include: { Team: true },
-        },
+        LeagueTeam: { include: { Team: true } },
       },
       orderBy: { Player: { lastName: 'asc' } },
     })
@@ -219,7 +145,7 @@ const getCachedPlayers = unstable_cache(
   },
   ['special-bet-players'],
   {
-    revalidate: 43200, // 12 hours
+    revalidate: 43200,
     tags: ['special-bet-players'],
   }
 )
@@ -237,136 +163,78 @@ export async function getSpecialBetPlayers(leagueId: number) {
  * Uses Serializable transaction for data consistency
  */
 export async function saveSpecialBet(input: UserSpecialBetInput) {
-  const startTime = Date.now()
-  const parsed = userSpecialBetSchema.safeParse(input)
+  return saveUserBet({
+    input,
+    schema: userSpecialBetSchema,
+    entityLabel: 'Special bet',
+    findLeagueId: async (validated) => {
+      const info = await prisma.leagueSpecialBetSingle.findUnique({
+        where: { id: validated.leagueSpecialBetSingleId, deletedAt: null },
+        select: { leagueId: true },
+      })
+      return info?.leagueId ?? null
+    },
+    runTransaction: async (tx: TransactionClient, validated, leagueUserId) => {
+      const specialBet = await tx.leagueSpecialBetSingle.findUnique({
+        where: { id: validated.leagueSpecialBetSingleId, deletedAt: null },
+      })
 
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: parsed.error.issues[0]?.message || 'Invalid input',
-    }
-  }
+      if (!specialBet) {
+        throw new AppError('Special bet not found', 'NOT_FOUND', 404)
+      }
 
-  const validated = parsed.data
+      if (!isBettingOpen(specialBet.dateTime)) {
+        throw new AppError('Betting is closed for this special bet', 'BETTING_CLOSED', 400)
+      }
 
-  // Get special bet leagueId for membership check (outside transaction)
-  const specialBetInfo = await prisma.leagueSpecialBetSingle.findUnique({
-    where: { id: validated.leagueSpecialBetSingleId, deletedAt: null },
-    select: { leagueId: true },
-  })
+      const existingBet = await tx.userSpecialBetSingle.findFirst({
+        where: {
+          leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
+          leagueUserId,
+          deletedAt: null,
+        },
+      })
 
-  if (!specialBetInfo) {
-    return { success: false as const, error: 'Special bet not found' }
-  }
+      const now = new Date()
 
-  // Verify league membership (outside transaction)
-  const { leagueUser } = await requireLeagueMember(specialBetInfo.leagueId)
-
-  // Wrap database operations in Serializable transaction
-  try {
-    let isUpdate = false
-
-    await prisma.$transaction(
-      async (tx) => {
-        // Fetch special bet details within transaction for consistency
-        const specialBet = await tx.leagueSpecialBetSingle.findUnique({
-          where: { id: validated.leagueSpecialBetSingleId, deletedAt: null },
-        })
-
-        if (!specialBet) {
-          throw new AppError('Special bet not found', 'NOT_FOUND', 404)
-        }
-
-        // Check betting lock
-        if (!isBettingOpen(specialBet.dateTime)) {
-          throw new AppError(
-            'Betting is closed for this special bet',
-            'BETTING_CLOSED',
-            400
-          )
-        }
-
-        // Check if bet exists to determine action type
-        const existingBet = await tx.userSpecialBetSingle.findFirst({
-          where: {
-            leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
-            leagueUserId: leagueUser.id,
-            deletedAt: null,
+      if (existingBet) {
+        await tx.userSpecialBetSingle.update({
+          where: { id: existingBet.id },
+          data: {
+            teamResultId: validated.teamResultId,
+            playerResultId: validated.playerResultId,
+            value: validated.value,
+            updatedAt: now,
           },
         })
-
-        isUpdate = !!existingBet
-
-        const now = new Date()
-
-        if (existingBet) {
-          // Update existing bet
-          await tx.userSpecialBetSingle.update({
-            where: { id: existingBet.id },
-            data: {
-              teamResultId: validated.teamResultId,
-              playerResultId: validated.playerResultId,
-              value: validated.value,
-              updatedAt: now,
-            },
-          })
-        } else {
-          // Create new bet
-          await tx.userSpecialBetSingle.create({
-            data: {
-              leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
-              leagueUserId: leagueUser.id,
-              teamResultId: validated.teamResultId,
-              playerResultId: validated.playerResultId,
-              value: validated.value,
-              totalPoints: 0,
-              dateTime: now,
-              createdAt: now,
-              updatedAt: now,
-            },
-          })
-        }
-      },
-      {
-        isolationLevel: 'Serializable',
-        maxWait: 5000, // 5s max wait for lock
-        timeout: 10000, // 10s max transaction time
+        return true
       }
-    )
 
-    // Audit log (fire-and-forget)
-    const durationMs = Date.now() - startTime
-    const metadata = {
-      teamResultId: validated.teamResultId,
-      playerResultId: validated.playerResultId,
-      value: validated.value,
-    }
-
-    if (isUpdate) {
-      AuditLogger.specialBetUpdated(
-        leagueUser.userId,
-        specialBetInfo.leagueId,
-        validated.leagueSpecialBetSingleId,
-        metadata,
-        durationMs
-      ).catch((err) => console.error('Audit log failed:', err))
-    } else {
-      AuditLogger.specialBetCreated(
-        leagueUser.userId,
-        specialBetInfo.leagueId,
-        validated.leagueSpecialBetSingleId,
-        metadata,
-        durationMs
-      ).catch((err) => console.error('Audit log failed:', err))
-    }
-
-    revalidateTag('bet-badges', 'max')
-    revalidatePath(`/${specialBetInfo.leagueId}/special-bets`)
-    return { success: true }
-  } catch (error) {
-    if (error instanceof AppError) {
-      return { success: false as const, error: error.message }
-    }
-    throw error
-  }
+      await tx.userSpecialBetSingle.create({
+        data: {
+          leagueSpecialBetSingleId: validated.leagueSpecialBetSingleId,
+          leagueUserId,
+          teamResultId: validated.teamResultId,
+          playerResultId: validated.playerResultId,
+          value: validated.value,
+          totalPoints: 0,
+          dateTime: now,
+          createdAt: now,
+          updatedAt: now,
+        },
+      })
+      return false
+    },
+    audit: {
+      getEntityId: (validated) => validated.leagueSpecialBetSingleId,
+      getMetadata: (validated) => ({
+        teamResultId: validated.teamResultId,
+        playerResultId: validated.playerResultId,
+        value: validated.value,
+      }),
+      onCreated: AuditLogger.specialBetCreated,
+      onUpdated: AuditLogger.specialBetUpdated,
+    },
+    revalidatePathSuffix: '/special-bets',
+  })
 }

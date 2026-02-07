@@ -1,66 +1,36 @@
 'use server'
 
-import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireLeagueMember, isBettingOpen } from '@/lib/auth/user-auth-utils'
+import { isBettingOpen } from '@/lib/auth/user-auth-utils'
 import { userQuestionBetSchema, type UserQuestionBetInput } from '@/lib/validation/user'
 import { AppError } from '@/lib/error-handler'
 import { AuditLogger } from '@/lib/logging/audit-logger'
-
-/**
- * Cached base question data (20 min TTL)
- * Shared across all users - excludes user-specific bets
- */
-const getCachedQuestionData = unstable_cache(
-  async (leagueId: number) => {
-    const questions = await prisma.leagueSpecialBetQuestion.findMany({
-      where: {
-        leagueId,
-        deletedAt: null,
-      },
-      orderBy: { dateTime: 'asc' },
-    })
-
-    return questions
-  },
-  ['question-data'],
-  {
-    revalidate: 1200, // 20 minutes
-    tags: ['question-data'],
-  }
-)
+import { saveUserBet, getFriendPredictions, type TransactionClient } from '@/lib/bet-utils'
+import { createCachedEntityFetcher } from '@/lib/cached-data-utils'
 
 /**
  * Fetches questions for a league with the current user's answers
  */
-export async function getUserQuestions(leagueId: number) {
-  const { leagueUser } = await requireLeagueMember(leagueId)
-
-  // Fetch cached base data and user's bets in parallel
-  const [questions, userBets] = await Promise.all([
-    getCachedQuestionData(leagueId),
+export const getUserQuestions = createCachedEntityFetcher({
+  cacheKey: 'question-data',
+  cacheTags: ['question-data'],
+  revalidateSeconds: 1200,
+  fetchEntities: (leagueId) =>
+    prisma.leagueSpecialBetQuestion.findMany({
+      where: { leagueId, deletedAt: null },
+      orderBy: { dateTime: 'asc' },
+    }),
+  fetchUserBets: (leagueUserId, leagueId) =>
     prisma.userSpecialBetQuestion.findMany({
       where: {
-        leagueUserId: leagueUser.id,
+        leagueUserId,
         deletedAt: null,
-        LeagueSpecialBetQuestion: {
-          leagueId,
-          deletedAt: null,
-        },
+        LeagueSpecialBetQuestion: { leagueId, deletedAt: null },
       },
     }),
-  ])
-
-  // Create a map of user bets by leagueSpecialBetQuestionId for fast lookup
-  const userBetMap = new Map(userBets.map((bet) => [bet.leagueSpecialBetQuestionId, bet]))
-
-  // Transform the data to include betting status and user's bet
-  return questions.map((q) => ({
-    ...q,
-    isBettingOpen: isBettingOpen(q.dateTime),
-    userBet: userBetMap.get(q.id) || null,
-  }))
-}
+  getUserBetEntityId: (bet) => bet.leagueSpecialBetQuestionId,
+  getDateTime: (question) => question.dateTime,
+})
 
 export type UserQuestion = Awaited<ReturnType<typeof getUserQuestions>>[number]
 
@@ -69,52 +39,40 @@ export type UserQuestion = Awaited<ReturnType<typeof getUserQuestions>>[number]
  * Only returns predictions if the betting is closed
  */
 export async function getQuestionFriendPredictions(leagueSpecialBetQuestionId: number) {
-  const question = await prisma.leagueSpecialBetQuestion.findUnique({
-    where: { id: leagueSpecialBetQuestionId, deletedAt: null },
-  })
-
-  if (!question) {
-    throw new AppError('Question not found', 'NOT_FOUND', 404)
-  }
-
-  const { leagueUser } = await requireLeagueMember(question.leagueId)
-
-  // Only show friend predictions after betting is closed
-  if (isBettingOpen(question.dateTime)) {
-    return {
-      isLocked: false,
-      predictions: [],
-    }
-  }
-
-  const predictions = await prisma.userSpecialBetQuestion.findMany({
-    where: {
-      leagueSpecialBetQuestionId,
-      deletedAt: null,
-      leagueUserId: { not: leagueUser.id },
-    },
-    include: {
-      LeagueUser: {
+  return getFriendPredictions({
+    entityId: leagueSpecialBetQuestionId,
+    entityLabel: 'Question',
+    findEntity: (id) =>
+      prisma.leagueSpecialBetQuestion.findUnique({
+        where: { id, deletedAt: null },
+      }),
+    getLeagueId: (question) => question.leagueId,
+    getDateTime: (question) => question.dateTime,
+    findPredictions: (entityId, excludeLeagueUserId) =>
+      prisma.userSpecialBetQuestion.findMany({
+        where: {
+          leagueSpecialBetQuestionId: entityId,
+          deletedAt: null,
+          leagueUserId: { not: excludeLeagueUserId },
+        },
         include: {
-          User: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              username: true,
-              avatarUrl: true,
+          LeagueUser: {
+            include: {
+              User: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  username: true,
+                  avatarUrl: true,
+                },
+              },
             },
           },
         },
-      },
-    },
-    orderBy: { totalPoints: 'desc' },
+        orderBy: { totalPoints: 'desc' },
+      }),
   })
-
-  return {
-    isLocked: true,
-    predictions,
-  }
 }
 
 export type QuestionFriendPrediction = Awaited<
@@ -126,130 +84,72 @@ export type QuestionFriendPrediction = Awaited<
  * Uses Serializable transaction for data consistency
  */
 export async function saveQuestionBet(input: UserQuestionBetInput) {
-  const startTime = Date.now()
-  const parsed = userQuestionBetSchema.safeParse(input)
+  return saveUserBet({
+    input,
+    schema: userQuestionBetSchema,
+    entityLabel: 'Question',
+    findLeagueId: async (validated) => {
+      const info = await prisma.leagueSpecialBetQuestion.findUnique({
+        where: { id: validated.leagueSpecialBetQuestionId, deletedAt: null },
+        select: { leagueId: true },
+      })
+      return info?.leagueId ?? null
+    },
+    runTransaction: async (tx: TransactionClient, validated, leagueUserId) => {
+      const question = await tx.leagueSpecialBetQuestion.findUnique({
+        where: { id: validated.leagueSpecialBetQuestionId, deletedAt: null },
+      })
 
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: parsed.error.issues[0]?.message || 'Invalid input',
-    }
-  }
+      if (!question) {
+        throw new AppError('Question not found', 'NOT_FOUND', 404)
+      }
 
-  const validated = parsed.data
+      if (!isBettingOpen(question.dateTime)) {
+        throw new AppError('Betting is closed for this question', 'BETTING_CLOSED', 400)
+      }
 
-  // Get question leagueId for membership check (outside transaction)
-  const questionInfo = await prisma.leagueSpecialBetQuestion.findUnique({
-    where: { id: validated.leagueSpecialBetQuestionId, deletedAt: null },
-    select: { leagueId: true },
-  })
+      const existingBet = await tx.userSpecialBetQuestion.findFirst({
+        where: {
+          leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
+          leagueUserId,
+          deletedAt: null,
+        },
+      })
 
-  if (!questionInfo) {
-    return { success: false as const, error: 'Question not found' }
-  }
+      const now = new Date()
 
-  // Verify league membership (outside transaction)
-  const { leagueUser } = await requireLeagueMember(questionInfo.leagueId)
-
-  // Wrap database operations in Serializable transaction
-  try {
-    let isUpdate = false
-
-    await prisma.$transaction(
-      async (tx) => {
-        // Fetch question details within transaction for consistency
-        const question = await tx.leagueSpecialBetQuestion.findUnique({
-          where: { id: validated.leagueSpecialBetQuestionId, deletedAt: null },
-        })
-
-        if (!question) {
-          throw new AppError('Question not found', 'NOT_FOUND', 404)
-        }
-
-        // Check betting lock
-        if (!isBettingOpen(question.dateTime)) {
-          throw new AppError(
-            'Betting is closed for this question',
-            'BETTING_CLOSED',
-            400
-          )
-        }
-
-        // Check if bet exists to determine action type
-        const existingBet = await tx.userSpecialBetQuestion.findFirst({
-          where: {
-            leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
-            leagueUserId: leagueUser.id,
-            deletedAt: null,
+      if (existingBet) {
+        await tx.userSpecialBetQuestion.update({
+          where: { id: existingBet.id },
+          data: {
+            userBet: validated.userBet,
+            updatedAt: now,
           },
         })
-
-        isUpdate = !!existingBet
-
-        const now = new Date()
-
-        if (existingBet) {
-          // Update existing bet
-          await tx.userSpecialBetQuestion.update({
-            where: { id: existingBet.id },
-            data: {
-              userBet: validated.userBet,
-              updatedAt: now,
-            },
-          })
-        } else {
-          // Create new bet
-          await tx.userSpecialBetQuestion.create({
-            data: {
-              leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
-              leagueUserId: leagueUser.id,
-              userBet: validated.userBet,
-              totalPoints: 0,
-              dateTime: now,
-              createdAt: now,
-              updatedAt: now,
-            },
-          })
-        }
-      },
-      {
-        isolationLevel: 'Serializable',
-        maxWait: 5000, // 5s max wait for lock
-        timeout: 10000, // 10s max transaction time
+        return true
       }
-    )
 
-    // Audit log (fire-and-forget)
-    const durationMs = Date.now() - startTime
-    const metadata = {
-      userBet: validated.userBet,
-    }
-
-    if (isUpdate) {
-      AuditLogger.questionBetUpdated(
-        leagueUser.userId,
-        questionInfo.leagueId,
-        validated.leagueSpecialBetQuestionId,
-        metadata,
-        durationMs
-      ).catch((err) => console.error('Audit log failed:', err))
-    } else {
-      AuditLogger.questionBetCreated(
-        leagueUser.userId,
-        questionInfo.leagueId,
-        validated.leagueSpecialBetQuestionId,
-        metadata,
-        durationMs
-      ).catch((err) => console.error('Audit log failed:', err))
-    }
-
-    revalidateTag('bet-badges', 'max')
-    revalidatePath(`/${questionInfo.leagueId}/questions`)
-    return { success: true }
-  } catch (error) {
-    if (error instanceof AppError) {
-      return { success: false as const, error: error.message }
-    }
-    throw error
-  }
+      await tx.userSpecialBetQuestion.create({
+        data: {
+          leagueSpecialBetQuestionId: validated.leagueSpecialBetQuestionId,
+          leagueUserId,
+          userBet: validated.userBet,
+          totalPoints: 0,
+          dateTime: now,
+          createdAt: now,
+          updatedAt: now,
+        },
+      })
+      return false
+    },
+    audit: {
+      getEntityId: (validated) => validated.leagueSpecialBetQuestionId,
+      getMetadata: (validated) => ({
+        userBet: validated.userBet,
+      }),
+      onCreated: AuditLogger.questionBetCreated,
+      onUpdated: AuditLogger.questionBetUpdated,
+    },
+    revalidatePathSuffix: '/questions',
+  })
 }
