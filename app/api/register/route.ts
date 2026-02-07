@@ -4,6 +4,7 @@ import { registerSchema } from "@/lib/validation";
 import { isPrismaError, handlePrismaError } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { AuditLogger } from "@/lib/audit-logger";
+import { sendRegistrationConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,6 +59,15 @@ export async function POST(request: NextRequest) {
     // Audit log (fire-and-forget)
     AuditLogger.userRegistered(user.id, user.username, user.email).catch((err) =>
       console.error("Audit log failed:", err)
+    );
+
+    // Send registration confirmation email (fire-and-forget)
+    sendRegistrationConfirmationEmail({
+      email: user.email,
+      username: user.username,
+      firstName: user.firstName,
+    }).catch((err) =>
+      console.error("Registration confirmation email failed:", err)
     );
 
     return NextResponse.json(
