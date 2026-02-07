@@ -158,16 +158,15 @@ export type SpecialBetFriendPrediction = Awaited<
 >['predictions'][number]
 
 /**
- * Cached teams data (1 hour TTL)
- * Teams rarely change during a season
+ * Cached teams data (12 hour TTL)
+ * Fetches all teams for a league - group filtering happens at runtime
  */
 const getCachedTeams = unstable_cache(
-  async (leagueId: number, group: string | null) => {
+  async (leagueId: number) => {
     const teams = await prisma.leagueTeam.findMany({
       where: {
         leagueId,
         deletedAt: null,
-        ...(group && { group }),
       },
       include: { Team: true },
       orderBy: { Team: { name: 'asc' } },
@@ -189,7 +188,8 @@ const getCachedTeams = unstable_cache(
  */
 export async function getSpecialBetTeams(leagueId: number, group?: string) {
   await requireLeagueMember(leagueId)
-  return getCachedTeams(leagueId, group ?? null)
+  const teams = await getCachedTeams(leagueId)
+  return group ? teams.filter((t) => t.group === group) : teams
 }
 
 /**

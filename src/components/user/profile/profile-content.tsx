@@ -5,7 +5,8 @@ import {
   Card,
   CardContent,
 } from '@/components/ui/card'
-import { updateProfile, changePassword, updateAvatar } from '@/actions/user/profile'
+import { updateProfile, updateAvatar } from '@/actions/user/profile'
+import { updatePassword } from '@/actions/profile'
 import {
   ProfileInformationForm,
   type UpdateProfileInput,
@@ -61,7 +62,7 @@ export function ProfileContent({ profile }: ProfileContentProps) {
   }
 
   const handlePasswordUpdate = async (data: UpdatePasswordInput): Promise<PasswordActionResult> => {
-    const result = await changePassword(data)
+    const result = await updatePassword(data)
     if ('error' in result) {
       return { success: false, error: result.error }
     }

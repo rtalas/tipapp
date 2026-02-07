@@ -159,13 +159,17 @@ export function EvaluatorCreateDialog({
         }
       }
 
-      await createEvaluator({
+      const result = await createEvaluator({
         leagueId: parseInt(createForm.leagueId, 10),
         evaluatorTypeId: parseInt(createForm.evaluatorTypeId, 10),
         name: createForm.name,
         points: parseInt(createForm.points, 10) || 0,
         config,
       })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('toast.createFailed'))
+        return
+      }
       toast.success(t('toast.created'))
       onOpenChange(false)
 

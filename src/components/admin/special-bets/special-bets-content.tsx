@@ -145,7 +145,11 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
     if (!specialBetToDelete) return
     setIsDeleting(true)
     try {
-      await deleteSpecialBet(specialBetToDelete.id)
+      const result = await deleteSpecialBet(specialBetToDelete.id)
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('specialBetDeleteFailed'))
+        return
+      }
       toast.success(t('specialBetDeleted'))
       setDeleteDialogOpen(false)
       setSpecialBetToDelete(null)

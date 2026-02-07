@@ -140,12 +140,16 @@ export function PlayersContent({ players }: PlayersContentProps) {
 
     inlineEdit.setSaving(true)
     try {
-      await updatePlayer({
+      const result = await updatePlayer({
         id: playerId,
         firstName: inlineEdit.form.firstName || undefined,
         lastName: inlineEdit.form.lastName || undefined,
         position: inlineEdit.form.position || undefined,
       })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('playerUpdateFailed'))
+        return
+      }
       toast.success(t('playerUpdated'))
       inlineEdit.finishEdit()
     } catch (error) {
@@ -159,10 +163,14 @@ export function PlayersContent({ players }: PlayersContentProps) {
 
   const handleToggleActive = async (player: Player) => {
     try {
-      await updatePlayer({
+      const result = await updatePlayer({
         id: player.id,
         isActive: !player.isActive,
       })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : 'Failed to update player')
+        return
+      }
       toast.success(`Player marked as ${!player.isActive ? 'active' : 'inactive'}`)
     } catch (error) {
       if (error instanceof Error) {
@@ -192,13 +200,18 @@ export function PlayersContent({ players }: PlayersContentProps) {
 
     createDialog.startCreating()
     try {
-      await createPlayer({
+      const result = await createPlayer({
         firstName: createDialog.form.firstName || undefined,
         lastName: createDialog.form.lastName || undefined,
         position: createDialog.form.position || undefined,
         isActive: createDialog.form.isActive,
         externalId: createDialog.form.externalId ? parseInt(createDialog.form.externalId, 10) : undefined,
       })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('playerCreateFailed'))
+        createDialog.cancelCreating()
+        return
+      }
       toast.success(t('playerCreated'))
       createDialog.finishCreating()
     } catch (error) {
@@ -214,7 +227,12 @@ export function PlayersContent({ players }: PlayersContentProps) {
 
     deleteDialog.startDeleting()
     try {
-      await deletePlayer(deleteDialog.itemToDelete.id)
+      const result = await deletePlayer(deleteDialog.itemToDelete.id)
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('playerDeleteFailed'))
+        deleteDialog.cancelDeleting()
+        return
+      }
       toast.success(t('playerDeleted'))
       deleteDialog.finishDeleting()
     } catch (error) {

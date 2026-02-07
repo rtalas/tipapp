@@ -124,13 +124,18 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
   const handleCreateSeries = async () => {
     createDialog.startCreating()
     try {
-      await createSeries({
+      const result = await createSeries({
         leagueId: parseInt(createDialog.form.leagueId, 10),
         specialBetSerieId: parseInt(createDialog.form.specialBetSerieId, 10),
         homeTeamId: parseInt(createDialog.form.homeTeamId, 10),
         awayTeamId: parseInt(createDialog.form.awayTeamId, 10),
         dateTime: new Date(createDialog.form.dateTime),
       })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('seriesCreateFailed'))
+        createDialog.cancelCreating()
+        return
+      }
       toast.success(t('seriesCreated'))
       createDialog.finishCreating()
     } catch (error) {
@@ -146,7 +151,12 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
 
     deleteDialog.startDeleting()
     try {
-      await deleteSeries(deleteDialog.itemToDelete.id)
+      const result = await deleteSeries(deleteDialog.itemToDelete.id)
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('seriesDeleteFailed'))
+        deleteDialog.cancelDeleting()
+        return
+      }
       toast.success(t('seriesDeleted'))
       deleteDialog.finishDeleting()
     } catch (error) {

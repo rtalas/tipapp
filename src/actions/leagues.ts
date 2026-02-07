@@ -318,8 +318,8 @@ export async function updateTopScorerRanking(input: UpdateTopScorerRankingInput)
       const now = new Date()
 
       // Get league context from the leaguePlayer
-      const leaguePlayer = await prisma.leaguePlayer.findUniqueOrThrow({
-        where: { id: validated.leaguePlayerId },
+      const leaguePlayer = await prisma.leaguePlayer.findFirstOrThrow({
+        where: { id: validated.leaguePlayerId, deletedAt: null },
         include: { LeagueTeam: true },
       })
       const leagueId = leaguePlayer.LeagueTeam.leagueId
@@ -375,6 +375,7 @@ export async function getLeagues() {
     include: {
       Sport: true,
       Evaluator: {
+        where: { deletedAt: null },
         include: { EvaluatorType: true },
       },
       _count: {
@@ -394,6 +395,7 @@ export async function getLeagueById(id: number) {
     include: {
       Sport: true,
       Evaluator: {
+        where: { deletedAt: null },
         include: { EvaluatorType: true },
       },
       LeagueTeam: {

@@ -171,7 +171,7 @@ export async function getAllLeaguesForSelector(): Promise<AllLeaguesResult> {
       throw new AppError('Authentication required', 'UNAUTHORIZED', 401)
     }
 
-    const userId = parseInt(session.user.id)
+    const userId = parseInt(session.user.id, 10)
     return getCachedLeaguesForSelector(userId)
   } catch (error) {
     throw handleActionError(error, 'Failed to load leagues')
@@ -189,7 +189,7 @@ export async function joinLeague(leagueId: number): Promise<{ success: true; lea
       throw new AppError('Authentication required', 'UNAUTHORIZED', 401)
     }
 
-    const userId = parseInt(session.user.id)
+    const userId = parseInt(session.user.id, 10)
 
     // Validate input
     const validated = joinLeagueSchema.parse({ leagueId })

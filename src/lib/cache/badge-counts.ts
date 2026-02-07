@@ -18,106 +18,48 @@ function countUpcoming(dateTimes: string[]): number {
 }
 
 /**
- * Cached unbetted item dateTimes (no time filter in query)
- * TTL: 15 minutes - time filtering happens at runtime so always accurate
- *
- * Returns ISO date strings for each bet type, filtered at runtime by caller
+ * Cached league items with IDs and dateTimes (shared across all users)
+ * TTL: 15 minutes - time filtering happens at runtime
  */
-const getCachedUnbettedDateTimes = unstable_cache(
-  async (leagueId: number, leagueUserId: number) => {
-    const [
-      unbettedMatches,
-      unbettedSeries,
-      unbettedSpecialBets,
-      unbettedQuestions,
-      totalSeriesCount,
-    ] = await Promise.all([
-      // Unbetted matches - get dateTimes
+const getCachedLeagueItems = unstable_cache(
+  async (leagueId: number) => {
+    const [matches, series, specialBets, questions] = await Promise.all([
       prisma.leagueMatch.findMany({
-        where: {
-          leagueId,
-          deletedAt: null,
-          Match: { deletedAt: null },
-          UserBet: {
-            none: {
-              leagueUserId,
-              deletedAt: null,
-            },
-          },
-        },
-        select: {
-          Match: { select: { dateTime: true } },
-        },
+        where: { leagueId, deletedAt: null, Match: { deletedAt: null } },
+        select: { id: true, Match: { select: { dateTime: true } } },
       }),
-      // Unbetted series - get dateTimes
       prisma.leagueSpecialBetSerie.findMany({
-        where: {
-          leagueId,
-          deletedAt: null,
-          UserSpecialBetSerie: {
-            none: {
-              leagueUserId,
-              deletedAt: null,
-            },
-          },
-        },
-        select: { dateTime: true },
+        where: { leagueId, deletedAt: null },
+        select: { id: true, dateTime: true },
       }),
-      // Unbetted special bets - get dateTimes
       prisma.leagueSpecialBetSingle.findMany({
-        where: {
-          leagueId,
-          deletedAt: null,
-          UserSpecialBetSingle: {
-            none: {
-              leagueUserId,
-              deletedAt: null,
-            },
-          },
-        },
-        select: { dateTime: true },
+        where: { leagueId, deletedAt: null },
+        select: { id: true, dateTime: true },
       }),
-      // Unbetted questions - get dateTimes
       prisma.leagueSpecialBetQuestion.findMany({
-        where: {
-          leagueId,
-          deletedAt: null,
-          UserSpecialBetQuestion: {
-            none: {
-              leagueUserId,
-              deletedAt: null,
-            },
-          },
-        },
-        select: { dateTime: true },
-      }),
-      // Total series count (for showing/hiding series tab)
-      prisma.leagueSpecialBetSerie.count({
-        where: {
-          leagueId,
-          deletedAt: null,
-        },
+        where: { leagueId, deletedAt: null },
+        select: { id: true, dateTime: true },
       }),
     ])
 
     return {
-      matchDateTimes: unbettedMatches.map((m) => m.Match.dateTime.toISOString()),
-      seriesDateTimes: unbettedSeries.map((s) => s.dateTime.toISOString()),
-      specialBetDateTimes: unbettedSpecialBets.map((sb) => sb.dateTime.toISOString()),
-      questionDateTimes: unbettedQuestions.map((q) => q.dateTime.toISOString()),
-      totalSeries: totalSeriesCount,
+      matches: matches.map((m) => ({ id: m.id, dateTime: m.Match.dateTime.toISOString() })),
+      series: series.map((s) => ({ id: s.id, dateTime: s.dateTime.toISOString() })),
+      specialBets: specialBets.map((sb) => ({ id: sb.id, dateTime: sb.dateTime.toISOString() })),
+      questions: questions.map((q) => ({ id: q.id, dateTime: q.dateTime.toISOString() })),
+      totalSeries: series.length,
     }
   },
   ['bet-badges'],
   {
-    revalidate: 900, // 15 minutes - time filtering is at runtime
+    revalidate: 900, // 15 minutes
     tags: ['bet-badges'],
   }
 )
 
 /**
  * Get bet badge counts with accurate time filtering
- * Caches unbetted item dateTimes, filters by current time at runtime
+ * Caches shared league data, fetches user bets fresh, merges at runtime
  */
 export async function getBetBadges(
   leagueId: number,
@@ -129,51 +71,71 @@ export async function getBetBadges(
   questions: number
   totalSeries: number
 }> {
-  const cached = await getCachedUnbettedDateTimes(leagueId, leagueUserId)
+  // Cached league data (shared) + fresh user bets in parallel
+  const [cached, matchBets, seriesBets, specialBetBets, questionBets] = await Promise.all([
+    getCachedLeagueItems(leagueId),
+    prisma.userBet.findMany({
+      where: { leagueUserId, deletedAt: null },
+      select: { leagueMatchId: true },
+    }),
+    prisma.userSpecialBetSerie.findMany({
+      where: { leagueUserId, deletedAt: null },
+      select: { leagueSpecialBetSerieId: true },
+    }),
+    prisma.userSpecialBetSingle.findMany({
+      where: { leagueUserId, deletedAt: null },
+      select: { leagueSpecialBetSingleId: true },
+    }),
+    prisma.userSpecialBetQuestion.findMany({
+      where: { leagueUserId, deletedAt: null },
+      select: { leagueSpecialBetQuestionId: true },
+    }),
+  ])
 
+  // Build sets for O(1) lookup
+  const bettedMatches = new Set(matchBets.map((b) => b.leagueMatchId))
+  const bettedSeries = new Set(seriesBets.map((b) => b.leagueSpecialBetSerieId))
+  const bettedSpecialBets = new Set(specialBetBets.map((b) => b.leagueSpecialBetSingleId))
+  const bettedQuestions = new Set(questionBets.map((b) => b.leagueSpecialBetQuestionId))
+
+  // Filter to unbetted items, then count upcoming
   return {
-    matches: countUpcoming(cached.matchDateTimes),
-    series: countUpcoming(cached.seriesDateTimes),
-    specialBets: countUpcoming(cached.specialBetDateTimes),
-    questions: countUpcoming(cached.questionDateTimes),
+    matches: countUpcoming(
+      cached.matches.filter((m) => !bettedMatches.has(m.id)).map((m) => m.dateTime)
+    ),
+    series: countUpcoming(
+      cached.series.filter((s) => !bettedSeries.has(s.id)).map((s) => s.dateTime)
+    ),
+    specialBets: countUpcoming(
+      cached.specialBets.filter((sb) => !bettedSpecialBets.has(sb.id)).map((sb) => sb.dateTime)
+    ),
+    questions: countUpcoming(
+      cached.questions.filter((q) => !bettedQuestions.has(q.id)).map((q) => q.dateTime)
+    ),
     totalSeries: cached.totalSeries,
   }
 }
 
 /**
- * Cached chat badge count (unread messages)
- * TTL: 60 seconds - needs faster updates for incoming messages
- *
- * Note: lastChatReadAt is passed as ISO string (or null) for consistent cache keys.
- * Date objects serialize to strings in unstable_cache, but passing explicit strings
- * ensures predictable cache key generation.
+ * Chat badge count (unread messages)
+ * Not cached - lastChatReadAt varies per user creating high key variance.
+ * A COUNT query on indexed columns is fast enough without caching.
  */
-export const getCachedChatBadge = unstable_cache(
-  async (
-    leagueId: number,
-    leagueUserId: number,
-    lastChatReadAtISO: string | null
-  ) => {
-    const lastChatReadAt = lastChatReadAtISO
-      ? new Date(lastChatReadAtISO)
-      : null
+export async function getChatBadge(
+  leagueId: number,
+  leagueUserId: number,
+  lastChatReadAt: Date | null
+) {
+  const unreadCount = await prisma.message.count({
+    where: {
+      leagueId,
+      deletedAt: null,
+      // Only count messages from other users
+      leagueUserId: { not: leagueUserId },
+      // Only count messages created after lastChatReadAt (if set)
+      ...(lastChatReadAt ? { createdAt: { gt: lastChatReadAt } } : {}),
+    },
+  })
 
-    const unreadCount = await prisma.message.count({
-      where: {
-        leagueId,
-        deletedAt: null,
-        // Only count messages from other users
-        leagueUserId: { not: leagueUserId },
-        // Only count messages created after lastChatReadAt (if set)
-        ...(lastChatReadAt ? { createdAt: { gt: lastChatReadAt } } : {}),
-      },
-    })
-
-    return { unread: unreadCount }
-  },
-  ['chat-badge'],
-  {
-    revalidate: 60, // 60 seconds
-    tags: ['chat-badge'],
-  }
-)
+  return { unread: unreadCount }
+}

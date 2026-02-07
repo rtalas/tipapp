@@ -118,7 +118,7 @@ export function LeagueActions({
     setIsSaving(true)
     try {
       // Update basic league info
-      await updateLeague({
+      const leagueResult = await updateLeague({
         id: leagueId,
         name: editForm.name,
         seasonFrom: editForm.seasonFrom,
@@ -127,21 +127,35 @@ export function LeagueActions({
         isPublic: editForm.isPublic,
         infoText: editForm.infoText || null,
       })
+      if (!leagueResult.success) {
+        toast.error('error' in leagueResult ? leagueResult.error : t('toast.updateFailed'))
+        return
+      }
 
       // Update chat settings if changed
       if (editForm.isChatEnabled !== isChatEnabled) {
-        await updateLeagueChatSettings({
+        const chatResult = await updateLeagueChatSettings({
           leagueId,
           isChatEnabled: editForm.isChatEnabled,
         })
+        if (!chatResult.success) {
+          const errorMessage = 'error' in chatResult ? chatResult.error : t('toast.updateFailed')
+          toast.error(errorMessage)
+          return
+        }
       }
 
       // Update prizes and fines
-      await updateLeaguePrizes({
+      const prizesResult = await updateLeaguePrizes({
         leagueId,
         prizes,
         fines,
       })
+      if (!prizesResult.success) {
+        const errorMessage = 'error' in prizesResult ? prizesResult.error : t('toast.updateFailed')
+        toast.error(errorMessage)
+        return
+      }
 
       toast.success(t('toast.updated'))
       setEditDialogOpen(false)

@@ -16,8 +16,8 @@ export interface ServerActionOptions<T, R = Record<string, unknown>> {
   validator: ZodSchema<T>
   /** Handler function that receives validated input and optional session */
   handler: (validated: T, session?: Session | null) => Promise<R>
-  /** Path to revalidate after successful execution */
-  revalidatePath: string
+  /** Path to revalidate after successful execution (optional for read-only actions) */
+  revalidatePath?: string
   /** Whether admin authorization is required (default: false) */
   requiresAdmin?: boolean
 }
@@ -63,7 +63,9 @@ export async function executeServerAction<T, R extends Record<string, unknown>>(
     const result = await options.handler(validated, session)
 
     // Revalidate cache
-    revalidatePath(options.revalidatePath)
+    if (options.revalidatePath) {
+      revalidatePath(options.revalidatePath)
+    }
 
     return {
       success: true,

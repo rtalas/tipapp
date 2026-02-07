@@ -71,10 +71,14 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
     setIsAddingTeam(true)
 
     try {
-      await assignTeamToLeague({
+      const result = await assignTeamToLeague({
         leagueId: league.id,
         teamId: parseInt(selectedTeamId, 10),
       })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('addError'))
+        return
+      }
       toast.success(t('addSuccess'))
       setSelectedTeamId('')
     } catch (error) {
@@ -87,7 +91,11 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
 
   const handleRemoveTeam = async (leagueTeamId: number) => {
     try {
-      await removeTeamFromLeague({ id: leagueTeamId })
+      const result = await removeTeamFromLeague({ id: leagueTeamId })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('removeError'))
+        return
+      }
       toast.success(t('removeSuccess'))
     } catch (error) {
       toast.error(t('removeError'))
@@ -108,10 +116,14 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
   const handleSaveGroup = async (leagueTeamId: number) => {
     setIsSavingGroup(true)
     try {
-      await updateLeagueTeamGroup({
+      const result = await updateLeagueTeamGroup({
         leagueTeamId,
         group: editGroupValue.trim() || null,
       })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : 'Failed to update group')
+        return
+      }
       toast.success('Group updated successfully')
       setEditingGroupId(null)
       setEditGroupValue('')

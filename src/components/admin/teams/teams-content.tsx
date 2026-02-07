@@ -146,7 +146,7 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
 
     inlineEdit.setSaving(true)
     try {
-      await updateTeam({
+      const result = await updateTeam({
         id: teamId,
         name: inlineEdit.form.name,
         nickname: inlineEdit.form.nickname || undefined,
@@ -155,6 +155,10 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
         flagIcon: inlineEdit.form.flagIcon || undefined,
         flagType: (flagType as 'icon' | 'path') || undefined,
       })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('teamUpdateFailed'))
+        return
+      }
       toast.success(t('teamUpdated'))
       inlineEdit.finishEdit()
     } catch (error) {
@@ -189,7 +193,7 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
 
     createDialog.startCreating()
     try {
-      await createTeam({
+      const result = await createTeam({
         sportId: parseInt(createDialog.form.sportId, 10),
         name: createDialog.form.name,
         nickname: createDialog.form.nickname || undefined,
@@ -198,6 +202,11 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
         flagType: (flagType as 'icon' | 'path') || undefined,
         externalId: createDialog.form.externalId ? parseInt(createDialog.form.externalId, 10) : undefined,
       })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('teamCreateFailed'))
+        createDialog.cancelCreating()
+        return
+      }
       toast.success(t('teamCreated'))
       createDialog.finishCreating()
     } catch (error) {
@@ -213,7 +222,12 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
 
     deleteDialog.startDeleting()
     try {
-      await deleteTeam(deleteDialog.itemToDelete.id)
+      const result = await deleteTeam(deleteDialog.itemToDelete.id)
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('teamDeleteFailed'))
+        deleteDialog.cancelDeleting()
+        return
+      }
       toast.success(t('teamDeleted'))
       deleteDialog.finishDeleting()
     } catch (error) {

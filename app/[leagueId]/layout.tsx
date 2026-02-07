@@ -3,7 +3,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { getLocale } from 'next-intl/server'
 import { UserLayout } from '@/components/user/layout/user-layout'
-import { getBetBadges, getCachedChatBadge } from '@/lib/cache/badge-counts'
+import { getBetBadges, getChatBadge } from '@/lib/cache/badge-counts'
 
 interface LeagueLayoutProps {
   children: React.ReactNode
@@ -93,10 +93,10 @@ export default async function LeagueLayout({
   const [betBadges, chatBadge] = await Promise.all([
     getBetBadges(leagueId, currentLeagueUser.id),
     league.isChatEnabled
-      ? getCachedChatBadge(
+      ? getChatBadge(
           leagueId,
           currentLeagueUser.id,
-          currentLeagueUser.lastChatReadAt?.toISOString() ?? null
+          currentLeagueUser.lastChatReadAt ?? null
         )
       : Promise.resolve({ unread: 0 }),
   ])

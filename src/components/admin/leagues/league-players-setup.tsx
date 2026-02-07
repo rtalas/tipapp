@@ -90,10 +90,14 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
     setIsAddingPlayer(true)
 
     try {
-      await assignPlayerToLeagueTeam({
+      const result = await assignPlayerToLeagueTeam({
         leagueTeamId: parseInt(selectedLeagueTeamId, 10),
         playerId: parseInt(selectedPlayerId, 10),
       })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('addError'))
+        return
+      }
       toast.success(t('addSuccess'))
       setSelectedPlayerId('')
     } catch (error) {
@@ -106,7 +110,11 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
 
   const handleRemovePlayer = async (leaguePlayerId: number) => {
     try {
-      await removePlayerFromLeagueTeam({ id: leaguePlayerId })
+      const result = await removePlayerFromLeagueTeam({ id: leaguePlayerId })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('removeError'))
+        return
+      }
       toast.success(t('removeSuccess'))
     } catch (error) {
       toast.error(t('removeError'))
@@ -117,10 +125,14 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
   const handleUpdateRanking = async (leaguePlayerId: number, ranking: string) => {
     try {
       const rankingValue = ranking === 'none' ? null : parseInt(ranking, 10)
-      await updateTopScorerRanking({
+      const result = await updateTopScorerRanking({
         leaguePlayerId,
         topScorerRanking: rankingValue,
       })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('rankingUpdateError'))
+        return
+      }
       toast.success(t('rankingUpdateSuccess'))
       setOpenRankingPopover(null)
     } catch (error) {

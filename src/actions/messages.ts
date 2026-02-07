@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
-import { getErrorMessage } from '@/lib/error-handler'
+import { AppError } from '@/lib/error-handler'
+import { executeServerAction } from '@/lib/server-action-utils'
 import {
   sendMessageSchema,
   getMessagesSchema,
@@ -69,60 +70,53 @@ async function getLeagueUser(userId: number, leagueId: number) {
  * Only accessible by active league members when chat is enabled.
  */
 export async function getMessages(input: GetMessagesInput) {
-  try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: 'Authentication required' }
-    }
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { success: false, error: 'Authentication required' }
+  }
 
-    const validated = getMessagesSchema.parse(input)
-    const userId = parseInt(session.user.id, 10)
+  const userId = parseInt(session.user.id, 10)
 
-    // Check league membership and chat enabled
-    const leagueUser = await getLeagueUser(userId, validated.leagueId)
-    if (!leagueUser) {
-      return { success: false, error: 'You are not a member of this league or chat is disabled' }
-    }
+  return executeServerAction(input, {
+    validator: getMessagesSchema,
+    handler: async (validated) => {
+      const leagueUser = await getLeagueUser(userId, validated.leagueId)
+      if (!leagueUser) {
+        throw new AppError('You are not a member of this league or chat is disabled', 'FORBIDDEN', 403)
+      }
 
-    // Fetch messages with cursor-based pagination
-    const messages = await prisma.message.findMany({
-      where: {
-        leagueId: validated.leagueId,
-        deletedAt: null,
-        ...(validated.before && { createdAt: { lt: validated.before } }),
-      },
-      include: {
-        LeagueUser: {
-          include: {
-            User: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                username: true,
-                avatarUrl: true,
+      const messages = await prisma.message.findMany({
+        where: {
+          leagueId: validated.leagueId,
+          deletedAt: null,
+          ...(validated.before && { createdAt: { lt: validated.before } }),
+        },
+        include: {
+          LeagueUser: {
+            include: {
+              User: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  username: true,
+                  avatarUrl: true,
+                },
               },
             },
           },
+          ...replyToInclude,
         },
-        ...replyToInclude,
-      },
-      orderBy: { createdAt: 'desc' },
-      take: validated.limit,
-    })
+        orderBy: { createdAt: 'desc' },
+        take: validated.limit,
+      })
 
-    // Reverse to show oldest first in UI
-    return {
-      success: true,
-      messages: messages.reverse(),
-      hasMore: messages.length === validated.limit,
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: getErrorMessage(error, 'Failed to fetch messages'),
-    }
-  }
+      return {
+        messages: messages.reverse(),
+        hasMore: messages.length === validated.limit,
+      }
+    },
+  })
 }
 
 /**
@@ -130,85 +124,74 @@ export async function getMessages(input: GetMessagesInput) {
  * Only accessible by active league members when chat is enabled and not suspended.
  */
 export async function sendMessage(input: SendMessageInput) {
-  try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: 'Authentication required' }
-    }
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { success: false, error: 'Authentication required' }
+  }
 
-    const validated = sendMessageSchema.parse(input)
-    const userId = parseInt(session.user.id, 10)
+  const userId = parseInt(session.user.id, 10)
 
-    // Check league membership and chat enabled
-    const leagueUser = await getLeagueUser(userId, validated.leagueId)
-    if (!leagueUser) {
-      return { success: false, error: 'You are not a member of this league or chat is disabled' }
-    }
-
-    // Check if chat is suspended
-    const league = await prisma.league.findUnique({
-      where: { id: validated.leagueId },
-      select: { chatSuspendedAt: true },
-    })
-
-    if (league?.chatSuspendedAt) {
-      return { success: false, error: 'Chat is temporarily suspended' }
-    }
-
-    // Validate replyToId if provided
-    if (validated.replyToId) {
-      const replyTarget = await prisma.message.findFirst({
-        where: {
-          id: validated.replyToId,
-          leagueId: validated.leagueId,
-          deletedAt: null,
-        },
-      })
-      if (!replyTarget) {
-        return { success: false, error: 'Reply target message not found' }
+  return executeServerAction(input, {
+    validator: sendMessageSchema,
+    handler: async (validated) => {
+      const leagueUser = await getLeagueUser(userId, validated.leagueId)
+      if (!leagueUser) {
+        throw new AppError('You are not a member of this league or chat is disabled', 'FORBIDDEN', 403)
       }
-    }
 
-    // Create the message
-    const message = await prisma.message.create({
-      data: {
-        leagueId: validated.leagueId,
-        leagueUserId: leagueUser.id,
-        text: validated.text,
-        replyToId: validated.replyToId ?? null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      include: {
-        LeagueUser: {
-          include: {
-            User: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                username: true,
-                avatarUrl: true,
+      const league = await prisma.league.findUnique({
+        where: { id: validated.leagueId },
+        select: { chatSuspendedAt: true },
+      })
+
+      if (league?.chatSuspendedAt) {
+        throw new AppError('Chat is temporarily suspended', 'FORBIDDEN', 403)
+      }
+
+      if (validated.replyToId) {
+        const replyTarget = await prisma.message.findFirst({
+          where: {
+            id: validated.replyToId,
+            leagueId: validated.leagueId,
+            deletedAt: null,
+          },
+        })
+        if (!replyTarget) {
+          throw new AppError('Reply target message not found', 'NOT_FOUND', 404)
+        }
+      }
+
+      const message = await prisma.message.create({
+        data: {
+          leagueId: validated.leagueId,
+          leagueUserId: leagueUser.id,
+          text: validated.text,
+          replyToId: validated.replyToId ?? null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        include: {
+          LeagueUser: {
+            include: {
+              User: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  username: true,
+                  avatarUrl: true,
+                },
               },
             },
           },
+          ...replyToInclude,
         },
-        ...replyToInclude,
-      },
-    })
+      })
 
-    revalidatePath(`/${validated.leagueId}/chat`)
-
-    return {
-      success: true,
-      message,
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: getErrorMessage(error, 'Failed to send message'),
-    }
-  }
+      return { message }
+    },
+    revalidatePath: `/${(input as SendMessageInput).leagueId}/chat`,
+  })
 }
 
 /**
@@ -217,76 +200,69 @@ export async function sendMessage(input: SendMessageInput) {
  * League admins and superadmins can delete any message.
  */
 export async function deleteMessage(input: DeleteMessageInput) {
-  try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const validated = deleteMessageSchema.parse(input)
-    const userId = parseInt(session.user.id, 10)
-
-    // Get the message with author info
-    const message = await prisma.message.findUnique({
-      where: { id: validated.id, deletedAt: null },
-      include: {
-        LeagueUser: {
-          include: {
-            User: true,
-          },
-        },
-        League: {
-          select: {
-            id: true,
-            isChatEnabled: true,
-          },
-        },
-      },
-    })
-
-    if (!message) {
-      return { success: false, error: 'Message not found' }
-    }
-
-    if (!message.League.isChatEnabled) {
-      return { success: false, error: 'Chat is disabled for this league' }
-    }
-
-    // Check if user can delete this message
-    const isAuthor = message.LeagueUser.userId === userId
-    const isSuperadmin = session.user.isSuperadmin
-
-    // Check if user is league admin
-    const userLeagueMembership = await prisma.leagueUser.findFirst({
-      where: {
-        userId,
-        leagueId: message.leagueId,
-        active: true,
-        deletedAt: null,
-      },
-    })
-
-    const isLeagueAdmin = userLeagueMembership?.admin === true
-
-    if (!isAuthor && !isSuperadmin && !isLeagueAdmin) {
-      return { success: false, error: 'You can only delete your own messages' }
-    }
-
-    // Soft delete
-    await prisma.message.update({
-      where: { id: validated.id },
-      data: { deletedAt: new Date() },
-    })
-
-    revalidatePath(`/${message.leagueId}/chat`)
-
-    return { success: true }
-  } catch (error) {
-    return {
-      success: false,
-      error: getErrorMessage(error, 'Failed to delete message'),
-    }
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { success: false, error: 'Authentication required' }
   }
+
+  const userId = parseInt(session.user.id, 10)
+
+  return executeServerAction(input, {
+    validator: deleteMessageSchema,
+    handler: async (validated) => {
+      const message = await prisma.message.findUnique({
+        where: { id: validated.id, deletedAt: null },
+        include: {
+          LeagueUser: {
+            include: {
+              User: true,
+            },
+          },
+          League: {
+            select: {
+              id: true,
+              isChatEnabled: true,
+            },
+          },
+        },
+      })
+
+      if (!message) {
+        throw new AppError('Message not found', 'NOT_FOUND', 404)
+      }
+
+      if (!message.League.isChatEnabled) {
+        throw new AppError('Chat is disabled for this league', 'FORBIDDEN', 403)
+      }
+
+      const isAuthor = message.LeagueUser.userId === userId
+      const isSuperadmin = session.user.isSuperadmin
+
+      const userLeagueMembership = await prisma.leagueUser.findFirst({
+        where: {
+          userId,
+          leagueId: message.leagueId,
+          active: true,
+          deletedAt: null,
+        },
+      })
+
+      const isLeagueAdmin = userLeagueMembership?.admin === true
+
+      if (!isAuthor && !isSuperadmin && !isLeagueAdmin) {
+        throw new AppError('You can only delete your own messages', 'FORBIDDEN', 403)
+      }
+
+      await prisma.message.update({
+        where: { id: validated.id },
+        data: { deletedAt: new Date() },
+      })
+
+      revalidatePath(`/${message.leagueId}/chat`)
+
+      return {}
+    },
+  })
 }
 
 /**
@@ -294,34 +270,29 @@ export async function deleteMessage(input: DeleteMessageInput) {
  * Updates the lastChatReadAt timestamp to now.
  */
 export async function markChatAsRead(leagueId: number) {
-  try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const validated = markChatAsReadSchema.parse({ leagueId })
-    const userId = parseInt(session.user.id, 10)
-
-    // Update the lastChatReadAt timestamp for this league user
-    await prisma.leagueUser.updateMany({
-      where: {
-        userId,
-        leagueId: validated.leagueId,
-        active: true,
-        deletedAt: null,
-      },
-      data: {
-        lastChatReadAt: new Date(),
-      },
-    })
-
-    return { success: true }
-  } catch (error) {
-    return {
-      success: false,
-      error: getErrorMessage(error, 'Failed to mark chat as read'),
-    }
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { success: false, error: 'Authentication required' }
   }
-}
 
+  const userId = parseInt(session.user.id, 10)
+
+  return executeServerAction({ leagueId }, {
+    validator: markChatAsReadSchema,
+    handler: async (validated) => {
+      await prisma.leagueUser.updateMany({
+        where: {
+          userId,
+          leagueId: validated.leagueId,
+          active: true,
+          deletedAt: null,
+        },
+        data: {
+          lastChatReadAt: new Date(),
+        },
+      })
+
+      return {}
+    },
+  })
+}

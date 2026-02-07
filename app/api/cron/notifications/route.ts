@@ -39,8 +39,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
-// Also support GET for Vercel cron (uses GET by default)
-export async function GET(request: NextRequest) {
-  return POST(request)
-}
