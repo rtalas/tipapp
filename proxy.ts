@@ -87,7 +87,7 @@ export default auth((req) => {
       const allowedOrigins = [
         `https://${host}`,
         `http://${host}`,
-        ...(process.env.ALLOWED_ORIGINS?.split(',') || []),
+        ...(process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) || []),
       ];
 
       // Check origin header (sent by modern browsers)
@@ -109,6 +109,12 @@ export default auth((req) => {
           console.warn(`[CSRF] Invalid referer header: ${referer}`);
           return new Response('CSRF validation failed', { status: 403 });
         }
+      }
+
+      // Block state-changing requests that have neither origin nor referer
+      if (!origin && !referer) {
+        console.warn('[CSRF] Blocked request without origin or referer');
+        return new Response('CSRF validation failed', { status: 403 });
       }
     }
   }
