@@ -31,6 +31,18 @@ export const EVENT_DURATION_MS = 3 * 60 * 60 * 1000
 export const MAX_PRIZE_TIERS = 10
 
 /**
+ * Event types for push notification tracking (SentNotification.eventType)
+ */
+export const NOTIFICATION_EVENT_TYPES = {
+  MATCH: 'match',
+  SERIES: 'series',
+  SPECIAL_BET: 'special_bet',
+  QUESTION: 'question',
+} as const
+
+export type NotificationEventType = typeof NOTIFICATION_EVENT_TYPES[keyof typeof NOTIFICATION_EVENT_TYPES]
+
+/**
  * Player positions by sport for filtering in exact_player evaluators
  */
 export const POSITIONS_BY_SPORT: Record<number, { value: string; label: string }[]> = {

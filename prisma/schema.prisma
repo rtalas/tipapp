@@ -112,7 +112,6 @@ model LeagueMatch {
   deletedAt        DateTime?          @db.Timestamptz(6)
   League           League             @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   Match            Match              @relation(fields: [matchId], references: [id], onDelete: NoAction)
-  SentNotification SentNotification[]
   UserBet          UserBet[]
 
   @@unique([leagueId, matchId, deletedAt])
@@ -437,16 +436,16 @@ model PushSubscription {
 }
 
 model SentNotification {
-  id            Int          @id @default(autoincrement())
-  userId        Int
-  leagueMatchId Int
-  sentAt        DateTime     @default(now()) @db.Timestamptz(6)
-  deletedAt     DateTime?    @db.Timestamptz(6)
-  LeagueMatch   LeagueMatch  @relation(fields: [leagueMatchId], references: [id], onDelete: NoAction)
-  User          User         @relation(fields: [userId], references: [id], onDelete: NoAction)
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  eventId   Int
+  eventType String    @default("match") @db.VarChar(20)
+  sentAt    DateTime  @default(now()) @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction)
 
-  @@unique([userId, leagueMatchId, deletedAt])
-  @@index([leagueMatchId])
+  @@unique([userId, eventType, eventId])
+  @@index([eventType, eventId])
   @@index([userId])
 }
 
