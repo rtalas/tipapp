@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getAllTeams, createTeam, updateTeam, deleteTeam } from './teams'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath, revalidateTag } from 'next/cache'
+import * as authUtils from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
@@ -10,6 +11,7 @@ vi.mock('@/lib/auth/auth-utils', () => ({
 const mockPrisma = vi.mocked(prisma, true)
 const mockRevalidatePath = vi.mocked(revalidatePath)
 const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockRequireAdmin = vi.mocked(authUtils.requireAdmin)
 
 describe('Teams Actions', () => {
   beforeEach(() => {
@@ -26,11 +28,19 @@ describe('Teams Actions', () => {
       const result = await getAllTeams()
 
       expect(result).toEqual(teams)
+      expect(mockRequireAdmin).toHaveBeenCalled()
       expect(mockPrisma.team.findMany).toHaveBeenCalledWith({
         where: { deletedAt: null },
         include: { Sport: true, _count: { select: { LeagueTeam: true } } },
         orderBy: { name: 'asc' },
       })
+    })
+
+    it('should reject non-admin users', async () => {
+      mockRequireAdmin.mockRejectedValueOnce(new Error('Unauthorized'))
+
+      await expect(getAllTeams()).rejects.toThrow('Unauthorized')
+      expect(mockPrisma.team.findMany).not.toHaveBeenCalled()
     })
   })
 

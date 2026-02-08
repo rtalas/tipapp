@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getMatchPhases, createMatchPhase, updateMatchPhase, deleteMatchPhase } from './match-phases'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import * as authUtils from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
@@ -9,6 +10,7 @@ vi.mock('@/lib/auth/auth-utils', () => ({
 
 const mockPrisma = vi.mocked(prisma, true)
 const mockRevalidatePath = vi.mocked(revalidatePath)
+const mockRequireAdmin = vi.mocked(authUtils.requireAdmin)
 
 describe('Match Phases Actions', () => {
   beforeEach(() => {
@@ -23,11 +25,19 @@ describe('Match Phases Actions', () => {
       const result = await getMatchPhases()
 
       expect(result).toEqual(phases)
+      expect(mockRequireAdmin).toHaveBeenCalled()
       expect(mockPrisma.matchPhase.findMany).toHaveBeenCalledWith({
         where: { deletedAt: null },
         include: { _count: { select: { Match: true } } },
         orderBy: { rank: 'asc' },
       })
+    })
+
+    it('should reject non-admin users', async () => {
+      mockRequireAdmin.mockRejectedValueOnce(new Error('Unauthorized'))
+
+      await expect(getMatchPhases()).rejects.toThrow('Unauthorized')
+      expect(mockPrisma.matchPhase.findMany).not.toHaveBeenCalled()
     })
   })
 

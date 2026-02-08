@@ -333,6 +333,7 @@
       "replyingTo": "Replying to {name}",
       "cancelReply": "Cancel reply",
       "messageDeleted": "Message was deleted",
+      "scrollToOriginal": "Scroll to original message",
       "emojiCategories": {
         "smileys": "Smileys & Emotion",
         "gestures": "Gestures & People",

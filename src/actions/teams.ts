@@ -2,12 +2,14 @@
 
 import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { AppError } from '@/lib/error-handler'
 import { createTeamSchema, updateTeamSchema, deleteByIdSchema, type CreateTeamInput, type UpdateTeamInput } from '@/lib/validation/admin'
 
 // Get all teams with Sport relation
 export async function getAllTeams() {
+  await requireAdmin()
   return prisma.team.findMany({
     where: { deletedAt: null },
     include: {

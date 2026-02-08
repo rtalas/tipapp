@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildDeletionErrorMessage } from '@/lib/delete-utils'
 import { AppError } from '@/lib/error-handler'
@@ -14,6 +15,7 @@ import {
 
 // Get all series types
 export async function getAllSeriesTypes() {
+  await requireAdmin()
   return prisma.specialBetSerie.findMany({
     where: { deletedAt: null },
     include: {

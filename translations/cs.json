@@ -333,6 +333,7 @@
       "replyingTo": "Odpověď pro {name}",
       "cancelReply": "Zrušit odpověď",
       "messageDeleted": "Zpráva byla smazána",
+      "scrollToOriginal": "Přejít na původní zprávu",
       "emojiCategories": {
         "smileys": "Emotikony & Emoce",
         "gestures": "Gesta & Lidé",

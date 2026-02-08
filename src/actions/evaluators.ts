@@ -1,6 +1,7 @@
 'use server'
 
 import { Prisma } from '@prisma/client'
+import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
@@ -47,6 +48,7 @@ export async function updateEvaluatorPoints(input: UpdateEvaluatorPointsInput) {
           updatedAt: new Date(),
         },
       })
+      revalidateTag('leaderboard', 'max')
       return {}
     },
     revalidatePath: '/admin/evaluators',
@@ -79,6 +81,7 @@ export async function createEvaluator(input: CreateEvaluatorInput) {
           updatedAt: new Date(),
         },
       })
+      revalidateTag('leaderboard', 'max')
       return { evaluatorId: evaluator.id }
     },
     revalidatePath: '/admin/evaluators',
@@ -125,6 +128,7 @@ export async function updateEvaluator(input: UpdateEvaluatorInput) {
         where: { id: validated.evaluatorId },
         data: updateData,
       })
+      revalidateTag('leaderboard', 'max')
       return {}
     },
     revalidatePath: '/admin/evaluators',
@@ -141,6 +145,7 @@ export async function deleteEvaluator(input: DeleteByIdInput) {
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
+      revalidateTag('leaderboard', 'max')
       return {}
     },
     revalidatePath: '/admin/evaluators',

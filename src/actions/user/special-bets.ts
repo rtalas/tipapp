@@ -107,7 +107,7 @@ const getCachedTeams = (leagueId: number) =>
         orderBy: { Team: { name: 'asc' } },
       })
 
-      return teams.map((t) => ({ ...t, group: t.group }))
+      return teams
     },
     ['special-bet-teams', String(leagueId)],
     {

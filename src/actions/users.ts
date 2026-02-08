@@ -91,6 +91,20 @@ export async function approveRequest(requestId: number) {
 export async function rejectRequest(requestId: number) {
   await requireAdmin()
 
+  // Fetch request first to get leagueId and validate existence
+  const request = await prisma.userRequest.findUnique({
+    where: { id: requestId },
+    select: { id: true, leagueId: true, decided: true },
+  })
+
+  if (!request) {
+    throw new AppError('Request not found', 'NOT_FOUND', 404)
+  }
+
+  if (request.decided) {
+    throw new AppError('Request has already been decided', 'CONFLICT', 409)
+  }
+
   // Atomic update — decided: false in where prevents race conditions
   const { count } = await prisma.userRequest.updateMany({
     where: { id: requestId, decided: false },
@@ -102,27 +116,12 @@ export async function rejectRequest(requestId: number) {
   })
 
   if (count === 0) {
-    // Distinguish not-found from already-decided
-    const exists = await prisma.userRequest.findUnique({
-      where: { id: requestId },
-      select: { id: true, leagueId: true },
-    })
-    if (!exists) {
-      throw new AppError('Request not found', 'NOT_FOUND', 404)
-    }
+    // Race: decided between find and update
     throw new AppError('Request has already been decided', 'CONFLICT', 409)
   }
 
-  // Need leagueId for revalidation
-  const request = await prisma.userRequest.findUnique({
-    where: { id: requestId },
-    select: { leagueId: true },
-  })
-
   revalidatePath('/admin/users')
-  if (request) {
-    revalidatePath(`/admin/leagues/${request.leagueId}/users`)
-  }
+  revalidatePath(`/admin/leagues/${request.leagueId}/users`)
   return { success: true }
 }
 

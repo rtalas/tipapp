@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getAllSeriesTypes, createSeriesType, updateSeriesType, deleteSeriesType } from './series-types'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import * as authUtils from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
@@ -9,6 +10,7 @@ vi.mock('@/lib/auth/auth-utils', () => ({
 
 const mockPrisma = vi.mocked(prisma, true)
 const mockRevalidatePath = vi.mocked(revalidatePath)
+const mockRequireAdmin = vi.mocked(authUtils.requireAdmin)
 
 describe('Series Types Actions', () => {
   beforeEach(() => {
@@ -23,11 +25,19 @@ describe('Series Types Actions', () => {
       const result = await getAllSeriesTypes()
 
       expect(result).toEqual(types)
+      expect(mockRequireAdmin).toHaveBeenCalled()
       expect(mockPrisma.specialBetSerie.findMany).toHaveBeenCalledWith({
         where: { deletedAt: null },
         include: { _count: { select: { LeagueSpecialBetSerie: true } } },
         orderBy: { name: 'asc' },
       })
+    })
+
+    it('should reject non-admin users', async () => {
+      mockRequireAdmin.mockRejectedValueOnce(new Error('Unauthorized'))
+
+      await expect(getAllSeriesTypes()).rejects.toThrow('Unauthorized')
+      expect(mockPrisma.specialBetSerie.findMany).not.toHaveBeenCalled()
     })
   })
 

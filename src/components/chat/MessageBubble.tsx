@@ -170,6 +170,7 @@ export function MessageBubble({ message, isOwn, canDelete, onDelete, onReply, on
                   type="button"
                   onClick={() => !isReplyDeleted && onScrollToOriginal(replyTo.id)}
                   disabled={isReplyDeleted}
+                  aria-label={isReplyDeleted ? t('messageDeleted') : t('scrollToOriginal')}
                   className={cn(
                     'w-full text-left mb-2 rounded-lg px-3 py-1.5 text-xs border-l-2',
                     isOwn
