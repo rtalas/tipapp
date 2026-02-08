@@ -55,6 +55,7 @@ export function EvaluatorTableRow({
   evaluatorTypes,
 }: EvaluatorTableRowProps) {
   const tCommon = useTranslations('admin.common')
+  const t = useTranslations('admin.evaluators')
 
   return (
     <>
@@ -110,11 +111,11 @@ export function EvaluatorTableRow({
                   .sort(([a], [b]) => Number(a) - Number(b))
                   .map(([rank, points]) => (
                     <div key={rank}>
-                      #{rank}: <span className="font-mono font-bold">{points}</span>
+                      {t('rankDisplay', { rank })} <span className="font-mono font-bold">{points}</span>
                     </div>
                   ))}
                 <div className="text-muted-foreground">
-                  Other: <span className="font-mono font-bold">{(evaluator.config as ScorerRankedConfig).unrankedPoints}</span>
+                  {t('otherLabel')} <span className="font-mono font-bold">{(evaluator.config as ScorerRankedConfig).unrankedPoints}</span>
                 </div>
               </div>
             ) : (

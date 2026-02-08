@@ -8,6 +8,7 @@ import type { LeaguePrize } from '@/actions/user/leaderboard'
 // Mock next-intl
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
+  useLocale: () => 'en',
 }))
 
 // Mock next/navigation (override global to add useParams)

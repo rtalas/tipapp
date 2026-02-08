@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateQuestion, updateQuestionResult } from '@/actions/questions'
 import { evaluateQuestionBets } from '@/actions/evaluate-questions'
-import { validateQuestionEdit } from '@/lib/validation-client'
+import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
@@ -81,7 +81,7 @@ export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestio
       dateTime: new Date(dateTime),
     }
 
-    const validation = validateQuestionEdit(validationData)
+    const validation = validate.questionEdit(validationData)
     if (!validation.success) {
       toast.error(getErrorMessage(validation.error, 'Validation failed'))
       return

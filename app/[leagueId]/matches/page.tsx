@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { getUserMatches } from '@/actions/user/matches'
 import { MatchList } from '@/components/user/matches/match-list'
 import { MatchListSkeleton } from '@/components/user/matches/match-list-skeleton'
+
+export const metadata: Metadata = { title: 'Matches' }
 
 interface MatchesPageProps {
   params: Promise<{ leagueId: string }>

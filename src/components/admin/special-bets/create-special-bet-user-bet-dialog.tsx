@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { createUserSpecialBet, type SpecialBetWithUserBets } from '@/actions/special-bet-bets'
 import { type LeagueWithTeams } from '@/actions/shared-queries'
-import { validateUserSpecialBetCreate } from '@/lib/validation-client'
+import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { getSpecialBetTypeFromEvaluator } from '@/lib/special-bet-utils'
 import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
@@ -93,7 +93,7 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
       validationData.value = parseInt(createDialog.form.value, 10)
     }
 
-    const validation = validateUserSpecialBetCreate(validationData)
+    const validation = validate.userSpecialBetCreate(validationData)
     if (!validation.success) {
       toast.error(getErrorMessage(validation.error, 'Validation failed'))
       return

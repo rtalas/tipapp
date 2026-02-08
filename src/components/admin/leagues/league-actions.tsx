@@ -23,8 +23,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { LeagueDeleteButton } from './league-delete-button'
-import { LeaguePrizesSection } from './league-prizes-section'
-import { LeagueFinesSection } from './league-fines-section'
+import { TierSection } from './tier-section'
 
 interface LeagueActionsProps {
   leagueId: number
@@ -365,11 +364,11 @@ export function LeagueActions({
             </div>
 
             <div className="border-t pt-4 mt-4">
-              <LeaguePrizesSection prizes={prizes} onChange={setPrizes} />
+              <TierSection variant="prize" tiers={prizes} onChange={setPrizes} />
             </div>
 
             <div className="border-t pt-4 mt-4">
-              <LeagueFinesSection fines={fines} onChange={setFines} />
+              <TierSection variant="fine" tiers={fines} onChange={setFines} />
             </div>
 
             <div className="border-t pt-4 mt-4">

@@ -42,3 +42,18 @@ export async function getActiveLeagues() {
     orderBy: { seasonFrom: 'desc' },
   })
 }
+
+/**
+ * Redirects from a non-league-scoped admin route to its league-scoped equivalent.
+ * Falls back to /admin/leagues if no active leagues exist.
+ * Used by /admin/matches, /admin/series, /admin/special-bets, /admin/evaluators.
+ */
+export async function redirectToLeagueScoped(segment: string): Promise<never> {
+  const leagues = await getActiveLeagues()
+
+  if (leagues.length === 0) {
+    redirect('/admin/leagues')
+  }
+
+  redirect(`/admin/${leagues[0].id}/${segment}`)
+}

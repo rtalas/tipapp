@@ -11,7 +11,7 @@ import {
 } from '@/actions/players'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
-import { validatePlayerCreate, validatePlayerEdit } from '@/lib/validation-client'
+import { validate } from '@/lib/validation-client'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
@@ -125,7 +125,7 @@ export function PlayersContent({ players }: PlayersContentProps) {
     if (!inlineEdit.form) return
 
     // Validate form data
-    const validation = validatePlayerEdit({
+    const validation = validate.playerEdit({
       id: playerId,
       firstName: inlineEdit.form.firstName,
       lastName: inlineEdit.form.lastName,
@@ -184,7 +184,7 @@ export function PlayersContent({ players }: PlayersContentProps) {
 
   const handleCreatePlayer = async () => {
     // Validate form data
-    const validation = validatePlayerCreate({
+    const validation = validate.playerCreate({
       firstName: createDialog.form.firstName,
       lastName: createDialog.form.lastName,
       position: createDialog.form.position,

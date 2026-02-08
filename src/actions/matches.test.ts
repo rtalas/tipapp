@@ -164,7 +164,7 @@ describe('Matches Actions', () => {
     it('should update match scores in transaction', async () => {
       const txMocks = {
         match: { update: vi.fn() },
-        matchScorer: { deleteMany: vi.fn(), createMany: vi.fn() },
+        matchScorer: { updateMany: vi.fn(), createMany: vi.fn() },
       }
       mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 
@@ -191,7 +191,7 @@ describe('Matches Actions', () => {
     it('should handle scorers replacement', async () => {
       const txMocks = {
         match: { update: vi.fn() },
-        matchScorer: { deleteMany: vi.fn(), createMany: vi.fn() },
+        matchScorer: { updateMany: vi.fn(), createMany: vi.fn() },
       }
       mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 
@@ -207,14 +207,17 @@ describe('Matches Actions', () => {
         ],
       })
 
-      expect(txMocks.matchScorer.deleteMany).toHaveBeenCalledWith({ where: { matchId: 1 } })
+      expect(txMocks.matchScorer.updateMany).toHaveBeenCalledWith({
+        where: { matchId: 1, deletedAt: null },
+        data: { deletedAt: expect.any(Date) },
+      })
       expect(txMocks.matchScorer.createMany).toHaveBeenCalled()
     })
 
     it('should set final scores to regular when not provided', async () => {
       const txMocks = {
         match: { update: vi.fn() },
-        matchScorer: { deleteMany: vi.fn(), createMany: vi.fn() },
+        matchScorer: { updateMany: vi.fn(), createMany: vi.fn() },
       }
       mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 

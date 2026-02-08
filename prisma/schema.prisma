@@ -361,7 +361,7 @@ model MatchScorer {
   Match         Match        @relation(fields: [matchId], references: [id], onDelete: NoAction)
   LeaguePlayer  LeaguePlayer @relation(fields: [scorerId], references: [id], onDelete: NoAction)
 
-  @@index([matchId])
+  @@index([matchId, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -379,7 +379,7 @@ model Message {
   ReplyTo      Message?   @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
   Replies      Message[]  @relation("MessageReplies")
 
-  @@index([leagueId, createdAt])
+  @@index([leagueId, deletedAt, createdAt])
   @@index([replyToId])
 }
 
@@ -525,6 +525,7 @@ model TopScorerRankingVersion {
 
   @@index([leagueId, effectiveFrom])
   @@index([leagueId, effectiveTo])
+  @@index([leagueId, effectiveFrom, effectiveTo])
   @@index([leaguePlayerId, effectiveFrom])
   @@index([leaguePlayerId, leagueId])
 }

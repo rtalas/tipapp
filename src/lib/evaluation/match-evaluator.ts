@@ -4,6 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import type { TransactionClient } from '@/lib/prisma-utils'
 import { getMatchEvaluator, buildMatchBetContext } from '@/lib/evaluators'
 import { evaluateScorer } from '@/lib/evaluators/scorer'
 import { getLeagueRankingsAtTime } from '@/lib/scorer-ranking-utils'
@@ -36,10 +37,6 @@ interface EvaluationResult {
   }>
 }
 
-type TransactionClient = Omit<
-  typeof prisma,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->
 
 /**
  * Main evaluation function for matches
@@ -59,7 +56,7 @@ async function evaluateMatch(
     include: {
       Match: {
         include: {
-          MatchScorer: true,
+          MatchScorer: { where: { deletedAt: null } },
         },
       },
       League: {

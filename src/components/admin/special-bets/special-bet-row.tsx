@@ -2,32 +2,20 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Prisma } from '@prisma/client'
 import { Input } from '@/components/ui/input'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { updateUserSpecialBet, deleteUserSpecialBet, type UserSpecialBet, type SpecialBetWithUserBets } from '@/actions/special-bet-bets'
 import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
-import { validateUserSpecialBetEdit } from '@/lib/validation-client'
+import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
 import { getSpecialBetTypeFromEvaluator } from '@/lib/special-bet-utils'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 import { TeamFlag } from '@/components/common/team-flag'
-type LeagueWithTeams = Prisma.LeagueGetPayload<{
-  include: {
-    LeagueTeam: {
-      include: {
-        Team: true
-        LeaguePlayer: {
-          include: { Player: true }
-        }
-      }
-    }
-  }
-}>
+import { type LeagueWithTeams } from '@/actions/shared-queries'
 
 interface UserSpecialBetFormData {
   teamResultId: string
@@ -114,7 +102,7 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated, specialBet
       validationData.value = parseInt(inlineEdit.form.value, 10)
     }
 
-    const validation = validateUserSpecialBetEdit(validationData)
+    const validation = validate.userSpecialBetEdit(validationData)
     if (!validation.success) {
       toast.error(getErrorMessage(validation.error, 'Validation failed'))
       return

@@ -5,31 +5,41 @@
  * These builders eliminate the need for `any` types when building dynamic filters
  * and ensure compile-time type safety for all database queries.
  *
- * ## Available Builders
- * - `buildLeagueMatchWhere` - Filter league matches by status, user, league
- * - `buildMatchWhere` - Filter matches (deprecated, use buildLeagueMatchWhere)
- * - `buildSeriesWhere` - Filter series bets
- * - `buildSpecialBetWhere` - Filter special bets
- * - `buildQuestionWhere` - Filter yes/no questions
+ * Uses shared helpers to eliminate duplication:
+ * - `applyEventStatus` - Common scheduled/finished/evaluated filter logic
+ * - `buildPicksWhere` - Shared picks builder (aliased for series/specialBet/question)
  *
  * @module query-builders
- * @example
- * ```typescript
- * const where = buildLeagueMatchWhere({
- *   leagueId: 1,
- *   status: 'scheduled',
- *   userId: 42,
- * })
- *
- * const matches = await prisma.leagueMatch.findMany({ where })
- * ```
  */
 
 import type { Prisma } from '@prisma/client'
 
+// ==================== Shared Helpers ====================
+
+type EventStatus = 'all' | 'scheduled' | 'finished' | 'evaluated'
+
 /**
- * Where conditions for LeagueMatch filters
+ * Apply scheduled/finished/evaluated status filter to a where clause.
+ * Used by buildSeriesWhere, buildSpecialBetsWhere, buildQuestionWhere.
  */
+function applyEventStatus(
+  where: { dateTime?: { gt: Date } | { lt: Date }; isEvaluated?: boolean },
+  status: EventStatus | undefined,
+) {
+  const now = new Date()
+  if (status === 'scheduled') {
+    where.dateTime = { gt: now }
+    where.isEvaluated = false
+  } else if (status === 'finished') {
+    where.dateTime = { lt: now }
+    where.isEvaluated = false
+  } else if (status === 'evaluated') {
+    where.isEvaluated = true
+  }
+}
+
+// ==================== LeagueMatch (unique structure) ====================
+
 export interface LeagueMatchWhere {
   deletedAt: null
   leagueId?: number
@@ -43,15 +53,11 @@ export interface LeagueMatchWhere {
   UserBet?: Prisma.UserBetListRelationFilter
 }
 
-/**
- * Build type-safe where conditions for LeagueMatch queries
- */
 export function buildLeagueMatchWhere(filters?: {
   leagueId?: number
-  status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
+  status?: EventStatus
   userId?: number
 }): LeagueMatchWhere {
-  const now = new Date()
   const where: LeagueMatchWhere = {
     deletedAt: null,
   }
@@ -60,7 +66,6 @@ export function buildLeagueMatchWhere(filters?: {
     where.leagueId = filters.leagueId
   }
 
-  // User filter: show only matches where this user has bets
   if (filters?.userId) {
     where.UserBet = {
       some: {
@@ -77,10 +82,10 @@ export function buildLeagueMatchWhere(filters?: {
   }
 
   if (filters?.status === 'scheduled') {
-    where.Match.dateTime = { gt: now }
+    where.Match.dateTime = { gt: new Date() }
     where.Match.isEvaluated = false
   } else if (filters?.status === 'finished') {
-    where.Match.dateTime = { lt: now }
+    where.Match.dateTime = { lt: new Date() }
     where.Match.isEvaluated = false
   } else if (filters?.status === 'evaluated') {
     where.Match.isEvaluated = true
@@ -89,17 +94,13 @@ export function buildLeagueMatchWhere(filters?: {
   return where
 }
 
-/**
- * Where conditions for LeagueUser filters
- */
+// ==================== LeagueUser (trivial) ====================
+
 export interface LeagueUserWhere {
   deletedAt: null
   leagueId?: number
 }
 
-/**
- * Build type-safe where conditions for LeagueUser queries
- */
 export function buildLeagueUserWhere(filters?: {
   leagueId?: number
 }): LeagueUserWhere {
@@ -114,9 +115,8 @@ export function buildLeagueUserWhere(filters?: {
   return where
 }
 
-/**
- * Where conditions for User Picks (LeagueMatch with UserBets)
- */
+// ==================== UserPicks (unique: nested Match) ====================
+
 export interface UserPicksWhere {
   deletedAt: null
   leagueId?: number
@@ -126,9 +126,6 @@ export interface UserPicksWhere {
   }
 }
 
-/**
- * Build type-safe where conditions for User Picks queries
- */
 export function buildUserPicksWhere(filters?: {
   leagueId?: number
   status?: 'evaluated' | 'unevaluated' | 'all'
@@ -153,66 +150,19 @@ export function buildUserPicksWhere(filters?: {
   return where
 }
 
-/**
- * Where conditions for LeagueSpecialBetSerie filters
- */
-export interface SeriesWhere {
-  deletedAt: null
-  leagueId?: number
-  dateTime?: { gt: Date } | { lt: Date }
-  isEvaluated?: boolean
-  homeTeamScore?: { not: null }
-  awayTeamScore?: { not: null }
-}
+// ==================== Picks (3 identical → 1 shared) ====================
 
-/**
- * Build type-safe where conditions for Series queries
- */
-export function buildSeriesWhere(filters?: {
-  leagueId?: number
-  status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
-}): SeriesWhere {
-  const now = new Date()
-  const where: SeriesWhere = {
-    deletedAt: null,
-  }
-
-  if (filters?.leagueId) {
-    where.leagueId = filters.leagueId
-  }
-
-  if (filters?.status === 'scheduled') {
-    where.dateTime = { gt: now }
-    where.isEvaluated = false
-  } else if (filters?.status === 'finished') {
-    where.dateTime = { lt: now }
-    where.isEvaluated = false
-    where.homeTeamScore = { not: null }
-    where.awayTeamScore = { not: null }
-  } else if (filters?.status === 'evaluated') {
-    where.isEvaluated = true
-  }
-
-  return where
-}
-
-/**
- * Where conditions for Series Picks (LeagueSpecialBetSerie with UserSpecialBetSerie)
- */
-export interface SeriesPicksWhere {
+export interface PicksWhere {
   deletedAt: null
   leagueId?: number
   isEvaluated?: boolean
 }
 
-/**
- * Build type-safe where conditions for Series Picks queries
- */
-export function buildSeriesPicksWhere(filters?: {
+function buildPicksWhere(filters?: {
   leagueId?: number
   status?: 'evaluated' | 'unevaluated' | 'all'
-}): SeriesPicksWhere {
-  const where: SeriesPicksWhere = {
+}): PicksWhere {
+  const where: PicksWhere = {
     deletedAt: null,
   }
 
@@ -229,9 +179,45 @@ export function buildSeriesPicksWhere(filters?: {
   return where
 }
 
-/**
- * Where conditions for LeagueSpecialBetSingle filters
- */
+export const buildSeriesPicksWhere = buildPicksWhere
+export const buildSpecialBetPicksWhere = buildPicksWhere
+export const buildQuestionPicksWhere = buildPicksWhere
+
+// ==================== Series Status ====================
+
+export interface SeriesWhere {
+  deletedAt: null
+  leagueId?: number
+  dateTime?: { gt: Date } | { lt: Date }
+  isEvaluated?: boolean
+  homeTeamScore?: { not: null }
+  awayTeamScore?: { not: null }
+}
+
+export function buildSeriesWhere(filters?: {
+  leagueId?: number
+  status?: EventStatus
+}): SeriesWhere {
+  const where: SeriesWhere = {
+    deletedAt: null,
+  }
+
+  if (filters?.leagueId) {
+    where.leagueId = filters.leagueId
+  }
+
+  applyEventStatus(where, filters?.status)
+
+  if (filters?.status === 'finished') {
+    where.homeTeamScore = { not: null }
+    where.awayTeamScore = { not: null }
+  }
+
+  return where
+}
+
+// ==================== Special Bets Status ====================
+
 export interface SpecialBetsWhere {
   deletedAt: null
   leagueId?: number
@@ -242,15 +228,11 @@ export interface SpecialBetsWhere {
   specialBetValue?: { not: null } | null
 }
 
-/**
- * Build type-safe where conditions for Special Bets queries
- */
 export function buildSpecialBetsWhere(filters?: {
   leagueId?: number
-  status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
+  status?: EventStatus
   type?: 'all' | 'team' | 'player' | 'value'
 }): SpecialBetsWhere {
-  const now = new Date()
   const where: SpecialBetsWhere = {
     deletedAt: null,
   }
@@ -259,15 +241,7 @@ export function buildSpecialBetsWhere(filters?: {
     where.leagueId = filters.leagueId
   }
 
-  if (filters?.status === 'scheduled') {
-    where.dateTime = { gt: now }
-    where.isEvaluated = false
-  } else if (filters?.status === 'finished') {
-    where.dateTime = { lt: now }
-    where.isEvaluated = false
-  } else if (filters?.status === 'evaluated') {
-    where.isEvaluated = true
-  }
+  applyEventStatus(where, filters?.status)
 
   if (filters?.type === 'team') {
     where.specialBetTeamResultId = { not: null }
@@ -280,42 +254,8 @@ export function buildSpecialBetsWhere(filters?: {
   return where
 }
 
-/**
- * Where conditions for Special Bet Picks (LeagueSpecialBetSingle with UserSpecialBetSingle)
- */
-export interface SpecialBetPicksWhere {
-  deletedAt: null
-  leagueId?: number
-  isEvaluated?: boolean
-}
+// ==================== Question Status ====================
 
-/**
- * Build type-safe where conditions for Special Bet Picks queries
- */
-export function buildSpecialBetPicksWhere(filters?: {
-  leagueId?: number
-  status?: 'evaluated' | 'unevaluated' | 'all'
-}): SpecialBetPicksWhere {
-  const where: SpecialBetPicksWhere = {
-    deletedAt: null,
-  }
-
-  if (filters?.leagueId) {
-    where.leagueId = filters.leagueId
-  }
-
-  if (filters?.status === 'evaluated') {
-    where.isEvaluated = true
-  } else if (filters?.status === 'unevaluated') {
-    where.isEvaluated = false
-  }
-
-  return where
-}
-
-/**
- * Where conditions for LeagueSpecialBetQuestion filters
- */
 export interface QuestionWhere {
   deletedAt: null
   leagueId?: number
@@ -324,14 +264,10 @@ export interface QuestionWhere {
   result?: { not: null }
 }
 
-/**
- * Build type-safe where conditions for Question queries
- */
 export function buildQuestionWhere(filters?: {
   leagueId?: number
-  status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
+  status?: EventStatus
 }): QuestionWhere {
-  const now = new Date()
   const where: QuestionWhere = {
     deletedAt: null,
   }
@@ -340,48 +276,10 @@ export function buildQuestionWhere(filters?: {
     where.leagueId = filters.leagueId
   }
 
-  if (filters?.status === 'scheduled') {
-    where.dateTime = { gt: now }
-    where.isEvaluated = false
-  } else if (filters?.status === 'finished') {
-    where.dateTime = { lt: now }
-    where.isEvaluated = false
+  applyEventStatus(where, filters?.status)
+
+  if (filters?.status === 'finished') {
     where.result = { not: null }
-  } else if (filters?.status === 'evaluated') {
-    where.isEvaluated = true
-  }
-
-  return where
-}
-
-/**
- * Where conditions for Question Picks
- */
-export interface QuestionPicksWhere {
-  deletedAt: null
-  leagueId?: number
-  isEvaluated?: boolean
-}
-
-/**
- * Build type-safe where conditions for Question Picks queries
- */
-export function buildQuestionPicksWhere(filters?: {
-  leagueId?: number
-  status?: 'evaluated' | 'unevaluated' | 'all'
-}): QuestionPicksWhere {
-  const where: QuestionPicksWhere = {
-    deletedAt: null,
-  }
-
-  if (filters?.leagueId) {
-    where.leagueId = filters.leagueId
-  }
-
-  if (filters?.status === 'evaluated') {
-    where.isEvaluated = true
-  } else if (filters?.status === 'unevaluated') {
-    where.isEvaluated = false
   }
 
   return where

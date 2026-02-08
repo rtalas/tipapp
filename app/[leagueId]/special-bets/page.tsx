@@ -1,8 +1,11 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { getUserSpecialBets, getSpecialBetTeams, getSpecialBetPlayers } from '@/actions/user/special-bets'
 import { getUserQuestions } from '@/actions/user/questions'
 import { SpecialBetsList } from '@/components/user/special-bets/special-bets-list'
 import { SpecialBetsListSkeleton } from '@/components/user/special-bets/special-bets-list-skeleton'
+
+export const metadata: Metadata = { title: 'Special Bets' }
 
 interface SpecialBetsPageProps {
   params: Promise<{ leagueId: string }>

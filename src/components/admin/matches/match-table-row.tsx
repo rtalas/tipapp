@@ -83,7 +83,7 @@ export function MatchTableRow({
               {match.League.name}
               {match.Match.isPlayoffGame && (
                 <Badge variant="warning" className="text-xs">
-                  Playoff
+                  {t('playoff')}
                 </Badge>
               )}
             </div>

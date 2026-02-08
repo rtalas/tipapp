@@ -1,3 +1,11 @@
+import type { prisma } from './prisma'
+
+/** Prisma transaction client — prisma without connection/transaction methods */
+export type TransactionClient = Omit<
+  typeof prisma,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>
+
 /**
  * Type-safe helper for Prisma unique constraints with nullable fields
  *

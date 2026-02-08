@@ -1,7 +1,7 @@
 'use client';
 
 import { requestPasswordReset } from '@/actions/password-reset';
-import { validateForgotPassword } from '@/lib/validation-client';
+import { validate } from '@/lib/validation-client';
 import Link from 'next/link';
 import { useState, Suspense } from 'react';
 import { AlertCircle, CheckCircle } from 'lucide-react';
@@ -23,7 +23,7 @@ function ForgotPasswordForm() {
     const formData = new FormData(e.currentTarget);
 
     // Client-side validation
-    const validationResult = validateForgotPassword({
+    const validationResult = validate.forgotPassword({
       email: formData.get('email') as string,
     });
 

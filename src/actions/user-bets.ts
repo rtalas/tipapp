@@ -54,6 +54,7 @@ export async function getMatchesWithUserBets(filters?: {
             },
           },
           MatchScorer: {
+            where: { deletedAt: null },
             include: {
               LeaguePlayer: {
                 include: { Player: true },

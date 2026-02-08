@@ -14,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Input } from '@/components/ui/input'
 import { LeagueActions } from '@/components/admin/leagues/league-actions'
 
 async function LeaguesTable() {
@@ -141,14 +140,6 @@ export default async function LeaguesPage() {
             {t('createLeague')}
           </Link>
         </Button>
-      </div>
-
-      {/* Search and filters */}
-      <div className="flex items-center gap-4">
-        <Input
-          placeholder={t('searchPlaceholder')}
-          className="max-w-sm"
-        />
       </div>
 
       <Card className="card-shadow">

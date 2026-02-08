@@ -53,6 +53,7 @@ describe('Leagues Actions', () => {
       })
       mockPrisma.league.create.mockResolvedValue(createdLeague as never)
       mockPrisma.evaluatorType.findMany.mockResolvedValue(evaluatorTypes as never)
+      mockPrisma.evaluator.createMany.mockResolvedValue({ count: 2 } as never)
       mockPrisma.evaluator.create.mockResolvedValue({} as never)
 
       const result = await createLeague({
@@ -67,8 +68,9 @@ describe('Leagues Actions', () => {
       expect(result.success).toBe(true)
       expect((result as Record<string, unknown>).leagueId).toBe(10)
       expect(mockPrisma.league.create).toHaveBeenCalled()
-      // Should create evaluators for each default type
-      expect(mockPrisma.evaluator.create).toHaveBeenCalledTimes(3)
+      // Non-scorer evaluators batched via createMany, scorer created individually
+      expect(mockPrisma.evaluator.createMany).toHaveBeenCalledTimes(1)
+      expect(mockPrisma.evaluator.create).toHaveBeenCalledTimes(1)
       expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
     })
 

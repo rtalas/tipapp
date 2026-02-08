@@ -1,51 +1,58 @@
 'use client'
 
 import { Trash2 } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 import type { PrizeTier } from '@/lib/validation/admin'
 
-interface FineTierRowProps {
-  fine: PrizeTier
+type TierVariant = 'prize' | 'fine'
+
+interface TierRowProps {
+  tier: PrizeTier
+  variant: TierVariant
   index: number
   onUpdate: (index: number, field: keyof PrizeTier, value: number | string) => void
   onRemove: (index: number) => void
   error?: string | null
 }
 
-export function FineTierRow({ fine, index, onUpdate, onRemove, error }: FineTierRowProps) {
-  const t = useTranslations('admin.leagueActions.finesSection')
+export function formatAmount(value: number, locale: string) {
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 0,
+  }).format(value / 100)
+}
 
-  // Format amount with thousands separator for display
-  const formatAmount = (value: number) => {
-    return new Intl.NumberFormat('cs-CZ', {
-      minimumFractionDigits: 0,
-    }).format(value / 100)
-  }
+export function parseAmount(formatted: string) {
+  const cleaned = formatted.replace(/\s/g, '').replace(',', '.')
+  const parsed = parseFloat(cleaned)
+  return isNaN(parsed) ? 0 : Math.round(parsed * 100)
+}
 
-  // Parse formatted amount back to integer (minor units)
-  const parseAmount = (formatted: string) => {
-    const cleaned = formatted.replace(/\s/g, '').replace(',', '.')
-    const parsed = parseFloat(cleaned)
-    return isNaN(parsed) ? 0 : Math.round(parsed * 100)
-  }
+export function TierRow({ tier, variant, index, onUpdate, onRemove, error }: TierRowProps) {
+  const t = useTranslations(`admin.leagueActions.${variant === 'prize' ? 'prizesSection' : 'finesSection'}`)
+  const locale = useLocale()
+  const prefix = variant
 
   return (
-    <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+    <div className={cn(
+      'space-y-3 rounded-lg border p-4',
+      variant === 'fine' ? 'border-destructive/30 bg-destructive/5' : 'border-border'
+    )}>
       <div className="flex items-start gap-3">
-        {/* Rank (from bottom) */}
+        {/* Rank */}
         <div className="w-20 flex-shrink-0">
-          <Label htmlFor={`fine-rank-${index}`} className="text-xs text-muted-foreground">
+          <Label htmlFor={`${prefix}-rank-${index}`} className="text-xs text-muted-foreground">
             {t('position')}
           </Label>
           <Input
-            id={`fine-rank-${index}`}
+            id={`${prefix}-rank-${index}`}
             type="number"
             min={1}
             max={10}
-            value={fine.rank}
+            value={tier.rank}
             onChange={(e) => onUpdate(index, 'rank', parseInt(e.target.value) || 1)}
             className="mt-1"
           />
@@ -53,32 +60,32 @@ export function FineTierRow({ fine, index, onUpdate, onRemove, error }: FineTier
 
         {/* Amount (in Kč) */}
         <div className="flex-1">
-          <Label htmlFor={`fine-amount-${index}`} className="text-xs text-muted-foreground">
+          <Label htmlFor={`${prefix}-amount-${index}`} className="text-xs text-muted-foreground">
             {t('amount')}
           </Label>
           <Input
-            id={`fine-amount-${index}`}
+            id={`${prefix}-amount-${index}`}
             type="text"
-            value={formatAmount(fine.amount)}
+            value={formatAmount(tier.amount, locale)}
             onChange={(e) => {
               const amount = parseAmount(e.target.value)
               onUpdate(index, 'amount', amount)
             }}
-            className="mt-1 border-destructive/30"
-            placeholder="100"
+            className={cn('mt-1', variant === 'fine' && 'border-destructive/30')}
+            placeholder={variant === 'prize' ? '1 000' : '100'}
           />
         </div>
 
         {/* Label (optional) */}
         <div className="flex-1">
-          <Label htmlFor={`fine-label-${index}`} className="text-xs text-muted-foreground">
+          <Label htmlFor={`${prefix}-label-${index}`} className="text-xs text-muted-foreground">
             {t('label')}
           </Label>
           <Input
-            id={`fine-label-${index}`}
+            id={`${prefix}-label-${index}`}
             type="text"
             maxLength={100}
-            value={fine.label || ''}
+            value={tier.label || ''}
             onChange={(e) => onUpdate(index, 'label', e.target.value)}
             className="mt-1"
             placeholder={t('labelPlaceholder')}

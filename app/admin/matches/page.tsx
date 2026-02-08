@@ -1,12 +1,5 @@
-import { redirect } from 'next/navigation'
-import { getActiveLeagues } from '@/lib/league-utils'
+import { redirectToLeagueScoped } from '@/lib/league-utils'
 
-export default async function MatchesRedirect() {
-  const leagues = await getActiveLeagues()
-
-  if (leagues.length === 0) {
-    redirect('/admin/leagues')
-  }
-
-  redirect(`/admin/${leagues[0].id}/matches`)
+export default function MatchesRedirect() {
+  return redirectToLeagueScoped('matches')
 }

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { updateUserQuestionBet, deleteUserQuestionBet, type UserQuestionBet } from '@/actions/question-bets'
 import { evaluateQuestionBets } from '@/actions/evaluate-questions'
-import { validateUserQuestionBetEdit } from '@/lib/validation-client'
+import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
@@ -52,7 +52,7 @@ export function QuestionBetRow({
       userBet: inlineEdit.form.userBet === 'null' ? null : inlineEdit.form.userBet === 'true',
     }
 
-    const validation = validateUserQuestionBetEdit(validationData)
+    const validation = validate.userQuestionBetEdit(validationData)
     if (!validation.success) {
       toast.error(getErrorMessage(validation.error, 'Validation failed'))
       return

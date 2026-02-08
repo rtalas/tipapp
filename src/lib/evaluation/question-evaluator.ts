@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import type { TransactionClient } from '@/lib/prisma-utils'
 import { AppError } from '@/lib/error-handler'
 
 export interface EvaluateQuestionOptions {
@@ -13,10 +14,6 @@ export interface EvaluationResult {
   isCorrect: boolean | null // null if user didn't bet
 }
 
-type TransactionClient = Omit<
-  typeof prisma,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->
 
 /**
  * Evaluate question bets

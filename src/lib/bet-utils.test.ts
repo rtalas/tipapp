@@ -195,6 +195,125 @@ describe('saveUserBet', () => {
     // Should still succeed since audit is fire-and-forget
     expect(result).toEqual({ success: true })
   })
+
+  describe('concurrent bet race conditions', () => {
+    beforeEach(() => {
+      baseConfig.findLeagueId.mockResolvedValue(1)
+    })
+
+    it('should propagate serialization failure when concurrent transactions conflict', async () => {
+      // Simulate PostgreSQL P2034 serialization error thrown by Prisma
+      const serializationError = new Error(
+        'Transaction failed due to a write conflict or a deadlock. Please retry your transaction'
+      )
+      serializationError.name = 'PrismaClientKnownRequestError'
+      ;(serializationError as any).code = 'P2034'
+
+      mockPrisma.$transaction.mockRejectedValue(serializationError)
+
+      // The serialization error is not an AppError, so it should be rethrown
+      await expect(
+        saveUserBet({
+          ...baseConfig,
+          input: { entityId: 1, value: 'test' },
+        })
+      ).rejects.toThrow('Transaction failed due to a write conflict')
+    })
+
+    it('should succeed for first caller and fail for second on concurrent bets', async () => {
+      let callCount = 0
+
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+        callCount++
+        if (callCount === 1) {
+          // First transaction succeeds
+          return fn({})
+        }
+        // Second transaction gets serialization failure from PostgreSQL
+        const error = new Error(
+          'Transaction failed due to a write conflict or a deadlock. Please retry your transaction'
+        )
+        ;(error as any).code = 'P2034'
+        throw error
+      })
+
+      baseConfig.runTransaction.mockResolvedValue(false)
+
+      // Fire two concurrent saves
+      const [result1, result2] = await Promise.allSettled([
+        saveUserBet({ ...baseConfig, input: { entityId: 1, value: 'bet-a' } }),
+        saveUserBet({ ...baseConfig, input: { entityId: 1, value: 'bet-b' } }),
+      ])
+
+      // First succeeds
+      expect(result1.status).toBe('fulfilled')
+      if (result1.status === 'fulfilled') {
+        expect(result1.value).toEqual({ success: true })
+      }
+
+      // Second is rejected with serialization error (not swallowed)
+      expect(result2.status).toBe('rejected')
+      if (result2.status === 'rejected') {
+        expect(result2.reason.message).toContain('write conflict')
+      }
+    })
+
+    it('should not produce duplicate bets when transaction retries after conflict', async () => {
+      const createCalls: unknown[] = []
+
+      // First call: transaction succeeds with create
+      // Second call: transaction succeeds but finds existing bet → update
+      let callCount = 0
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+        callCount++
+        const tx = {
+          findFirst: vi.fn().mockResolvedValue(
+            callCount === 1 ? null : { id: 99 } // first: no bet, second: bet exists
+          ),
+          create: vi.fn().mockImplementation((data: unknown) => {
+            createCalls.push(data)
+            return { id: callCount }
+          }),
+          update: vi.fn(),
+        }
+        return fn(tx)
+      })
+
+      // Simulate: first creates, second finds the created bet and updates
+      baseConfig.runTransaction
+        .mockResolvedValueOnce(false) // first: created
+        .mockResolvedValueOnce(true)  // second: updated
+
+      const [r1, r2] = await Promise.all([
+        saveUserBet({ ...baseConfig, input: { entityId: 1, value: 'bet-a' } }),
+        saveUserBet({ ...baseConfig, input: { entityId: 1, value: 'bet-b' } }),
+      ])
+
+      expect(r1.success).toBe(true)
+      expect(r2.success).toBe(true)
+      // One create audit and one update audit — not two creates
+      expect(baseConfig.audit.onCreated).toHaveBeenCalledTimes(1)
+      expect(baseConfig.audit.onUpdated).toHaveBeenCalledTimes(1)
+    })
+
+    it('should reject Prisma unique constraint violation on concurrent create', async () => {
+      // Simulate P2002 unique constraint violation
+      const uniqueError = new Error(
+        'Unique constraint failed on the fields: (`leagueMatchId`,`leagueUserId`,`deletedAt`)'
+      )
+      uniqueError.name = 'PrismaClientKnownRequestError'
+      ;(uniqueError as any).code = 'P2002'
+
+      mockPrisma.$transaction.mockRejectedValue(uniqueError)
+
+      await expect(
+        saveUserBet({
+          ...baseConfig,
+          input: { entityId: 1, value: 'test' },
+        })
+      ).rejects.toThrow('Unique constraint failed')
+    })
+  })
 })
 
 describe('getFriendPredictions', () => {

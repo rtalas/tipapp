@@ -52,35 +52,3 @@ export const validate = {
   userQuestionBetCreate: (data: unknown) => createUserQuestionBetSchema.safeParse(data),
   userQuestionBetEdit: (data: unknown) => updateUserQuestionBetSchema.safeParse(data),
 } as const
-
-// Legacy named exports for backwards compatibility (use `validate` namespace instead)
-/** @deprecated Use `validate.teamEdit` instead */
-export const validateTeamEdit = validate.teamEdit
-/** @deprecated Use `validate.teamCreate` instead */
-export const validateTeamCreate = validate.teamCreate
-/** @deprecated Use `validate.playerEdit` instead */
-export const validatePlayerEdit = validate.playerEdit
-/** @deprecated Use `validate.playerCreate` instead */
-export const validatePlayerCreate = validate.playerCreate
-/** @deprecated Use `validate.forgotPassword` instead */
-export const validateForgotPassword = validate.forgotPassword
-/** @deprecated Use `validate.resetPassword` instead */
-export const validateResetPassword = validate.resetPassword
-/** @deprecated Use `validate.userBetCreate` instead */
-export const validateUserBetCreate = validate.userBetCreate
-/** @deprecated Use `validate.userBetEdit` instead */
-export const validateUserBetEdit = validate.userBetEdit
-/** @deprecated Use `validate.userSeriesBetCreate` instead */
-export const validateUserSeriesBetCreate = validate.userSeriesBetCreate
-/** @deprecated Use `validate.userSeriesBetEdit` instead */
-export const validateUserSeriesBetEdit = validate.userSeriesBetEdit
-/** @deprecated Use `validate.userSpecialBetCreate` instead */
-export const validateUserSpecialBetCreate = validate.userSpecialBetCreate
-/** @deprecated Use `validate.userSpecialBetEdit` instead */
-export const validateUserSpecialBetEdit = validate.userSpecialBetEdit
-/** @deprecated Use `validate.questionEdit` instead */
-export const validateQuestionEdit = validate.questionEdit
-/** @deprecated Use `validate.userQuestionBetCreate` instead */
-export const validateUserQuestionBetCreate = validate.userQuestionBetCreate
-/** @deprecated Use `validate.userQuestionBetEdit` instead */
-export const validateUserQuestionBetEdit = validate.userQuestionBetEdit

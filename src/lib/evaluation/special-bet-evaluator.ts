@@ -4,6 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import type { TransactionClient } from '@/lib/prisma-utils'
 import { AppError } from '@/lib/error-handler'
 import {
   getSpecialEvaluator,
@@ -36,10 +37,6 @@ interface EvaluationResult {
   }>
 }
 
-type TransactionClient = Omit<
-  typeof prisma,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->
 
 /**
  * Evaluate special bets

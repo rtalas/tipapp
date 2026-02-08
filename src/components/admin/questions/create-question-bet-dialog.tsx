@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { createUserQuestionBet, type QuestionWithUserBets } from '@/actions/question-bets'
 import { type UserBasic } from '@/actions/users'
-import { validateUserQuestionBetCreate } from '@/lib/validation-client'
+import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import {
   Select,
@@ -67,7 +67,7 @@ export function CreateQuestionBetDialog({ open, onOpenChange, question, users }:
       userBet: createDialog.form.userBet === 'true',
     }
 
-    const validation = validateUserQuestionBetCreate(validationData)
+    const validation = validate.userQuestionBetCreate(validationData)
     if (!validation.success) {
       toast.error(getErrorMessage(validation.error, 'Validation failed'))
       return

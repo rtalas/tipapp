@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { getUserSeries } from '@/actions/user/series'
 import { SeriesList } from '@/components/user/series/series-list'
 import { SeriesListSkeleton } from '@/components/user/series/series-list-skeleton'
+
+export const metadata: Metadata = { title: 'Series' }
 
 interface SeriesPageProps {
   params: Promise<{ leagueId: string }>

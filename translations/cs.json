@@ -197,7 +197,9 @@
       "yourBetShort": "Váš tip:",
       "saved": "Uloženo",
       "saving": "Ukládání...",
-      "savePrediction": "Uložit tip"
+      "savePrediction": "Uložit tip",
+      "playoff": "Playoff",
+      "game": "Zápas {number}"
     },
     "leaderboard": {
       "title": "Žebříček",
@@ -576,6 +578,7 @@
       "matchDeleteFailed": "Nepodařilo se smazat zápas",
       "matchEvaluated": "Zápas vyhodnocen! {count} uživatel(ů) aktualizováno.",
       "matchEvaluateFailed": "Nepodařilo se vyhodnotit zápas",
+      "playoff": "Playoff",
       "enterResult": "Zadat výsledek",
       "user": "Uživatel",
       "overtime": "Prod.",
@@ -827,6 +830,9 @@
       "requestApprovedFailed": "Nepodařilo se schválit žádost",
       "requestRejected": "Žádost odmítnuta",
       "requestRejectedFailed": "Nepodařilo se odmítnout žádost",
+      "backToLeagues": "Zpět na ligy",
+      "userManagement": "{league} - Správa uživatelů",
+      "userManagementDescription": "Spravujte žádosti a členství uživatelů v této lize.",
       "leagueUsers": "Uživatelé ligy",
       "leagueUsersDescription": "Spravujte přístup uživatelů a oprávnění napříč ligami",
       "searchPlaceholder": "Hledat podle jména nebo emailu...",
@@ -1134,7 +1140,7 @@
     },
     "leagueEvaluators": {
       "backToLeagues": "Zpět na ligy",
-      "description": "Spravujte pravidla bodování pro tuto ligu",
+      "description": "Vyhodnocovače pro {leagueName} {season}",
       "addEvaluator": "Přidat vyhodnocovací pravidlo",
       "scoringRules": "Pravidla bodování",
       "scoringRulesDescription": "Spravujte body vyhodnocovacích pravidel pro {leagueName}",
@@ -1189,6 +1195,13 @@
         "type": "Typ",
         "points": "Body"
       },
+      "rankShort": "R{rank}:{points}",
+      "unrankedShort": "U:{points}",
+      "winnerShort": "V:{points}",
+      "advanceShort": "P:{points}",
+      "positionsLabel": "Poz: {positions}",
+      "otherLabel": "Ostatní:",
+      "rankDisplay": "#{rank}:",
       "rankingPoints": "Body podle hodnocení",
       "rank": "Rank {rank}:",
       "pts": "b",

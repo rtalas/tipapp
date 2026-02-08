@@ -182,9 +182,10 @@ export async function updateMatchResult(input: UpdateMatchResultInput) {
 
         // Handle scorers
         if (validated.scorers) {
-          // Delete existing scorers
-          await tx.matchScorer.deleteMany({
-            where: { matchId: validated.matchId },
+          // Soft-delete existing scorers
+          await tx.matchScorer.updateMany({
+            where: { matchId: validated.matchId, deletedAt: null },
+            data: { deletedAt: now },
           })
 
           // Create new scorers
@@ -269,6 +270,7 @@ export async function getMatchById(matchId: number) {
         },
       },
       MatchScorer: {
+        where: { deletedAt: null },
         include: {
           LeaguePlayer: {
             include: { Player: true },

@@ -1,7 +1,7 @@
 'use client';
 
 import { resetPassword } from '@/actions/password-reset';
-import { validateResetPassword } from '@/lib/validation-client';
+import { validate } from '@/lib/validation-client';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -53,7 +53,7 @@ export default function ResetPasswordPage() {
     setIsLoading(true);
 
     // Client-side validation
-    const validationResult = validateResetPassword({
+    const validationResult = validate.resetPassword({
       token,
       password,
       confirmPassword,

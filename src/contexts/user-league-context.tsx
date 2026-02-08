@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { AppError } from '@/lib/error-handler'
 
@@ -28,7 +28,7 @@ export function UserLeagueProvider({
   const pathname = usePathname()
   const router = useRouter()
   const [selectedLeagueId, setSelectedLeagueIdState] = useState<number>(initialLeagueId)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   // Sync with URL when on league-specific routes
   // Valid use of setState in effect: syncing with external system (router/URL)
@@ -52,27 +52,21 @@ export function UserLeagueProvider({
     }
   }, [selectedLeagueId])
 
-  const setSelectedLeagueId = useCallback(
-    (leagueId: number) => {
-      setIsLoading(true)
-      setSelectedLeagueIdState(leagueId)
+  const setSelectedLeagueId = (leagueId: number) => {
+    setSelectedLeagueIdState(leagueId)
 
-      // Navigate to the new league, preserving the current page type
-      const currentPage = pathname.match(/^\/\d+\/(.+)$/)?.[1] || 'matches'
+    // Navigate to the new league, preserving the current page type
+    const currentPage = pathname.match(/^\/\d+\/(.+)$/)?.[1] || 'matches'
+    startTransition(() => {
       router.push(`/${leagueId}/${currentPage}`)
-      setIsLoading(false)
-    },
-    [pathname, router]
-  )
+    })
+  }
 
-  const value = useMemo(
-    () => ({
-      selectedLeagueId,
-      setSelectedLeagueId,
-      isLoading,
-    }),
-    [selectedLeagueId, setSelectedLeagueId, isLoading]
-  )
+  const value = {
+    selectedLeagueId,
+    setSelectedLeagueId,
+    isLoading: isPending,
+  }
 
   return (
     <UserLeagueContext.Provider value={value}>

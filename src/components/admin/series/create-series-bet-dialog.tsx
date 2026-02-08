@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { createUserSeriesBet, type SeriesWithUserBets } from '@/actions/series-bets'
-import { validateUserSeriesBetCreate } from '@/lib/validation-client'
+import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
@@ -58,7 +58,7 @@ export function CreateSeriesBetDialog({ open, onOpenChange, series }: CreateSeri
       awayTeamScore: parseInt(createDialog.form.awayTeamScore),
     }
 
-    const validation = validateUserSeriesBetCreate(validationData)
+    const validation = validate.userSeriesBetCreate(validationData)
     if (!validation.success) {
       toast.error(getErrorMessage(validation.error, 'Validation failed'))
       return

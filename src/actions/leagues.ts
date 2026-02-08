@@ -99,31 +99,38 @@ export async function createLeague(input: CreateLeagueInput) {
               DEFAULT_EVALUATOR_POINTS.hasOwnProperty(type.name)
             )
 
-            // Create evaluators (using individual creates to support JSON config for scorer)
-            for (const type of defaultTypes) {
-              const baseData = {
-                name: type.name,
-                evaluatorTypeId: type.id,
-                leagueId: league.id,
-                points: DEFAULT_EVALUATOR_POINTS[type.name] ?? 1,
-                entity: getEvaluatorEntity(type.name),
-                createdAt: now,
-                updatedAt: now,
-              }
+            const scorerType = defaultTypes.find(t => t.name === 'scorer')
+            const nonScorerTypes = defaultTypes.filter(t => t.name !== 'scorer')
 
-              // Add config for scorer evaluator
-              if (type.name === 'scorer') {
-                await tx.evaluator.create({
-                  data: {
-                    ...baseData,
-                    config: DEFAULT_SCORER_CONFIG,
-                  },
-                })
-              } else {
-                await tx.evaluator.create({
-                  data: baseData,
-                })
-              }
+            // Batch create non-scorer evaluators
+            if (nonScorerTypes.length > 0) {
+              await tx.evaluator.createMany({
+                data: nonScorerTypes.map(type => ({
+                  name: type.name,
+                  evaluatorTypeId: type.id,
+                  leagueId: league.id,
+                  points: DEFAULT_EVALUATOR_POINTS[type.name] ?? 1,
+                  entity: getEvaluatorEntity(type.name),
+                  createdAt: now,
+                  updatedAt: now,
+                })),
+              })
+            }
+
+            // Create scorer separately (needs JSON config)
+            if (scorerType) {
+              await tx.evaluator.create({
+                data: {
+                  name: scorerType.name,
+                  evaluatorTypeId: scorerType.id,
+                  leagueId: league.id,
+                  points: DEFAULT_EVALUATOR_POINTS[scorerType.name] ?? 1,
+                  entity: getEvaluatorEntity(scorerType.name),
+                  config: DEFAULT_SCORER_CONFIG,
+                  createdAt: now,
+                  updatedAt: now,
+                },
+              })
             }
           }
         }

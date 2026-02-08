@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
+import { useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Trophy } from 'lucide-react'
 import { RefreshButton } from '@/components/user/common/refresh-button'
 import { PullToRefresh } from '@/components/user/common/pull-to-refresh'
@@ -26,9 +26,9 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
   const leagueId = parseInt(params.leagueId as string, 10)
   const [selectedUser, setSelectedUser] = useState<LeaderboardEntry | null>(null)
 
-  const handleSelectUser = useCallback((entry: LeaderboardEntry | null) => {
+  const handleSelectUser = (entry: LeaderboardEntry | null) => {
     setSelectedUser(entry)
-  }, [])
+  }
 
   if (entries.length === 0) {
     return (
@@ -150,14 +150,15 @@ interface RankingRowProps {
 
 function RankingRow({ entry, index, prizes, fines, totalEntries, onClick }: RankingRowProps) {
   const t = useTranslations('user.leaderboard')
+  const locale = useLocale()
   const displayName = getDisplayName(
     entry.firstName,
     entry.lastName,
     entry.username
   )
   const rankStyle = getRankStyle(entry.rank)
-  const prize = getPrize(entry.rank, prizes)
-  const fine = getFine(entry.rank, totalEntries, fines)
+  const prize = getPrize(entry.rank, prizes, locale)
+  const fine = getFine(entry.rank, totalEntries, fines, locale)
 
   return (
     <button
@@ -263,18 +264,18 @@ function getRankStyle(rank: number) {
   return { bg: 'bg-secondary', ring: 'ring-border', text: 'text-muted-foreground' }
 }
 
-function getPrize(rank: number, prizes: LeaguePrize[]) {
+function getPrize(rank: number, prizes: LeaguePrize[], locale: string) {
   const prize = prizes.find((p) => p.rank === rank)
   if (!prize) return null
 
-  const formatted = new Intl.NumberFormat('cs-CZ', {
+  const formatted = new Intl.NumberFormat(locale, {
     minimumFractionDigits: 0,
   }).format(prize.amount / 100)
 
   return `${formatted}\u00A0${prize.currency}`
 }
 
-function getFine(rank: number, totalEntries: number, fines: LeaguePrize[]) {
+function getFine(rank: number, totalEntries: number, fines: LeaguePrize[], locale: string) {
   // Calculate position from bottom (1 = last place, 2 = second-to-last, etc.)
   const positionFromBottom = totalEntries - rank + 1
 
@@ -282,7 +283,7 @@ function getFine(rank: number, totalEntries: number, fines: LeaguePrize[]) {
   if (!fine) return null
 
   // Use Math.abs to avoid double minus sign (minus is added in display)
-  const formatted = new Intl.NumberFormat('cs-CZ', {
+  const formatted = new Intl.NumberFormat(locale, {
     minimumFractionDigits: 0,
   }).format(Math.abs(fine.amount) / 100)
 

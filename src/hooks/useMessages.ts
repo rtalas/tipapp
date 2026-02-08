@@ -2,38 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getMessages, sendMessage, deleteMessage } from '@/actions/messages'
+import type { MessageWithRelations } from '@/lib/prisma-helpers'
 
-// Message type based on what the server returns
-export interface ChatMessage {
-  id: number
-  leagueId: number
-  leagueUserId: number
-  text: string
-  createdAt: Date
-  updatedAt: Date
-  deletedAt: Date | null
-  LeagueUser: {
-    id: number
-    userId: number
-    User: {
-      id: number
-      firstName: string
-      lastName: string
-      username: string
-      avatarUrl: string | null
-    }
-  }
-  ReplyTo: {
-    id: number
-    text: string
-    deletedAt: Date | null
-    LeagueUser: {
-      id: number
-      userId: number
-      User: { id: number; firstName: string; lastName: string; username: string }
-    }
-  } | null
-}
+export type ChatMessage = MessageWithRelations
 
 interface UseMessagesOptions {
   leagueId: number
@@ -57,6 +28,9 @@ interface UseMessagesReturn {
 /**
  * Hook for managing chat messages with polling support.
  * Handles fetching, sending, deleting, and real-time updates via polling.
+ *
+ * Concurrency: All fetch operations (polling, loadMore, refresh) share a single
+ * isFetchingRef guard to prevent overlapping requests. Only one can run at a time.
  */
 export function useMessages({
   leagueId,
@@ -77,15 +51,31 @@ export function useMessages({
       : null
   )
 
-  // Track the oldest message timestamp for loadMore (avoids messages dependency)
+  // Track the oldest message timestamp for loadMore
   const oldestTimestamp = useRef<Date | null>(
     initialMessages.length > 0
       ? new Date(initialMessages[0].createdAt)
       : null
   )
 
-  // Guard against concurrent fetch operations
+  // Guard against concurrent fetch operations (shared across poll, loadMore, refresh)
   const isFetchingRef = useRef(false)
+
+  // Track hasMore in a ref so loadMore doesn't need it as a dependency
+  const hasMoreRef = useRef(true)
+
+  // Reset timestamps when enabled transitions from false to true
+  const prevEnabledRef = useRef(enabled)
+  useEffect(() => {
+    if (enabled && !prevEnabledRef.current) {
+      // Re-enabled: reset cursors to avoid stale gaps
+      newestTimestamp.current = null
+      oldestTimestamp.current = null
+      hasMoreRef.current = true
+      setHasMore(true)
+    }
+    prevEnabledRef.current = enabled
+  }, [enabled])
 
   // Fetch new messages (for polling) — incremental via `after` parameter
   const fetchNewMessages = useCallback(async () => {
@@ -189,7 +179,7 @@ export function useMessages({
 
   // Load older messages (pagination)
   const loadMore = useCallback(async () => {
-    if (!hasMore || isLoading || isFetchingRef.current) return
+    if (!hasMoreRef.current || isFetchingRef.current) return
 
     isFetchingRef.current = true
     setIsLoading(true)
@@ -208,9 +198,15 @@ export function useMessages({
         const olderMessages = result.messages as ChatMessage[]
         if (olderMessages.length > 0) {
           oldestTimestamp.current = new Date(olderMessages[0].createdAt)
-          setMessages((prev) => [...olderMessages, ...prev])
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((m) => m.id))
+            const uniqueOlder = olderMessages.filter((m) => !existingIds.has(m.id))
+            return uniqueOlder.length > 0 ? [...uniqueOlder, ...prev] : prev
+          })
         }
-        setHasMore(result.hasMore ?? false)
+        const more = result.hasMore ?? false
+        hasMoreRef.current = more
+        setHasMore(more)
       }
     } catch {
       setError('Failed to load messages')
@@ -218,10 +214,13 @@ export function useMessages({
       setIsLoading(false)
       isFetchingRef.current = false
     }
-  }, [leagueId, hasMore, isLoading])
+  }, [leagueId])
 
-  // Manual refresh
+  // Manual refresh — replaces all messages with fresh data
   const refresh = useCallback(async () => {
+    if (isFetchingRef.current) return
+
+    isFetchingRef.current = true
     setIsLoading(true)
     setError(null)
 
@@ -233,16 +232,22 @@ export function useMessages({
       } else {
         const refreshedMessages = result.messages as ChatMessage[]
         setMessages(refreshedMessages)
-        setHasMore(result.hasMore ?? false)
+        const more = result.hasMore ?? false
+        hasMoreRef.current = more
+        setHasMore(more)
         if (refreshedMessages.length > 0) {
           newestTimestamp.current = new Date(refreshedMessages[refreshedMessages.length - 1].createdAt)
           oldestTimestamp.current = new Date(refreshedMessages[0].createdAt)
+        } else {
+          newestTimestamp.current = null
+          oldestTimestamp.current = null
         }
       }
     } catch {
       setError('Failed to refresh messages')
     } finally {
       setIsLoading(false)
+      isFetchingRef.current = false
     }
   }, [leagueId])
 

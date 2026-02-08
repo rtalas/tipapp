@@ -17,7 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { createUserBet, type MatchWithUserBets } from '@/actions/user-bets'
-import { validateUserBetCreate } from '@/lib/validation-client'
+import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
@@ -76,7 +76,7 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
           : createDialog.form.homeAdvanced === 'home',
     }
 
-    const validation = validateUserBetCreate(validationData)
+    const validation = validate.userBetCreate(validationData)
     if (!validation.success) {
       toast.error(getErrorMessage(validation.error, 'Validation failed'))
       return

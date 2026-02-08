@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 import { getPendingRequests, getLeagueUsers } from '@/actions/users'
 import { prisma } from '@/lib/prisma'
 import { Button } from '@/components/ui/button'
@@ -28,9 +29,10 @@ export default async function LeagueUsersPage({ params }: LeagueUsersPageProps) 
   }
 
   // Fetch data in parallel - filter for this specific league
-  const [pendingRequests, leagueUsers] = await Promise.all([
+  const [pendingRequests, leagueUsers, t] = await Promise.all([
     getPendingRequests(),
     getLeagueUsers({ leagueId }),
+    getTranslations('admin.users'),
   ])
 
   // Filter pending requests for this league only
@@ -42,17 +44,17 @@ export default async function LeagueUsersPage({ params }: LeagueUsersPageProps) 
         <Button variant="ghost" size="sm" asChild>
           <Link href="/admin/leagues">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Leagues
+            {t('backToLeagues')}
           </Link>
         </Button>
       </div>
 
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          {league.name} - User Management
+          {t('userManagement', { league: league.name })}
         </h1>
         <p className="text-muted-foreground">
-          Manage user requests and memberships for this league.
+          {t('userManagementDescription')}
         </p>
       </div>
 

@@ -1,8 +1,16 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { getLocale } from 'next-intl/server'
 import { AdminLayout } from '@/components/admin/layout/admin-layout'
 import { getActiveLeagues } from '@/lib/league-utils'
+
+export const metadata: Metadata = {
+  title: {
+    default: 'Admin',
+    template: '%s | TipApp Admin',
+  },
+}
 
 export default async function AdminRootLayout({
   children,

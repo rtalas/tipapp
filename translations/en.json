@@ -197,7 +197,9 @@
       "yourBetShort": "Your bet:",
       "saved": "Saved",
       "saving": "Saving...",
-      "savePrediction": "Save Prediction"
+      "savePrediction": "Save Prediction",
+      "playoff": "Playoff",
+      "game": "Game {number}"
     },
     "leaderboard": {
       "title": "Leaderboard",
@@ -576,6 +578,7 @@
       "matchDeleteFailed": "Failed to delete match",
       "matchEvaluated": "Match evaluated! {count} user(s) updated.",
       "matchEvaluateFailed": "Failed to evaluate match",
+      "playoff": "Playoff",
       "enterResult": "Enter Result",
       "user": "User",
       "overtime": "OT",
@@ -827,6 +830,9 @@
       "requestApprovedFailed": "Failed to approve request",
       "requestRejected": "Request rejected",
       "requestRejectedFailed": "Failed to reject request",
+      "backToLeagues": "Back to Leagues",
+      "userManagement": "{league} - User Management",
+      "userManagementDescription": "Manage user requests and memberships for this league.",
       "leagueUsers": "League Users",
       "leagueUsersDescription": "Manage user access and permissions across leagues",
       "searchPlaceholder": "Search by name or email...",
@@ -1134,7 +1140,7 @@
     },
     "leagueEvaluators": {
       "backToLeagues": "Back to leagues",
-      "description": "Manage scoring rules for this league",
+      "description": "Evaluators for {leagueName} {season}",
       "addEvaluator": "Add Evaluator",
       "scoringRules": "Scoring Rules",
       "scoringRulesDescription": "Manage evaluator points for {leagueName}",
@@ -1189,6 +1195,13 @@
         "type": "Type",
         "points": "Points"
       },
+      "rankShort": "R{rank}:{points}",
+      "unrankedShort": "U:{points}",
+      "winnerShort": "W:{points}",
+      "advanceShort": "A:{points}",
+      "positionsLabel": "Pos: {positions}",
+      "otherLabel": "Other:",
+      "rankDisplay": "#{rank}:",
       "rankingPoints": "Ranking Points",
       "rank": "Rank {rank}:",
       "pts": "pts",

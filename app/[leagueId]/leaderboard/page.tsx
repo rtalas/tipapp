@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { getLeaderboard } from '@/actions/user/leaderboard'
 import { LeaderboardTable } from '@/components/user/leaderboard/leaderboard-table'
 import { LeaderboardSkeleton } from '@/components/user/leaderboard/leaderboard-skeleton'
+
+export const metadata: Metadata = { title: 'Leaderboard' }
 
 interface LeaderboardPageProps {
   params: Promise<{ leagueId: string }>

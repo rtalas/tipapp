@@ -1,5 +1,6 @@
 import { Zap, Clock } from 'lucide-react'
 import { format } from 'date-fns'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { StatusBadge } from '@/components/user/common/status-badge'
 import type { UserMatch } from '@/actions/user/matches'
@@ -15,6 +16,7 @@ export function MatchHeader({
   isEvaluated,
   isDoubled,
 }: MatchHeaderProps) {
+  const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const isPlayoff = match.Match.isPlayoffGame
 
@@ -27,7 +29,7 @@ export function MatchHeader({
             {match.Match.MatchPhase.name}
             {match.Match.gameNumber &&
               match.Match.MatchPhase.bestOf &&
-              match.Match.MatchPhase.bestOf > 1 && <>, Game {match.Match.gameNumber}</>}
+              match.Match.MatchPhase.bestOf > 1 && <>, {t('game', { number: match.Match.gameNumber })}</>}
           </span>
         )}
 
@@ -41,7 +43,7 @@ export function MatchHeader({
             )}
             {isPlayoff && (
               <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
-                Playoff
+                {t('playoff')}
               </span>
             )}
           </>

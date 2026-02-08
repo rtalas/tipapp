@@ -4,10 +4,8 @@ import { requireLeagueMember, isBettingOpen } from '@/lib/auth/user-auth-utils'
 import { AppError } from '@/lib/error-handler'
 import type { ZodType } from 'zod'
 
-export type TransactionClient = Omit<
-  typeof prisma,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->
+import type { TransactionClient } from '@/lib/prisma-utils'
+export type { TransactionClient } from '@/lib/prisma-utils'
 
 // ==================== Scorer Validation ====================
 

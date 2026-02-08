@@ -18,7 +18,10 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'TipApp - Nevereding fun with your friends',
+  title: {
+    default: 'TipApp - Neverending fun with your friends',
+    template: '%s | TipApp',
+  },
   description: 'Compete with friends in football and hockey predictions',
   manifest: '/manifest.json',
   appleWebApp: {

@@ -10,7 +10,7 @@ import {
 } from '@/actions/teams'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
-import { validateTeamCreate, validateTeamEdit } from '@/lib/validation-client'
+import { validate } from '@/lib/validation-client'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
@@ -128,7 +128,7 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
     const flagType = inlineEdit.form.flagType === 'none' ? undefined : inlineEdit.form.flagType
 
     // Validate form data
-    const validation = validateTeamEdit({
+    const validation = validate.teamEdit({
       id: teamId,
       name: inlineEdit.form.name,
       nickname: inlineEdit.form.nickname,
@@ -175,7 +175,7 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
     const flagType = createDialog.form.flagType === 'none' ? undefined : createDialog.form.flagType
 
     // Validate form data
-    const validation = validateTeamCreate({
+    const validation = validate.teamCreate({
       sportId: parseInt(createDialog.form.sportId, 10) || undefined,
       name: createDialog.form.name,
       nickname: createDialog.form.nickname,

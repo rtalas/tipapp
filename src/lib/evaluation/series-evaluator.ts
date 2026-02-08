@@ -4,6 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import type { TransactionClient } from '@/lib/prisma-utils'
 import { getSeriesEvaluator, buildSeriesBetContext } from '@/lib/evaluators'
 import { AppError } from '@/lib/error-handler'
 
@@ -22,10 +23,6 @@ interface EvaluationResult {
   }>
 }
 
-type TransactionClient = Omit<
-  typeof prisma,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->
 
 /**
  * Evaluate series bets

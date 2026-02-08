@@ -66,14 +66,34 @@ export async function getLeaguesWithTeams() {
       deletedAt: null,
       isActive: true,
     },
-    include: {
+    select: {
+      id: true,
+      name: true,
       LeagueTeam: {
         where: { deletedAt: null },
-        include: {
-          Team: true,
+        select: {
+          id: true,
+          group: true,
+          Team: {
+            select: {
+              id: true,
+              name: true,
+              shortcut: true,
+              flagIcon: true,
+              flagType: true,
+            },
+          },
           LeaguePlayer: {
             where: { deletedAt: null },
-            include: { Player: true },
+            select: {
+              id: true,
+              Player: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
             orderBy: { Player: { lastName: 'asc' } },
           },
         },

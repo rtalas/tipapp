@@ -162,187 +162,137 @@ export async function auditLog(options: AuditLogOptions): Promise<void> {
   }
 }
 
+// ==================== Factories ====================
+
+function createBetLoggers(config: {
+  createdEvent: EventType;
+  updatedEvent: EventType;
+  resourceType: string;
+  createdDesc: string;
+  updatedDesc: string;
+}) {
+  const created = async (
+    userId: number,
+    leagueId: number,
+    resourceId: number,
+    metadata?: Record<string, unknown>,
+    durationMs?: number
+  ) => {
+    await auditLog({
+      eventType: config.createdEvent,
+      eventCategory: EventCategory.USER_ACTION,
+      severity: LogSeverity.INFO,
+      userId,
+      leagueId,
+      resourceType: config.resourceType,
+      resourceId,
+      action: "CREATE",
+      description: `User ${userId} ${config.createdDesc} ${resourceId}`,
+      metadata,
+      durationMs,
+    });
+  };
+
+  const updated = async (
+    userId: number,
+    leagueId: number,
+    resourceId: number,
+    changes?: Record<string, unknown>,
+    durationMs?: number
+  ) => {
+    await auditLog({
+      eventType: config.updatedEvent,
+      eventCategory: EventCategory.USER_ACTION,
+      severity: LogSeverity.INFO,
+      userId,
+      leagueId,
+      resourceType: config.resourceType,
+      resourceId,
+      action: "UPDATE",
+      description: `User ${userId} ${config.updatedDesc} ${resourceId}`,
+      metadata: changes,
+      durationMs,
+    });
+  };
+
+  return { created, updated };
+}
+
+function createEvalLogger(config: {
+  eventType: EventType;
+  resourceType: string;
+  label: string;
+}) {
+  return async (
+    adminId: number,
+    resourceId: number,
+    affectedUsers: number,
+    totalPoints: number,
+    durationMs?: number
+  ) => {
+    await auditLog({
+      eventType: config.eventType,
+      eventCategory: EventCategory.EVALUATION,
+      severity: LogSeverity.INFO,
+      userId: adminId,
+      resourceType: config.resourceType,
+      resourceId,
+      action: "EVALUATE",
+      description: `${config.label} ${resourceId} evaluated by admin ${adminId}`,
+      metadata: { affectedUsers, totalPoints },
+      durationMs,
+    });
+  };
+}
+
+// ==================== Generated Loggers ====================
+
+const matchBet = createBetLoggers({
+  createdEvent: EventType.USER_BET_CREATED,
+  updatedEvent: EventType.USER_BET_UPDATED,
+  resourceType: "UserBet",
+  createdDesc: "placed bet on match",
+  updatedDesc: "updated bet on match",
+});
+
+const seriesBet = createBetLoggers({
+  createdEvent: EventType.USER_SERIES_BET_CREATED,
+  updatedEvent: EventType.USER_SERIES_BET_UPDATED,
+  resourceType: "UserSpecialBetSerie",
+  createdDesc: "placed series bet",
+  updatedDesc: "updated series bet",
+});
+
+const specialBet = createBetLoggers({
+  createdEvent: EventType.USER_SPECIAL_BET_CREATED,
+  updatedEvent: EventType.USER_SPECIAL_BET_UPDATED,
+  resourceType: "UserSpecialBetSingle",
+  createdDesc: "placed special bet",
+  updatedDesc: "updated special bet",
+});
+
+const questionBet = createBetLoggers({
+  createdEvent: EventType.USER_QUESTION_BET_CREATED,
+  updatedEvent: EventType.USER_QUESTION_BET_UPDATED,
+  resourceType: "UserSpecialBetQuestion",
+  createdDesc: "answered question",
+  updatedDesc: "updated question answer",
+});
+
 // ==================== Convenience Functions ====================
 
 export const AuditLogger = {
-  // User betting actions
-  userBetCreated: async (
-    userId: number,
-    leagueId: number,
-    matchId: number,
-    metadata?: Record<string, unknown>,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.USER_BET_CREATED,
-      eventCategory: EventCategory.USER_ACTION,
-      severity: LogSeverity.INFO,
-      userId,
-      leagueId,
-      resourceType: "UserBet",
-      resourceId: matchId,
-      action: "CREATE",
-      description: `User ${userId} placed bet on match ${matchId}`,
-      metadata,
-      durationMs,
-    });
-  },
+  // User betting actions (factory-generated)
+  userBetCreated: matchBet.created,
+  userBetUpdated: matchBet.updated,
+  seriesBetCreated: seriesBet.created,
+  seriesBetUpdated: seriesBet.updated,
+  specialBetCreated: specialBet.created,
+  specialBetUpdated: specialBet.updated,
+  questionBetCreated: questionBet.created,
+  questionBetUpdated: questionBet.updated,
 
-  userBetUpdated: async (
-    userId: number,
-    leagueId: number,
-    matchId: number,
-    changes?: Record<string, unknown>,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.USER_BET_UPDATED,
-      eventCategory: EventCategory.USER_ACTION,
-      severity: LogSeverity.INFO,
-      userId,
-      leagueId,
-      resourceType: "UserBet",
-      resourceId: matchId,
-      action: "UPDATE",
-      description: `User ${userId} updated bet on match ${matchId}`,
-      metadata: changes,
-      durationMs,
-    });
-  },
-
-  seriesBetCreated: async (
-    userId: number,
-    leagueId: number,
-    seriesId: number,
-    metadata?: Record<string, unknown>,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.USER_SERIES_BET_CREATED,
-      eventCategory: EventCategory.USER_ACTION,
-      severity: LogSeverity.INFO,
-      userId,
-      leagueId,
-      resourceType: "UserSpecialBetSerie",
-      resourceId: seriesId,
-      action: "CREATE",
-      description: `User ${userId} placed series bet ${seriesId}`,
-      metadata,
-      durationMs,
-    });
-  },
-
-  seriesBetUpdated: async (
-    userId: number,
-    leagueId: number,
-    seriesId: number,
-    changes?: Record<string, unknown>,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.USER_SERIES_BET_UPDATED,
-      eventCategory: EventCategory.USER_ACTION,
-      severity: LogSeverity.INFO,
-      userId,
-      leagueId,
-      resourceType: "UserSpecialBetSerie",
-      resourceId: seriesId,
-      action: "UPDATE",
-      description: `User ${userId} updated series bet ${seriesId}`,
-      metadata: changes,
-      durationMs,
-    });
-  },
-
-  specialBetCreated: async (
-    userId: number,
-    leagueId: number,
-    specialBetId: number,
-    metadata?: Record<string, unknown>,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.USER_SPECIAL_BET_CREATED,
-      eventCategory: EventCategory.USER_ACTION,
-      severity: LogSeverity.INFO,
-      userId,
-      leagueId,
-      resourceType: "UserSpecialBetSingle",
-      resourceId: specialBetId,
-      action: "CREATE",
-      description: `User ${userId} placed special bet ${specialBetId}`,
-      metadata,
-      durationMs,
-    });
-  },
-
-  specialBetUpdated: async (
-    userId: number,
-    leagueId: number,
-    specialBetId: number,
-    changes?: Record<string, unknown>,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.USER_SPECIAL_BET_UPDATED,
-      eventCategory: EventCategory.USER_ACTION,
-      severity: LogSeverity.INFO,
-      userId,
-      leagueId,
-      resourceType: "UserSpecialBetSingle",
-      resourceId: specialBetId,
-      action: "UPDATE",
-      description: `User ${userId} updated special bet ${specialBetId}`,
-      metadata: changes,
-      durationMs,
-    });
-  },
-
-  questionBetCreated: async (
-    userId: number,
-    leagueId: number,
-    questionId: number,
-    metadata?: Record<string, unknown>,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.USER_QUESTION_BET_CREATED,
-      eventCategory: EventCategory.USER_ACTION,
-      severity: LogSeverity.INFO,
-      userId,
-      leagueId,
-      resourceType: "UserSpecialBetQuestion",
-      resourceId: questionId,
-      action: "CREATE",
-      description: `User ${userId} answered question ${questionId}`,
-      metadata,
-      durationMs,
-    });
-  },
-
-  questionBetUpdated: async (
-    userId: number,
-    leagueId: number,
-    questionId: number,
-    changes?: Record<string, unknown>,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.USER_QUESTION_BET_UPDATED,
-      eventCategory: EventCategory.USER_ACTION,
-      severity: LogSeverity.INFO,
-      userId,
-      leagueId,
-      resourceType: "UserSpecialBetQuestion",
-      resourceId: questionId,
-      action: "UPDATE",
-      description: `User ${userId} updated question answer ${questionId}`,
-      metadata: changes,
-      durationMs,
-    });
-  },
-
-  // Authentication events
+  // Authentication events (unique signatures)
   userRegistered: async (userId: number, username: string, email: string) => {
     await auditLog({
       eventType: EventType.USER_REGISTERED,
@@ -442,88 +392,28 @@ export const AuditLogger = {
     });
   },
 
-  // Evaluation operations
-  matchEvaluated: async (
-    adminId: number,
-    matchId: number,
-    affectedUsers: number,
-    totalPoints: number,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.MATCH_EVALUATED,
-      eventCategory: EventCategory.EVALUATION,
-      severity: LogSeverity.INFO,
-      userId: adminId,
-      resourceType: "Match",
-      resourceId: matchId,
-      action: "EVALUATE",
-      description: `Match ${matchId} evaluated by admin ${adminId}`,
-      metadata: { affectedUsers, totalPoints },
-      durationMs,
-    });
-  },
+  // Evaluation operations (factory-generated)
+  matchEvaluated: createEvalLogger({
+    eventType: EventType.MATCH_EVALUATED,
+    resourceType: "Match",
+    label: "Match",
+  }),
 
-  seriesEvaluated: async (
-    adminId: number,
-    seriesId: number,
-    affectedUsers: number,
-    totalPoints: number,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.SERIES_EVALUATED,
-      eventCategory: EventCategory.EVALUATION,
-      severity: LogSeverity.INFO,
-      userId: adminId,
-      resourceType: "LeagueSpecialBetSerie",
-      resourceId: seriesId,
-      action: "EVALUATE",
-      description: `Series ${seriesId} evaluated by admin ${adminId}`,
-      metadata: { affectedUsers, totalPoints },
-      durationMs,
-    });
-  },
+  seriesEvaluated: createEvalLogger({
+    eventType: EventType.SERIES_EVALUATED,
+    resourceType: "LeagueSpecialBetSerie",
+    label: "Series",
+  }),
 
-  specialBetEvaluated: async (
-    adminId: number,
-    specialBetId: number,
-    affectedUsers: number,
-    totalPoints: number,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.SPECIAL_BET_EVALUATED,
-      eventCategory: EventCategory.EVALUATION,
-      severity: LogSeverity.INFO,
-      userId: adminId,
-      resourceType: "LeagueSpecialBetSingle",
-      resourceId: specialBetId,
-      action: "EVALUATE",
-      description: `Special bet ${specialBetId} evaluated by admin ${adminId}`,
-      metadata: { affectedUsers, totalPoints },
-      durationMs,
-    });
-  },
+  specialBetEvaluated: createEvalLogger({
+    eventType: EventType.SPECIAL_BET_EVALUATED,
+    resourceType: "LeagueSpecialBetSingle",
+    label: "Special bet",
+  }),
 
-  questionEvaluated: async (
-    adminId: number,
-    questionId: number,
-    affectedUsers: number,
-    totalPoints: number,
-    durationMs?: number
-  ) => {
-    await auditLog({
-      eventType: EventType.QUESTION_EVALUATED,
-      eventCategory: EventCategory.EVALUATION,
-      severity: LogSeverity.INFO,
-      userId: adminId,
-      resourceType: "LeagueSpecialBetQuestion",
-      resourceId: questionId,
-      action: "EVALUATE",
-      description: `Question ${questionId} evaluated by admin ${adminId}`,
-      metadata: { affectedUsers, totalPoints },
-      durationMs,
-    });
-  },
+  questionEvaluated: createEvalLogger({
+    eventType: EventType.QUESTION_EVALUATED,
+    resourceType: "LeagueSpecialBetQuestion",
+    label: "Question",
+  }),
 };

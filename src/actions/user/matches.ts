@@ -56,6 +56,7 @@ export const getUserMatches = createCachedEntityFetcher({
               },
             },
             MatchScorer: {
+              where: { deletedAt: null },
               include: {
                 LeaguePlayer: {
                   include: { Player: true },

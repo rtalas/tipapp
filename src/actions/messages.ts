@@ -14,30 +14,11 @@ import {
   type DeleteMessageInput,
 } from '@/lib/validation/admin'
 import { z } from 'zod'
+import { messageWithRelationsInclude } from '@/lib/prisma-helpers'
 
 const markChatAsReadSchema = z.object({
   leagueId: z.number().int().positive(),
 })
-
-/** Shared include for ReplyTo relation on messages */
-const replyToInclude = {
-  ReplyTo: {
-    include: {
-      LeagueUser: {
-        include: {
-          User: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              username: true,
-            },
-          },
-        },
-      },
-    },
-  },
-} as const
 
 /**
  * Get the current user's LeagueUser record for a specific league.
@@ -96,20 +77,7 @@ export async function getMessages(input: GetMessagesInput) {
           ...(Object.keys(createdAtFilter).length > 0 && { createdAt: createdAtFilter }),
         },
         include: {
-          LeagueUser: {
-            include: {
-              User: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  username: true,
-                  avatarUrl: true,
-                },
-              },
-            },
-          },
-          ...replyToInclude,
+          ...messageWithRelationsInclude,
         },
         orderBy: { createdAt: 'desc' },
         take: validated.limit,
@@ -144,7 +112,7 @@ export async function sendMessage(input: SendMessageInput) {
       }
 
       const league = await prisma.league.findUnique({
-        where: { id: validated.leagueId },
+        where: { id: validated.leagueId, deletedAt: null },
         select: { chatSuspendedAt: true },
       })
 
@@ -174,22 +142,7 @@ export async function sendMessage(input: SendMessageInput) {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-        include: {
-          LeagueUser: {
-            include: {
-              User: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  username: true,
-                  avatarUrl: true,
-                },
-              },
-            },
-          },
-          ...replyToInclude,
-        },
+        include: messageWithRelationsInclude,
       })
 
       return { message }

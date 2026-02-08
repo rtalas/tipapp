@@ -11,7 +11,7 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { updateUserBet, deleteUserBet, type UserBet } from '@/actions/user-bets'
 import { evaluateMatchBets } from '@/actions/evaluate-matches'
-import { validateUserBetEdit } from '@/lib/validation-client'
+import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
@@ -80,7 +80,7 @@ export function UserBetRow({
           : inlineEdit.form.homeAdvanced === 'home',
     }
 
-    const validation = validateUserBetEdit(validationData)
+    const validation = validate.userBetEdit(validationData)
     if (!validation.success) {
       toast.error(getErrorMessage(validation.error, 'Validation failed'))
       return

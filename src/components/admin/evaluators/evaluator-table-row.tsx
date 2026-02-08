@@ -152,14 +152,15 @@ export function EvaluatorTableRow({
 }
 
 function PointsDisplay({ evaluator }: { evaluator: Evaluator }) {
+  const t = useTranslations('admin.evaluators')
   if (evaluator.config && evaluator.EvaluatorType.name === 'scorer') {
     const config = evaluator.config as ScorerRankedConfig
     return (
       <span className="text-xs font-mono">
         {Object.entries(config.rankedPoints)
           .sort(([a], [b]) => parseInt(a) - parseInt(b))
-          .map(([rank, pts]) => `R${rank}:${pts}`)
-          .join(' ') + ` U:${config.unrankedPoints}`}
+          .map(([rank, pts]) => t('rankShort', { rank, points: pts }))
+          .join(' ') + ' ' + t('unrankedShort', { points: config.unrankedPoints })}
       </span>
     )
   }
@@ -168,7 +169,7 @@ function PointsDisplay({ evaluator }: { evaluator: Evaluator }) {
     const config = evaluator.config as GroupStageConfig
     return (
       <span className="text-xs font-mono">
-        W:{config.winnerPoints} A:{config.advancePoints}
+        {t('winnerShort', { points: config.winnerPoints })} {t('advanceShort', { points: config.advancePoints })}
       </span>
     )
   }
@@ -186,7 +187,7 @@ function PointsDisplay({ evaluator }: { evaluator: Evaluator }) {
         <span className="font-mono font-bold">{evaluator.points}</span>
         {config.positions && config.positions.length > 0 && (
           <div className="text-muted-foreground mt-0.5">
-            Pos: {config.positions.join(', ')}
+            {t('positionsLabel', { positions: config.positions.join(', ') })}
           </div>
         )}
       </div>

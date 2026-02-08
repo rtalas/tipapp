@@ -1,13 +1,59 @@
+import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { redirect, notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { ChatView } from '@/components/chat/ChatView'
+import { ChatSkeleton } from '@/components/chat/chat-skeleton'
 import { markChatAsRead } from '@/actions/messages'
-import type { ChatMessage } from '@/hooks/useMessages'
+import { messageWithRelationsInclude } from '@/lib/prisma-helpers'
+
+export const metadata: Metadata = { title: 'Chat' }
 
 interface ChatPageProps {
   params: Promise<{ leagueId: string }>
+}
+
+async function ChatContent({
+  leagueId,
+  userId,
+  isLeagueAdmin,
+  isSuperadmin,
+  isSuspended,
+}: {
+  leagueId: number
+  userId: number
+  isLeagueAdmin: boolean
+  isSuperadmin: boolean
+  isSuspended: boolean
+}) {
+  // Mark chat as read and fetch messages in parallel
+  const [, messages] = await Promise.all([
+    markChatAsRead(leagueId),
+    prisma.message.findMany({
+      where: {
+        leagueId,
+        deletedAt: null,
+      },
+      include: messageWithRelationsInclude,
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    }),
+  ])
+
+  const initialMessages = messages.reverse()
+
+  return (
+    <ChatView
+      leagueId={leagueId}
+      initialMessages={initialMessages}
+      currentUserId={userId}
+      isLeagueAdmin={isLeagueAdmin}
+      isSuperadmin={isSuperadmin}
+      isSuspended={isSuspended}
+    />
+  )
 }
 
 export default async function ChatPage({ params }: ChatPageProps) {
@@ -78,61 +124,15 @@ export default async function ChatPage({ params }: ChatPageProps) {
     )
   }
 
-  // Mark chat as read when user opens the page
-  await markChatAsRead(leagueId)
-
-  // Fetch initial messages
-  const messages = await prisma.message.findMany({
-    where: {
-      leagueId,
-      deletedAt: null,
-    },
-    include: {
-      LeagueUser: {
-        include: {
-          User: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              username: true,
-              avatarUrl: true,
-            },
-          },
-        },
-      },
-      ReplyTo: {
-        include: {
-          LeagueUser: {
-            include: {
-              User: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  username: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-  })
-
-  // Reverse to show oldest first
-  const initialMessages = messages.reverse() as unknown as ChatMessage[]
-
   return (
-    <ChatView
-      leagueId={leagueId}
-      initialMessages={initialMessages}
-      currentUserId={userId}
-      isLeagueAdmin={leagueUser.admin === true}
-      isSuperadmin={session.user.isSuperadmin === true}
-      isSuspended={league.chatSuspendedAt !== null}
-    />
+    <Suspense fallback={<ChatSkeleton />}>
+      <ChatContent
+        leagueId={leagueId}
+        userId={userId}
+        isLeagueAdmin={leagueUser.admin === true}
+        isSuperadmin={session.user.isSuperadmin === true}
+        isSuspended={league.chatSuspendedAt !== null}
+      />
+    </Suspense>
   )
 }

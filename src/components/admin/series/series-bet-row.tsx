@@ -7,7 +7,7 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { updateUserSeriesBet, deleteUserSeriesBet, type UserSeriesBet } from '@/actions/series-bets'
 import { evaluateSeriesBets } from '@/actions/evaluate-series'
-import { validateUserSeriesBetEdit } from '@/lib/validation-client'
+import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
@@ -57,7 +57,7 @@ export function SeriesBetRow({
       awayTeamScore: parseInt(inlineEdit.form.awayTeamScore),
     }
 
-    const validation = validateUserSeriesBetEdit(validationData)
+    const validation = validate.userSeriesBetEdit(validationData)
     if (!validation.success) {
       toast.error(getErrorMessage(validation.error, 'Validation failed'))
       return
