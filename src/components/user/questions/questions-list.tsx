@@ -35,6 +35,7 @@ export function QuestionsList({ questions }: QuestionsListProps) {
   const { isRefreshing, refresh } = useRefresh()
   const [filter, setFilter] = useState<FilterType>('current')
   const dateLocale = useDateLocale()
+  const t = useTranslations('user.questions')
   const tMatches = useTranslations('user.matches')
 
   const getDateLabel = useCallback(
@@ -66,9 +67,9 @@ export function QuestionsList({ questions }: QuestionsListProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <HelpCircle className="mb-4 h-12 w-12 text-muted-foreground opacity-30" />
-        <h3 className="text-lg font-medium">No questions</h3>
+        <h3 className="text-lg font-medium">{t('noQuestions')}</h3>
         <p className="text-sm text-muted-foreground">
-          Questions will appear here
+          {t('questionsWillAppear')}
         </p>
       </div>
     )
@@ -81,7 +82,7 @@ export function QuestionsList({ questions }: QuestionsListProps) {
         <div className="flex items-center gap-2">
           <HelpCircle className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-bold text-foreground">
-            Yes/No Questions
+            {t('title')}
           </h2>
         </div>
         <RefreshButton isRefreshing={isRefreshing} onRefresh={refresh} />
@@ -95,10 +96,10 @@ export function QuestionsList({ questions }: QuestionsListProps) {
       >
         <TabsList className="grid w-full grid-cols-2 bg-secondary/50">
           <TabsTrigger value="current" className="data-[state=active]:bg-card">
-            Current
+            {t('current')}
           </TabsTrigger>
           <TabsTrigger value="past" className="data-[state=active]:bg-card">
-            Past
+            {t('past')}
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -108,12 +109,12 @@ export function QuestionsList({ questions }: QuestionsListProps) {
         <div className="text-center py-12 text-muted-foreground">
           <HelpCircle className="w-12 h-12 mx-auto mb-4 opacity-30" />
           <p className="font-medium">
-            No {filter === 'current' ? 'upcoming' : 'past'} questions
+            {filter === 'current' ? t('noUpcoming') : t('noPast')}
           </p>
           <p className="text-sm">
             {filter === 'current'
-              ? 'Questions will appear here'
-              : 'No answered questions yet'}
+              ? t('questionsWillAppear')
+              : t('noAnsweredQuestions')}
           </p>
         </div>
       ) : (
@@ -242,7 +243,7 @@ function QuestionCard({
             <div className="p-3 rounded-lg bg-secondary/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Your answer:</span>
+                  <span className="text-xs text-muted-foreground">{t('yourAnswer')}</span>
                   <span
                     className={cn(
                       'text-sm font-medium',
@@ -250,10 +251,10 @@ function QuestionCard({
                     )}
                   >
                     {selectedAnswer === true
-                      ? 'Yes'
+                      ? t('yes')
                       : selectedAnswer === false
-                        ? 'No'
-                        : 'No answer'}
+                        ? t('no')
+                        : t('noAnswer')}
                   </span>
                   {isEvaluated &&
                     selectedAnswer !== null &&
@@ -270,9 +271,9 @@ function QuestionCard({
             {isEvaluated && question.result !== null && (
               <div className="p-3 rounded-lg bg-primary/10">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Correct answer:</span>
+                  <span className="text-xs text-muted-foreground">{t('correctAnswer')}</span>
                   <span className="text-sm font-semibold text-primary">
-                    {question.result ? 'Yes' : 'No'}
+                    {question.result ? t('yes') : t('no')}
                   </span>
                 </div>
               </div>
@@ -303,7 +304,7 @@ function QuestionCard({
               disabled={isSaving}
             >
               <Check className="w-4 h-4 mr-1" />
-              Yes
+              {t('yes')}
             </Button>
             <Button
               variant="outline"
@@ -317,7 +318,7 @@ function QuestionCard({
               disabled={isSaving}
             >
               <X className="w-4 h-4 mr-1" />
-              No
+              {t('no')}
             </Button>
           </div>
         )}
@@ -330,18 +331,18 @@ function QuestionCard({
             <DialogTitle>{question.text}</DialogTitle>
             <DialogDescription>
               {isEvaluated && question.result !== null
-                ? `Correct answer: ${question.result ? 'Yes' : 'No'}`
-                : "Friends' Answers"}
+                ? `${t('correctAnswer')} ${question.result ? t('yes') : t('no')}`
+                : t('friendsAnswers')}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
             <div className="flex items-center gap-2 mb-3">
               <Users className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Friends&apos; Answers</span>
+              <span className="font-medium text-sm">{t('friendsAnswers')}</span>
             </div>
             <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               <p className="text-center text-muted-foreground text-sm py-4">
-                No friends&apos; answers yet
+                {t('noFriendsAnswers')}
               </p>
             </div>
           </div>

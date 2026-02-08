@@ -1,3 +1,5 @@
+import { EVENT_DURATION_MS } from '@/lib/constants'
+
 // Helper to get match status
 export function getMatchStatus(match: {
   dateTime: Date
@@ -5,7 +7,7 @@ export function getMatchStatus(match: {
 }): 'scheduled' | 'live' | 'finished' | 'evaluated' {
   const now = new Date()
   const matchTime = new Date(match.dateTime)
-  const matchEndEstimate = new Date(matchTime.getTime() + 3 * 60 * 60 * 1000) // 3 hours after start
+  const matchEndEstimate = new Date(matchTime.getTime() + EVENT_DURATION_MS)
 
   if (match.isEvaluated) return 'evaluated'
   if (now < matchTime) return 'scheduled'

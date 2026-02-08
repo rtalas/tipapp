@@ -293,10 +293,13 @@
     "questions": {
       "title": "Otázky",
       "upcoming": "Aktuální a nadcházející",
+      "current": "Aktuální",
       "past": "Minulé",
       "noQuestions": "Žádné otázky",
+      "questionsWillAppear": "Otázky se zobrazí zde",
       "noUpcoming": "Žádné nadcházející otázky",
       "noPast": "Žádné minulé otázky",
+      "noAnsweredQuestions": "Zatím žádné zodpovězené otázky",
       "yes": "Ano",
       "no": "Ne",
       "saveSuccess": "Odpověď úspěšně uložena",
@@ -347,7 +350,8 @@
       "refresh": "Obnovit",
       "pullToRefresh": "Potáhněte pro obnovení",
       "releaseToRefresh": "Uvolněte pro obnovení",
-      "refreshing": "Obnovování..."
+      "refreshing": "Obnovování...",
+      "locked": "Uzamčeno"
     },
     "header": {
       "profile": "Profil",

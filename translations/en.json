@@ -293,10 +293,13 @@
     "questions": {
       "title": "Questions",
       "upcoming": "Current & Upcoming",
+      "current": "Current",
       "past": "Past",
-      "noQuestions": "No questions found",
+      "noQuestions": "No questions",
+      "questionsWillAppear": "Questions will appear here",
       "noUpcoming": "No upcoming questions",
       "noPast": "No past questions",
+      "noAnsweredQuestions": "No answered questions yet",
       "yes": "Yes",
       "no": "No",
       "saveSuccess": "Answer saved successfully",
@@ -347,7 +350,8 @@
       "refresh": "Refresh",
       "pullToRefresh": "Pull to refresh",
       "releaseToRefresh": "Release to refresh",
-      "refreshing": "Refreshing..."
+      "refreshing": "Refreshing...",
+      "locked": "Locked"
     },
     "header": {
       "profile": "Profile",

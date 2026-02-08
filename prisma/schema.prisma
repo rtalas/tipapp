@@ -74,10 +74,10 @@ model League {
   name                     String                     @db.VarChar(255)
   sportId                  Int
   isActive                 Boolean                    @default(false)
-  isTheMostActive          Boolean?                   @default(false)
+  isTheMostActive          Boolean                    @default(false)
   seasonFrom               Int
   seasonTo                 Int
-  isFinished               Boolean?                   @default(false)
+  isFinished               Boolean                    @default(false)
   isPublic                 Boolean                    @default(false)
   createdAt                DateTime                   @db.Timestamptz(6)
   updatedAt                DateTime                   @db.Timestamptz(6)
@@ -287,8 +287,8 @@ model LeagueUser {
   leagueId               Int
   userId                 Int
   paid                   Boolean                  @default(false)
-  active                 Boolean?                 @default(true)
-  admin                  Boolean?                 @default(false)
+  active                 Boolean                  @default(true)
+  admin                  Boolean                  @default(false)
   createdAt              DateTime                 @db.Timestamptz(6)
   updatedAt              DateTime                 @db.Timestamptz(6)
   deletedAt              DateTime?                @db.Timestamptz(6)

@@ -11,7 +11,6 @@ import type {
   GroupStageContext,
   GroupStageConfig,
 } from './types'
-import type { QuestionContext } from './question'
 import { AppError } from '@/lib/error-handler'
 
 // Type imports for Prisma entities
@@ -168,40 +167,6 @@ export function buildClosestValueContext(
       value: specialBet.specialBetValue,
     },
     allPredictions,
-  }
-}
-
-/**
- * Build QuestionContext from database entities
- * Converts numeric values to yes/no answers
- * - 1 = yes
- * - 0 = no
- * - null = not picked
- */
-export function buildQuestionContext(
-  userBet: UserSpecialBetSingle,
-  specialBet: LeagueSpecialBetSingle
-): QuestionContext {
-  // Convert numeric values to yes/no
-  const convertToAnswer = (value: number | null): 'yes' | 'no' | null => {
-    if (value === null) return null
-    return value === 1 ? 'yes' : 'no'
-  }
-
-  const userAnswer = convertToAnswer(userBet.value)
-  const correctAnswer = convertToAnswer(specialBet.specialBetValue)
-
-  if (correctAnswer === null) {
-    throw new AppError('Question must have a correct answer set', 'BAD_REQUEST', 400)
-  }
-
-  return {
-    prediction: {
-      answer: userAnswer,
-    },
-    actual: {
-      correctAnswer,
-    },
   }
 }
 

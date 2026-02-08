@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { joinLeagueSchema } from '@/lib/validation/user'
 import { AppError, handleActionError } from '@/lib/error-handler'
+import { parseSessionUserId } from '@/lib/auth/auth-utils'
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 
 type LeagueWithSport = {
@@ -171,7 +172,7 @@ export async function getAllLeaguesForSelector(): Promise<AllLeaguesResult> {
       throw new AppError('Authentication required', 'UNAUTHORIZED', 401)
     }
 
-    const userId = parseInt(session.user.id, 10)
+    const userId = parseSessionUserId(session.user.id)
     return getCachedLeaguesForSelector(userId)
   } catch (error) {
     throw handleActionError(error, 'Failed to load leagues')
@@ -189,7 +190,7 @@ export async function joinLeague(leagueId: number): Promise<{ success: true; lea
       throw new AppError('Authentication required', 'UNAUTHORIZED', 401)
     }
 
-    const userId = parseInt(session.user.id, 10)
+    const userId = parseSessionUserId(session.user.id)
 
     // Validate input
     const validated = joinLeagueSchema.parse({ leagueId })

@@ -6,6 +6,7 @@ import { revalidateTag } from 'next/cache'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn(),
+  parseSessionUserId: vi.fn((id: string) => parseInt(id, 10)),
 }))
 
 const mockPrisma = vi.mocked(prisma, true)

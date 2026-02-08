@@ -39,6 +39,15 @@ export async function createSeries(input: CreateSeriesInput) {
         throw new AppError('Teams must belong to the selected league', 'BAD_REQUEST', 400)
       }
 
+      // Verify series type exists
+      const seriesType = await prisma.specialBetSerie.findFirst({
+        where: { id: validated.specialBetSerieId, deletedAt: null },
+      })
+
+      if (!seriesType) {
+        throw new AppError('Series type not found', 'NOT_FOUND', 404)
+      }
+
       // Create the series
       const series = await prisma.leagueSpecialBetSerie.create({
         data: {

@@ -7,6 +7,11 @@ export const SPORT_IDS = {
 } as const
 
 /**
+ * Estimated match/event duration for status calculations (3 hours)
+ */
+export const EVENT_DURATION_MS = 3 * 60 * 60 * 1000
+
+/**
  * Maximum number of prize/fine tiers per league
  */
 export const MAX_PRIZE_TIERS = 10

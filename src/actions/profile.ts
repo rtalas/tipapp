@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { AppError } from '@/lib/error-handler'
+import { parseSessionUserId } from '@/lib/auth/auth-utils'
 import { updateProfileSchema } from '@/lib/validation/user'
 import type { UpdateProfileInput } from '@/lib/validation/user'
 import { z } from 'zod'
@@ -34,7 +35,7 @@ export async function getCurrentUserProfile() {
     }
   }
 
-  const userId = parseInt(session.user.id, 10)
+  const userId = parseSessionUserId(session.user.id)
 
   const user = await prisma.user.findUnique({
     where: { id: userId, deletedAt: null },
@@ -78,7 +79,7 @@ export async function updateProfile(input: UpdateProfileInput) {
     }
   }
 
-  const userId = parseInt(session.user.id, 10)
+  const userId = parseSessionUserId(session.user.id)
 
   return executeServerAction(input, {
     validator: updateProfileSchema,
@@ -133,7 +134,7 @@ export async function updatePassword(input: UpdatePasswordInput) {
     }
   }
 
-  const userId = parseInt(session.user.id, 10)
+  const userId = parseSessionUserId(session.user.id)
 
   return executeServerAction(input, {
     validator: updatePasswordSchema,

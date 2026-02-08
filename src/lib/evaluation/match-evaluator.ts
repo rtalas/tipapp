@@ -9,6 +9,7 @@ import { getMatchEvaluator, buildMatchBetContext } from '@/lib/evaluators'
 import { evaluateScorer } from '@/lib/evaluators/scorer'
 import { getLeagueRankingsAtTime } from '@/lib/scorer-ranking-utils'
 import { AppError } from '@/lib/error-handler'
+import { scorerRankedConfigSchema } from '@/lib/validation/admin'
 import type { ScorerRankedConfig } from '@/lib/evaluators/types'
 
 /**
@@ -141,7 +142,12 @@ async function evaluateMatch(
 
       // Scorer evaluator supports rank-based mode when config is present
       if (evaluator.EvaluatorType.name === 'scorer' && evaluator.config) {
-        const scorerConfig = evaluator.config as unknown as ScorerRankedConfig
+        const parsed = scorerRankedConfigSchema.safeParse(evaluator.config)
+        if (!parsed.success) {
+          console.error(`Invalid scorer config for evaluator ${evaluator.id}:`, parsed.error.message)
+          continue
+        }
+        const scorerConfig = parsed.data as ScorerRankedConfig
         points = evaluateScorer(context, scorerConfig) as number
       } else {
         const result = evaluatorFn(context)

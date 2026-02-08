@@ -16,9 +16,9 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get callback URL from search params
-  // Note: Don't default to /admin here - let the signIn result determine the redirect
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  // Get callback URL from search params, validated to prevent open redirect
+  const rawCallbackUrl = searchParams.get("callbackUrl") || "/";
+  const callbackUrl = rawCallbackUrl.startsWith('/') && !rawCallbackUrl.includes('//') ? rawCallbackUrl : "/";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

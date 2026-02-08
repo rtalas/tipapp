@@ -87,13 +87,13 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
       })
 
       if (!result.success) {
-        toast.error(result.error || 'Failed to save bet')
+        toast.error(result.error || t('saveError'))
       } else {
         savedValuesRef.current = { homeScore, awayScore, scorerId, noScorer, overtime, homeAdvanced }
         onBetSaved?.()
       }
     } catch {
-      toast.error('Failed to save bet')
+      toast.error(t('saveError'))
     } finally {
       setIsSaving(false)
     }
@@ -107,6 +107,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
     homeAdvanced,
     isLocked,
     onBetSaved,
+    t,
   ])
 
   const handleHomeScoreChange = (value: number) => {

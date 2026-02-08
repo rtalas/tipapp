@@ -3,7 +3,7 @@
  * and badge display logic across all bet types.
  */
 
-const THREE_HOURS_MS = 3 * 60 * 60 * 1000
+import { EVENT_DURATION_MS } from '@/lib/constants'
 
 /**
  * Determines if an event should appear in the "Current" tab.
@@ -15,7 +15,7 @@ const THREE_HOURS_MS = 3 * 60 * 60 * 1000
  */
 export function isCurrentEvent(dateTime: Date | string): boolean {
   const now = new Date()
-  const threeHoursAgo = new Date(now.getTime() - THREE_HOURS_MS)
+  const threeHoursAgo = new Date(now.getTime() - EVENT_DURATION_MS)
   const eventDate = dateTime instanceof Date ? dateTime : new Date(dateTime)
   return eventDate > threeHoursAgo
 }

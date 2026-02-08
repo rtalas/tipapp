@@ -133,11 +133,6 @@ describe('Special Bet Evaluator', () => {
     })
   })
 
-  // Note: 'question' evaluator type is NOT in getSpecialEvaluator() map.
-  // Questions are evaluated via the separate question-evaluator.ts path.
-  // The isQuestionEvaluator() branch in special-bet-evaluator.ts is unreachable
-  // because getSpecialEvaluator('question') returns null and throws first.
-
   // --- closest_value evaluator (multiplier-based) ---
 
   describe('closest_value (Multiplier-Based)', () => {

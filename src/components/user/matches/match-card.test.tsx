@@ -271,7 +271,7 @@ describe('MatchCard', () => {
       await user.click(screen.getByTestId('save-button'))
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Failed to save bet')
+        expect(toast.error).toHaveBeenCalledWith('saveError')
       })
     })
 

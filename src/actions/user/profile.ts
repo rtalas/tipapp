@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { AppError } from '@/lib/error-handler'
+import { parseSessionUserId } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { updateProfileSchema } from '@/lib/validation/user'
 import type { UpdateProfileInput } from '@/lib/validation/user'
@@ -22,7 +23,7 @@ export async function getUserProfile() {
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: parseInt(session.user.id) },
+    where: { id: parseSessionUserId(session.user.id) },
     select: {
       id: true,
       username: true,
@@ -53,7 +54,7 @@ export async function updateProfile(input: UpdateProfileInput) {
     return { success: false as const, error: 'Not authenticated' }
   }
 
-  const userId = parseInt(session.user.id)
+  const userId = parseSessionUserId(session.user.id)
 
   return executeServerAction(input, {
     validator: updateProfileSchema,
@@ -103,7 +104,7 @@ export async function updateAvatar(avatarUrl: string | null) {
     return { success: false as const, error: 'Not authenticated' }
   }
 
-  const userId = parseInt(session.user.id)
+  const userId = parseSessionUserId(session.user.id)
 
   return executeServerAction({ avatarUrl }, {
     validator: updateAvatarSchema,

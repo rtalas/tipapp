@@ -21,6 +21,12 @@ export enum EventType {
   PASSWORD_RESET_REQUESTED = "PASSWORD_RESET_REQUESTED",
   PASSWORD_RESET_COMPLETED = "PASSWORD_RESET_COMPLETED",
   PASSWORD_RESET_FAILED = "PASSWORD_RESET_FAILED",
+  ADMIN_ACCESS_DENIED = "ADMIN_ACCESS_DENIED",
+  LEAGUE_ACCESS_DENIED = "LEAGUE_ACCESS_DENIED",
+
+  // Chat operations
+  CHAT_MESSAGE_SENT = "CHAT_MESSAGE_SENT",
+  CHAT_MESSAGE_DELETED = "CHAT_MESSAGE_DELETED",
 
   // Evaluation operations
   MATCH_EVALUATED = "MATCH_EVALUATED",
@@ -76,10 +82,17 @@ const SENSITIVE_KEYS = [
   "bearer",
 ];
 
+const MAX_SANITIZE_DEPTH = 5;
+
 function sanitizeMetadata(
-  metadata: Record<string, unknown> | undefined
+  metadata: Record<string, unknown> | undefined,
+  depth: number = 0,
+  seen: WeakSet<object> = new WeakSet()
 ): Record<string, unknown> | undefined {
   if (!metadata) return undefined;
+  if (depth >= MAX_SANITIZE_DEPTH) return { _truncated: true };
+  if (seen.has(metadata)) return { _circular: true };
+  seen.add(metadata);
 
   const sanitized: Record<string, unknown> = {};
 
@@ -92,7 +105,11 @@ function sanitizeMetadata(
     if (isSensitive) {
       sanitized[key] = "[REDACTED]";
     } else if (typeof value === "object" && value !== null) {
-      sanitized[key] = sanitizeMetadata(value as Record<string, unknown>);
+      sanitized[key] = sanitizeMetadata(
+        value as Record<string, unknown>,
+        depth + 1,
+        seen
+      );
     } else {
       sanitized[key] = value;
     }
@@ -389,6 +406,70 @@ export const AuditLogger = {
       description: `Password reset failed: ${reason}`,
       metadata,
       success: false,
+    });
+  },
+
+  adminAccessDenied: async (userId?: number) => {
+    await auditLog({
+      eventType: EventType.ADMIN_ACCESS_DENIED,
+      eventCategory: EventCategory.AUTH,
+      severity: LogSeverity.WARNING,
+      userId,
+      action: "ACCESS",
+      description: userId
+        ? `User ${userId} attempted admin access without privileges`
+        : "Unauthenticated admin access attempt",
+      success: false,
+    });
+  },
+
+  leagueAccessDenied: async (userId: number, leagueId: number) => {
+    await auditLog({
+      eventType: EventType.LEAGUE_ACCESS_DENIED,
+      eventCategory: EventCategory.AUTH,
+      severity: LogSeverity.WARNING,
+      userId,
+      leagueId,
+      action: "ACCESS",
+      description: `User ${userId} attempted access to league ${leagueId} without membership`,
+      success: false,
+    });
+  },
+
+  // Chat operations
+  chatMessageSent: async (userId: number, leagueId: number, messageId: number) => {
+    await auditLog({
+      eventType: EventType.CHAT_MESSAGE_SENT,
+      eventCategory: EventCategory.USER_ACTION,
+      severity: LogSeverity.INFO,
+      userId,
+      leagueId,
+      resourceType: "Message",
+      resourceId: messageId,
+      action: "CREATE",
+      description: `User ${userId} sent message ${messageId} in league ${leagueId}`,
+    });
+  },
+
+  chatMessageDeleted: async (
+    userId: number,
+    leagueId: number,
+    messageId: number,
+    isOwnMessage: boolean
+  ) => {
+    await auditLog({
+      eventType: EventType.CHAT_MESSAGE_DELETED,
+      eventCategory: EventCategory.USER_ACTION,
+      severity: isOwnMessage ? LogSeverity.INFO : LogSeverity.WARNING,
+      userId,
+      leagueId,
+      resourceType: "Message",
+      resourceId: messageId,
+      action: "DELETE",
+      description: isOwnMessage
+        ? `User ${userId} deleted own message ${messageId}`
+        : `User ${userId} deleted another user's message ${messageId} (moderator action)`,
+      metadata: { isOwnMessage },
     });
   },
 

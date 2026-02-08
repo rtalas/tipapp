@@ -3,7 +3,7 @@
 import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
-import { requireAdmin } from '@/lib/auth/auth-utils'
+import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
 import { AppError } from '@/lib/error-handler'
 import { getEvaluatorEntity } from '@/lib/evaluators'
 import {
@@ -354,7 +354,7 @@ export async function updateTopScorerRanking(input: UpdateTopScorerRankingInput)
               effectiveFrom: now,
               effectiveTo: null, // This is now the current version
               createdAt: now,
-              createdByUserId: session?.user?.id ? parseInt(session.user.id) : null,
+              createdByUserId: session?.user?.id ? parseSessionUserId(session.user.id) : null,
             },
           })
         }

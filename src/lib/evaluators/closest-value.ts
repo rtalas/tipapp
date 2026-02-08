@@ -33,7 +33,7 @@ export function evaluateClosestValue(context: ClosestValueContext): number {
   );
 
   if (userDiff === minDiff) {
-    return 0.33; // 1/3 points for being closest (but not exact)
+    return 1/3; // 1/3 points for being closest (but not exact)
   }
 
   return 0; // No points for not being closest

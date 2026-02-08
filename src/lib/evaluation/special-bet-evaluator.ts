@@ -6,16 +6,14 @@
 import { prisma } from '@/lib/prisma'
 import type { TransactionClient } from '@/lib/prisma-utils'
 import { AppError } from '@/lib/error-handler'
+import { groupStageConfigSchema } from '@/lib/validation/admin'
 import {
   getSpecialEvaluator,
   isClosestValueEvaluator,
-  isQuestionEvaluator,
   isGroupStageEvaluator,
   buildSpecialBetContext,
   buildClosestValueContext,
-  buildQuestionContext,
   buildGroupStageContext,
-  evaluateQuestion,
   type ClosestValueContext,
   type SpecialBetContext,
   type GroupStageContext,
@@ -113,15 +111,8 @@ async function evaluateSpecialBet(
     let awarded = false
     let points = 0
 
-    // Special handling for question (returns point multiplier)
-    if (isQuestionEvaluator(evaluator.EvaluatorType.name)) {
-      const context = buildQuestionContext(userBet, specialBet)
-      const multiplier = evaluateQuestion(context)
-      points = Math.round(multiplier * evaluator.points)
-      awarded = points !== 0 // For tracking purposes
-    }
     // Special handling for closest_value (returns point multiplier)
-    else if (isClosestValueEvaluator(evaluator.EvaluatorType.name)) {
+    if (isClosestValueEvaluator(evaluator.EvaluatorType.name)) {
       const context = buildClosestValueContext(
         userBet,
         specialBet,
@@ -137,7 +128,11 @@ async function evaluateSpecialBet(
         throw new AppError('Group stage evaluator requires config', 'BAD_REQUEST', 400)
       }
 
-      const config = evaluator.config as unknown as GroupStageConfig
+      const parsed = groupStageConfigSchema.safeParse(evaluator.config)
+      if (!parsed.success) {
+        throw new AppError(`Invalid group stage config for evaluator ${evaluator.id}: ${parsed.error.message}`, 'BAD_REQUEST', 400)
+      }
+      const config = parsed.data as GroupStageConfig
       const context = buildGroupStageContext(userBet, specialBet, config)
       points = (evaluatorFn as (ctx: GroupStageContext) => number)(context)
       awarded = points > 0

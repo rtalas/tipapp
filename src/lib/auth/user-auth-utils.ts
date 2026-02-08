@@ -1,6 +1,8 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { AppError } from '@/lib/error-handler'
+import { parseSessionUserId } from '@/lib/auth/auth-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import type { Session } from 'next-auth'
 
 export interface LeagueMemberResult {
@@ -9,8 +11,8 @@ export interface LeagueMemberResult {
     id: number
     leagueId: number
     userId: number
-    admin: boolean | null
-    active: boolean | null
+    admin: boolean
+    active: boolean
     paid: boolean
   }
   userId: number
@@ -33,7 +35,7 @@ export async function requireLeagueMember(
     throw new AppError('Unauthorized: Login required', 'UNAUTHORIZED', 401)
   }
 
-  const userId = parseInt(session.user.id, 10)
+  const userId = parseSessionUserId(session.user.id)
 
   const leagueUser = await prisma.leagueUser.findFirst({
     where: {
@@ -53,6 +55,7 @@ export async function requireLeagueMember(
   })
 
   if (!leagueUser) {
+    await AuditLogger.leagueAccessDenied(userId, leagueId)
     throw new AppError('Unauthorized: Not a member of this league', 'FORBIDDEN', 403)
   }
 
@@ -73,7 +76,7 @@ async function getUserLeagues() {
     throw new AppError('Unauthorized: Login required', 'UNAUTHORIZED', 401)
   }
 
-  const userId = parseInt(session.user.id, 10)
+  const userId = parseSessionUserId(session.user.id)
 
   const leagueUsers = await prisma.leagueUser.findMany({
     where: {

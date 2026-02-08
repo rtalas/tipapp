@@ -247,6 +247,7 @@ translations/
   - Scorer evaluators support rank-based configuration (UI auto-expands row when editing)
   - Ranking points UI: Add/remove ranks, set points per rank, set unranked points
   - Config stored in `Evaluator.config` JSON field, validated via Zod schema
+- **Admin bet creation:** Admins can create/edit bets on behalf of users after deadlines (no `isBettingOpen` check). This is intentional — admins manage late entries and corrections.
 - **Soft delete:** All entities use `deletedAt` timestamp
 - **Action buttons:** Direct icon buttons (no dropdowns)
 

@@ -6,6 +6,7 @@ import bcryptjs from 'bcryptjs'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
+  parseSessionUserId: vi.fn((id: string) => parseInt(id, 10)),
 }))
 
 vi.mock('bcryptjs', () => ({

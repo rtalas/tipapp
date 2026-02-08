@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { AppError } from '@/lib/error-handler'
+import { parseSessionUserId } from '@/lib/auth/auth-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import { executeServerAction } from '@/lib/server-action-utils'
 import {
   sendMessageSchema,
@@ -56,7 +58,7 @@ export async function getMessages(input: GetMessagesInput) {
     return { success: false as const, error: 'Authentication required' }
   }
 
-  const userId = parseInt(session.user.id, 10)
+  const userId = parseSessionUserId(session.user.id)
 
   return executeServerAction(input, {
     validator: getMessagesSchema,
@@ -101,7 +103,7 @@ export async function sendMessage(input: SendMessageInput) {
     return { success: false as const, error: 'Authentication required' }
   }
 
-  const userId = parseInt(session.user.id, 10)
+  const userId = parseSessionUserId(session.user.id)
 
   return executeServerAction(input, {
     validator: sendMessageSchema,
@@ -145,6 +147,8 @@ export async function sendMessage(input: SendMessageInput) {
         include: messageWithRelationsInclude,
       })
 
+      AuditLogger.chatMessageSent(userId, validated.leagueId, message.id).catch(() => {})
+
       return { message }
     },
     revalidatePath: `/${(input as SendMessageInput).leagueId}/chat`,
@@ -162,7 +166,7 @@ export async function deleteMessage(input: DeleteMessageInput) {
     return { success: false as const, error: 'Authentication required' }
   }
 
-  const userId = parseInt(session.user.id, 10)
+  const userId = parseSessionUserId(session.user.id)
 
   return executeServerAction(input, {
     validator: deleteMessageSchema,
@@ -215,6 +219,8 @@ export async function deleteMessage(input: DeleteMessageInput) {
         data: { deletedAt: new Date() },
       })
 
+      AuditLogger.chatMessageDeleted(userId, message.leagueId, validated.id, isAuthor).catch(() => {})
+
       revalidatePath(`/${message.leagueId}/chat`)
 
       return {}
@@ -232,7 +238,7 @@ export async function markChatAsRead(leagueId: number) {
     return { success: false as const, error: 'Authentication required' }
   }
 
-  const userId = parseInt(session.user.id, 10)
+  const userId = parseSessionUserId(session.user.id)
 
   return executeServerAction({ leagueId }, {
     validator: markChatAsReadSchema,

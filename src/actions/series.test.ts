@@ -22,6 +22,7 @@ describe('Series Actions', () => {
       mockPrisma.leagueTeam.findFirst
         .mockResolvedValueOnce({ id: 1, leagueId: 1 } as any) // home team
         .mockResolvedValueOnce({ id: 2, leagueId: 1 } as any) // away team
+      mockPrisma.specialBetSerie.findFirst.mockResolvedValue({ id: 1 } as any)
       mockPrisma.leagueSpecialBetSerie.create.mockResolvedValue({ id: 10 } as any)
 
       const result = await createSeries({
@@ -75,6 +76,7 @@ describe('Series Actions', () => {
       mockPrisma.leagueTeam.findFirst
         .mockResolvedValueOnce({ id: 1 } as any)
         .mockResolvedValueOnce({ id: 2 } as any)
+      mockPrisma.specialBetSerie.findFirst.mockResolvedValue({ id: 1 } as any)
       mockPrisma.leagueSpecialBetSerie.create.mockResolvedValue({ id: 1 } as any)
 
       await createSeries({

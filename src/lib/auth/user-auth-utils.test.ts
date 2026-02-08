@@ -3,9 +3,11 @@ import { requireLeagueMember, getMostActiveLeagueId, isBettingOpen } from './use
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { AppError } from '@/lib/error-handler'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 
 const mockAuth = vi.mocked(auth)
 const mockPrisma = vi.mocked(prisma, true)
+const mockAuditLogger = vi.mocked(AuditLogger)
 
 const authenticatedSession = {
   user: { id: '5', username: 'player1', isSuperadmin: false },
@@ -94,6 +96,7 @@ describe('requireLeagueMember', () => {
     await expect(requireLeagueMember(1)).rejects.toThrow(
       'Unauthorized: Not a member of this league'
     )
+    expect(mockAuditLogger.leagueAccessDenied).toHaveBeenCalledWith(5, 1)
   })
 
   it('should throw with FORBIDDEN code and 403 status when not a member', async () => {

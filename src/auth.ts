@@ -77,11 +77,32 @@ export const { handlers, auth } = NextAuth({
         token.id = user.id;
         token.username = user.username;
         token.isSuperadmin = user.isSuperadmin;
+        token.lastVerified = Date.now();
       }
+
+      // Re-verify user exists every 5 minutes
+      const VERIFY_INTERVAL = 5 * 60 * 1000;
+      if (token.id && Date.now() - (token.lastVerified as number || 0) > VERIFY_INTERVAL) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: parseInt(token.id as string, 10), deletedAt: null },
+          select: { id: true, isSuperadmin: true, username: true },
+        });
+
+        if (!dbUser) {
+          // User deleted or not found — invalidate session
+          return { ...token, id: undefined };
+        }
+
+        // Refresh claims in case role changed
+        token.isSuperadmin = Boolean(dbUser.isSuperadmin);
+        token.username = dbUser.username;
+        token.lastVerified = Date.now();
+      }
+
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token.id) {
         session.user.id = token.id as string;
         session.user.username = token.username as string;
         session.user.isSuperadmin = token.isSuperadmin as boolean;
@@ -94,6 +115,7 @@ export const { handlers, auth } = NextAuth({
   },
   session: {
     strategy: "jwt",
+    maxAge: 14 * 24 * 60 * 60, // 14 days
   },
   secret: process.env.AUTH_SECRET,
 });

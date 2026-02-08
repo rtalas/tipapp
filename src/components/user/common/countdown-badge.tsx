@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Clock, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -9,7 +10,7 @@ interface CountdownBadgeProps {
   className?: string
 }
 
-function formatTimeRemaining(deadline: Date | string): {
+function formatTimeRemaining(deadline: Date | string, lockedLabel: string): {
   text: string
   urgency: 'low' | 'medium' | 'high' | 'locked'
   showPulse: boolean
@@ -19,7 +20,7 @@ function formatTimeRemaining(deadline: Date | string): {
   const diff = deadlineDate.getTime() - now.getTime()
 
   if (diff <= 0) {
-    return { text: 'Locked', urgency: 'locked', showPulse: false }
+    return { text: lockedLabel, urgency: 'locked', showPulse: false }
   }
 
   const seconds = Math.floor(diff / 1000)
@@ -59,13 +60,16 @@ function formatTimeRemaining(deadline: Date | string): {
 }
 
 export function CountdownBadge({ deadline, className }: CountdownBadgeProps) {
+  const t = useTranslations('user.common')
+  const lockedLabel = t('locked')
+
   const [timeInfo, setTimeInfo] = useState(() =>
-    formatTimeRemaining(deadline)
+    formatTimeRemaining(deadline, lockedLabel)
   )
 
   useEffect(() => {
     const update = () => {
-      setTimeInfo(formatTimeRemaining(deadline))
+      setTimeInfo(formatTimeRemaining(deadline, lockedLabel))
     }
 
     // Update immediately
@@ -75,7 +79,7 @@ export function CountdownBadge({ deadline, className }: CountdownBadgeProps) {
     const interval = setInterval(update, 1000)
 
     return () => clearInterval(interval)
-  }, [deadline])
+  }, [deadline, lockedLabel])
 
   // Don't render if more than 6 hours away
   if (!timeInfo.text) {
@@ -92,7 +96,7 @@ export function CountdownBadge({ deadline, className }: CountdownBadgeProps) {
         )}
       >
         <Lock className="w-3 h-3" />
-        Locked
+        {timeInfo.text}
       </span>
     )
   }
