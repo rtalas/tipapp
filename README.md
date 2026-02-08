@@ -82,7 +82,7 @@ TipApp was designed for small groups of friends and family (dozens of users) who
 - **Pull-to-Refresh** - Swipe down to refresh data
 - **Bottom Navigation** - Easy thumb access to all sections (matches, series, special bets, questions, leaderboard)
 - **Countdown Badges** - Visual indicators for upcoming match deadlines
-- **Push Notifications** - Get reminded before match deadlines (infrastructure ready)
+- **Push Notifications** - Get reminded before match deadlines via Web Push (configurable timing per user)
 
 ### For Admins
 

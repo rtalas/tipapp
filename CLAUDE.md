@@ -227,7 +227,7 @@ translations/
 - ✅ **Phase 4:** Evaluation Engine (14 evaluators with full test coverage)
 - ✅ **Phase 5:** User-Side App (mobile-first, PWA, bottom nav, friend predictions, pull-to-refresh)
 - ✅ **Phase 6:** Polish (prizes & fines, race condition fixes, performance caching, security hardening, chat replies, audit logs)
-- 🔄 **Phase 7:** Production (push notifications, monitoring, final deployment)
+- ✅ **Phase 7:** Production (push notifications, cron job, monitoring, final deployment)
 
 ## Key Features
 
@@ -263,6 +263,7 @@ translations/
   - Top performers see prize badges (yellow/silver/bronze styling for top 3)
   - Worst performers see fine badges (red badges with negative amounts)
   - Smart calculation: In 14-person league, rank 14 displays fine for "rank 1 from bottom"
+- **Push Notifications:** Web Push via VAPID, cron-triggered reminders for unbetted matches, configurable notification window per user
 - **Components:** CountdownBadge, RefreshButton, PointsDisplay, PageLoading, PullToRefresh
 
 ---
