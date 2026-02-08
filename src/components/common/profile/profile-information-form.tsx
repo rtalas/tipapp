@@ -19,7 +19,7 @@ import { usePushNotifications } from '@/components/providers/service-worker-regi
 
 // Notification time options in minutes
 const NOTIFICATION_OPTIONS = [
-  0, 5, 15, 30, 45, 60, 90, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720, 1080, 1440,
+  0, 15, 30, 45, 60, 90, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720, 1080, 1440,
 ]
 
 // Format minutes to display string
