@@ -151,6 +151,14 @@ export async function updateUserSeriesBet(input: UpdateUserSeriesBetInput) {
     handler: async (validated) => {
       const now = new Date()
 
+      const bet = await prisma.userSpecialBetSerie.findFirst({
+        where: { id: validated.id, deletedAt: null },
+      })
+
+      if (!bet) {
+        throw new AppError('Bet not found', 'NOT_FOUND', 404)
+      }
+
       await prisma.userSpecialBetSerie.update({
         where: { id: validated.id },
         data: {

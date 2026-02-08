@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
@@ -34,8 +35,8 @@ export function SeriesBetRow({
   isSeriesEvaluated,
   seriesId,
 }: SeriesBetRowProps) {
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const t = useTranslations('admin.bets')
+  const deleteDialog = useDeleteDialog()
 
   const inlineEdit = useInlineEdit<UserSeriesBetFormData>()
 
@@ -59,7 +60,7 @@ export function SeriesBetRow({
 
     const validation = validate.userSeriesBetEdit(validationData)
     if (!validation.success) {
-      toast.error(getErrorMessage(validation.error, 'Validation failed'))
+      toast.error(getErrorMessage(validation.error, t('validationFailed')))
       return
     }
 
@@ -67,28 +68,28 @@ export function SeriesBetRow({
     const result = await updateUserSeriesBet(validation.data)
 
     if (result.success) {
-      toast.success('Bet updated successfully')
+      toast.success(t('betUpdated'))
       if (isSeriesEvaluated) {
-        toast.warning('Series is already evaluated. Re-evaluation required.')
+        toast.warning(t('seriesReEvaluation'))
       }
       inlineEdit.finishEdit()
     } else {
-      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to update bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, t('betUpdateFailed')))
       inlineEdit.setSaving(false)
     }
   }
 
   const handleDelete = async () => {
-    setIsDeleting(true)
+    deleteDialog.startDeleting()
     const result = await deleteUserSeriesBet(bet.id)
 
     if (result.success) {
-      toast.success('Bet deleted successfully')
-      setDeleteDialogOpen(false)
+      toast.success(t('betDeleted'))
+      deleteDialog.finishDeleting()
     } else {
-      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to delete bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, t('betDeleteFailed')))
+      deleteDialog.cancelDeleting()
     }
-    setIsDeleting(false)
   }
 
   const handleEvaluate = async () => {
@@ -100,12 +101,12 @@ export function SeriesBetRow({
 
       if (result.success && 'results' in result) {
         const userResult = result.results[0]
-        toast.success(`Bet evaluated! ${userResult.totalPoints} points awarded.`)
+        toast.success(t('betEvaluated', { points: userResult.totalPoints }))
       } else if (!result.success) {
-        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to evaluate bet'))
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, t('betEvaluateFailed')))
       }
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Failed to evaluate bet'))
+      toast.error(getErrorMessage(error, t('betEvaluateFailed')))
       logger.error('Failed to evaluate series bet', { error, betId: bet.id, seriesId })
     }
   }
@@ -168,7 +169,7 @@ export function SeriesBetRow({
             onStartEdit={handleStartEdit}
             onCancelEdit={inlineEdit.cancelEdit}
             onSaveEdit={handleSaveEdit}
-            onDelete={() => setDeleteDialogOpen(true)}
+            onDelete={() => deleteDialog.openDialog(bet)}
             onEvaluate={handleEvaluate}
           />
         </TableCell>
@@ -176,11 +177,11 @@ export function SeriesBetRow({
 
       {/* Delete confirmation dialog */}
       <BetRowDeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        open={deleteDialog.open}
+        onOpenChange={deleteDialog.onOpenChange}
         onConfirm={handleDelete}
         userName={userName}
-        isDeleting={isDeleting}
+        isDeleting={deleteDialog.isDeleting}
         isEvaluated={isSeriesEvaluated}
         entityType="Series"
       />

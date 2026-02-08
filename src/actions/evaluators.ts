@@ -3,8 +3,9 @@
 import { Prisma } from '@prisma/client'
 import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth/auth-utils'
+import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import { getEvaluatorEntity } from '@/lib/evaluators'
 import {
   createEvaluatorSchema,
@@ -40,7 +41,7 @@ export async function getLeagueEvaluators(leagueId: number) {
 export async function updateEvaluatorPoints(input: UpdateEvaluatorPointsInput) {
   return executeServerAction(input, {
     validator: updateEvaluatorPointsSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       await prisma.evaluator.update({
         where: { id: validated.evaluatorId },
         data: {
@@ -49,6 +50,12 @@ export async function updateEvaluatorPoints(input: UpdateEvaluatorPointsInput) {
         },
       })
       revalidateTag('leaderboard', 'max')
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'Evaluator', validated.evaluatorId,
+        { points: validated.points }
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/evaluators',
@@ -60,7 +67,7 @@ export async function updateEvaluatorPoints(input: UpdateEvaluatorPointsInput) {
 export async function createEvaluator(input: CreateEvaluatorInput) {
   return executeServerAction(input, {
     validator: createEvaluatorSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       // Fetch evaluator type to determine entity
       const evaluatorType = await prisma.evaluatorType.findUniqueOrThrow({
         where: { id: validated.evaluatorTypeId },
@@ -82,6 +89,13 @@ export async function createEvaluator(input: CreateEvaluatorInput) {
         },
       })
       revalidateTag('leaderboard', 'max')
+
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'Evaluator', evaluator.id,
+        { name: validated.name, points: validated.points, leagueId: validated.leagueId },
+        validated.leagueId
+      ).catch(() => {})
+
       return { evaluatorId: evaluator.id }
     },
     revalidatePath: '/admin/evaluators',
@@ -93,7 +107,7 @@ export async function createEvaluator(input: CreateEvaluatorInput) {
 export async function updateEvaluatorName(input: UpdateEvaluatorNameInput) {
   return executeServerAction(input, {
     validator: updateEvaluatorNameSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       await prisma.evaluator.update({
         where: { id: validated.evaluatorId },
         data: {
@@ -101,6 +115,12 @@ export async function updateEvaluatorName(input: UpdateEvaluatorNameInput) {
           updatedAt: new Date(),
         },
       })
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'Evaluator', validated.evaluatorId,
+        { name: validated.name }
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/evaluators',
@@ -112,7 +132,7 @@ export async function updateEvaluatorName(input: UpdateEvaluatorNameInput) {
 export async function updateEvaluator(input: UpdateEvaluatorInput) {
   return executeServerAction(input, {
     validator: updateEvaluatorSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const updateData: Prisma.EvaluatorUpdateInput = {
         name: validated.name.trim(),
         points: validated.points,
@@ -129,6 +149,12 @@ export async function updateEvaluator(input: UpdateEvaluatorInput) {
         data: updateData,
       })
       revalidateTag('leaderboard', 'max')
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'Evaluator', validated.evaluatorId,
+        { name: validated.name, points: validated.points, hasConfig: validated.config !== undefined }
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/evaluators',
@@ -140,12 +166,17 @@ export async function updateEvaluator(input: UpdateEvaluatorInput) {
 export async function deleteEvaluator(input: DeleteByIdInput) {
   return executeServerAction(input, {
     validator: deleteByIdSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       await prisma.evaluator.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
       revalidateTag('leaderboard', 'max')
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'Evaluator', validated.id
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/evaluators',

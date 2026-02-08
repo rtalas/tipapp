@@ -56,7 +56,7 @@ interface Match {
 
 interface LeagueMatch {
   id: number
-  isDoubled: boolean | null
+  isDoubled: boolean
   Match: Match
 }
 

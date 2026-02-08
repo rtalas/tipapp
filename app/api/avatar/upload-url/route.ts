@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { auth } from '@/auth'
-import { supabaseAdmin, AVATAR_BUCKET } from '@/lib/supabase'
+import { AVATAR_BUCKET } from '@/lib/supabase'
+
+// Server-only admin client scoped to this route (bypasses RLS for signed upload URLs)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseAdmin = supabaseUrl && supabaseServiceKey
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : null
 
 const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 const MAX_CONTENT_LENGTH = 5 * 1024 * 1024 // 5MB

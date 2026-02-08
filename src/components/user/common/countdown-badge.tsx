@@ -1,9 +1,44 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { useSyncExternalStore } from 'react'
 import { useTranslations } from 'next-intl'
 import { Clock, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+// --------------- shared 1-second tick ---------------
+// Single setInterval shared by every CountdownBadge on the page.
+// Starts on first subscribe, stops when the last one unsubscribes.
+
+let tick = 0
+const listeners: Set<() => void> = new Set()
+let timer: ReturnType<typeof setInterval> | null = null
+
+function subscribe(cb: () => void) {
+  listeners.add(cb)
+  if (listeners.size === 1) {
+    timer = setInterval(() => {
+      tick++
+      listeners.forEach((l) => l())
+    }, 1000)
+  }
+  return () => {
+    listeners.delete(cb)
+    if (listeners.size === 0 && timer) {
+      clearInterval(timer)
+      timer = null
+    }
+  }
+}
+
+function getSnapshot() {
+  return tick
+}
+
+function getServerSnapshot() {
+  return 0
+}
+
+// --------------- formatting ---------------
 
 interface CountdownBadgeProps {
   deadline: Date | string
@@ -59,27 +94,16 @@ function formatTimeRemaining(deadline: Date | string, lockedLabel: string): {
   }
 }
 
+// --------------- component ---------------
+
 export function CountdownBadge({ deadline, className }: CountdownBadgeProps) {
   const t = useTranslations('user.common')
   const lockedLabel = t('locked')
 
-  const [timeInfo, setTimeInfo] = useState(() =>
-    formatTimeRemaining(deadline, lockedLabel)
-  )
+  // Subscribe to the shared tick — re-renders once per second
+  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
-  useEffect(() => {
-    const update = () => {
-      setTimeInfo(formatTimeRemaining(deadline, lockedLabel))
-    }
-
-    // Update immediately
-    update()
-
-    // Update every second for accurate countdown
-    const interval = setInterval(update, 1000)
-
-    return () => clearInterval(interval)
-  }, [deadline, lockedLabel])
+  const timeInfo = formatTimeRemaining(deadline, lockedLabel)
 
   // Don't render if more than 6 hours away
   if (!timeInfo.text) {

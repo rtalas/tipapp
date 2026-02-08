@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
-  getScorerRankingAtTime,
   getLeagueRankingsAtTime,
   getRankingHistory,
   getCurrentLeagueRankings,
@@ -10,60 +9,6 @@ import { prisma } from '@/lib/prisma'
 describe('Scorer Ranking Utils', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-  })
-
-  describe('getScorerRankingAtTime', () => {
-    it('should return ranking when version is current (effectiveTo is null)', async () => {
-      const mockVersion = {
-        ranking: 1,
-      }
-
-      vi.mocked(prisma.topScorerRankingVersion.findFirst).mockResolvedValue(mockVersion as any)
-
-      const result = await getScorerRankingAtTime(100, new Date('2024-06-15'))
-
-      expect(result).toBe(1)
-      expect(prisma.topScorerRankingVersion.findFirst).toHaveBeenCalledWith({
-        where: {
-          leaguePlayerId: 100,
-          effectiveFrom: { lte: new Date('2024-06-15') },
-          OR: [
-            { effectiveTo: null },
-            { effectiveTo: { gt: new Date('2024-06-15') } },
-          ],
-        },
-        orderBy: { effectiveFrom: 'desc' },
-        select: { ranking: true },
-      })
-    })
-
-    it('should return ranking when atTime is within version range', async () => {
-      const mockVersion = {
-        ranking: 2,
-      }
-
-      vi.mocked(prisma.topScorerRankingVersion.findFirst).mockResolvedValue(mockVersion as any)
-
-      const result = await getScorerRankingAtTime(100, new Date('2024-06-10'))
-
-      expect(result).toBe(2)
-    })
-
-    it('should return null when no version exists at the given time', async () => {
-      vi.mocked(prisma.topScorerRankingVersion.findFirst).mockResolvedValue(null)
-
-      const result = await getScorerRankingAtTime(100, new Date('2024-01-01'))
-
-      expect(result).toBeNull()
-    })
-
-    it('should return null when player has no ranking history', async () => {
-      vi.mocked(prisma.topScorerRankingVersion.findFirst).mockResolvedValue(null)
-
-      const result = await getScorerRankingAtTime(999, new Date('2024-06-15'))
-
-      expect(result).toBeNull()
-    })
   })
 
   describe('getLeagueRankingsAtTime', () => {
@@ -232,42 +177,4 @@ describe('Scorer Ranking Utils', () => {
     })
   })
 
-  describe('Time-based lookup scenarios', () => {
-    it('should handle scenario: player ranking changed mid-tournament', async () => {
-      // Scenario: Player was rank 1 from June 1-15, then changed to rank 2 after June 15
-      // Query for June 10 should return rank 1
-      // Query for June 20 should return rank 2
-
-      const mockVersionJune10 = { ranking: 1 }
-      const mockVersionJune20 = { ranking: 2 }
-
-      vi.mocked(prisma.topScorerRankingVersion.findFirst)
-        .mockResolvedValueOnce(mockVersionJune10 as any)
-        .mockResolvedValueOnce(mockVersionJune20 as any)
-
-      const rankAtJune10 = await getScorerRankingAtTime(100, new Date('2024-06-10'))
-      const rankAtJune20 = await getScorerRankingAtTime(100, new Date('2024-06-20'))
-
-      expect(rankAtJune10).toBe(1)
-      expect(rankAtJune20).toBe(2)
-    })
-
-    it('should handle scenario: player ranking removed mid-tournament', async () => {
-      // Scenario: Player had rank 1 but was removed (injured)
-      // Query before removal should return rank 1
-      // Query after removal should return null
-
-      const mockVersionBefore = { ranking: 1 }
-
-      vi.mocked(prisma.topScorerRankingVersion.findFirst)
-        .mockResolvedValueOnce(mockVersionBefore as any)
-        .mockResolvedValueOnce(null) // No active version after removal
-
-      const rankBefore = await getScorerRankingAtTime(100, new Date('2024-06-01'))
-      const rankAfter = await getScorerRankingAtTime(100, new Date('2024-06-20'))
-
-      expect(rankBefore).toBe(1)
-      expect(rankAfter).toBeNull()
-    })
-  })
 })

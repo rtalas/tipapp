@@ -137,49 +137,48 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
   }
 
   const handleToggleAdmin = async (leagueUserId: number, currentValue: boolean) => {
-    try {
-      await updateLeagueUserAdmin(leagueUserId, !currentValue)
+    const result = await updateLeagueUserAdmin({ leagueUserId, value: !currentValue })
+    if (result.success) {
       toast.success(currentValue ? t('adminRoleRemoved') : t('adminRoleGranted'))
-    } catch (error) {
+    } else {
       toast.error(t('adminUpdateFailed'))
-      logger.error('Failed to toggle admin status', { error, leagueUserId })
+      logger.error('Failed to toggle admin status', { error: result.error, leagueUserId })
     }
   }
 
   const handleToggleActive = async (leagueUserId: number, currentValue: boolean) => {
-    try {
-      await updateLeagueUserActive(leagueUserId, !currentValue)
+    const result = await updateLeagueUserActive({ leagueUserId, value: !currentValue })
+    if (result.success) {
       toast.success(currentValue ? t('userDeactivated') : t('userActivated'))
-    } catch (error) {
+    } else {
       toast.error(t('activeUpdateFailed'))
-      logger.error('Failed to toggle active status', { error, leagueUserId })
+      logger.error('Failed to toggle active status', { error: result.error, leagueUserId })
     }
   }
 
   const handleTogglePaid = async (leagueUserId: number, currentValue: boolean) => {
-    try {
-      await updateLeagueUserPaid(leagueUserId, !currentValue)
+    const result = await updateLeagueUserPaid({ leagueUserId, value: !currentValue })
+    if (result.success) {
       toast.success(currentValue ? t('markedAsUnpaid') : t('markedAsPaid'))
-    } catch (error) {
+    } else {
       toast.error(t('paidUpdateFailed'))
-      logger.error('Failed to toggle paid status', { error, leagueUserId })
+      logger.error('Failed to toggle paid status', { error: result.error, leagueUserId })
     }
   }
 
   const handleRemove = async () => {
     if (!userToRemove) return
     setIsRemoving(true)
-    try {
-      await removeLeagueUser(userToRemove.id)
+    const result = await removeLeagueUser({ leagueUserId: userToRemove.id })
+    if (result.success) {
       toast.success(t('userRemoved'))
       setRemoveDialogOpen(false)
       setUserToRemove(null)
-    } catch (error) {
+    } else {
       toast.error(t('userRemoveFailed'))
-      logger.error('Failed to remove user from league', { error, leagueUserId: userToRemove?.id })
-    } finally {
-      setIsRemoving(false)
+      logger.error('Failed to remove user from league', { error: result.error, leagueUserId: userToRemove?.id })
     }
+    setIsRemoving(false)
   }
 
   const loadUsers = useCallback(async () => {
@@ -217,22 +216,17 @@ export function UsersContent({ pendingRequests, leagueUsers, leagues, league }: 
     }
 
     setIsAddingUser(true)
-    try {
-      await addUserToLeague(parseInt(selectedUserId), leagueId)
+    const result = await addUserToLeague({ userId: parseInt(selectedUserId), leagueId })
+    if (result.success) {
       toast.success(t('addUserSuccess'))
       setAddUserDialogOpen(false)
       setSelectedUserId('')
       setSelectedLeagueId('')
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error(t('addUserFailed'))
-      }
-      logger.error('Failed to add user to league', { error, userId: selectedUserId, leagueId })
-    } finally {
-      setIsAddingUser(false)
+    } else {
+      toast.error(result.error ?? t('addUserFailed'))
+      logger.error('Failed to add user to league', { error: result.error, userId: selectedUserId, leagueId })
     }
+    setIsAddingUser(false)
   }
 
   const handleCancelAddUser = () => {

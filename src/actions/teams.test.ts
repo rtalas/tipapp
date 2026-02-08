@@ -6,6 +6,7 @@ import * as authUtils from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
+  parseSessionUserId: vi.fn((id: string) => parseInt(id, 10)),
 }))
 
 const mockPrisma = vi.mocked(prisma, true)
@@ -105,7 +106,7 @@ describe('Teams Actions', () => {
 
   describe('updateTeam', () => {
     it('should update team when it exists', async () => {
-      mockPrisma.team.findUnique.mockResolvedValue({ id: 1 } as any)
+      mockPrisma.team.findFirst.mockResolvedValue({ id: 1 } as any)
       mockPrisma.team.update.mockResolvedValue({ id: 1 } as any)
 
       const result = await updateTeam({ id: 1, name: 'Updated' })
@@ -121,7 +122,7 @@ describe('Teams Actions', () => {
     })
 
     it('should return error when team not found', async () => {
-      mockPrisma.team.findUnique.mockResolvedValue(null)
+      mockPrisma.team.findFirst.mockResolvedValue(null)
 
       const result = await updateTeam({ id: 999, name: 'X' })
 
@@ -141,7 +142,7 @@ describe('Teams Actions', () => {
 
   describe('deleteTeam', () => {
     it('should soft delete team when it exists', async () => {
-      mockPrisma.team.findUnique.mockResolvedValue({
+      mockPrisma.team.findFirst.mockResolvedValue({
         id: 1,
         name: 'Team',
         _count: { LeagueTeam: 0 },
@@ -159,7 +160,7 @@ describe('Teams Actions', () => {
     })
 
     it('should return error when team not found', async () => {
-      mockPrisma.team.findUnique.mockResolvedValue(null)
+      mockPrisma.team.findFirst.mockResolvedValue(null)
 
       const result = await deleteTeam(999)
 
@@ -168,7 +169,7 @@ describe('Teams Actions', () => {
     })
 
     it('should still delete when team is assigned to leagues', async () => {
-      mockPrisma.team.findUnique.mockResolvedValue({
+      mockPrisma.team.findFirst.mockResolvedValue({
         id: 1,
         name: 'Team',
         _count: { LeagueTeam: 3 },

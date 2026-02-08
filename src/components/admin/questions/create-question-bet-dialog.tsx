@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
+import { getUserDisplayNameWithUsername } from '@/lib/user-display-utils'
 import { createUserQuestionBet, type QuestionWithUserBets } from '@/actions/question-bets'
 import { type UserBasic } from '@/actions/users'
 import { validate } from '@/lib/validation-client'
@@ -128,7 +129,7 @@ export function CreateQuestionBetDialog({ open, onOpenChange, question, users }:
                 <SelectContent>
                   {availableUsers.map((user) => (
                     <SelectItem key={user.id} value={user.id.toString()}>
-                      {user.firstName} {user.lastName} ({user.username})
+                      {getUserDisplayNameWithUsername(user)}
                     </SelectItem>
                   ))}
                 </SelectContent>

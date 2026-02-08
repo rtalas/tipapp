@@ -130,7 +130,7 @@ describe('Special Bet Bets Actions', () => {
 
   describe('updateUserSpecialBet', () => {
     it('should update special bet', async () => {
-      mockPrisma.userSpecialBetSingle.findUnique.mockResolvedValue({
+      mockPrisma.userSpecialBetSingle.findFirst.mockResolvedValue({
         id: 1,
         LeagueSpecialBetSingle: { leagueId: 1 },
       } as any)
@@ -142,7 +142,7 @@ describe('Special Bet Bets Actions', () => {
     })
 
     it('should return error when bet not found', async () => {
-      mockPrisma.userSpecialBetSingle.findUnique.mockResolvedValue(null)
+      mockPrisma.userSpecialBetSingle.findFirst.mockResolvedValue(null)
 
       const result = await updateUserSpecialBet({ id: 999, value: 1 })
 

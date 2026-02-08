@@ -19,8 +19,8 @@ type Match = {
   awayRegularScore: number | null
   homeFinalScore: number | null
   awayFinalScore: number | null
-  isOvertime: boolean | null
-  isShootout: boolean | null
+  isOvertime: boolean
+  isShootout: boolean
   isPlayoffGame: boolean
   homeAdvanced?: boolean | null
   MatchScorer: Array<{ scorerId: number; numberOfGoals: number }>

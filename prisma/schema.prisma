@@ -106,7 +106,7 @@ model LeagueMatch {
   id               Int                @id @default(autoincrement())
   leagueId         Int
   matchId          Int
-  isDoubled        Boolean?
+  isDoubled        Boolean            @default(false)
   createdAt        DateTime           @db.Timestamptz(6)
   updatedAt        DateTime           @db.Timestamptz(6)
   deletedAt        DateTime?          @db.Timestamptz(6)
@@ -114,6 +114,9 @@ model LeagueMatch {
   Match            Match              @relation(fields: [matchId], references: [id], onDelete: NoAction)
   SentNotification SentNotification[]
   UserBet          UserBet[]
+
+  @@unique([leagueId, matchId, deletedAt])
+  @@index([leagueId, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -150,6 +153,9 @@ model LeaguePlayer {
   TopScorerRankingVersion TopScorerRankingVersion[]
   UserBet                 UserBet[]
   UserSpecialBetSingle    UserSpecialBetSingle[]
+
+  @@unique([leagueTeamId, playerId, deletedAt])
+  @@index([leagueTeamId, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -279,6 +285,9 @@ model LeagueTeam {
   Match_Match_awayTeamIdToLeagueTeam                                 Match[]                              @relation("Match_awayTeamIdToLeagueTeam")
   Match_Match_homeTeamIdToLeagueTeam                                 Match[]                              @relation("Match_homeTeamIdToLeagueTeam")
   UserSpecialBetSingle                                               UserSpecialBetSingle[]
+
+  @@unique([leagueId, teamId, deletedAt])
+  @@index([leagueId, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -318,8 +327,8 @@ model Match {
   awayRegularScore                        Int?
   homeFinalScore                          Int?
   awayFinalScore                          Int?
-  isOvertime                              Boolean?
-  isShootout                              Boolean?
+  isOvertime                              Boolean       @default(false)
+  isShootout                              Boolean       @default(false)
   isEvaluated                             Boolean       @default(false)
   isPlayoffGame                           Boolean       @default(false)
   externalId                              Int?
@@ -520,6 +529,7 @@ model TopScorerRankingVersion {
   effectiveTo     DateTime?    @db.Timestamptz(6)
   createdAt       DateTime     @db.Timestamptz(6)
   createdByUserId Int?
+  deletedAt       DateTime?    @db.Timestamptz(6)
   User            User?        @relation(fields: [createdByUserId], references: [id])
   League          League       @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   LeaguePlayer    LeaguePlayer @relation(fields: [leaguePlayerId], references: [id], onDelete: NoAction)
@@ -594,6 +604,8 @@ model UserRequest {
   deletedAt DateTime? @db.Timestamptz(6)
   League    League    @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   User      User      @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  @@index([leagueId, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

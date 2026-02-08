@@ -115,7 +115,7 @@ describe('Messages Actions', () => {
 
       expect(mockPrisma.message.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ text: '  Hello  ' }),
+          data: expect.objectContaining({ text: 'Hello' }),
         })
       )
     })

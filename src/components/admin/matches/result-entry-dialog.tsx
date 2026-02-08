@@ -51,8 +51,8 @@ interface Match {
   awayRegularScore: number | null
   homeFinalScore: number | null
   awayFinalScore: number | null
-  isOvertime: boolean | null
-  isShootout: boolean | null
+  isOvertime: boolean
+  isShootout: boolean
   isEvaluated: boolean
   isPlayoffGame: boolean
   LeagueTeam_Match_homeTeamIdToLeagueTeam: LeagueTeam
@@ -61,7 +61,7 @@ interface Match {
 
 interface LeagueMatch {
   id: number
-  isDoubled: boolean | null
+  isDoubled: boolean
   League: { name: string; sportId: number }
   Match: Match
 }

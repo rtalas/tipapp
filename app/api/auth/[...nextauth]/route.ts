@@ -1,13 +1,16 @@
 import { handlers } from "@/auth";
 import { NextRequest } from "next/server";
-import { getClientIp, checkLoginRateLimit } from "@/lib/rate-limit";
+import { getClientIp, checkLoginRateLimit, recordFailedLogin } from "@/lib/rate-limit";
 
 export const { GET } = handlers;
 
 export async function POST(request: NextRequest) {
+  const isCredentialLogin = request.nextUrl.pathname.endsWith("/callback/credentials");
+  let ip: string | undefined;
+
   // Only rate-limit credential sign-in attempts
-  if (request.nextUrl.pathname.endsWith("/callback/credentials")) {
-    const ip = getClientIp(request);
+  if (isCredentialLogin) {
+    ip = getClientIp(request);
     const { limited, retryAfterMs } = checkLoginRateLimit(ip);
 
     if (limited) {
@@ -25,5 +28,15 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return handlers.POST(request);
+  const response = await handlers.POST(request);
+
+  // Record only failed login attempts (Auth.js redirects with ?error= on failure)
+  if (isCredentialLogin && ip) {
+    const location = response.headers.get('location');
+    if (location?.includes('error=')) {
+      recordFailedLogin(ip);
+    }
+  }
+
+  return response;
 }

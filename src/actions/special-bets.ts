@@ -5,6 +5,8 @@ import { z } from 'zod'
 import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { parseSessionUserId } from '@/lib/auth/auth-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import { specialBetInclude } from '@/lib/prisma-helpers'
 import { AppError } from '@/lib/error-handler'
 import {
@@ -17,7 +19,7 @@ import {
 export async function createSpecialBet(input: CreateSpecialBetInput) {
   return executeServerAction(input, {
     validator: createSpecialBetSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       // Verify league exists
@@ -67,6 +69,12 @@ export async function createSpecialBet(input: CreateSpecialBetInput) {
       // Invalidate user-facing special bet cache
       revalidateTag('special-bet-data', 'max')
 
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSingle', specialBet.id,
+        { leagueId: validated.leagueId, name: validated.name, evaluatorId: validated.evaluatorId },
+        validated.leagueId
+      ).catch(() => {})
+
       return { specialBetId: specialBet.id }
     },
     revalidatePath: '/admin/special-bets',
@@ -77,7 +85,7 @@ export async function createSpecialBet(input: CreateSpecialBetInput) {
 export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput) {
   return executeServerAction(input, {
     validator: updateSpecialBetResultSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       // Verify exactly one result field is set (already validated by schema, but double-check)
@@ -190,6 +198,12 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
       // Invalidate user-facing special bet cache
       revalidateTag('special-bet-data', 'max')
 
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSingle', validated.specialBetId,
+        { teamResultId: validated.specialBetTeamResultId, playerResultId: validated.specialBetPlayerResultId, value: validated.specialBetValue },
+        specialBet.leagueId
+      ).catch(() => {})
+
       return {
         wasEvaluated: specialBet.isEvaluated,
         needsReEvaluation: true, // Always needs re-evaluation after result update
@@ -203,7 +217,7 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
 export async function deleteSpecialBet(id: number) {
   return executeServerAction({ id }, {
     validator: z.object({ id: z.number().int().positive() }),
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       await prisma.leagueSpecialBetSingle.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
@@ -211,6 +225,10 @@ export async function deleteSpecialBet(id: number) {
 
       // Invalidate user-facing special bet cache
       revalidateTag('special-bet-data', 'max')
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSingle', validated.id
+      ).catch(() => {})
 
       return {}
     },

@@ -2,8 +2,10 @@
 
 import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
+import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import { AppError } from '@/lib/error-handler'
 import { getEvaluatorEntity } from '@/lib/evaluators'
 import {
@@ -51,7 +53,7 @@ const DEFAULT_SCORER_CONFIG = {
 export async function createLeague(input: CreateLeagueInput) {
   return executeServerAction(input, {
     validator: createLeagueSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       // Transaction: Create league + evaluators
@@ -141,6 +143,11 @@ export async function createLeague(input: CreateLeagueInput) {
       // Invalidate league selector cache for all users
       revalidateTag('league-selector', 'max')
 
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'League', result.id,
+        { name: validated.name, sportId: validated.sportId }
+      ).catch(() => {})
+
       return { leagueId: result.id }
     },
     revalidatePath: '/admin/leagues',
@@ -151,7 +158,7 @@ export async function createLeague(input: CreateLeagueInput) {
 export async function updateLeague(input: UpdateLeagueInput) {
   return executeServerAction(input, {
     validator: updateLeagueSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const { id, ...data } = validated
 
       await prisma.league.update({
@@ -165,6 +172,10 @@ export async function updateLeague(input: UpdateLeagueInput) {
       // Invalidate league selector cache (name, isActive, etc. could change)
       revalidateTag('league-selector', 'max')
 
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'League', id, data, id
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/leagues',
@@ -175,7 +186,7 @@ export async function updateLeague(input: UpdateLeagueInput) {
 export async function deleteLeague(input: DeleteByIdInput) {
   return executeServerAction(input, {
     validator: deleteByIdSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       await prisma.league.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
@@ -183,6 +194,10 @@ export async function deleteLeague(input: DeleteByIdInput) {
 
       // Invalidate league selector cache
       revalidateTag('league-selector', 'max')
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'League', validated.id
+      ).catch(() => {})
 
       return {}
     },
@@ -194,23 +209,21 @@ export async function deleteLeague(input: DeleteByIdInput) {
 export async function assignTeamToLeague(input: AssignTeamInput) {
   return executeServerAction(input, {
     validator: assignTeamSchema,
-    handler: async (validated) => {
-      // Check if team is already assigned
-      const existing = await prisma.leagueTeam.findFirst({
-        where: {
-          leagueId: validated.leagueId,
-          teamId: validated.teamId,
-          deletedAt: null,
-        },
-      })
-
-      if (existing) {
-        throw new AppError('Team is already assigned to this league', 'CONFLICT', 409)
-      }
-
+    handler: async (validated, session) => {
       const now = new Date()
-      await prisma.leagueTeam.create({
-        data: {
+      const result = await prisma.leagueTeam.upsert({
+        where: {
+          leagueId_teamId_deletedAt: nullableUniqueConstraint({
+            leagueId: validated.leagueId,
+            teamId: validated.teamId,
+            deletedAt: null,
+          }),
+        },
+        update: {
+          // Already exists — no-op, will throw below
+          updatedAt: now,
+        },
+        create: {
           leagueId: validated.leagueId,
           teamId: validated.teamId,
           group: validated.group,
@@ -219,7 +232,18 @@ export async function assignTeamToLeague(input: AssignTeamInput) {
         },
       })
 
+      if (result.createdAt.getTime() !== now.getTime()) {
+        throw new AppError('Team is already assigned to this league', 'CONFLICT', 409)
+      }
+
       revalidateTag('special-bet-teams', 'max')
+
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'LeagueTeam', result.id,
+        { leagueId: validated.leagueId, teamId: validated.teamId },
+        validated.leagueId
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: `/admin/leagues/${input.leagueId}/setup`,
@@ -230,13 +254,18 @@ export async function assignTeamToLeague(input: AssignTeamInput) {
 export async function removeTeamFromLeague(input: DeleteByIdInput) {
   return executeServerAction(input, {
     validator: deleteByIdSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       await prisma.leagueTeam.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
 
       revalidateTag('special-bet-teams', 'max')
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'LeagueTeam', validated.id
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/leagues',
@@ -247,7 +276,7 @@ export async function removeTeamFromLeague(input: DeleteByIdInput) {
 export async function updateLeagueTeamGroup(input: UpdateLeagueTeamGroupInput) {
   return executeServerAction(input, {
     validator: updateLeagueTeamGroupSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       await prisma.leagueTeam.update({
         where: { id: validated.leagueTeamId },
         data: {
@@ -257,6 +286,12 @@ export async function updateLeagueTeamGroup(input: UpdateLeagueTeamGroupInput) {
       })
 
       revalidateTag('special-bet-teams', 'max')
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeagueTeam', validated.leagueTeamId,
+        { group: validated.group }
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/leagues',
@@ -267,23 +302,21 @@ export async function updateLeagueTeamGroup(input: UpdateLeagueTeamGroupInput) {
 export async function assignPlayerToLeagueTeam(input: AssignPlayerInput) {
   return executeServerAction(input, {
     validator: assignPlayerSchema,
-    handler: async (validated) => {
-      // Check if player is already assigned to this league team
-      const existing = await prisma.leaguePlayer.findFirst({
-        where: {
-          leagueTeamId: validated.leagueTeamId,
-          playerId: validated.playerId,
-          deletedAt: null,
-        },
-      })
-
-      if (existing) {
-        throw new AppError('Player is already assigned to this team in this league', 'CONFLICT', 409)
-      }
-
+    handler: async (validated, session) => {
       const now = new Date()
-      await prisma.leaguePlayer.create({
-        data: {
+      const result = await prisma.leaguePlayer.upsert({
+        where: {
+          leagueTeamId_playerId_deletedAt: nullableUniqueConstraint({
+            leagueTeamId: validated.leagueTeamId,
+            playerId: validated.playerId,
+            deletedAt: null,
+          }),
+        },
+        update: {
+          // Already exists — no-op, will throw below
+          updatedAt: now,
+        },
+        create: {
           leagueTeamId: validated.leagueTeamId,
           playerId: validated.playerId,
           seasonGames: validated.seasonGames,
@@ -294,7 +327,17 @@ export async function assignPlayerToLeagueTeam(input: AssignPlayerInput) {
         },
       })
 
+      if (result.createdAt.getTime() !== now.getTime()) {
+        throw new AppError('Player is already assigned to this team in this league', 'CONFLICT', 409)
+      }
+
       revalidateTag('special-bet-players', 'max')
+
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'LeaguePlayer', result.id,
+        { leagueTeamId: validated.leagueTeamId, playerId: validated.playerId }
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/leagues',
@@ -305,13 +348,18 @@ export async function assignPlayerToLeagueTeam(input: AssignPlayerInput) {
 export async function removePlayerFromLeagueTeam(input: DeleteByIdInput) {
   return executeServerAction(input, {
     validator: deleteByIdSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       await prisma.leaguePlayer.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
 
       revalidateTag('special-bet-players', 'max')
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'LeaguePlayer', validated.id
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/leagues',
@@ -368,6 +416,12 @@ export async function updateTopScorerRanking(input: UpdateTopScorerRankingInput)
           },
         })
       })
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeaguePlayer', validated.leaguePlayerId,
+        { topScorerRanking: validated.topScorerRanking },
+        leagueId
+      ).catch(() => {})
 
       return {}
     },
@@ -439,7 +493,7 @@ export async function getSports() {
 export async function updateLeagueChatSettings(input: UpdateLeagueChatSettingsInput) {
   return executeServerAction(input, {
     validator: updateLeagueChatSettingsSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const league = await prisma.league.findUnique({
         where: { id: validated.leagueId, deletedAt: null },
       })
@@ -470,6 +524,12 @@ export async function updateLeagueChatSettings(input: UpdateLeagueChatSettingsIn
         where: { id: validated.leagueId },
         data: updateData,
       })
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'League', validated.leagueId,
+        { isChatEnabled: validated.isChatEnabled, suspend: validated.suspend },
+        validated.leagueId
+      ).catch(() => {})
 
       return {}
     },

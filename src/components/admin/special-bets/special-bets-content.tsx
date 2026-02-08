@@ -10,6 +10,7 @@ import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
+import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { DetailedEntityDeleteDialog } from '@/components/admin/common/detailed-entity-delete-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -84,9 +85,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [selectedSpecialBet, setSelectedSpecialBet] = useState<SpecialBet | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [specialBetToDelete, setSpecialBetToDelete] = useState<SpecialBet | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const deleteDialog = useDeleteDialog<SpecialBet>()
   const [createBetSpecialBetId, setCreateBetSpecialBetId] = useState<number | null>(null)
 
   // Expandable rows
@@ -142,23 +141,22 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
   })
 
   const handleDelete = async () => {
-    if (!specialBetToDelete) return
-    setIsDeleting(true)
+    if (!deleteDialog.itemToDelete) return
+    deleteDialog.startDeleting()
     try {
-      const result = await deleteSpecialBet(specialBetToDelete.id)
+      const result = await deleteSpecialBet(deleteDialog.itemToDelete.id)
       if (!result.success) {
         toast.error('error' in result ? result.error : t('specialBetDeleteFailed'))
+        deleteDialog.cancelDeleting()
         return
       }
       toast.success(t('specialBetDeleted'))
-      setDeleteDialogOpen(false)
-      setSpecialBetToDelete(null)
+      deleteDialog.finishDeleting()
     } catch (error) {
       const message = getErrorMessage(error, t('specialBetDeleteFailed'))
       toast.error(message)
-      logger.error('Failed to delete special bet', { error, specialBetId: specialBetToDelete?.id })
-    } finally {
-      setIsDeleting(false)
+      logger.error('Failed to delete special bet', { error, specialBetId: deleteDialog.itemToDelete?.id })
+      deleteDialog.cancelDeleting()
     }
   }
 
@@ -292,10 +290,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
                         onToggleExpand={() => toggleRow(sb.id)}
                         onEdit={() => setSelectedSpecialBet(sb)}
                         onEvaluate={() => handleEvaluate(sb.id)}
-                        onDelete={() => {
-                          setSpecialBetToDelete(sb)
-                          setDeleteDialogOpen(true)
-                        }}
+                        onDelete={() => deleteDialog.openDialog(sb)}
                         onAddMissingBet={() => setCreateBetSpecialBetId(sb.id)}
                         showLeagueColumn={!league}
                       />
@@ -343,28 +338,28 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
 
       {/* Delete Confirmation Dialog */}
       <DetailedEntityDeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        open={deleteDialog.open}
+        onOpenChange={deleteDialog.onOpenChange}
         title={t('deleteTitle')}
         description={t('deleteConfirm')}
         onConfirm={handleDelete}
-        isDeleting={isDeleting}
+        isDeleting={deleteDialog.isDeleting}
       >
-        {specialBetToDelete && (() => {
-          const deleteResultInfo = getResultTypeAndDisplay(specialBetToDelete)
+        {deleteDialog.itemToDelete && (() => {
+          const deleteResultInfo = getResultTypeAndDisplay(deleteDialog.itemToDelete)
           return (
             <div className="rounded-lg border p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{t('betId')}</span>
-                <span className="font-mono">#{specialBetToDelete.id}</span>
+                <span className="font-mono">#{deleteDialog.itemToDelete.id}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{tSeries('date')}</span>
-                <span>{format(new Date(specialBetToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
+                <span>{format(new Date(deleteDialog.itemToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{t('name')}</span>
-                <span className="font-medium">{specialBetToDelete.name}</span>
+                <span className="font-medium">{deleteDialog.itemToDelete.name}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{t('typeLabel')}</span>
@@ -374,11 +369,11 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{t('pointsLabel')}</span>
-                <span>{specialBetToDelete.points} {t('pts')}</span>
+                <span>{deleteDialog.itemToDelete.points} {t('pts')}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{tSeries('leagueLabel')}</span>
-                <span>{specialBetToDelete.League.name}</span>
+                <span>{deleteDialog.itemToDelete.League.name}</span>
               </div>
             </div>
           )

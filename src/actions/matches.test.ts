@@ -6,6 +6,7 @@ import { requireAdmin } from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
+  parseSessionUserId: vi.fn((id: string) => parseInt(id, 10)),
 }))
 
 vi.mock('@/lib/query-builders', () => ({
@@ -311,7 +312,14 @@ describe('Matches Actions', () => {
 
       const result = await getMatches({ leagueId: 1 })
 
+      expect(mockRequireAdmin).toHaveBeenCalled()
       expect(result).toHaveLength(1)
+    })
+
+    it('should reject non-admin users', async () => {
+      mockRequireAdmin.mockRejectedValueOnce(new Error('Unauthorized'))
+
+      await expect(getMatches()).rejects.toThrow('Unauthorized')
     })
   })
 
@@ -321,12 +329,19 @@ describe('Matches Actions', () => {
 
       const result = await getMatchById(1)
 
+      expect(mockRequireAdmin).toHaveBeenCalled()
       expect(result).toEqual({ id: 1 })
       expect(mockPrisma.match.findUnique).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 1, deletedAt: null },
         })
       )
+    })
+
+    it('should reject non-admin users', async () => {
+      mockRequireAdmin.mockRejectedValueOnce(new Error('Unauthorized'))
+
+      await expect(getMatchById(1)).rejects.toThrow('Unauthorized')
     })
   })
 })

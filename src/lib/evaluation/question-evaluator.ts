@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import type { TransactionClient } from '@/lib/prisma-utils'
 import { AppError } from '@/lib/error-handler'
+import { evaluateQuestion as evaluateQuestionBet, type QuestionContext } from '@/lib/evaluators/question'
 
 export interface EvaluateQuestionOptions {
   questionId: number
@@ -72,30 +73,19 @@ async function evaluateQuestion(
   }
 
   const basePoints = questionEvaluator.points || 0
-  const correctPoints = basePoints
-  const wrongPoints = Math.floor(basePoints / 2) * -1 // Divide by 2, then negate
 
   const results: EvaluationResult[] = []
   const now = new Date()
 
-  // Evaluate each user bet
+  // Evaluate each user bet using the shared evaluator
   for (const bet of question.UserSpecialBetQuestion) {
-    let pointsAwarded = 0
-    let isCorrect: boolean | null = null
-
-    if (bet.userBet !== null) {
-      // User made a bet
-      if (bet.userBet === question.result) {
-        // Correct answer
-        pointsAwarded = correctPoints
-        isCorrect = true
-      } else {
-        // Wrong answer
-        pointsAwarded = wrongPoints
-        isCorrect = false
-      }
+    const context: QuestionContext = {
+      prediction: { answer: bet.userBet as 'yes' | 'no' | null },
+      actual: { correctAnswer: question.result as unknown as 'yes' | 'no' },
     }
-    // else: User didn't bet (no row or null userBet) = 0 points, isCorrect = null
+    const multiplier = evaluateQuestionBet(context)
+    const pointsAwarded = Math.trunc(basePoints * multiplier)
+    const isCorrect = bet.userBet === null ? null : multiplier > 0
 
     // Update bet points
     await tx.userSpecialBetQuestion.update({

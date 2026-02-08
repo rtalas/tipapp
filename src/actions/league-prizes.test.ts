@@ -5,7 +5,8 @@ import * as authUtils from '@/lib/auth/auth-utils'
 import { revalidateTag, revalidatePath } from 'next/cache'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
-  requireAdmin: vi.fn(),
+  requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
+  parseSessionUserId: vi.fn((id: string) => parseInt(id, 10)),
 }))
 
 const mockPrisma = vi.mocked(prisma, true)
@@ -31,10 +32,10 @@ describe('League Prizes Actions', () => {
 
       expect(mockRequireAdmin).toHaveBeenCalled()
       expect(result.success).toBe(true)
-      expect(result.prizes).toHaveLength(2)
-      expect(result.fines).toHaveLength(1)
-      expect(result.prizes![0].type).toBe('prize')
-      expect(result.fines![0].type).toBe('fine')
+      expect((result as any).prizes).toHaveLength(2)
+      expect((result as any).fines).toHaveLength(1)
+      expect((result as any).prizes[0].type).toBe('prize')
+      expect((result as any).fines[0].type).toBe('fine')
     })
 
     it('should query with correct filters', async () => {
@@ -64,8 +65,8 @@ describe('League Prizes Actions', () => {
       const result = await getLeaguePrizes(1)
 
       expect(result.success).toBe(true)
-      expect(result.prizes).toHaveLength(0)
-      expect(result.fines).toHaveLength(0)
+      expect((result as any).prizes).toHaveLength(0)
+      expect((result as any).fines).toHaveLength(0)
     })
 
     it('should return error when not admin', async () => {
@@ -78,13 +79,16 @@ describe('League Prizes Actions', () => {
     })
 
     it('should return error for invalid leagueId', async () => {
+      mockRequireAdmin.mockResolvedValue({ user: { id: '1', isSuperadmin: true } } as any)
+
       const result = await getLeaguePrizes(-1)
 
       expect(result.success).toBe(false)
-      expect(mockRequireAdmin).not.toHaveBeenCalled()
     })
 
     it('should return error for zero leagueId', async () => {
+      mockRequireAdmin.mockResolvedValue({ user: { id: '1', isSuperadmin: true } } as any)
+
       const result = await getLeaguePrizes(0)
 
       expect(result.success).toBe(false)

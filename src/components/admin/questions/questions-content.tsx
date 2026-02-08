@@ -11,6 +11,7 @@ import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
+import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { ContentFilterHeader } from '@/components/admin/common/content-filter-header'
 import { DetailedEntityDeleteDialog } from '@/components/admin/common/detailed-entity-delete-dialog'
 import { QuestionTableRow } from './question-table-row'
@@ -57,9 +58,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [userFilter, setUserFilter] = useState<string>('all')
   const [questionToEdit, setQuestionToEdit] = useState<Question | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const deleteDialog = useDeleteDialog<Question>()
   const [createBetQuestionId, setCreateBetQuestionId] = useState<number | null>(null)
 
   const { isExpanded, toggleRow } = useExpandableRow()
@@ -129,19 +128,17 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
   }
 
   const handleDelete = async () => {
-    if (!questionToDelete) return
-    setIsDeleting(true)
+    if (!deleteDialog.itemToDelete) return
+    deleteDialog.startDeleting()
     try {
-      await deleteQuestion(questionToDelete.id)
+      await deleteQuestion(deleteDialog.itemToDelete.id)
       toast.success(t('questionDeleted'))
-      setDeleteDialogOpen(false)
-      setQuestionToDelete(null)
+      deleteDialog.finishDeleting()
     } catch (error) {
       const message = getErrorMessage(error, t('questionDeleteFailed'))
       toast.error(message)
-      logger.error('Failed to delete question', { error, questionId: questionToDelete?.id })
-    } finally {
-      setIsDeleting(false)
+      logger.error('Failed to delete question', { error, questionId: deleteDialog.itemToDelete?.id })
+      deleteDialog.cancelDeleting()
     }
   }
 
@@ -243,10 +240,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                       onToggleExpand={() => toggleRow(q.id)}
                       onEdit={() => setQuestionToEdit(q)}
                       onEvaluate={() => handleEvaluate(q.id)}
-                      onDelete={() => {
-                        setQuestionToDelete(q)
-                        setDeleteDialogOpen(true)
-                      }}
+                      onDelete={() => deleteDialog.openDialog(q)}
                       onAddBet={() => setCreateBetQuestionId(q.id)}
                       status={getQuestionStatus(q)}
                     />
@@ -289,30 +283,30 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
 
       {/* Delete Confirmation Dialog */}
       <DetailedEntityDeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        open={deleteDialog.open}
+        onOpenChange={deleteDialog.onOpenChange}
         title={t('deleteTitle')}
         description={t('deleteConfirm')}
         onConfirm={handleDelete}
-        isDeleting={isDeleting}
+        isDeleting={deleteDialog.isDeleting}
       >
-        {questionToDelete && (
+        {deleteDialog.itemToDelete && (
           <div className="rounded-lg border p-4 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('questionId')}</span>
-              <span className="font-mono">#{questionToDelete.id}</span>
+              <span className="font-mono">#{deleteDialog.itemToDelete.id}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{tSeries('date')}</span>
-              <span>{format(new Date(questionToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
+              <span>{format(new Date(deleteDialog.itemToDelete.dateTime), 'd.M.yyyy HH:mm')}</span>
             </div>
             <div className="col-span-2">
               <span className="text-sm text-muted-foreground">{t('questionLabel')}</span>
-              <p className="mt-1 font-medium">{questionToDelete.text}</p>
+              <p className="mt-1 font-medium">{deleteDialog.itemToDelete.text}</p>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{tSeries('leagueLabel')}</span>
-              <span>{questionToDelete.League.name}</span>
+              <span>{deleteDialog.itemToDelete.League.name}</span>
             </div>
           </div>
         )}

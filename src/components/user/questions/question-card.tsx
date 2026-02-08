@@ -11,8 +11,8 @@ import { CountdownBadge } from '@/components/user/common/countdown-badge'
 import { StatusBadge } from '@/components/user/common/status-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
 import { cn } from '@/lib/utils'
-import { logger } from '@/lib/logging/client-logger'
 import { getUserDisplayName } from '@/lib/user-display-utils'
+import { useFriendPredictions } from '@/hooks/useFriendPredictions'
 import { saveQuestionBet, getQuestionFriendPredictions } from '@/actions/user/questions'
 import type { UserQuestion, QuestionFriendPrediction } from '@/actions/user/questions'
 
@@ -32,25 +32,13 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
   )
   const [isSaving, setIsSaving] = useState(false)
   const [isSaved, setIsSaved] = useState(currentAnswer !== undefined && currentAnswer !== null)
-  const [showFriendsBets, setShowFriendsBets] = useState(false)
-  const [friendPredictions, setFriendPredictions] = useState<QuestionFriendPrediction[]>([])
-  const [isLoadingFriends, setIsLoadingFriends] = useState(false)
-
-  const handleOpenFriendsBets = async () => {
-    setShowFriendsBets(true)
-    if (isLocked && friendPredictions.length === 0) {
-      setIsLoadingFriends(true)
-      try {
-        const result = await getQuestionFriendPredictions(question.id)
-        setFriendPredictions(result.predictions)
-      } catch (error) {
-        logger.error('Failed to load friend predictions', { error: error instanceof Error ? error.message : String(error), questionId: question.id })
-        toast.error(t('friendsLoadError'))
-      } finally {
-        setIsLoadingFriends(false)
-      }
-    }
-  }
+  const friends = useFriendPredictions<QuestionFriendPrediction>({
+    isLocked,
+    entityId: question.id,
+    entityName: 'question',
+    fetchPredictions: getQuestionFriendPredictions,
+    errorToast: t('friendsLoadError'),
+  })
 
   const handleAnswer = (answer: boolean | null) => {
     if (isLocked) return
@@ -246,7 +234,7 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
         {isLocked && (
           <div className="mt-3 pt-3 border-t border-border/30 flex justify-center">
             <button
-              onClick={handleOpenFriendsBets}
+              onClick={friends.open}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Users className="w-3.5 h-3.5" />
@@ -258,8 +246,8 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
 
       {/* Friends Predictions Modal */}
       <FriendPredictionsModal
-        open={showFriendsBets}
-        onOpenChange={setShowFriendsBets}
+        open={friends.showModal}
+        onOpenChange={friends.setShowModal}
         title={question.text}
         subtitle={
           isEvaluated && question.result !== null
@@ -268,13 +256,13 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
         }
         sectionLabel={t('friendsAnswers')}
         isLocked={isLocked}
-        isLoading={isLoadingFriends}
-        predictions={friendPredictions}
+        isLoading={friends.isLoading}
+        predictions={friends.predictions}
         emptyMessage={t('noFriendsAnswers')}
         lockedMessage={t('friendsPicksLater')}
         loadingMessage={t('loading')}
       >
-        {friendPredictions.map((prediction) => {
+        {friends.predictions.map((prediction) => {
           const user = prediction.LeagueUser.User
           const displayName = getUserDisplayName(user)
 

@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { getLeagueUsers } from '@/actions/users'
+import { getUserDisplayNameWithUsername } from '@/lib/user-display-utils'
 
 interface UserSelectorInputProps {
   value: string
@@ -76,14 +77,6 @@ export function UserSelectorInput({
     fetchUsers()
   }, [leagueId, existingBetUserIds])
 
-  // Helper to get display name
-  const getUserDisplayName = (user: LeagueUserOption['User']) => {
-    if (user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName} (${user.username})`
-    }
-    return user.username
-  }
-
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -123,7 +116,7 @@ export function UserSelectorInput({
         <SelectContent>
           {users.map((user) => (
             <SelectItem key={user.id} value={user.id.toString()}>
-              {getUserDisplayName(user.User)}
+              {getUserDisplayNameWithUsername(user.User)}
             </SelectItem>
           ))}
         </SelectContent>

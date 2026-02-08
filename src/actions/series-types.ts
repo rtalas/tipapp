@@ -1,8 +1,9 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth/auth-utils'
+import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import { buildDeletionErrorMessage } from '@/lib/delete-utils'
 import { AppError } from '@/lib/error-handler'
 import {
@@ -31,7 +32,7 @@ export async function getAllSeriesTypes() {
 export async function createSeriesType(input: CreateSeriesTypeInput) {
   return executeServerAction(input, {
     validator: createSeriesTypeSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       const seriesType = await prisma.specialBetSerie.create({
@@ -42,6 +43,11 @@ export async function createSeriesType(input: CreateSeriesTypeInput) {
           updatedAt: now,
         },
       })
+
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'SpecialBetSerie', seriesType.id,
+        { name: validated.name, bestOf: validated.bestOf }
+      ).catch(() => {})
 
       return { data: seriesType }
     },
@@ -54,15 +60,20 @@ export async function createSeriesType(input: CreateSeriesTypeInput) {
 export async function updateSeriesType(input: UpdateSeriesTypeInput) {
   return executeServerAction(input, {
     validator: updateSeriesTypeSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const seriesType = await prisma.specialBetSerie.update({
         where: { id: validated.id },
         data: {
-          ...(validated.name && { name: validated.name }),
-          ...(validated.bestOf && { bestOf: validated.bestOf }),
+          ...(validated.name !== undefined && { name: validated.name }),
+          ...(validated.bestOf !== undefined && { bestOf: validated.bestOf }),
           updatedAt: new Date(),
         },
       })
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'SpecialBetSerie', validated.id,
+        { name: validated.name, bestOf: validated.bestOf }
+      ).catch(() => {})
 
       return { data: seriesType }
     },
@@ -75,7 +86,7 @@ export async function updateSeriesType(input: UpdateSeriesTypeInput) {
 export async function deleteSeriesType(id: number) {
   return executeServerAction({ id }, {
     validator: deleteByIdSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       // Check if used in any leagues
       const usageCount = await prisma.leagueSpecialBetSerie.count({
         where: {
@@ -92,6 +103,10 @@ export async function deleteSeriesType(id: number) {
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'SpecialBetSerie', validated.id
+      ).catch(() => {})
 
       return {}
     },

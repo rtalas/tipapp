@@ -64,7 +64,8 @@ export async function createUserQuestionBet(input: CreateUserQuestionBetInput) {
       const now = new Date()
 
       // Use transaction to prevent race condition in duplicate check
-      const bet = await prisma.$transaction(async (tx) => {
+      const bet = await prisma.$transaction(
+        async (tx) => {
         // Verify question exists and check betting deadline
         const question = await tx.leagueSpecialBetQuestion.findUnique({
           where: { id: validated.leagueSpecialBetQuestionId, deletedAt: null },
@@ -113,7 +114,13 @@ export async function createUserQuestionBet(input: CreateUserQuestionBetInput) {
             updatedAt: now,
           },
         })
-      })
+        },
+        {
+          isolationLevel: 'Serializable',
+          maxWait: 5000,
+          timeout: 10000,
+        }
+      )
 
       return { betId: bet.id }
     },

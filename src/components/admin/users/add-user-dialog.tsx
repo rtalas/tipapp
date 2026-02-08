@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { getUserDisplayNameWithUsername } from '@/lib/user-display-utils'
 import {
   Select,
   SelectContent,
@@ -95,7 +96,7 @@ export function AddUserDialog({
               <SelectContent>
                 {allUsers.map((user) => (
                   <SelectItem key={user.id} value={user.id.toString()}>
-                    {user.firstName} {user.lastName} (@{user.username})
+                    {getUserDisplayNameWithUsername(user)}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -16,7 +16,8 @@ import * as authUtils from '@/lib/auth/auth-utils'
 import { revalidateTag } from 'next/cache'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
-  requireAdmin: vi.fn(),
+  requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
+  parseSessionUserId: vi.fn((id: string) => parseInt(id, 10)),
 }))
 
 vi.mock('@/lib/query-builders', () => ({
@@ -117,18 +118,24 @@ describe('Users Actions', () => {
       expect(txMocks.leagueUser.create).not.toHaveBeenCalled()
     })
 
-    it('should throw when request not found', async () => {
+    it('should return error when request not found', async () => {
       const txMocks = makeTxMocks({ notFound: true })
       mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 
-      await expect(approveRequest(999)).rejects.toThrow('Request not found')
+      const result = await approveRequest(999)
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Request not found')
     })
 
-    it('should throw when already decided', async () => {
+    it('should return error when already decided', async () => {
       const txMocks = makeTxMocks({ decided: true })
       mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 
-      await expect(approveRequest(1)).rejects.toThrow('already been decided')
+      const result = await approveRequest(1)
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('already been decided')
     })
 
     it('should invalidate league-selector and leaderboard caches', async () => {
@@ -139,6 +146,11 @@ describe('Users Actions', () => {
 
       expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
       expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
+    })
+
+    it('should reject invalid requestId', async () => {
+      const result = await approveRequest(-1)
+      expect(result.success).toBe(false)
     })
   })
 
@@ -156,18 +168,27 @@ describe('Users Actions', () => {
       })
     })
 
-    it('should throw when request not found', async () => {
-      mockPrisma.userRequest.updateMany.mockResolvedValue({ count: 0 })
+    it('should return error when request not found', async () => {
       mockPrisma.userRequest.findUnique.mockResolvedValue(null)
 
-      await expect(rejectRequest(999)).rejects.toThrow('Request not found')
+      const result = await rejectRequest(999)
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Request not found')
     })
 
-    it('should throw when already decided', async () => {
-      mockPrisma.userRequest.updateMany.mockResolvedValue({ count: 0 })
-      mockPrisma.userRequest.findUnique.mockResolvedValue({ id: 1, leagueId: 1 } as any)
+    it('should return error when already decided', async () => {
+      mockPrisma.userRequest.findUnique.mockResolvedValue({ id: 1, leagueId: 1, decided: true } as any)
 
-      await expect(rejectRequest(1)).rejects.toThrow('already been decided')
+      const result = await rejectRequest(1)
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('already been decided')
+    })
+
+    it('should reject invalid requestId', async () => {
+      const result = await rejectRequest(0)
+      expect(result.success).toBe(false)
     })
   })
 
@@ -196,7 +217,7 @@ describe('Users Actions', () => {
     it('should update admin status', async () => {
       mockPrisma.leagueUser.update.mockResolvedValue({ id: 1, leagueId: 5 } as any)
 
-      const result = await updateLeagueUserAdmin(1, true)
+      const result = await updateLeagueUserAdmin({ leagueUserId: 1, value: true })
 
       expect(result.success).toBe(true)
       expect(mockPrisma.leagueUser.update).toHaveBeenCalledWith({
@@ -204,16 +225,26 @@ describe('Users Actions', () => {
         data: { admin: true, updatedAt: expect.any(Date) },
       })
     })
+
+    it('should reject invalid input', async () => {
+      const result = await updateLeagueUserAdmin({ leagueUserId: -1, value: true })
+      expect(result.success).toBe(false)
+    })
   })
 
   describe('updateLeagueUserActive', () => {
     it('should update active status and invalidate cache', async () => {
       mockPrisma.leagueUser.update.mockResolvedValue({ id: 1, leagueId: 5 } as any)
 
-      const result = await updateLeagueUserActive(1, false)
+      const result = await updateLeagueUserActive({ leagueUserId: 1, value: false })
 
       expect(result.success).toBe(true)
       expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
+    })
+
+    it('should reject invalid input', async () => {
+      const result = await updateLeagueUserActive({ leagueUserId: 0, value: true })
+      expect(result.success).toBe(false)
     })
   })
 
@@ -221,7 +252,7 @@ describe('Users Actions', () => {
     it('should update paid status', async () => {
       mockPrisma.leagueUser.update.mockResolvedValue({ id: 1, leagueId: 5 } as any)
 
-      const result = await updateLeagueUserPaid(1, true)
+      const result = await updateLeagueUserPaid({ leagueUserId: 1, value: true })
 
       expect(result.success).toBe(true)
       expect(mockPrisma.leagueUser.update).toHaveBeenCalledWith({
@@ -229,41 +260,60 @@ describe('Users Actions', () => {
         data: { paid: true, updatedAt: expect.any(Date) },
       })
     })
+
+    it('should reject invalid input', async () => {
+      const result = await updateLeagueUserPaid({ leagueUserId: -5, value: false })
+      expect(result.success).toBe(false)
+    })
   })
 
   describe('addUserToLeague', () => {
     it('should add user to league', async () => {
+      const now = new Date()
       mockPrisma.user.findUnique.mockResolvedValue({ id: 5 } as any)
       mockPrisma.league.findUnique.mockResolvedValue({ id: 1 } as any)
-      mockPrisma.leagueUser.findFirst.mockResolvedValue(null) // not member
-      mockPrisma.leagueUser.create.mockResolvedValue({ id: 10 } as any)
+      mockPrisma.leagueUser.upsert.mockResolvedValue({ id: 10, createdAt: now } as any)
 
-      const result = await addUserToLeague(5, 1)
+      const result = await addUserToLeague({ userId: 5, leagueId: 1 })
 
       expect(result.success).toBe(true)
       expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
       expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
     })
 
-    it('should throw when user not found', async () => {
+    it('should return error when user not found', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null)
 
-      await expect(addUserToLeague(999, 1)).rejects.toThrow('User not found')
+      const result = await addUserToLeague({ userId: 999, leagueId: 1 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('User not found')
     })
 
-    it('should throw when league not found', async () => {
+    it('should return error when league not found', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({ id: 5 } as any)
       mockPrisma.league.findUnique.mockResolvedValue(null)
 
-      await expect(addUserToLeague(5, 999)).rejects.toThrow('League not found')
+      const result = await addUserToLeague({ userId: 5, leagueId: 999 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('League not found')
     })
 
-    it('should throw when user already member', async () => {
+    it('should return error when user already member', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({ id: 5 } as any)
       mockPrisma.league.findUnique.mockResolvedValue({ id: 1 } as any)
-      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10 } as any)
+      mockPrisma.leagueUser.upsert.mockResolvedValue({ id: 10, createdAt: new Date('2020-01-01') } as any)
 
-      await expect(addUserToLeague(5, 1)).rejects.toThrow('already a member')
+      const result = await addUserToLeague({ userId: 5, leagueId: 1 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('already a member')
+    })
+
+    it('should reject invalid input', async () => {
+      const result = await addUserToLeague({ userId: -1, leagueId: 1 })
+      expect(result.success).toBe(false)
     })
   })
 
@@ -271,7 +321,7 @@ describe('Users Actions', () => {
     it('should soft delete league user', async () => {
       mockPrisma.leagueUser.update.mockResolvedValue({ id: 1, leagueId: 5 } as any)
 
-      const result = await removeLeagueUser(1)
+      const result = await removeLeagueUser({ leagueUserId: 1 })
 
       expect(result.success).toBe(true)
       expect(mockPrisma.leagueUser.update).toHaveBeenCalledWith({
@@ -280,6 +330,11 @@ describe('Users Actions', () => {
       })
       expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
       expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
+    })
+
+    it('should reject invalid input', async () => {
+      const result = await removeLeagueUser({ leagueUserId: 0 })
+      expect(result.success).toBe(false)
     })
   })
 })

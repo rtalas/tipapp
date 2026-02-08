@@ -103,11 +103,24 @@ describe('Series Bets Actions', () => {
 
   describe('updateUserSeriesBet', () => {
     it('should update series bet', async () => {
+      mockPrisma.userSpecialBetSerie.findFirst.mockResolvedValue({ id: 1 } as any)
       mockPrisma.userSpecialBetSerie.update.mockResolvedValue({ id: 1 } as any)
 
       const result = await updateUserSeriesBet({ id: 1, homeTeamScore: 4 })
 
       expect(result.success).toBe(true)
+      expect(mockPrisma.userSpecialBetSerie.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, deletedAt: null },
+      })
+    })
+
+    it('should return error when bet not found or deleted', async () => {
+      mockPrisma.userSpecialBetSerie.findFirst.mockResolvedValue(null)
+
+      const result = await updateUserSeriesBet({ id: 999, homeTeamScore: 4 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Bet not found')
     })
   })
 

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { joinLeagueSchema } from '@/lib/validation/user'
 import { AppError, handleActionError } from '@/lib/error-handler'
 import { parseSessionUserId } from '@/lib/auth/auth-utils'
+import { executeServerAction } from '@/lib/server-action-utils'
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 
 type LeagueWithSport = {
@@ -175,7 +176,8 @@ export async function getAllLeaguesForSelector(): Promise<AllLeaguesResult> {
     const userId = parseSessionUserId(session.user.id)
     return getCachedLeaguesForSelector(userId)
   } catch (error) {
-    throw handleActionError(error, 'Failed to load leagues')
+    const { message } = handleActionError(error, 'Failed to load leagues')
+    throw new Error(message)
   }
 }
 
@@ -183,80 +185,75 @@ export async function getAllLeaguesForSelector(): Promise<AllLeaguesResult> {
  * Join a public league
  * Creates a LeagueUser record and revalidates the league context
  */
-export async function joinLeague(leagueId: number): Promise<{ success: true; leagueId: number }> {
-  try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      throw new AppError('Authentication required', 'UNAUTHORIZED', 401)
-    }
-
-    const userId = parseSessionUserId(session.user.id)
-
-    // Validate input
-    const validated = joinLeagueSchema.parse({ leagueId })
-
-    // Check if league exists and is valid
-    const league = await prisma.league.findUnique({
-      where: {
-        id: validated.leagueId,
-        deletedAt: null,
-      },
-    })
-
-    if (!league) {
-      throw new AppError('League not found', 'NOT_FOUND', 404)
-    }
-
-    if (!league.isPublic) {
-      throw new AppError('This league is private', 'FORBIDDEN', 403)
-    }
-
-    if (!league.isActive) {
-      throw new AppError('League is not active', 'BAD_REQUEST', 400)
-    }
-
-    // Serializable transaction to prevent duplicate memberships from concurrent requests
-    const now = new Date()
-    await prisma.$transaction(
-      async (tx) => {
-        const existingMembership = await tx.leagueUser.findFirst({
-          where: {
-            userId,
-            leagueId: validated.leagueId,
-            deletedAt: null,
-          },
-        })
-
-        if (existingMembership) {
-          throw new AppError('Already a member of this league', 'CONFLICT', 409)
-        }
-
-        await tx.leagueUser.create({
-          data: {
-            userId,
-            leagueId: validated.leagueId,
-            active: true,
-            admin: false,
-            paid: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-        })
-      },
-      {
-        isolationLevel: 'Serializable',
-        maxWait: 5000,
-        timeout: 10000,
+export async function joinLeague(leagueId: number) {
+  return executeServerAction({ leagueId }, {
+    validator: joinLeagueSchema,
+    handler: async (validated) => {
+      const session = await auth()
+      if (!session?.user?.id) {
+        throw new AppError('Authentication required', 'UNAUTHORIZED', 401)
       }
-    )
 
-    // Invalidate league selector cache, leaderboard, and revalidate layout
-    revalidateTag('league-selector', 'max')
-    revalidateTag('leaderboard', 'max')
-    revalidatePath('/[leagueId]', 'layout')
+      const userId = parseSessionUserId(session.user.id)
 
-    return { success: true, leagueId: validated.leagueId }
-  } catch (error) {
-    throw handleActionError(error, 'Failed to join league')
-  }
+      const league = await prisma.league.findUnique({
+        where: {
+          id: validated.leagueId,
+          deletedAt: null,
+        },
+      })
+
+      if (!league) {
+        throw new AppError('League not found', 'NOT_FOUND', 404)
+      }
+
+      if (!league.isPublic) {
+        throw new AppError('This league is private', 'FORBIDDEN', 403)
+      }
+
+      if (!league.isActive) {
+        throw new AppError('League is not active', 'BAD_REQUEST', 400)
+      }
+
+      const now = new Date()
+      await prisma.$transaction(
+        async (tx) => {
+          const existingMembership = await tx.leagueUser.findFirst({
+            where: {
+              userId,
+              leagueId: validated.leagueId,
+              deletedAt: null,
+            },
+          })
+
+          if (existingMembership) {
+            throw new AppError('Already a member of this league', 'CONFLICT', 409)
+          }
+
+          await tx.leagueUser.create({
+            data: {
+              userId,
+              leagueId: validated.leagueId,
+              active: true,
+              admin: false,
+              paid: false,
+              createdAt: now,
+              updatedAt: now,
+            },
+          })
+        },
+        {
+          isolationLevel: 'Serializable',
+          maxWait: 5000,
+          timeout: 10000,
+        }
+      )
+
+      revalidateTag('league-selector', 'max')
+      revalidateTag('leaderboard', 'max')
+      revalidatePath('/[leagueId]', 'layout')
+
+      return { leagueId: validated.leagueId }
+    },
+  })
 }

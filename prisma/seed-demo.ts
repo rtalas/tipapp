@@ -941,7 +941,7 @@ async function main() {
   )
 
   // 17. Assign Euro players to league teams
-  await Promise.all(
+  const euroLeaguePlayers = await Promise.all(
     createdEuroPlayers.map((player, index) => {
       const originalPlayer = euroPlayers[index]
       const leagueTeam = euroLeagueTeams.find(lt => lt.teamId === originalPlayer.teamId)!
@@ -1709,7 +1709,7 @@ async function main() {
         points: 10,
         dateTime: createDate(-30, 20, 0),
         isEvaluated: true,
-        specialBetPlayerResultId: nhlLeaguePlayers.find(p => p.playerId === createdEuroPlayers[3].id)?.id || null, // Harry Kane
+        specialBetPlayerResultId: euroLeaguePlayers.find(p => p.playerId === createdEuroPlayers[3].id)?.id || null, // Harry Kane
         createdAt: now,
         updatedAt: now,
       }
@@ -2010,9 +2010,7 @@ async function main() {
 
       if (hasPlayerResult || (!hasTeamResult && !hasValueResult)) {
         // Player-based bet (exact_player)
-        const players = isNHL ? nhlLeaguePlayers : nhlLeaguePlayers.filter(p =>
-          euroLeagueTeams.some(lt => lt.id === p.leagueTeamId)
-        )
+        const players = isNHL ? nhlLeaguePlayers : euroLeaguePlayers
         if (players.length > 0) {
           betData.playerResultId = getRandomElement(players).id
         }

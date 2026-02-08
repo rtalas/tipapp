@@ -33,6 +33,11 @@ export enum EventType {
   SERIES_EVALUATED = "SERIES_EVALUATED",
   SPECIAL_BET_EVALUATED = "SPECIAL_BET_EVALUATED",
   QUESTION_EVALUATED = "QUESTION_EVALUATED",
+
+  // Admin CRUD operations
+  ADMIN_ENTITY_CREATED = "ADMIN_ENTITY_CREATED",
+  ADMIN_ENTITY_UPDATED = "ADMIN_ENTITY_UPDATED",
+  ADMIN_ENTITY_DELETED = "ADMIN_ENTITY_DELETED",
 }
 
 export enum EventCategory {
@@ -497,4 +502,68 @@ export const AuditLogger = {
     resourceType: "LeagueSpecialBetQuestion",
     label: "Question",
   }),
+
+  // Admin CRUD operations (generic — resourceType distinguishes entities)
+  adminCreated: async (
+    adminId: number,
+    resourceType: string,
+    resourceId: number,
+    metadata?: Record<string, unknown>,
+    leagueId?: number
+  ) => {
+    await auditLog({
+      eventType: EventType.ADMIN_ENTITY_CREATED,
+      eventCategory: EventCategory.ADMIN_ACTION,
+      severity: LogSeverity.INFO,
+      userId: adminId,
+      resourceType,
+      resourceId,
+      leagueId,
+      action: "CREATE",
+      description: `Admin ${adminId} created ${resourceType} ${resourceId}`,
+      metadata,
+    });
+  },
+
+  adminUpdated: async (
+    adminId: number,
+    resourceType: string,
+    resourceId: number,
+    metadata?: Record<string, unknown>,
+    leagueId?: number
+  ) => {
+    await auditLog({
+      eventType: EventType.ADMIN_ENTITY_UPDATED,
+      eventCategory: EventCategory.ADMIN_ACTION,
+      severity: LogSeverity.INFO,
+      userId: adminId,
+      resourceType,
+      resourceId,
+      leagueId,
+      action: "UPDATE",
+      description: `Admin ${adminId} updated ${resourceType} ${resourceId}`,
+      metadata,
+    });
+  },
+
+  adminDeleted: async (
+    adminId: number,
+    resourceType: string,
+    resourceId: number,
+    metadata?: Record<string, unknown>,
+    leagueId?: number
+  ) => {
+    await auditLog({
+      eventType: EventType.ADMIN_ENTITY_DELETED,
+      eventCategory: EventCategory.ADMIN_ACTION,
+      severity: LogSeverity.WARNING,
+      userId: adminId,
+      resourceType,
+      resourceId,
+      leagueId,
+      action: "DELETE",
+      description: `Admin ${adminId} deleted ${resourceType} ${resourceId}`,
+      metadata,
+    });
+  },
 };

@@ -1,6 +1,7 @@
 'use client'
 
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,8 @@ const initialFormData: CreateBetFormData = {
 }
 
 export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }: CreateBetDialogProps) {
+  const t = useTranslations('admin.bets')
+  const tc = useTranslations('common')
   const createDialog = useCreateDialog<CreateBetFormData>(initialFormData)
 
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team
@@ -78,7 +81,7 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
 
     const validation = validate.userBetCreate(validationData)
     if (!validation.success) {
-      toast.error(getErrorMessage(validation.error, 'Validation failed'))
+      toast.error(getErrorMessage(validation.error, t('validationFailed')))
       return
     }
 
@@ -86,11 +89,11 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
     const result = await createUserBet(validation.data)
 
     if (result.success) {
-      toast.success('Bet created successfully')
+      toast.success(t('betCreated'))
       createDialog.finishCreating()
       onOpenChange(false)
     } else {
-      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to create bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, t('betCreateFailed')))
       createDialog.cancelCreating()
     }
   }
@@ -106,9 +109,9 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add Missing Bet</DialogTitle>
+          <DialogTitle>{t('addMissingBetTitle')}</DialogTitle>
           <DialogDescription>
-            Create a prediction for a user who hasn&apos;t placed a bet on this match yet.
+            {t('addMissingBetDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -124,45 +127,45 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
           {/* Score inputs */}
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="homeScore">{homeTeam.shortcut} Score</Label>
+              <Label htmlFor="homeScore">{t('teamScore', { team: homeTeam.shortcut })}</Label>
               <Input
                 id="homeScore"
                 type="number"
                 min="0"
                 value={createDialog.form.homeScore}
                 onChange={(e) => createDialog.updateForm({ homeScore: e.target.value })}
-                aria-label="Home team score"
+                aria-label={t('homeTeamScore')}
               />
             </div>
             <div className="flex items-end justify-center pb-2">
               <span className="text-2xl">:</span>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="awayScore">{awayTeam.shortcut} Score</Label>
+              <Label htmlFor="awayScore">{t('teamScore', { team: awayTeam.shortcut })}</Label>
               <Input
                 id="awayScore"
                 type="number"
                 min="0"
                 value={createDialog.form.awayScore}
                 onChange={(e) => createDialog.updateForm({ awayScore: e.target.value })}
-                aria-label="Away team score"
+                aria-label={t('awayTeamScore')}
               />
             </div>
           </div>
 
           {/* Scorer selection */}
           <div className="space-y-2">
-            <Label htmlFor="scorer">Scorer (optional)</Label>
+            <Label htmlFor="scorer">{t('scorerOptional')}</Label>
             <Select
               value={createDialog.form.scorerId}
               onValueChange={(value) => createDialog.updateForm({ scorerId: value })}
               disabled={createDialog.form.noScorer}
             >
-              <SelectTrigger id="scorer" aria-label="Select scorer">
-                <SelectValue placeholder="No scorer" />
+              <SelectTrigger id="scorer" aria-label={t('selectScorer')}>
+                <SelectValue placeholder={t('noScorerPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No scorer</SelectItem>
+                <SelectItem value="none">{t('noScorerPlaceholder')}</SelectItem>
                 {availablePlayers.map((player) => (
                   <SelectItem key={player.id} value={player.id.toString()}>
                     {player.Player.firstName} {player.Player.lastName}
@@ -186,7 +189,7 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
               }}
             />
             <Label htmlFor="noScorer" className="text-sm font-normal cursor-pointer">
-              No Scorer (0:0 game)
+              {t('noScorerZeroZero')}
             </Label>
           </div>
 
@@ -200,14 +203,14 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
               }
             />
             <Label htmlFor="overtime" className="text-sm font-normal">
-              Overtime prediction
+              {t('overtimePrediction')}
             </Label>
           </div>
 
           {/* Advanced (playoff) */}
           {match.Match.isPlayoffGame && (
             <div className="space-y-2">
-              <Label>Team to advance (playoff)</Label>
+              <Label>{t('teamToAdvance')}</Label>
               <RadioGroup
                 value={createDialog.form.homeAdvanced}
                 onValueChange={(value) => createDialog.updateForm({ homeAdvanced: value })}
@@ -227,7 +230,7 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="none" id="none-create" />
                   <Label htmlFor="none-create" className="font-normal">
-                    None
+                    {t('none')}
                   </Label>
                 </div>
               </RadioGroup>
@@ -241,10 +244,10 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
             onClick={() => handleOpenChange(false)}
             disabled={createDialog.isCreating}
           >
-            Cancel
+            {tc('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={createDialog.isCreating}>
-            {createDialog.isCreating ? 'Creating...' : 'Create Bet'}
+            {createDialog.isCreating ? t('creatingBet') : t('createBet')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -14,18 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { getAllLeaguesForSelector, joinLeague } from '@/actions/user/leagues'
-
-// Helper to get sport emoji
-function getSportEmoji(sportId?: number): string {
-  switch (sportId) {
-    case 1: // HOCKEY
-      return '🏒'
-    case 2: // FOOTBALL
-      return '⚽'
-    default:
-      return '🏆'
-  }
-}
+import { getSportEmoji } from '@/lib/constants'
 
 // League join row component
 function LeagueJoinRow({
@@ -47,12 +36,12 @@ function LeagueJoinRow({
   const handleJoin = async (e: React.MouseEvent) => {
     e.stopPropagation()
     setIsJoining(true)
-    try {
-      await joinLeague(league.id)
+    const result = await joinLeague(league.id)
+    if (result.success) {
       toast.success(t('joinedLeague', { leagueName: league.name }))
       onJoinSuccess()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('joinFailed'))
+    } else {
+      toast.error(result.error || t('joinFailed'))
       setIsJoining(false)
     }
   }

@@ -12,7 +12,7 @@ import { BetDisplay } from './bet-display'
 import { SaveButton } from './save-button'
 import { FriendPredictionsList } from './friend-predictions-list'
 import { cn } from '@/lib/utils'
-import { logger } from '@/lib/logging/client-logger'
+import { useFriendPredictions } from '@/hooks/useFriendPredictions'
 import { saveMatchBet, getMatchFriendPredictions } from '@/actions/user/matches'
 import type { UserMatch, FriendPrediction } from '@/actions/user/matches'
 
@@ -44,9 +44,13 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
     match.userBet?.homeAdvanced ?? null
   )
   const [isSaving, setIsSaving] = useState(false)
-  const [showFriendsBets, setShowFriendsBets] = useState(false)
-  const [friendPredictions, setFriendPredictions] = useState<FriendPrediction[]>([])
-  const [isLoadingFriends, setIsLoadingFriends] = useState(false)
+  const friends = useFriendPredictions<FriendPrediction>({
+    isLocked,
+    entityId: match.id,
+    entityName: 'match',
+    fetchPredictions: getMatchFriendPredictions,
+    errorToast: t('friendsLoadError'),
+  })
 
   // Track last-saved values to derive dirty state
   const savedValuesRef = useRef(
@@ -154,23 +158,6 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
   const homeTeamName = homeTeam.Team.shortcut || homeTeam.Team.name
   const awayTeamName = awayTeam.Team.shortcut || awayTeam.Team.name
 
-  // Handle opening friends modal
-  const handleOpenFriendsBets = async () => {
-    setShowFriendsBets(true)
-    if (isLocked && friendPredictions.length === 0) {
-      setIsLoadingFriends(true)
-      try {
-        const result = await getMatchFriendPredictions(match.id)
-        setFriendPredictions(result.predictions)
-      } catch (error) {
-        logger.error('Failed to load friend predictions', { error: error instanceof Error ? error.message : String(error), matchId: match.id })
-        toast.error(t('friendsLoadError'))
-      } finally {
-        setIsLoadingFriends(false)
-      }
-    }
-  }
-
   return (
     <>
       <div
@@ -226,7 +213,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
         {isLocked && (
           <div className="mt-3 pt-3 border-t border-border/30 flex justify-center">
             <button
-              onClick={handleOpenFriendsBets}
+              onClick={friends.open}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Users className="w-3.5 h-3.5" />
@@ -238,8 +225,8 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
 
       {/* Friends Predictions Modal */}
       <FriendPredictionsModal
-        open={showFriendsBets}
-        onOpenChange={setShowFriendsBets}
+        open={friends.showModal}
+        onOpenChange={friends.setShowModal}
         title={`${homeTeamName} vs ${awayTeamName}`}
         subtitle={
           hasResult
@@ -250,13 +237,13 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
         }
         sectionLabel={t('friendsPredictions')}
         isLocked={isLocked}
-        isLoading={isLoadingFriends}
-        predictions={friendPredictions}
+        isLoading={friends.isLoading}
+        predictions={friends.predictions}
         emptyMessage={t('noFriendsPredictions')}
         lockedMessage={t('friendsPicksLater')}
       >
         <FriendPredictionsList
-          predictions={friendPredictions}
+          predictions={friends.predictions}
           match={match}
           isEvaluated={isEvaluated}
         />

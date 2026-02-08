@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils'
 import type { LeaderboardEntry } from '@/types/user'
 import type { UserPicksData } from '@/actions/user/leaderboard'
 import { getUserPicks } from '@/actions/user/leaderboard'
+import { getUserDisplayName } from '@/lib/user-display-utils'
 
 interface UserPicksModalProps {
   selectedUser: LeaderboardEntry | null
@@ -57,7 +58,7 @@ export function UserPicksModal({ selectedUser, leagueId, onClose }: UserPicksMod
   const { userPicks, isLoading, hasError } = state
 
   const displayName = selectedUser
-    ? getDisplayName(selectedUser.firstName, selectedUser.lastName, selectedUser.username)
+    ? getUserDisplayName(selectedUser)
     : ''
 
   return (
@@ -284,13 +285,3 @@ function PointsBadge({ points, allowNegative }: { points: number; allowNegative?
   )
 }
 
-function getDisplayName(
-  firstName: string | null,
-  lastName: string | null,
-  username: string
-): string {
-  if (firstName && lastName) return `${firstName} ${lastName}`
-  if (firstName) return firstName
-  if (lastName) return lastName
-  return username
-}

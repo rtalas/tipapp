@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/common/user-avatar'
 import type { ChatMessage } from '@/hooks/useMessages'
+import { getUserDisplayName } from '@/lib/user-display-utils'
 
 const SWIPE_THRESHOLD = 60
 const MAX_SWIPE = 80
@@ -24,17 +25,11 @@ interface MessageBubbleProps {
 export function MessageBubble({ message, isOwn, canDelete, onDelete, onReply, onScrollToOriginal }: MessageBubbleProps) {
   const t = useTranslations('user.chat')
   const user = message.LeagueUser.User
-  const displayName = user.firstName && user.lastName
-    ? `${user.firstName} ${user.lastName}`
-    : user.username
+  const displayName = getUserDisplayName(user)
 
   const replyTo = message.ReplyTo
   const replyAuthor = replyTo?.LeagueUser.User
-  const replyAuthorName = replyAuthor
-    ? replyAuthor.firstName && replyAuthor.lastName
-      ? `${replyAuthor.firstName} ${replyAuthor.lastName}`
-      : replyAuthor.username
-    : null
+  const replyAuthorName = replyAuthor ? getUserDisplayName(replyAuthor) : null
   const isReplyDeleted = replyTo?.deletedAt !== null && replyTo?.deletedAt !== undefined
 
   // Swipe-to-reply state
@@ -150,7 +145,7 @@ export function MessageBubble({ message, isOwn, canDelete, onDelete, onReply, on
               isOwn ? 'flex-row-reverse' : 'flex-row'
             )}
           >
-            <span className="font-medium">{isOwn ? 'You' : displayName}</span>
+            <span className="font-medium">{isOwn ? t('you') : displayName}</span>
             <span>{format(new Date(message.createdAt), 'HH:mm')}</span>
           </div>
 
@@ -217,7 +212,7 @@ export function MessageBubble({ message, isOwn, canDelete, onDelete, onReply, on
               size="sm"
               className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity mt-1"
               onClick={() => onDelete(message.id)}
-              aria-label="Delete message"
+              aria-label={t('deleteMessage')}
             >
               <Trash2 className="h-3 w-3" />
             </Button>

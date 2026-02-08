@@ -29,48 +29,44 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = registerSchema.parse(body);
 
-    // Check if username or email already exists (email is case-insensitive)
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { username: validatedData.username },
-          { email: validatedData.email.toLowerCase() },
-        ],
-      },
-    });
-
-    if (existingUser) {
-      if (existingUser.username === validatedData.username) {
-        return NextResponse.json(
-          { error: "Username already taken" },
-          { status: 400 }
-        );
-      }
-      if (existingUser.email.toLowerCase() === validatedData.email.toLowerCase()) {
-        return NextResponse.json(
-          { error: "Email already registered" },
-          { status: 400 }
-        );
-      }
-    }
-
     // Hash password
     const hashedPassword = await hash(validatedData.password, 12);
 
-    // Create user (store email in lowercase for case-insensitive comparisons)
-    const user = await prisma.user.create({
-      data: {
-        firstName: validatedData.firstName,
-        lastName: validatedData.lastName,
-        username: validatedData.username,
-        email: validatedData.email.toLowerCase(),
-        password: hashedPassword,
-        isSuperadmin: false,
-        notifyHours: 0, // Default: notifications turned off (stored as minutes)
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
+    // Create user atomically — unique constraints on username/email
+    // prevent duplicates without a separate check (no TOCTOU race)
+    let user;
+    try {
+      user = await prisma.user.create({
+        data: {
+          firstName: validatedData.firstName,
+          lastName: validatedData.lastName,
+          username: validatedData.username,
+          email: validatedData.email.toLowerCase(),
+          password: hashedPassword,
+          isSuperadmin: false,
+          notifyHours: 0, // Default: notifications turned off (stored as minutes)
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      if (isPrismaError(error) && error.code === 'P2002') {
+        const field = error.meta?.target?.[0];
+        if (field === 'username') {
+          return NextResponse.json(
+            { error: "Username already taken" },
+            { status: 400 }
+          );
+        }
+        if (field === 'email') {
+          return NextResponse.json(
+            { error: "Email already registered" },
+            { status: 400 }
+          );
+        }
+      }
+      throw error;
+    }
 
     // Audit log (fire-and-forget)
     AuditLogger.userRegistered(user.id, user.username, user.email).catch((err) =>
@@ -116,10 +112,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      console.error("Registration error:", error.message);
+    } else {
+      console.error("Registration error:", error);
     }
     return NextResponse.json(
       { error: "An error occurred during registration" },

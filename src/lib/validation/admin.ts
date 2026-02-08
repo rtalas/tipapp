@@ -282,7 +282,6 @@ export const createUserBetSchema = z
     (data) => {
       // Mutual exclusivity: cannot set both scorerId and noScorer
       if (data.noScorer === true && data.scorerId !== undefined) return false
-      if (data.scorerId !== undefined && data.noScorer === true) return false
       return true
     },
     {
@@ -496,7 +495,7 @@ export type UpdateUserQuestionBetInput = z.infer<typeof updateUserQuestionBetSch
 // Message validation schemas
 export const sendMessageSchema = z.object({
   leagueId: z.number().int().positive('League ID is required'),
-  text: z.string().min(1, 'Message cannot be empty').max(1000, 'Message must not exceed 1000 characters'),
+  text: z.string().trim().min(1, 'Message cannot be empty').max(1000, 'Message must not exceed 1000 characters'),
   replyToId: z.number().int().positive().optional(),
 })
 
@@ -557,3 +556,24 @@ export const updateLeaguePrizesSchema = z.object({
 
 export type UpdateLeaguePrizesInput = z.infer<typeof updateLeaguePrizesSchema>
 export type PrizeTier = z.infer<typeof prizeTierSchema>
+
+// League user management schemas
+export const updateLeagueUserBooleanSchema = z.object({
+  leagueUserId: z.number().int().positive('League User ID is required'),
+  value: z.boolean(),
+})
+
+export type UpdateLeagueUserBooleanInput = z.infer<typeof updateLeagueUserBooleanSchema>
+
+export const addUserToLeagueSchema = z.object({
+  userId: z.number().int().positive('User ID is required'),
+  leagueId: z.number().int().positive('League ID is required'),
+})
+
+export type AddUserToLeagueInput = z.infer<typeof addUserToLeagueSchema>
+
+export const removeLeagueUserSchema = z.object({
+  leagueUserId: z.number().int().positive('League User ID is required'),
+})
+
+export type RemoveLeagueUserInput = z.infer<typeof removeLeagueUserSchema>

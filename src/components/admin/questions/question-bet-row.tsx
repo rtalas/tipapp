@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -31,8 +32,8 @@ export function QuestionBetRow({
   isQuestionEvaluated,
   questionId,
 }: QuestionBetRowProps) {
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const t = useTranslations('admin.bets')
+  const deleteDialog = useDeleteDialog()
 
   const inlineEdit = useInlineEdit<UserQuestionBetFormData>()
 
@@ -54,7 +55,7 @@ export function QuestionBetRow({
 
     const validation = validate.userQuestionBetEdit(validationData)
     if (!validation.success) {
-      toast.error(getErrorMessage(validation.error, 'Validation failed'))
+      toast.error(getErrorMessage(validation.error, t('validationFailed')))
       return
     }
 
@@ -62,28 +63,28 @@ export function QuestionBetRow({
     const result = await updateUserQuestionBet(validation.data)
 
     if (result.success) {
-      toast.success('Bet updated successfully')
+      toast.success(t('betUpdated'))
       if (isQuestionEvaluated) {
-        toast.warning('Question is already evaluated. Re-evaluation required.')
+        toast.warning(t('questionReEvaluation'))
       }
       inlineEdit.finishEdit()
     } else {
-      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to update bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, t('betUpdateFailed')))
       inlineEdit.setSaving(false)
     }
   }
 
   const handleDelete = async () => {
-    setIsDeleting(true)
+    deleteDialog.startDeleting()
     const result = await deleteUserQuestionBet(bet.id)
 
     if (result.success) {
-      toast.success('Bet deleted successfully')
-      setDeleteDialogOpen(false)
+      toast.success(t('betDeleted'))
+      deleteDialog.finishDeleting()
     } else {
-      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to delete bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, t('betDeleteFailed')))
+      deleteDialog.cancelDeleting()
     }
-    setIsDeleting(false)
   }
 
   const handleEvaluate = async () => {
@@ -95,12 +96,12 @@ export function QuestionBetRow({
 
       if (result.success && 'results' in result) {
         const userResult = result.results[0]
-        toast.success(`Bet evaluated! ${userResult.pointsAwarded} points awarded.`)
+        toast.success(t('betEvaluated', { points: userResult.pointsAwarded }))
       } else if (!result.success) {
-        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to evaluate bet'))
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, t('betEvaluateFailed')))
       }
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Failed to evaluate bet'))
+      toast.error(getErrorMessage(error, t('betEvaluateFailed')))
       logger.error('Failed to evaluate question bet', { error, betId: bet.id, questionId })
     }
   }
@@ -126,26 +127,26 @@ export function QuestionBetRow({
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="true" id={`yes-${bet.id}`} />
                 <Label htmlFor={`yes-${bet.id}`} className="cursor-pointer">
-                  Yes
+                  {t('yes')}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="false" id={`no-${bet.id}`} />
                 <Label htmlFor={`no-${bet.id}`} className="cursor-pointer">
-                  No
+                  {t('no')}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="null" id={`none-${bet.id}`} />
                 <Label htmlFor={`none-${bet.id}`} className="cursor-pointer">
-                  Not Answered
+                  {t('notAnswered')}
                 </Label>
               </div>
             </RadioGroup>
           ) : (
             bet.userBet !== null ? (
               <Badge variant={bet.userBet ? 'default' : 'secondary'}>
-                {bet.userBet ? 'Yes' : 'No'}
+                {bet.userBet ? t('yes') : t('no')}
               </Badge>
             ) : (
               <span className="text-muted-foreground">-</span>
@@ -167,7 +168,7 @@ export function QuestionBetRow({
             onStartEdit={handleStartEdit}
             onCancelEdit={inlineEdit.cancelEdit}
             onSaveEdit={handleSaveEdit}
-            onDelete={() => setDeleteDialogOpen(true)}
+            onDelete={() => deleteDialog.openDialog(bet)}
             onEvaluate={handleEvaluate}
           />
         </TableCell>
@@ -175,11 +176,11 @@ export function QuestionBetRow({
 
       {/* Delete confirmation dialog */}
       <BetRowDeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        open={deleteDialog.open}
+        onOpenChange={deleteDialog.onOpenChange}
         onConfirm={handleDelete}
         userName={userName}
-        isDeleting={isDeleting}
+        isDeleting={deleteDialog.isDeleting}
         isEvaluated={isQuestionEvaluated}
         entityType="Question"
       />

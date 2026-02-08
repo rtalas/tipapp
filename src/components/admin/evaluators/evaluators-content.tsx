@@ -11,6 +11,7 @@ import {
   deleteEvaluator,
 } from '@/actions/evaluators'
 import { logger } from '@/lib/logging/client-logger'
+import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -93,9 +94,7 @@ export function EvaluatorsContent({
   // Get sport ID from league
   const sportId = league?.sportId
   const availablePositions = sportId ? (POSITIONS_BY_SPORT[sportId] || []) : []
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [evaluatorToDelete, setEvaluatorToDelete] = useState<Evaluator | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const deleteDialog = useDeleteDialog<Evaluator>()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   // Filter evaluators with optimized string search
@@ -229,18 +228,16 @@ export function EvaluatorsContent({
   }
 
   const handleDelete = async () => {
-    if (!evaluatorToDelete) return
-    setIsDeleting(true)
+    if (!deleteDialog.itemToDelete) return
+    deleteDialog.startDeleting()
     try {
-      await deleteEvaluator({ id: evaluatorToDelete.id })
+      await deleteEvaluator({ id: deleteDialog.itemToDelete.id })
       toast.success(t('toast.deleted'))
-      setDeleteDialogOpen(false)
-      setEvaluatorToDelete(null)
+      deleteDialog.finishDeleting()
     } catch (error) {
       toast.error(t('toast.deleteFailed'))
-      logger.error('Failed to delete evaluator', { error, evaluatorId: evaluatorToDelete?.id })
-    } finally {
-      setIsDeleting(false)
+      logger.error('Failed to delete evaluator', { error, evaluatorId: deleteDialog.itemToDelete?.id })
+      deleteDialog.cancelDeleting()
     }
   }
 
@@ -359,10 +356,7 @@ export function EvaluatorsContent({
                         onStartEdit={() => handleStartEdit(evaluator)}
                         onCancelEdit={handleCancelEdit}
                         onSave={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
-                        onDelete={() => {
-                          setEvaluatorToDelete(evaluator)
-                          setDeleteDialogOpen(true)
-                        }}
+                        onDelete={() => deleteDialog.openDialog(evaluator)}
                         onNameChange={setEditNameValue}
                         onPointsChange={setEditPointsValue}
                       />
@@ -376,21 +370,21 @@ export function EvaluatorsContent({
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <Dialog open={deleteDialog.open} onOpenChange={deleteDialog.onOpenChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('dialog.deleteTitle')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{evaluatorToDelete?.name}&quot;
-              {!league && ` from ${evaluatorToDelete?.League.name}`}? This action cannot be undone.
+              Are you sure you want to delete &quot;{deleteDialog.itemToDelete?.name}&quot;
+              {!league && ` from ${deleteDialog.itemToDelete?.League.name}`}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button variant="outline" onClick={deleteDialog.closeDialog}>
               {tCommon('button.cancel')}
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? tCommon('deleting') : tCommon('button.delete')}
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteDialog.isDeleting}>
+              {deleteDialog.isDeleting ? tCommon('deleting') : tCommon('button.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

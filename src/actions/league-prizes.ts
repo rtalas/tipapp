@@ -3,8 +3,9 @@
 import { z } from 'zod'
 import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth/auth-utils'
+import { parseSessionUserId } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import {
   updateLeaguePrizesSchema,
   type UpdateLeaguePrizesInput,
@@ -19,43 +20,34 @@ const getLeaguePrizesSchema = z.object({
  * Fetch all active prizes and fines for a specific league
  */
 export async function getLeaguePrizes(leagueId: number) {
-  try {
-    // Validate input
-    const validated = getLeaguePrizesSchema.parse({ leagueId })
+  return executeServerAction({ leagueId }, {
+    validator: getLeaguePrizesSchema,
+    handler: async (validated) => {
+      const prizeRecords = await prisma.leaguePrize.findMany({
+        where: {
+          leagueId: validated.leagueId,
+          deletedAt: null,
+        },
+        orderBy: {
+          rank: 'asc',
+        },
+        select: {
+          id: true,
+          rank: true,
+          amount: true,
+          currency: true,
+          label: true,
+          type: true,
+        },
+      })
 
-    // Require admin access
-    await requireAdmin()
+      const prizes = prizeRecords.filter(p => p.type === 'prize')
+      const fines = prizeRecords.filter(p => p.type === 'fine')
 
-    // Fetch all prize records (both prizes and fines)
-    const prizeRecords = await prisma.leaguePrize.findMany({
-      where: {
-        leagueId: validated.leagueId,
-        deletedAt: null,
-      },
-      orderBy: {
-        rank: 'asc',
-      },
-      select: {
-        id: true,
-        rank: true,
-        amount: true,
-        currency: true,
-        label: true,
-        type: true,
-      },
-    })
-
-    // Separate prizes and fines
-    const prizes = prizeRecords.filter(p => p.type === 'prize')
-    const fines = prizeRecords.filter(p => p.type === 'fine')
-
-    return { success: true, prizes, fines }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch prizes and fines',
-    }
-  }
+      return { prizes, fines }
+    },
+    requiresAdmin: true,
+  })
 }
 
 /**
@@ -70,7 +62,7 @@ export async function getLeaguePrizes(leagueId: number) {
 export async function updateLeaguePrizes(input: UpdateLeaguePrizesInput) {
   return executeServerAction(input, {
     validator: updateLeaguePrizesSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       await prisma.$transaction(async (tx) => {
@@ -121,6 +113,12 @@ export async function updateLeaguePrizes(input: UpdateLeaguePrizesInput) {
 
       // Invalidate leaderboard cache so prize/fine changes appear immediately
       revalidateTag('leaderboard', 'max')
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeaguePrize', validated.leagueId,
+        { prizeCount: validated.prizes.length, fineCount: validated.fines.length },
+        validated.leagueId
+      ).catch(() => {})
 
       return { success: true }
     },

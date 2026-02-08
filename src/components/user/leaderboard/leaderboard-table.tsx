@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import type { LeaderboardEntry } from '@/types/user'
 import type { LeaguePrize } from '@/actions/user/leaderboard'
 import { useParams } from 'next/navigation'
+import { getUserDisplayName } from '@/lib/user-display-utils'
 import { UserPicksModal } from './user-picks-modal'
 
 interface LeaderboardTableProps {
@@ -151,11 +152,7 @@ interface RankingRowProps {
 function RankingRow({ entry, index, prizes, fines, totalEntries, onClick }: RankingRowProps) {
   const t = useTranslations('user.leaderboard')
   const locale = useLocale()
-  const displayName = getDisplayName(
-    entry.firstName,
-    entry.lastName,
-    entry.username
-  )
+  const displayName = getUserDisplayName(entry)
   const rankStyle = getRankStyle(entry.rank)
   const prize = getPrize(entry.rank, prizes, locale)
   const fine = getFine(entry.rank, totalEntries, fines, locale)
@@ -290,15 +287,3 @@ function getFine(rank: number, totalEntries: number, fines: LeaguePrize[], local
   return `${formatted}\u00A0${fine.currency}`
 }
 
-function getDisplayName(
-  firstName: string | null,
-  lastName: string | null,
-  username: string
-): string {
-  if (firstName && lastName) {
-    return `${firstName} ${lastName}`
-  }
-  if (firstName) return firstName
-  if (lastName) return lastName
-  return username
-}

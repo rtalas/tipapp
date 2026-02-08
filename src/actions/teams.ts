@@ -2,8 +2,9 @@
 
 import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth/auth-utils'
+import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import { AppError } from '@/lib/error-handler'
 import { createTeamSchema, updateTeamSchema, deleteByIdSchema, type CreateTeamInput, type UpdateTeamInput } from '@/lib/validation/admin'
 
@@ -26,7 +27,7 @@ export async function getAllTeams() {
 export async function createTeam(input: CreateTeamInput) {
   return executeServerAction(input, {
     validator: createTeamSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       // Check if sport exists
       const sport = await prisma.sport.findUnique({
         where: { id: validated.sportId },
@@ -54,6 +55,12 @@ export async function createTeam(input: CreateTeamInput) {
       })
 
       revalidateTag('special-bet-teams', 'max')
+
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'Team', team.id,
+        { name: validated.name, shortcut: validated.shortcut, sportId: validated.sportId }
+      ).catch(() => {})
+
       return { teamId: team.id }
     },
     revalidatePath: '/admin/teams',
@@ -65,7 +72,7 @@ export async function createTeam(input: CreateTeamInput) {
 export async function updateTeam(input: UpdateTeamInput) {
   return executeServerAction(input, {
     validator: updateTeamSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       if (!validated.id) {
         throw new AppError('Team ID is required', 'BAD_REQUEST', 400)
       }
@@ -81,9 +88,9 @@ export async function updateTeam(input: UpdateTeamInput) {
         }
       }
 
-      // Check if team exists
-      const existingTeam = await prisma.team.findUnique({
-        where: { id: validated.id },
+      // Check if team exists and is not deleted
+      const existingTeam = await prisma.team.findFirst({
+        where: { id: validated.id, deletedAt: null },
       })
 
       if (!existingTeam) {
@@ -105,6 +112,12 @@ export async function updateTeam(input: UpdateTeamInput) {
       })
 
       revalidateTag('special-bet-teams', 'max')
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'Team', validated.id!,
+        { name: validated.name, shortcut: validated.shortcut, sportId: validated.sportId }
+      ).catch(() => {})
+
       return { success: true }
     },
     revalidatePath: '/admin/teams',
@@ -118,13 +131,13 @@ export async function deleteTeam(id: number) {
     { id },
     {
       validator: deleteByIdSchema,
-      handler: async (validated) => {
-        // Check if team exists
-        const team = await prisma.team.findUnique({
-          where: { id: validated.id },
+      handler: async (validated, session) => {
+        // Check if team exists and is not already deleted
+        const team = await prisma.team.findFirst({
+          where: { id: validated.id, deletedAt: null },
           include: {
             _count: {
-              select: { LeagueTeam: true },
+              select: { LeagueTeam: { where: { deletedAt: null } } },
             },
           },
         })
@@ -147,6 +160,12 @@ export async function deleteTeam(id: number) {
         })
 
         revalidateTag('special-bet-teams', 'max')
+
+        AuditLogger.adminDeleted(
+          parseSessionUserId(session!.user!.id!), 'Team', validated.id,
+          { name: team.name }
+        ).catch(() => {})
+
         return { success: true }
       },
       revalidatePath: '/admin/teams',

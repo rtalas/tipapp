@@ -7,6 +7,20 @@ export const SPORT_IDS = {
 } as const
 
 /**
+ * Get sport emoji by sport ID
+ */
+export function getSportEmoji(sportId?: number): string {
+  switch (sportId) {
+    case SPORT_IDS.HOCKEY:
+      return '🏒'
+    case SPORT_IDS.FOOTBALL:
+      return '⚽'
+    default:
+      return '🏆'
+  }
+}
+
+/**
  * Estimated match/event duration for status calculations (3 hours)
  */
 export const EVENT_DURATION_MS = 3 * 60 * 60 * 1000

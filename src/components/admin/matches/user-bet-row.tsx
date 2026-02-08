@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -47,8 +48,8 @@ export function UserBetRow({
   leagueMatchId,
   matchId,
 }: UserBetRowProps) {
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const t = useTranslations('admin.bets')
+  const deleteDialog = useDeleteDialog()
 
   const inlineEdit = useInlineEdit<UserBetFormData>()
 
@@ -82,7 +83,7 @@ export function UserBetRow({
 
     const validation = validate.userBetEdit(validationData)
     if (!validation.success) {
-      toast.error(getErrorMessage(validation.error, 'Validation failed'))
+      toast.error(getErrorMessage(validation.error, t('validationFailed')))
       return
     }
 
@@ -90,28 +91,28 @@ export function UserBetRow({
     const result = await updateUserBet(validation.data)
 
     if (result.success) {
-      toast.success('Bet updated successfully')
+      toast.success(t('betUpdated'))
       if (isMatchEvaluated) {
-        toast.warning('Match is already evaluated. Re-evaluation required.')
+        toast.warning(t('matchReEvaluation'))
       }
       inlineEdit.finishEdit()
     } else {
-      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to update bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, t('betUpdateFailed')))
       inlineEdit.setSaving(false)
     }
   }
 
   const handleDelete = async () => {
-    setIsDeleting(true)
+    deleteDialog.startDeleting()
     const result = await deleteUserBet(bet.id)
 
     if (result.success) {
-      toast.success('Bet deleted successfully')
-      setDeleteDialogOpen(false)
+      toast.success(t('betDeleted'))
+      deleteDialog.finishDeleting()
     } else {
-      toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to delete bet'))
+      toast.error(getErrorMessage('error' in result ? result.error : undefined, t('betDeleteFailed')))
+      deleteDialog.cancelDeleting()
     }
-    setIsDeleting(false)
   }
 
   const handleEvaluate = async () => {
@@ -124,19 +125,19 @@ export function UserBetRow({
 
       if (result.success && 'results' in result) {
         const userResult = result.results[0]
-        toast.success(`Bet evaluated! ${userResult.totalPoints} points awarded.`)
+        toast.success(t('betEvaluated', { points: userResult.totalPoints }))
       } else if (!result.success) {
-        toast.error(getErrorMessage('error' in result ? result.error : undefined, 'Failed to evaluate bet'))
+        toast.error(getErrorMessage('error' in result ? result.error : undefined, t('betEvaluateFailed')))
       }
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Failed to evaluate bet'))
+      toast.error(getErrorMessage(error, t('betEvaluateFailed')))
       logger.error('Failed to evaluate match bet', { error, betId: bet.id, leagueMatchId, matchId })
     }
   }
 
   const userName = `${bet.LeagueUser.User.firstName} ${bet.LeagueUser.User.lastName}`
   const scorerDisplay = bet.noScorer
-    ? 'No Scorer'
+    ? t('noScorer')
     : bet.LeaguePlayer
     ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
     : '-'
@@ -166,7 +167,7 @@ export function UserBetRow({
                 value={inlineEdit.form.homeScore}
                 onChange={(e) => inlineEdit.updateForm({ homeScore: e.target.value })}
                 className="w-16"
-                aria-label="Home team score"
+                aria-label={t('homeTeamScore')}
               />
               <span>:</span>
               <Input
@@ -175,7 +176,7 @@ export function UserBetRow({
                 value={inlineEdit.form.awayScore}
                 onChange={(e) => inlineEdit.updateForm({ awayScore: e.target.value })}
                 className="w-16"
-                aria-label="Away team score"
+                aria-label={t('awayTeamScore')}
               />
             </div>
           ) : (
@@ -192,11 +193,11 @@ export function UserBetRow({
               value={inlineEdit.form.scorerId}
               onValueChange={(value) => inlineEdit.updateForm({ scorerId: value })}
             >
-              <SelectTrigger className="w-[180px]" aria-label="Select scorer">
-                <SelectValue placeholder="No scorer" />
+              <SelectTrigger className="w-[180px]" aria-label={t('selectScorer')}>
+                <SelectValue placeholder={t('noScorerPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No scorer</SelectItem>
+                <SelectItem value="none">{t('noScorerPlaceholder')}</SelectItem>
                 {availablePlayers.map((player) => (
                   <SelectItem key={player.id} value={player.id.toString()}>
                     {player.Player.firstName} {player.Player.lastName}
@@ -219,7 +220,7 @@ export function UserBetRow({
               onCheckedChange={(checked) =>
                 inlineEdit.updateForm({ overtime: checked === true })
               }
-              aria-label="Overtime prediction"
+              aria-label={t('overtimePrediction')}
             />
           ) : (
             <span>{bet.overtime ? '✓' : '-'}</span>
@@ -260,7 +261,7 @@ export function UserBetRow({
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="none" id={`none-${bet.id}`} />
                 <Label htmlFor={`none-${bet.id}`} className="text-xs">
-                  None
+                  {t('none')}
                 </Label>
               </div>
             </RadioGroup>
@@ -293,7 +294,7 @@ export function UserBetRow({
             onStartEdit={handleStartEdit}
             onCancelEdit={inlineEdit.cancelEdit}
             onSaveEdit={handleSaveEdit}
-            onDelete={() => setDeleteDialogOpen(true)}
+            onDelete={() => deleteDialog.openDialog(bet)}
             onEvaluate={handleEvaluate}
           />
         </TableCell>
@@ -301,11 +302,11 @@ export function UserBetRow({
 
       {/* Delete confirmation dialog */}
       <BetRowDeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        open={deleteDialog.open}
+        onOpenChange={deleteDialog.onOpenChange}
         onConfirm={handleDelete}
         userName={userName}
-        isDeleting={isDeleting}
+        isDeleting={deleteDialog.isDeleting}
         isEvaluated={isMatchEvaluated}
         entityType="Match"
       />

@@ -3,6 +3,8 @@
 import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { parseSessionUserId } from '@/lib/auth/auth-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import { AppError } from '@/lib/error-handler'
 import { createPlayerSchema, updatePlayerSchema, deleteByIdSchema, type CreatePlayerInput, type UpdatePlayerInput } from '@/lib/validation/admin'
 
@@ -10,7 +12,7 @@ import { createPlayerSchema, updatePlayerSchema, deleteByIdSchema, type CreatePl
 export async function createPlayer(input: CreatePlayerInput) {
   return executeServerAction(input, {
     validator: createPlayerSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const player = await prisma.player.create({
         data: {
           firstName: validated.firstName?.trim() || null,
@@ -24,6 +26,12 @@ export async function createPlayer(input: CreatePlayerInput) {
       })
 
       revalidateTag('special-bet-players', 'max')
+
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'Player', player.id,
+        { firstName: validated.firstName, lastName: validated.lastName, position: validated.position }
+      ).catch(() => {})
+
       return { playerId: player.id }
     },
     revalidatePath: '/admin/players',
@@ -35,7 +43,7 @@ export async function createPlayer(input: CreatePlayerInput) {
 export async function updatePlayer(input: UpdatePlayerInput) {
   return executeServerAction(input, {
     validator: updatePlayerSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       if (!validated.id) {
         throw new AppError('Player ID is required', 'BAD_REQUEST', 400)
       }
@@ -62,6 +70,12 @@ export async function updatePlayer(input: UpdatePlayerInput) {
       })
 
       revalidateTag('special-bet-players', 'max')
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'Player', validated.id!,
+        { firstName: validated.firstName, lastName: validated.lastName, position: validated.position }
+      ).catch(() => {})
+
       return { success: true }
     },
     revalidatePath: '/admin/players',
@@ -75,7 +89,7 @@ export async function deletePlayer(id: number) {
     { id },
     {
       validator: deleteByIdSchema,
-      handler: async (validated) => {
+      handler: async (validated, session) => {
         // Check if player exists
         const player = await prisma.player.findUnique({
           where: { id: validated.id },
@@ -105,6 +119,12 @@ export async function deletePlayer(id: number) {
         })
 
         revalidateTag('special-bet-players', 'max')
+
+        AuditLogger.adminDeleted(
+          parseSessionUserId(session!.user!.id!), 'Player', validated.id,
+          { name: playerName }
+        ).catch(() => {})
+
         return { success: true }
       },
       revalidatePath: '/admin/players',

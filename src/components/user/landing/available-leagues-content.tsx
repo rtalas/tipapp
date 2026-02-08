@@ -16,6 +16,7 @@ import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { getAllLeaguesForSelector, joinLeague } from '@/actions/user/leagues'
 import { signOut } from 'next-auth/react'
+import { getSportEmoji } from '@/lib/constants'
 
 interface AvailableLeaguesContentProps {
   user: {
@@ -40,18 +41,6 @@ type League = {
   }
 }
 
-// Helper to get sport emoji
-function getSportEmoji(sportId?: number): string {
-  switch (sportId) {
-    case 1: // HOCKEY
-      return '🏒'
-    case 2: // FOOTBALL
-      return '⚽'
-    default:
-      return '🏆'
-  }
-}
-
 // Helper to get sport gradient
 function getSportGradient(sportId?: number): string {
   switch (sportId) {
@@ -69,12 +58,12 @@ function LeagueCard({ league, onJoinSuccess }: { league: League; onJoinSuccess: 
 
   const handleJoin = async () => {
     setIsJoining(true)
-    try {
-      await joinLeague(league.id)
+    const result = await joinLeague(league.id)
+    if (result.success) {
       toast.success(`Joined ${league.name}!`)
       onJoinSuccess()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to join league')
+    } else {
+      toast.error(result.error || 'Failed to join league')
       setIsJoining(false)
     }
   }

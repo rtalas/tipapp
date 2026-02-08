@@ -11,6 +11,7 @@ import { getMatchStatus } from '@/lib/match-utils'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
+import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { DetailedEntityDeleteDialog } from '@/components/admin/common/detailed-entity-delete-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -59,9 +60,7 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [selectedMatch, setSelectedMatch] = useState<LeagueMatch | null>(null)
   const [editMatch, setEditMatch] = useState<LeagueMatch | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [matchToDelete, setMatchToDelete] = useState<LeagueMatch | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const deleteDialog = useDeleteDialog<LeagueMatch>()
   const [createBetMatchId, setCreateBetMatchId] = useState<number | null>(null)
 
   // Expandable rows
@@ -103,19 +102,17 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
   })
 
   const handleDelete = async () => {
-    if (!matchToDelete) return
-    setIsDeleting(true)
+    if (!deleteDialog.itemToDelete) return
+    deleteDialog.startDeleting()
     try {
-      await deleteMatch(matchToDelete.Match.id)
+      await deleteMatch(deleteDialog.itemToDelete.Match.id)
       toast.success(t('matchDeleted'))
-      setDeleteDialogOpen(false)
-      setMatchToDelete(null)
+      deleteDialog.finishDeleting()
     } catch (error) {
       const message = getErrorMessage(error, t('matchDeleteFailed'))
       toast.error(message)
-      logger.error('Failed to delete match', { error, matchId: matchToDelete?.Match.id })
-    } finally {
-      setIsDeleting(false)
+      logger.error('Failed to delete match', { error, matchId: deleteDialog.itemToDelete?.Match.id })
+      deleteDialog.cancelDeleting()
     }
   }
 
@@ -202,10 +199,7 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                       onEditMatch={() => setEditMatch(lm)}
                       onEditResult={() => setSelectedMatch(lm)}
                       onEvaluate={() => handleEvaluate(lm.id, lm.Match.id)}
-                      onDelete={() => {
-                        setMatchToDelete(lm)
-                        setDeleteDialogOpen(true)
-                      }}
+                      onDelete={() => deleteDialog.openDialog(lm)}
                       onAddMissingBet={() => setCreateBetMatchId(lm.id)}
                       showLeagueColumn={!league}
                     />
@@ -262,33 +256,33 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
 
       {/* Delete Confirmation Dialog */}
       <DetailedEntityDeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        open={deleteDialog.open}
+        onOpenChange={deleteDialog.onOpenChange}
         title={t('deleteTitle')}
         description={t('deleteConfirm')}
         onConfirm={handleDelete}
-        isDeleting={isDeleting}
+        isDeleting={deleteDialog.isDeleting}
       >
-        {matchToDelete && (
+        {deleteDialog.itemToDelete && (
           <div className="rounded-lg border p-4 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('matchId')}</span>
-              <span className="font-mono">#{matchToDelete.Match.id}</span>
+              <span className="font-mono">#{deleteDialog.itemToDelete.Match.id}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('date')}</span>
-              <span>{format(new Date(matchToDelete.Match.dateTime), 'd.M.yyyy HH:mm')}</span>
+              <span>{format(new Date(deleteDialog.itemToDelete.Match.dateTime), 'd.M.yyyy HH:mm')}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('matchup')}:</span>
               <span className="font-medium">
-                {matchToDelete.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name} {t('vs')}{' '}
-                {matchToDelete.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name}
+                {deleteDialog.itemToDelete.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name} {t('vs')}{' '}
+                {deleteDialog.itemToDelete.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('league')}:</span>
-              <span>{matchToDelete.League.name}</span>
+              <span>{deleteDialog.itemToDelete.League.name}</span>
             </div>
           </div>
         )}

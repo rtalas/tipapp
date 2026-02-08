@@ -159,8 +159,8 @@ describe('Leagues Actions', () => {
 
   describe('assignTeamToLeague', () => {
     it('assigns team when not already assigned', async () => {
-      mockPrisma.leagueTeam.findFirst.mockResolvedValue(null)
-      mockPrisma.leagueTeam.create.mockResolvedValue({ id: 1 } as never)
+      const now = new Date()
+      mockPrisma.leagueTeam.upsert.mockResolvedValue({ id: 1, createdAt: now } as never)
 
       const result = await assignTeamToLeague({
         leagueId: 1,
@@ -169,9 +169,9 @@ describe('Leagues Actions', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(mockPrisma.leagueTeam.create).toHaveBeenCalledWith(
+      expect(mockPrisma.leagueTeam.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
+          create: expect.objectContaining({
             leagueId: 1,
             teamId: 5,
             group: 'A',
@@ -182,7 +182,7 @@ describe('Leagues Actions', () => {
     })
 
     it('returns error when team already assigned', async () => {
-      mockPrisma.leagueTeam.findFirst.mockResolvedValue({ id: 1 } as never)
+      mockPrisma.leagueTeam.upsert.mockResolvedValue({ id: 1, createdAt: new Date('2020-01-01') } as never)
 
       const result = await assignTeamToLeague({
         leagueId: 1,
@@ -251,8 +251,9 @@ describe('Leagues Actions', () => {
 
   describe('assignPlayerToLeagueTeam', () => {
     it('assigns player when not already assigned', async () => {
-      mockPrisma.leaguePlayer.findFirst.mockResolvedValue(null)
-      mockPrisma.leaguePlayer.create.mockResolvedValue({ id: 1 } as never)
+      vi.useFakeTimers()
+      const now = new Date()
+      mockPrisma.leaguePlayer.upsert.mockResolvedValue({ id: 1, createdAt: now } as never)
 
       const result = await assignPlayerToLeagueTeam({
         leagueTeamId: 1,
@@ -263,9 +264,9 @@ describe('Leagues Actions', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(mockPrisma.leaguePlayer.create).toHaveBeenCalledWith(
+      expect(mockPrisma.leaguePlayer.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
+          create: expect.objectContaining({
             leagueTeamId: 1,
             playerId: 10,
             seasonGames: 82,
@@ -275,10 +276,11 @@ describe('Leagues Actions', () => {
         })
       )
       expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-players', 'max')
+      vi.useRealTimers()
     })
 
     it('returns error when player already assigned', async () => {
-      mockPrisma.leaguePlayer.findFirst.mockResolvedValue({ id: 1 } as never)
+      mockPrisma.leaguePlayer.upsert.mockResolvedValue({ id: 1, createdAt: new Date('2020-01-01') } as never)
 
       const result = await assignPlayerToLeagueTeam({
         leagueTeamId: 1,

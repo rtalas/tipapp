@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Generic filter header component for admin content pages
  * Provides consistent search, filter, and create button layout

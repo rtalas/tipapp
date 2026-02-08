@@ -103,8 +103,8 @@ describe("evaluateOneTeamScore", () => {
         homeFinalScore: null,
         awayFinalScore: null,
         scorerIds: [],
-        isOvertime: null,
-        isShootout: null,
+        isOvertime: false,
+        isShootout: false,
         isPlayoffGame: false,
       },
     };

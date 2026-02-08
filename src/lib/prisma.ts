@@ -27,7 +27,23 @@ export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    datasources: {
+      db: {
+        url: appendConnectionLimit(process.env.DATABASE_URL || ""),
+      },
+    },
   });
+
+/**
+ * Append connection_limit to DATABASE_URL if not already set.
+ * Keeps each serverless instance's pool small to avoid exhausting
+ * Supabase PgBouncer connections across concurrent instances.
+ */
+function appendConnectionLimit(url: string): string {
+  if (!url || url.includes("connection_limit")) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}connection_limit=5`;
+}
 
 // Preserve client across hot-reloads in development
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

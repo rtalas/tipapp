@@ -15,8 +15,8 @@ import { FriendPredictionsModal } from '@/components/user/common/friend-predicti
 import { SearchableSelect } from '@/components/user/special-bets/searchable-select'
 import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
-import { logger } from '@/lib/logging/client-logger'
 import { getUserDisplayName } from '@/lib/user-display-utils'
+import { useFriendPredictions } from '@/hooks/useFriendPredictions'
 import { saveSpecialBet, getSpecialBetFriendPredictions } from '@/actions/user/special-bets'
 import type { UserSpecialBet, SpecialBetFriendPrediction } from '@/actions/user/special-bets'
 import type { ExactPlayerConfig } from '@/lib/evaluators/types'
@@ -76,9 +76,13 @@ export function SpecialBetCard({
   )
   const [isSaving, setIsSaving] = useState(false)
   const [isSaved, setIsSaved] = useState(!!specialBet.userBet)
-  const [showFriendsBets, setShowFriendsBets] = useState(false)
-  const [friendPredictions, setFriendPredictions] = useState<SpecialBetFriendPrediction[]>([])
-  const [isLoadingFriends, setIsLoadingFriends] = useState(false)
+  const friends = useFriendPredictions<SpecialBetFriendPrediction>({
+    isLocked,
+    entityId: specialBet.id,
+    entityName: 'specialBet',
+    fetchPredictions: getSpecialBetFriendPredictions,
+    errorToast: t('friendsLoadError'),
+  })
 
   // Determine bet type from evaluator type (primary) or SpecialBetSingleType (legacy fallback)
   const isTeamBet = evaluatorTypeName === 'exact_team' || evaluatorTypeName === 'group_stage_team' || betTypeId === 2
@@ -153,22 +157,6 @@ export function SpecialBetCard({
     setValue(v)
     setTeamId(null)
     setPlayerId(null)
-  }
-
-  const handleOpenFriendsBets = async () => {
-    setShowFriendsBets(true)
-    if (isLocked && friendPredictions.length === 0) {
-      setIsLoadingFriends(true)
-      try {
-        const result = await getSpecialBetFriendPredictions(specialBet.id)
-        setFriendPredictions(result.predictions)
-      } catch (error) {
-        logger.error('Failed to load friend predictions', { error: error instanceof Error ? error.message : String(error), specialBetId: specialBet.id })
-        toast.error(t('friendsLoadError'))
-      } finally {
-        setIsLoadingFriends(false)
-      }
-    }
   }
 
   // Get display values
@@ -374,7 +362,7 @@ export function SpecialBetCard({
         {isLocked && (
           <div className="mt-3 pt-3 border-t border-border/30 flex justify-center">
             <button
-              onClick={handleOpenFriendsBets}
+              onClick={friends.open}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Users className="w-3.5 h-3.5" />
@@ -386,19 +374,19 @@ export function SpecialBetCard({
 
       {/* Friends Predictions Modal */}
       <FriendPredictionsModal
-        open={showFriendsBets}
-        onOpenChange={setShowFriendsBets}
+        open={friends.showModal}
+        onOpenChange={friends.setShowModal}
         title={specialBet.name}
         subtitle={actualResult ? `${t('winner')}: ${actualResult}` : undefined}
         sectionLabel={t('friendsPredictions')}
         isLocked={isLocked}
-        isLoading={isLoadingFriends}
-        predictions={friendPredictions}
+        isLoading={friends.isLoading}
+        predictions={friends.predictions}
         emptyMessage={t('noFriendsPredictions')}
         lockedMessage={t('friendsPicksLater')}
         loadingMessage={t('loading')}
       >
-        {friendPredictions.map((prediction) => {
+        {friends.predictions.map((prediction) => {
           const user = prediction.LeagueUser.User
           const displayName = getUserDisplayName(user)
 

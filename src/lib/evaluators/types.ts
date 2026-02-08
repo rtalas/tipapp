@@ -30,8 +30,8 @@ export interface MatchBetContext {
     awayFinalScore: number | null;
     scorerIds: number[]; // Array of scorer IDs from MatchScorer
     scorerRankings?: Map<number, number | null>; // leaguePlayerId -> ranking at match time
-    isOvertime: boolean | null;
-    isShootout: boolean | null;
+    isOvertime: boolean;
+    isShootout: boolean;
     isPlayoffGame: boolean;
     homeAdvanced?: boolean | null; // For playoff games
   };

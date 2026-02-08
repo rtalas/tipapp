@@ -2,9 +2,21 @@
 
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth/auth-utils'
+import { nullableUniqueConstraint } from '@/lib/prisma-utils'
+import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
+import { executeServerAction } from '@/lib/server-action-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import { buildLeagueUserWhere } from '@/lib/query-builders'
 import { AppError } from '@/lib/error-handler'
+import {
+  deleteByIdSchema,
+  updateLeagueUserBooleanSchema,
+  addUserToLeagueSchema,
+  removeLeagueUserSchema,
+  type UpdateLeagueUserBooleanInput,
+  type AddUserToLeagueInput,
+  type RemoveLeagueUserInput,
+} from '@/lib/validation/admin'
 
 // Get pending user requests
 export async function getPendingRequests(filters?: { leagueId?: number }) {
@@ -25,104 +37,126 @@ export async function getPendingRequests(filters?: { leagueId?: number }) {
 
 // Approve a user request
 export async function approveRequest(requestId: number) {
-  await requireAdmin()
+  return executeServerAction({ id: requestId }, {
+    validator: deleteByIdSchema,
+    handler: async (validated, session) => {
+      const now = new Date()
 
-  const now = new Date()
+      // All checks inside transaction to prevent race conditions
+      const request = await prisma.$transaction(async (tx) => {
+        const req = await tx.userRequest.findUnique({
+          where: { id: validated.id },
+          include: { User: true, League: true },
+        })
 
-  // All checks inside transaction to prevent race conditions
-  const request = await prisma.$transaction(async (tx) => {
-    const req = await tx.userRequest.findUnique({
-      where: { id: requestId },
-      include: { User: true, League: true },
-    })
+        if (!req) {
+          throw new AppError('Request not found', 'NOT_FOUND', 404)
+        }
 
-    if (!req) {
-      throw new AppError('Request not found', 'NOT_FOUND', 404)
-    }
+        if (req.decided) {
+          throw new AppError('Request has already been decided', 'CONFLICT', 409)
+        }
 
-    if (req.decided) {
-      throw new AppError('Request has already been decided', 'CONFLICT', 409)
-    }
+        // Check if user is already a member
+        const existingMembership = await tx.leagueUser.findFirst({
+          where: {
+            userId: req.userId,
+            leagueId: req.leagueId,
+            deletedAt: null,
+          },
+        })
 
-    // Check if user is already a member
-    const existingMembership = await tx.leagueUser.findFirst({
-      where: {
-        userId: req.userId,
-        leagueId: req.leagueId,
-        deletedAt: null,
-      },
-    })
+        if (!existingMembership) {
+          await tx.leagueUser.create({
+            data: {
+              userId: req.userId,
+              leagueId: req.leagueId,
+              paid: false,
+              active: true,
+              admin: false,
+              createdAt: now,
+              updatedAt: now,
+            },
+          })
+        }
 
-    if (!existingMembership) {
-      await tx.leagueUser.create({
-        data: {
-          userId: req.userId,
-          leagueId: req.leagueId,
-          paid: false,
-          active: true,
-          admin: false,
-          createdAt: now,
-          updatedAt: now,
-        },
+        // Mark request as approved
+        await tx.userRequest.update({
+          where: { id: validated.id },
+          data: {
+            decided: true,
+            accepted: true,
+            updatedAt: now,
+          },
+        })
+
+        return req
       })
-    }
 
-    // Mark request as approved
-    await tx.userRequest.update({
-      where: { id: requestId },
-      data: {
-        decided: true,
-        accepted: true,
-        updatedAt: now,
-      },
-    })
+      revalidateTag('league-selector', 'max')
+      revalidateTag('leaderboard', 'max')
+      revalidatePath(`/admin/leagues/${request.leagueId}/users`)
 
-    return req
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'UserRequest', validated.id,
+        { action: 'approve', userId: request.userId, leagueId: request.leagueId },
+        request.leagueId
+      ).catch(() => {})
+
+      return {}
+    },
+    revalidatePath: '/admin/users',
+    requiresAdmin: true,
   })
-
-  revalidateTag('league-selector', 'max')
-  revalidateTag('leaderboard', 'max')
-  revalidatePath('/admin/users')
-  revalidatePath(`/admin/leagues/${request.leagueId}/users`)
-  return { success: true }
 }
 
 // Reject a user request
 export async function rejectRequest(requestId: number) {
-  await requireAdmin()
+  return executeServerAction({ id: requestId }, {
+    validator: deleteByIdSchema,
+    handler: async (validated, session) => {
+      // Fetch request first to get leagueId and validate existence
+      const request = await prisma.userRequest.findUnique({
+        where: { id: validated.id },
+        select: { id: true, leagueId: true, decided: true },
+      })
 
-  // Fetch request first to get leagueId and validate existence
-  const request = await prisma.userRequest.findUnique({
-    where: { id: requestId },
-    select: { id: true, leagueId: true, decided: true },
-  })
+      if (!request) {
+        throw new AppError('Request not found', 'NOT_FOUND', 404)
+      }
 
-  if (!request) {
-    throw new AppError('Request not found', 'NOT_FOUND', 404)
-  }
+      if (request.decided) {
+        throw new AppError('Request has already been decided', 'CONFLICT', 409)
+      }
 
-  if (request.decided) {
-    throw new AppError('Request has already been decided', 'CONFLICT', 409)
-  }
+      // Atomic update — decided: false in where prevents race conditions
+      const { count } = await prisma.userRequest.updateMany({
+        where: { id: validated.id, decided: false },
+        data: {
+          decided: true,
+          accepted: false,
+          updatedAt: new Date(),
+        },
+      })
 
-  // Atomic update — decided: false in where prevents race conditions
-  const { count } = await prisma.userRequest.updateMany({
-    where: { id: requestId, decided: false },
-    data: {
-      decided: true,
-      accepted: false,
-      updatedAt: new Date(),
+      if (count === 0) {
+        // Race: decided between find and update
+        throw new AppError('Request has already been decided', 'CONFLICT', 409)
+      }
+
+      revalidatePath(`/admin/leagues/${request.leagueId}/users`)
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'UserRequest', validated.id,
+        { action: 'reject', leagueId: request.leagueId },
+        request.leagueId
+      ).catch(() => {})
+
+      return {}
     },
+    revalidatePath: '/admin/users',
+    requiresAdmin: true,
   })
-
-  if (count === 0) {
-    // Race: decided between find and update
-    throw new AppError('Request has already been decided', 'CONFLICT', 409)
-  }
-
-  revalidatePath('/admin/users')
-  revalidatePath(`/admin/leagues/${request.leagueId}/users`)
-  return { success: true }
 }
 
 // Get all users (for filter dropdowns)
@@ -159,132 +193,185 @@ export async function getLeagueUsers(filters?: { leagueId?: number }) {
 }
 
 // Update league user admin status
-export async function updateLeagueUserAdmin(leagueUserId: number, isAdmin: boolean) {
-  await requireAdmin()
+export async function updateLeagueUserAdmin(input: UpdateLeagueUserBooleanInput) {
+  return executeServerAction(input, {
+    validator: updateLeagueUserBooleanSchema,
+    handler: async (validated, session) => {
+      const leagueUser = await prisma.leagueUser.update({
+        where: { id: validated.leagueUserId },
+        data: {
+          admin: validated.value,
+          updatedAt: new Date(),
+        },
+      })
 
-  const leagueUser = await prisma.leagueUser.update({
-    where: { id: leagueUserId },
-    data: {
-      admin: isAdmin,
-      updatedAt: new Date(),
+      revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeagueUser', validated.leagueUserId,
+        { field: 'admin', value: validated.value },
+        leagueUser.leagueId
+      ).catch(() => {})
+
+      return {}
     },
+    revalidatePath: '/admin/users',
+    requiresAdmin: true,
   })
-
-  revalidatePath('/admin/users')
-  revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
-  return { success: true }
 }
 
 // Update league user active status
-export async function updateLeagueUserActive(leagueUserId: number, isActive: boolean) {
-  await requireAdmin()
+export async function updateLeagueUserActive(input: UpdateLeagueUserBooleanInput) {
+  return executeServerAction(input, {
+    validator: updateLeagueUserBooleanSchema,
+    handler: async (validated, session) => {
+      const leagueUser = await prisma.leagueUser.update({
+        where: { id: validated.leagueUserId },
+        data: {
+          active: validated.value,
+          updatedAt: new Date(),
+        },
+      })
 
-  const leagueUser = await prisma.leagueUser.update({
-    where: { id: leagueUserId },
-    data: {
-      active: isActive,
-      updatedAt: new Date(),
+      revalidateTag('league-selector', 'max')
+      revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeagueUser', validated.leagueUserId,
+        { field: 'active', value: validated.value },
+        leagueUser.leagueId
+      ).catch(() => {})
+
+      return {}
     },
+    revalidatePath: '/admin/users',
+    requiresAdmin: true,
   })
-
-  // Invalidate league selector cache (active status affects user's available leagues)
-  revalidateTag('league-selector', 'max')
-  revalidatePath('/admin/users')
-  revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
-  return { success: true }
 }
 
 // Update league user paid status
-export async function updateLeagueUserPaid(leagueUserId: number, isPaid: boolean) {
-  await requireAdmin()
+export async function updateLeagueUserPaid(input: UpdateLeagueUserBooleanInput) {
+  return executeServerAction(input, {
+    validator: updateLeagueUserBooleanSchema,
+    handler: async (validated, session) => {
+      const leagueUser = await prisma.leagueUser.update({
+        where: { id: validated.leagueUserId },
+        data: {
+          paid: validated.value,
+          updatedAt: new Date(),
+        },
+      })
 
-  const leagueUser = await prisma.leagueUser.update({
-    where: { id: leagueUserId },
-    data: {
-      paid: isPaid,
-      updatedAt: new Date(),
+      revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeagueUser', validated.leagueUserId,
+        { field: 'paid', value: validated.value },
+        leagueUser.leagueId
+      ).catch(() => {})
+
+      return {}
     },
+    revalidatePath: '/admin/users',
+    requiresAdmin: true,
   })
-
-  revalidatePath('/admin/users')
-  revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
-  return { success: true }
 }
 
 // Add user to league
-export async function addUserToLeague(userId: number, leagueId: number) {
-  await requireAdmin()
+export async function addUserToLeague(input: AddUserToLeagueInput) {
+  return executeServerAction(input, {
+    validator: addUserToLeagueSchema,
+    handler: async (validated, session) => {
+      const now = new Date()
 
-  const now = new Date()
+      // Check if user exists
+      const user = await prisma.user.findUnique({
+        where: { id: validated.userId, deletedAt: null },
+      })
 
-  // Check if user exists
-  const user = await prisma.user.findUnique({
-    where: { id: userId, deletedAt: null },
-  })
+      if (!user) {
+        throw new AppError('User not found', 'NOT_FOUND', 404)
+      }
 
-  if (!user) {
-    throw new AppError('User not found', 'NOT_FOUND', 404)
-  }
+      // Check if league exists
+      const league = await prisma.league.findUnique({
+        where: { id: validated.leagueId, deletedAt: null },
+      })
 
-  // Check if league exists
-  const league = await prisma.league.findUnique({
-    where: { id: leagueId, deletedAt: null },
-  })
+      if (!league) {
+        throw new AppError('League not found', 'NOT_FOUND', 404)
+      }
 
-  if (!league) {
-    throw new AppError('League not found', 'NOT_FOUND', 404)
-  }
+      // Atomic upsert to prevent race condition duplicates
+      const result = await prisma.leagueUser.upsert({
+        where: {
+          leagueId_userId_deletedAt: nullableUniqueConstraint({
+            leagueId: validated.leagueId,
+            userId: validated.userId,
+            deletedAt: null,
+          }),
+        },
+        update: {
+          // Already exists — no-op, will throw below
+          updatedAt: now,
+        },
+        create: {
+          userId: validated.userId,
+          leagueId: validated.leagueId,
+          paid: false,
+          active: true,
+          admin: false,
+          createdAt: now,
+          updatedAt: now,
+        },
+      })
 
-  // Check if user is already a member
-  const existingMembership = await prisma.leagueUser.findFirst({
-    where: {
-      userId,
-      leagueId,
-      deletedAt: null,
+      if (result.createdAt.getTime() !== now.getTime()) {
+        throw new AppError('User is already a member of this league', 'CONFLICT', 409)
+      }
+
+      revalidateTag('league-selector', 'max')
+      revalidateTag('leaderboard', 'max')
+      revalidatePath(`/admin/${validated.leagueId}/users`)
+
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'LeagueUser', result.id,
+        { userId: validated.userId, leagueId: validated.leagueId },
+        validated.leagueId
+      ).catch(() => {})
+
+      return {}
     },
+    revalidatePath: '/admin/users',
+    requiresAdmin: true,
   })
-
-  if (existingMembership) {
-    throw new AppError('User is already a member of this league', 'CONFLICT', 409)
-  }
-
-  // Create league user membership
-  await prisma.leagueUser.create({
-    data: {
-      userId,
-      leagueId,
-      paid: false,
-      active: true,
-      admin: false,
-      createdAt: now,
-      updatedAt: now,
-    },
-  })
-
-  // Invalidate league selector and leaderboard caches for the added user
-  revalidateTag('league-selector', 'max')
-  revalidateTag('leaderboard', 'max')
-  revalidatePath('/admin/users')
-  revalidatePath(`/admin/${leagueId}/users`)
-  return { success: true }
 }
 
 // Remove user from league
-export async function removeLeagueUser(leagueUserId: number) {
-  await requireAdmin()
+export async function removeLeagueUser(input: RemoveLeagueUserInput) {
+  return executeServerAction(input, {
+    validator: removeLeagueUserSchema,
+    handler: async (validated, session) => {
+      const leagueUser = await prisma.leagueUser.update({
+        where: { id: validated.leagueUserId },
+        data: {
+          deletedAt: new Date(),
+        },
+      })
 
-  // Soft delete
-  const leagueUser = await prisma.leagueUser.update({
-    where: { id: leagueUserId },
-    data: {
-      deletedAt: new Date(),
+      revalidateTag('league-selector', 'max')
+      revalidateTag('leaderboard', 'max')
+      revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'LeagueUser', validated.leagueUserId,
+        { leagueId: leagueUser.leagueId },
+        leagueUser.leagueId
+      ).catch(() => {})
+
+      return {}
     },
+    revalidatePath: '/admin/users',
+    requiresAdmin: true,
   })
-
-  // Invalidate league selector and leaderboard caches for the removed user
-  revalidateTag('league-selector', 'max')
-  revalidateTag('leaderboard', 'max')
-  revalidatePath('/admin/users')
-  revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
-  return { success: true }
 }

@@ -205,8 +205,8 @@ export async function updateUserSpecialBet(input: UpdateUserSpecialBetInput) {
     validator: updateUserSpecialBetSchema,
     handler: async (validated) => {
       // Get the bet to check which league it belongs to
-      const bet = await prisma.userSpecialBetSingle.findUnique({
-        where: { id: validated.id },
+      const bet = await prisma.userSpecialBetSingle.findFirst({
+        where: { id: validated.id, deletedAt: null },
         include: {
           LeagueSpecialBetSingle: true,
         },

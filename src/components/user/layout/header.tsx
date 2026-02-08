@@ -15,7 +15,7 @@ import { LeagueSelectionDialog } from './league-selection-dialog'
 import { UserMenuDropdown } from './user-menu-dropdown'
 import { LanguageSwitcher } from './language-switcher'
 import { DemoBanner } from '@/components/demo-banner'
-import { SPORT_IDS } from '@/lib/constants'
+import { getSportEmoji } from '@/lib/constants'
 
 interface HeaderProps {
   user: {
@@ -41,17 +41,6 @@ interface HeaderProps {
 }
 
 // Helper to get sport emoji
-function getSportEmoji(sportId?: number): string {
-  switch (sportId) {
-    case SPORT_IDS.HOCKEY:
-      return '🏒'
-    case SPORT_IDS.FOOTBALL:
-      return '⚽'
-    default:
-      return '🏆'
-  }
-}
-
 export function Header({ user, currentLeague, locale }: HeaderProps) {
   const t = useTranslations('user.header')
   const { setSelectedLeagueId } = useUserLeagueContext()

@@ -4,6 +4,8 @@ import { z } from 'zod'
 import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { parseSessionUserId } from '@/lib/auth/auth-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import { AppError } from '@/lib/error-handler'
 import {
   createSeriesSchema,
@@ -15,7 +17,7 @@ import {
 export async function createSeries(input: CreateSeriesInput) {
   return executeServerAction(input, {
     validator: createSeriesSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       // Verify teams belong to the league
@@ -64,6 +66,12 @@ export async function createSeries(input: CreateSeriesInput) {
       // Invalidate user-facing series cache
       revalidateTag('series-data', 'max')
 
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSerie', series.id,
+        { leagueId: validated.leagueId, homeTeamId: validated.homeTeamId, awayTeamId: validated.awayTeamId },
+        validated.leagueId
+      ).catch(() => {})
+
       return { seriesId: series.id }
     },
     revalidatePath: '/admin/series',
@@ -74,7 +82,7 @@ export async function createSeries(input: CreateSeriesInput) {
 export async function updateSeriesResult(input: UpdateSeriesResultInput) {
   return executeServerAction(input, {
     validator: updateSeriesResultSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       // Update the series scores
@@ -90,6 +98,11 @@ export async function updateSeriesResult(input: UpdateSeriesResultInput) {
       // Invalidate user-facing series cache
       revalidateTag('series-data', 'max')
 
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSerie', validated.seriesId,
+        { homeTeamScore: validated.homeTeamScore, awayTeamScore: validated.awayTeamScore }
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/series',
@@ -100,7 +113,7 @@ export async function updateSeriesResult(input: UpdateSeriesResultInput) {
 export async function deleteSeries(id: number) {
   return executeServerAction({ id }, {
     validator: z.object({ id: z.number().int().positive() }),
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       await prisma.leagueSpecialBetSerie.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
@@ -108,6 +121,10 @@ export async function deleteSeries(id: number) {
 
       // Invalidate user-facing series cache
       revalidateTag('series-data', 'max')
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSerie', validated.id
+      ).catch(() => {})
 
       return {}
     },

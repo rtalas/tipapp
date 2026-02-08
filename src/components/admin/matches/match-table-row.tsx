@@ -108,7 +108,7 @@ export function MatchTableRow({
             <span className="font-medium">{awayTeam.name}</span>
             {!showLeagueColumn && match.Match.isPlayoffGame && (
               <Badge variant="warning" className="text-xs">
-                Playoff
+                {t('playoff')}
               </Badge>
             )}
           </div>
@@ -117,8 +117,8 @@ export function MatchTableRow({
           {match.Match.homeRegularScore !== null ? (
             <span className="font-mono font-bold text-base whitespace-nowrap">
               {match.Match.homeRegularScore}:{match.Match.awayRegularScore}
-              {match.Match.isShootout && ' (SO)'}
-              {match.Match.isOvertime && !match.Match.isShootout && ' (OT)'}
+              {match.Match.isShootout && ` ${t('shootout')}`}
+              {match.Match.isOvertime && !match.Match.isShootout && ` ${t('overtimeSuffix')}`}
             </span>
           ) : (
             <span className="text-muted-foreground">-</span>

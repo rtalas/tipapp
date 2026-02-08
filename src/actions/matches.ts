@@ -7,6 +7,8 @@ import { executeServerAction } from '@/lib/server-action-utils'
 import { buildLeagueMatchWhere } from '@/lib/query-builders'
 import { leagueMatchWithBetsInclude } from '@/lib/prisma-helpers'
 import { AppError } from '@/lib/error-handler'
+import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import {
   createMatchSchema,
   updateMatchSchema,
@@ -19,7 +21,7 @@ import {
 export async function createMatch(input: CreateMatchInput) {
   return executeServerAction(input, {
     validator: createMatchSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       // Verify teams belong to the league
@@ -95,6 +97,12 @@ export async function createMatch(input: CreateMatchInput) {
       // Invalidate user-facing match cache
       revalidateTag('match-data', 'max')
 
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'Match', result.id,
+        { leagueId: validated.leagueId, homeTeamId: validated.homeTeamId, awayTeamId: validated.awayTeamId },
+        validated.leagueId
+      ).catch(() => {})
+
       return { matchId: result.id }
     },
     revalidatePath: '/admin/matches',
@@ -105,7 +113,7 @@ export async function createMatch(input: CreateMatchInput) {
 export async function updateMatch(input: UpdateMatchInput) {
   return executeServerAction(input, {
     validator: updateMatchSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       // Verify match phase exists if provided
       if (validated.matchPhaseId) {
         const matchPhase = await prisma.matchPhase.findFirst({
@@ -152,6 +160,11 @@ export async function updateMatch(input: UpdateMatchInput) {
       // Invalidate user-facing match cache
       revalidateTag('match-data', 'max')
 
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'Match', validated.matchId,
+        { dateTime: validated.dateTime, matchPhaseId: validated.matchPhaseId, gameNumber: validated.gameNumber }
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/matches',
@@ -162,7 +175,7 @@ export async function updateMatch(input: UpdateMatchInput) {
 export async function updateMatchResult(input: UpdateMatchResultInput) {
   return executeServerAction(input, {
     validator: updateMatchResultSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       await prisma.$transaction(async (tx) => {
@@ -206,6 +219,11 @@ export async function updateMatchResult(input: UpdateMatchResultInput) {
       // Invalidate user-facing match cache (results updated)
       revalidateTag('match-data', 'max')
 
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'Match', validated.matchId,
+        { homeRegularScore: validated.homeRegularScore, awayRegularScore: validated.awayRegularScore, scorerCount: validated.scorers?.length ?? 0 }
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/matches',
@@ -216,7 +234,7 @@ export async function updateMatchResult(input: UpdateMatchResultInput) {
 export async function deleteMatch(id: number) {
   return executeServerAction({ id }, {
     validator: z.object({ id: z.number().int().positive() }),
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       await prisma.match.update({
         where: { id: validated.id },
         data: { deletedAt: new Date() },
@@ -224,6 +242,10 @@ export async function deleteMatch(id: number) {
 
       // Invalidate user-facing match cache
       revalidateTag('match-data', 'max')
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'Match', validated.id
+      ).catch(() => {})
 
       return {}
     },
@@ -238,6 +260,8 @@ export async function getMatches(filters?: {
   status?: 'all' | 'scheduled' | 'finished' | 'evaluated'
   userId?: number
 }) {
+  await requireAdmin()
+
   const whereConditions = buildLeagueMatchWhere(filters)
 
   return prisma.leagueMatch.findMany({
@@ -248,6 +272,8 @@ export async function getMatches(filters?: {
 }
 
 export async function getMatchById(matchId: number) {
+  await requireAdmin()
+
   return prisma.match.findUnique({
     where: { id: matchId, deletedAt: null },
     include: {

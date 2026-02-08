@@ -4,6 +4,9 @@ const MAX_PASSWORD_RESET_ATTEMPTS = 10;
 const RATE_LIMIT_WINDOW_HOURS = 1;
 
 // ===== In-Memory IP Rate Limiter =====
+// NOTE: This Map resets on every serverless cold start and is per-instance,
+// so on Vercel these limits are best-effort only. Acceptable for a small
+// friends app; swap to Redis/Upstash if stronger guarantees are needed.
 
 interface RateLimitEntry {
   timestamps: number[];
@@ -47,15 +50,14 @@ export const REGISTER_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60 * 60 * 1000, // 1 hour
 };
 
-function checkRateLimit(key: string, config: RateLimitConfig): { limited: boolean; remaining: number; retryAfterMs: number } {
+function isRateLimited(key: string, config: RateLimitConfig): { limited: boolean; remaining: number; retryAfterMs: number } {
   startCleanup(Math.max(LOGIN_RATE_LIMIT.windowMs, REGISTER_RATE_LIMIT.windowMs));
 
   const now = Date.now();
   const entry = rateLimitStore.get(key);
 
   if (!entry) {
-    rateLimitStore.set(key, { timestamps: [now] });
-    return { limited: false, remaining: config.maxAttempts - 1, retryAfterMs: 0 };
+    return { limited: false, remaining: config.maxAttempts, retryAfterMs: 0 };
   }
 
   // Remove timestamps outside the window
@@ -67,24 +69,41 @@ function checkRateLimit(key: string, config: RateLimitConfig): { limited: boolea
     return { limited: true, remaining: 0, retryAfterMs };
   }
 
-  entry.timestamps.push(now);
   return { limited: false, remaining: config.maxAttempts - entry.timestamps.length, retryAfterMs: 0 };
 }
 
-export function getClientIp(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
+function recordRateLimitAttempt(key: string) {
+  const now = Date.now();
+  const entry = rateLimitStore.get(key);
+  if (entry) {
+    entry.timestamps.push(now);
+  } else {
+    rateLimitStore.set(key, { timestamps: [now] });
   }
-  return request.headers.get('x-real-ip') ?? 'unknown';
+}
+
+export function getClientIp(request: Request): string {
+  // Prefer x-real-ip (set by Vercel, not spoofable) over x-forwarded-for
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) return realIp;
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return 'unknown';
 }
 
 export function checkLoginRateLimit(ip: string): { limited: boolean; remaining: number; retryAfterMs: number } {
-  return checkRateLimit(`login:${ip}`, LOGIN_RATE_LIMIT);
+  return isRateLimited(`login:${ip}`, LOGIN_RATE_LIMIT);
+}
+
+export function recordFailedLogin(ip: string) {
+  recordRateLimitAttempt(`login:${ip}`);
 }
 
 export function checkRegistrationRateLimit(ip: string): { limited: boolean; remaining: number; retryAfterMs: number } {
-  return checkRateLimit(`register:${ip}`, REGISTER_RATE_LIMIT);
+  const key = `register:${ip}`;
+  const result = isRateLimited(key, REGISTER_RATE_LIMIT);
+  if (!result.limited) recordRateLimitAttempt(key);
+  return result;
 }
 
 /** Exported for testing only */
@@ -112,20 +131,3 @@ export async function isPasswordResetRateLimited(userId: number): Promise<boolea
   return (await getRecentAttemptCount(userId)) >= MAX_PASSWORD_RESET_ATTEMPTS;
 }
 
-/**
- * Get the number of remaining password reset attempts for a user in the current rate limit window.
- * Returns 0 if rate limited.
- */
-export async function getRemainingResetAttempts(userId: number): Promise<number> {
-  return Math.max(0, MAX_PASSWORD_RESET_ATTEMPTS - await getRecentAttemptCount(userId));
-}
-
-/**
- * Get the reset limit constants.
- */
-export function getRateLimitConfig() {
-  return {
-    maxAttempts: MAX_PASSWORD_RESET_ATTEMPTS,
-    windowHours: RATE_LIMIT_WINDOW_HOURS,
-  };
-}

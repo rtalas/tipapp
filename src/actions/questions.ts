@@ -3,6 +3,8 @@
 import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { parseSessionUserId } from '@/lib/auth/auth-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import { AppError } from '@/lib/error-handler'
 import {
   createQuestionSchema,
@@ -20,7 +22,7 @@ import { deleteByIdSchema } from '@/lib/validation/admin'
 export async function createQuestion(input: CreateQuestionInput) {
   return executeServerAction(input, {
     validator: createQuestionSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       // Verify league exists
@@ -49,6 +51,12 @@ export async function createQuestion(input: CreateQuestionInput) {
       // Invalidate user-facing question cache
       revalidateTag('question-data', 'max')
 
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetQuestion', question.id,
+        { leagueId: validated.leagueId, text: validated.text },
+        validated.leagueId
+      ).catch(() => {})
+
       return { questionId: question.id }
     },
     revalidatePath: '/admin/questions',
@@ -62,7 +70,7 @@ export async function createQuestion(input: CreateQuestionInput) {
 export async function updateQuestion(input: UpdateQuestionInput) {
   return executeServerAction(input, {
     validator: updateQuestionSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       // Verify question exists
@@ -87,6 +95,11 @@ export async function updateQuestion(input: UpdateQuestionInput) {
       // Invalidate user-facing question cache
       revalidateTag('question-data', 'max')
 
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetQuestion', validated.id,
+        { text: validated.text, dateTime: validated.dateTime }
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/questions',
@@ -100,7 +113,7 @@ export async function updateQuestion(input: UpdateQuestionInput) {
 export async function updateQuestionResult(input: UpdateQuestionResultInput) {
   return executeServerAction(input, {
     validator: updateQuestionResultSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       // Verify question exists
@@ -124,6 +137,11 @@ export async function updateQuestionResult(input: UpdateQuestionResultInput) {
       // Invalidate user-facing question cache
       revalidateTag('question-data', 'max')
 
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetQuestion', validated.questionId,
+        { result: validated.result }
+      ).catch(() => {})
+
       return {}
     },
     revalidatePath: '/admin/questions',
@@ -137,7 +155,7 @@ export async function updateQuestionResult(input: UpdateQuestionResultInput) {
 export async function deleteQuestion(id: number) {
   return executeServerAction({ id }, {
     validator: deleteByIdSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       // Verify question exists
       const question = await prisma.leagueSpecialBetQuestion.findUnique({
         where: { id: validated.id, deletedAt: null },
@@ -155,6 +173,10 @@ export async function deleteQuestion(id: number) {
 
       // Invalidate user-facing question cache
       revalidateTag('question-data', 'max')
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetQuestion', validated.id
+      ).catch(() => {})
 
       return {}
     },

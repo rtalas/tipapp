@@ -6,32 +6,6 @@
 import { prisma } from '@/lib/prisma'
 
 /**
- * Get the scorer ranking for a specific player at a given point in time
- * @param leaguePlayerId - The LeaguePlayer ID to look up
- * @param atTime - The point in time to check (typically match.dateTime)
- * @returns The ranking (1-4) or null if no ranking was active at that time
- */
-export async function getScorerRankingAtTime(
-  leaguePlayerId: number,
-  atTime: Date
-): Promise<number | null> {
-  const version = await prisma.topScorerRankingVersion.findFirst({
-    where: {
-      leaguePlayerId,
-      effectiveFrom: { lte: atTime },
-      OR: [
-        { effectiveTo: null }, // Current version (still active)
-        { effectiveTo: { gt: atTime } }, // Version was still active at atTime
-      ],
-    },
-    orderBy: { effectiveFrom: 'desc' },
-    select: { ranking: true },
-  })
-
-  return version?.ranking ?? null
-}
-
-/**
  * Get all scorer rankings for a league at a given point in time
  * @param leagueId - The League ID to look up rankings for
  * @param atTime - The point in time to check (typically match.dateTime)

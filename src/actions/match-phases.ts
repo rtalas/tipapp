@@ -1,8 +1,9 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth/auth-utils'
+import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
+import { AuditLogger } from '@/lib/logging/audit-logger'
 import { buildDeletionErrorMessage } from '@/lib/delete-utils'
 import { AppError } from '@/lib/error-handler'
 import {
@@ -31,7 +32,7 @@ export async function getMatchPhases() {
 export async function createMatchPhase(input: CreateMatchPhaseInput) {
   return executeServerAction(input, {
     validator: createMatchPhaseSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const now = new Date()
 
       const matchPhase = await prisma.matchPhase.create({
@@ -49,6 +50,11 @@ export async function createMatchPhase(input: CreateMatchPhaseInput) {
         },
       })
 
+      AuditLogger.adminCreated(
+        parseSessionUserId(session!.user!.id!), 'MatchPhase', matchPhase.id,
+        { name: validated.name, rank: validated.rank, bestOf: validated.bestOf }
+      ).catch(() => {})
+
       return { data: matchPhase }
     },
     revalidatePath: '/admin/match-phases',
@@ -60,7 +66,7 @@ export async function createMatchPhase(input: CreateMatchPhaseInput) {
 export async function updateMatchPhase(input: UpdateMatchPhaseInput) {
   return executeServerAction(input, {
     validator: updateMatchPhaseSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       const updateData: {
         name?: string
         rank?: number
@@ -90,6 +96,11 @@ export async function updateMatchPhase(input: UpdateMatchPhaseInput) {
         },
       })
 
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'MatchPhase', validated.id,
+        { name: validated.name, rank: validated.rank, bestOf: validated.bestOf }
+      ).catch(() => {})
+
       return { data: matchPhase }
     },
     revalidatePath: '/admin/match-phases',
@@ -101,7 +112,7 @@ export async function updateMatchPhase(input: UpdateMatchPhaseInput) {
 export async function deleteMatchPhase(id: number) {
   return executeServerAction({ id }, {
     validator: deleteByIdSchema,
-    handler: async (validated) => {
+    handler: async (validated, session) => {
       // Check if used in any matches
       const usageCount = await prisma.match.count({
         where: {
@@ -118,6 +129,10 @@ export async function deleteMatchPhase(id: number) {
         where: { id: validated.id },
         data: { deletedAt: new Date() },
       })
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'MatchPhase', validated.id
+      ).catch(() => {})
 
       return {}
     },
