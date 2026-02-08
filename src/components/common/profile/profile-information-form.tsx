@@ -322,10 +322,10 @@ export function ProfileInformationForm({
                                 toast.error(t('pushError'))
                               }
                             } else {
-                              const success = await pushNotifications.subscribe()
-                              if (success) {
+                              const result = await pushNotifications.subscribe()
+                              if (result.success) {
                                 toast.success(t('pushEnabled'))
-                              } else if (pushNotifications.permissionState === 'denied') {
+                              } else if (result.reason === 'denied') {
                                 toast.error(t('pushDenied'))
                               } else {
                                 toast.error(t('pushError'))

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processNotifications } from '@/lib/push-notifications'
 
-export async function POST(request: NextRequest) {
+async function handleCron(request: NextRequest) {
   try {
     // Verify cron secret for security
     const authHeader = request.headers.get('authorization')
@@ -39,3 +39,6 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const GET = handleCron
+export const POST = handleCron

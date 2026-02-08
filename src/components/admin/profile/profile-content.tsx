@@ -118,6 +118,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
         }}
         variant="admin"
         onUpdate={handleProfileUpdate}
+        showPushNotifications
       />
 
       {/* Password Change Form */}

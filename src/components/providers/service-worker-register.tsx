@@ -17,12 +17,16 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 
 export type PushPermissionState = 'granted' | 'denied' | 'default' | 'unsupported'
 
+export type SubscribeResult =
+  | { success: true }
+  | { success: false; reason: 'denied' | 'unsupported' | 'error' }
+
 interface PushNotificationHook {
   isSupported: boolean
   permissionState: PushPermissionState
   isSubscribed: boolean
   isLoading: boolean
-  subscribe: () => Promise<boolean>
+  subscribe: () => Promise<SubscribeResult>
   unsubscribe: () => Promise<boolean>
 }
 
@@ -121,9 +125,9 @@ export function usePushNotifications(): PushNotificationHook {
     })
   }, [isSupported, checkSubscription])
 
-  const subscribe = useCallback(async (): Promise<boolean> => {
+  const subscribe = useCallback(async (): Promise<SubscribeResult> => {
     if (!swRegistration || !isSupported) {
-      return false
+      return { success: false, reason: 'unsupported' }
     }
 
     setIsLoading(true)
@@ -135,11 +139,11 @@ export function usePushNotifications(): PushNotificationHook {
         setPermissionState(permission as PushPermissionState)
         if (permission !== 'granted') {
           setIsLoading(false)
-          return false
+          return { success: false, reason: 'denied' }
         }
       } else if (Notification.permission === 'denied') {
         setIsLoading(false)
-        return false
+        return { success: false, reason: 'denied' }
       }
 
       // Get VAPID public key from server
@@ -153,7 +157,7 @@ export function usePushNotifications(): PushNotificationHook {
       if (!response.ok) {
         console.error('Failed to get VAPID key:', response.status)
         setIsLoading(false)
-        return false
+        return { success: false, reason: 'error' }
       }
 
       const { vapidPublicKey } = await response.json()
@@ -161,7 +165,7 @@ export function usePushNotifications(): PushNotificationHook {
       if (!vapidPublicKey) {
         console.error('VAPID key not available in response')
         setIsLoading(false)
-        return false
+        return { success: false, reason: 'error' }
       }
 
       // Check for existing subscription first
@@ -194,16 +198,16 @@ export function usePushNotifications(): PushNotificationHook {
         console.error('Failed to save subscription to server:', subscribeResponse.status)
         await subscription.unsubscribe()
         setIsLoading(false)
-        return false
+        return { success: false, reason: 'error' }
       }
 
       setIsSubscribed(true)
       setIsLoading(false)
-      return true
+      return { success: true }
     } catch (error) {
       console.error('Error subscribing to push notifications:', error)
       setIsLoading(false)
-      return false
+      return { success: false, reason: 'error' }
     }
   }, [isSupported])
 
@@ -249,7 +253,8 @@ export function usePushNotifications(): PushNotificationHook {
 
 export function ServiceWorkerRegister() {
   useEffect(() => {
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+    const enableInDev = process.env.NEXT_PUBLIC_ENABLE_SW_DEV === 'true'
+    if ('serviceWorker' in navigator && (process.env.NODE_ENV === 'production' || enableInDev)) {
       navigator.serviceWorker
         .register('/sw.js', { scope: '/' })
         .then((registration) => {

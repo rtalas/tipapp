@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
-import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { getVapidPublicKey } from '@/lib/push-notifications'
 import { z } from 'zod'
 
@@ -31,31 +30,39 @@ export async function POST(request: NextRequest) {
     // Get user agent for debugging
     const userAgent = request.headers.get('user-agent') || undefined
 
-    // Upsert subscription (handles re-subscription after browser restart)
-    await prisma.pushSubscription.upsert({
+    // Find existing subscription or create new one
+    const now = new Date()
+    const existing = await prisma.pushSubscription.findFirst({
       where: {
-        userId_endpoint_deletedAt: nullableUniqueConstraint({
-          userId,
-          endpoint: validatedData.endpoint,
-          deletedAt: null,
-        }),
-      },
-      update: {
-        p256dh: validatedData.keys.p256dh,
-        auth: validatedData.keys.auth,
-        userAgent,
-        updatedAt: new Date(),
-      },
-      create: {
         userId,
         endpoint: validatedData.endpoint,
-        p256dh: validatedData.keys.p256dh,
-        auth: validatedData.keys.auth,
-        userAgent,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        deletedAt: null,
       },
     })
+
+    if (existing) {
+      await prisma.pushSubscription.update({
+        where: { id: existing.id },
+        data: {
+          p256dh: validatedData.keys.p256dh,
+          auth: validatedData.keys.auth,
+          userAgent,
+          updatedAt: now,
+        },
+      })
+    } else {
+      await prisma.pushSubscription.create({
+        data: {
+          userId,
+          endpoint: validatedData.endpoint,
+          p256dh: validatedData.keys.p256dh,
+          auth: validatedData.keys.auth,
+          userAgent,
+          createdAt: now,
+          updatedAt: now,
+        },
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
