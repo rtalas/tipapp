@@ -10,6 +10,16 @@ import { getLeagueRankingsAtTime } from '@/lib/scorer-ranking-utils'
 import { AppError } from '@/lib/error-handler'
 import type { ScorerRankedConfig } from '@/lib/evaluators/types'
 
+/**
+ * Exclusion rules: if any listed evaluator awarded points, this evaluator is skipped.
+ * e.g. score_difference is excluded when exact_score already awarded.
+ */
+const MATCH_EXCLUSIONS: Record<string, string[]> = {
+  score_difference: ['exact_score'],
+  one_team_score: ['exact_score', 'score_difference'],
+  draw: ['exact_score'],
+}
+
 interface EvaluateMatchOptions {
   matchId: number
   leagueMatchId: number
@@ -117,7 +127,9 @@ async function evaluateMatch(
     let totalPoints = 0
     const evaluatorResults = []
 
-    // Run each evaluator
+    // First pass: evaluate all evaluators independently
+    const rawResults: Array<{ name: string; points: number }> = []
+
     for (const evaluator of evaluators) {
       const evaluatorFn = getMatchEvaluator(evaluator.EvaluatorType.name)
 
@@ -130,25 +142,29 @@ async function evaluateMatch(
 
       let points = 0
 
-      // Handle scorer evaluator (supports both simple and rank-based modes)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const config = (evaluator as any).config
-      if (evaluator.EvaluatorType.name === 'scorer' && config) {
-        // Rank-based mode: config exists, call evaluateScorer directly with config
-        const scorerConfig = config as unknown as ScorerRankedConfig
+      // Scorer evaluator supports rank-based mode when config is present
+      if (evaluator.EvaluatorType.name === 'scorer' && evaluator.config) {
+        const scorerConfig = evaluator.config as unknown as ScorerRankedConfig
         points = evaluateScorer(context, scorerConfig) as number
-      }
-      // All other evaluators (including scorer without config)
-      else {
-        const awarded = evaluatorFn(context) as unknown as boolean
-        points = awarded ? evaluator.points : 0
+      } else {
+        const result = evaluatorFn(context)
+        points = result ? evaluator.points : 0
       }
 
-      // Apply isDoubled multiplier per evaluator if configured
+      rawResults.push({ name: evaluator.EvaluatorType.name, points })
+    }
+
+    // Second pass: apply exclusion rules and compute final points
+    const awardedNames = new Set(rawResults.filter((r) => r.points > 0).map((r) => r.name))
+
+    for (const raw of rawResults) {
+      const excludedBy = MATCH_EXCLUSIONS[raw.name]
+      const excluded = excludedBy?.some((e) => awardedNames.has(e)) ?? false
+      const points = excluded ? 0 : raw.points
       const finalPoints = leagueMatch.isDoubled ? points * 2 : points
 
       evaluatorResults.push({
-        evaluatorName: evaluator.EvaluatorType.name,
+        evaluatorName: raw.name,
         awarded: points > 0,
         points: finalPoints,
       })

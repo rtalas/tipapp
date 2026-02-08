@@ -1,19 +1,13 @@
-import type { MatchBetContext } from "./types";
-import { evaluateExactScore } from "./exact-score";
+import { type MatchBetContext, hasRegularScores } from "./types";
 
 /**
  * DRAW: Awards points if match ends in draw and prediction was also a draw
- * Only for soccer, only if exact_score is false
+ * Exclusion from exact_score is handled by the match-evaluator orchestrator.
  */
 export function evaluateDraw(context: MatchBetContext): boolean {
   const { prediction, actual } = context;
 
-  if (actual.homeRegularScore === null || actual.awayRegularScore === null) {
-    return false;
-  }
-
-  // Don't award if exact score already matched
-  if (evaluateExactScore(context)) {
+  if (!hasRegularScores(actual)) {
     return false;
   }
 

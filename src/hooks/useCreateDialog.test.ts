@@ -100,15 +100,23 @@ describe('useCreateDialog', () => {
     expect(result.current.isCreating).toBe(false)
   })
 
-  it('should allow direct setOpen and setForm', () => {
+  it('should close and reset state via onOpenChange(false)', () => {
     const { result } = renderHook(() => useCreateDialog(emptyForm))
 
     act(() => {
-      result.current.setOpen(true)
-      result.current.setForm({ name: 'Direct', category: 'Test' })
+      result.current.openDialog()
+      result.current.updateForm({ name: 'Modified' })
+      result.current.startCreating()
     })
 
     expect(result.current.open).toBe(true)
-    expect(result.current.form).toEqual({ name: 'Direct', category: 'Test' })
+
+    act(() => {
+      result.current.onOpenChange(false)
+    })
+
+    expect(result.current.open).toBe(false)
+    expect(result.current.form).toEqual(emptyForm)
+    expect(result.current.isCreating).toBe(false)
   })
 })

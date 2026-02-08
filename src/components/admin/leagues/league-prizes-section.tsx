@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { PrizeTierRow } from './prize-tier-row'
 import type { PrizeTier } from '@/lib/validation/admin'
+import { MAX_PRIZE_TIERS } from '@/lib/constants'
 
 interface LeaguePrizesSectionProps {
   prizes: PrizeTier[]
@@ -18,14 +19,14 @@ export function LeaguePrizesSection({ prizes, onChange }: LeaguePrizesSectionPro
 
   // Add a new prize tier with next available rank
   const handleAddPrize = () => {
-    if (prizes.length >= 10) {
+    if (prizes.length >= MAX_PRIZE_TIERS) {
       return // Maximum 10 prize tiers
     }
 
     // Find next available rank (1-10)
     const usedRanks = new Set(prizes.map(p => p.rank))
     let nextRank = 1
-    while (usedRanks.has(nextRank) && nextRank <= 10) {
+    while (usedRanks.has(nextRank) && nextRank <= MAX_PRIZE_TIERS) {
       nextRank++
     }
 
@@ -124,12 +125,12 @@ export function LeaguePrizesSection({ prizes, onChange }: LeaguePrizesSectionPro
         variant="outline"
         size="sm"
         onClick={handleAddPrize}
-        disabled={prizes.length >= 10}
+        disabled={prizes.length >= MAX_PRIZE_TIERS}
         className="w-full"
       >
         <Plus className="h-4 w-4 mr-2" />
         {t('addTier')}
-        {prizes.length >= 10 && t('maximumReached')}
+        {prizes.length >= MAX_PRIZE_TIERS && t('maximumReached')}
       </Button>
 
       {/* Validation message */}

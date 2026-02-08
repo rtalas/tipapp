@@ -312,7 +312,7 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
       {/* Delete Confirmation Dialog */}
       <DeleteEntityDialog
         open={deleteDialog.open}
-        onOpenChange={deleteDialog.setOpen}
+        onOpenChange={deleteDialog.onOpenChange}
         title={t('deleteTitle')}
         description={deleteDialog.itemToDelete ? t('deleteConfirm', { name: deleteDialog.itemToDelete.name }) : ''}
         warningMessage={
@@ -327,7 +327,7 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
       {/* Create Team Dialog */}
       <CreateTeamDialog
         open={createDialog.open}
-        onOpenChange={createDialog.setOpen}
+        onOpenChange={createDialog.onOpenChange}
         formData={createDialog.form}
         onFormChange={createDialog.updateForm}
         onCreate={handleCreateTeam}

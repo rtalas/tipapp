@@ -319,7 +319,7 @@ export function PlayersContent({ players }: PlayersContentProps) {
       {/* Delete Confirmation Dialog */}
       <DeleteEntityDialog
         open={deleteDialog.open}
-        onOpenChange={deleteDialog.setOpen}
+        onOpenChange={deleteDialog.onOpenChange}
         title={t('deleteTitle')}
         description={deleteDialog.itemToDelete ? t('deleteConfirm', { name: getPlayerName(deleteDialog.itemToDelete) }) : ''}
         onConfirm={handleDelete}
@@ -329,7 +329,7 @@ export function PlayersContent({ players }: PlayersContentProps) {
       {/* Create Player Dialog */}
       <CreatePlayerDialog
         open={createDialog.open}
-        onOpenChange={createDialog.setOpen}
+        onOpenChange={createDialog.onOpenChange}
         formData={createDialog.form}
         onFormChange={createDialog.updateForm}
         onCreate={handleCreatePlayer}

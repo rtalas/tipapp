@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MAX_PRIZE_TIERS } from '@/lib/constants'
 
 // Delete by ID schema (used for delete operations)
 export const deleteByIdSchema = z.object({
@@ -505,6 +506,7 @@ export const getMessagesSchema = z.object({
   leagueId: z.number().int().positive('League ID is required'),
   limit: z.number().int().min(1).max(100).default(50),
   before: z.date().optional(),
+  after: z.date().optional(),
 })
 
 export type GetMessagesInput = z.infer<typeof getMessagesSchema>
@@ -526,7 +528,7 @@ export type UpdateLeagueChatSettingsInput = z.infer<typeof updateLeagueChatSetti
 
 // League prize validation schemas
 const prizeTierSchema = z.object({
-  rank: z.number().int().min(1, 'Rank must be at least 1').max(10, 'Maximum 10 prize tiers allowed'),
+  rank: z.number().int().min(1, 'Rank must be at least 1').max(MAX_PRIZE_TIERS, `Maximum ${MAX_PRIZE_TIERS} prize tiers allowed`),
   amount: z.number().int().min(0, 'Amount cannot be negative'),
   currency: z.string().length(3, 'Currency must be 3 characters').default('CZK'),
   label: z.string().max(100, 'Label must not exceed 100 characters').optional(),
@@ -535,8 +537,8 @@ const prizeTierSchema = z.object({
 
 export const updateLeaguePrizesSchema = z.object({
   leagueId: z.number().int().positive('League ID is required'),
-  prizes: z.array(prizeTierSchema).max(10, 'Maximum 10 prize tiers allowed').default([]),
-  fines: z.array(prizeTierSchema).max(10, 'Maximum 10 fine tiers allowed').default([]),
+  prizes: z.array(prizeTierSchema).max(MAX_PRIZE_TIERS, `Maximum ${MAX_PRIZE_TIERS} prize tiers allowed`).default([]),
+  fines: z.array(prizeTierSchema).max(MAX_PRIZE_TIERS, `Maximum ${MAX_PRIZE_TIERS} fine tiers allowed`).default([]),
 }).refine((data) => {
   // Ensure unique ranks within prizes
   const prizeRanks = data.prizes.map(p => p.rank)

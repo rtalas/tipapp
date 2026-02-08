@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildUserPicksWhere } from '@/lib/query-builders'
 import { AppError } from '@/lib/error-handler'
+import { validateScorerExclusivity, validateScorerBelongsToTeam } from '@/lib/bet-utils'
 import {
   createUserBetSchema,
   updateUserBetSchema,
@@ -134,28 +135,12 @@ export async function createUserBet(input: CreateUserBetInput) {
             throw new AppError('User already has a bet for this match', 'CONFLICT', 409)
           }
 
-          // Verify scorer belongs to one of the teams if provided
+          validateScorerExclusivity(validated.scorerId, validated.noScorer)
+
           if (validated.scorerId) {
-            const scorer = await tx.leaguePlayer.findUnique({
-              where: { id: validated.scorerId, deletedAt: null },
-            })
-
-            if (!scorer) {
-              throw new AppError('Scorer not found', 'NOT_FOUND', 404)
-            }
-
-            const isValidScorer =
-              scorer.leagueTeamId === leagueMatch.Match.homeTeamId ||
-              scorer.leagueTeamId === leagueMatch.Match.awayTeamId
-
-            if (!isValidScorer) {
-              throw new AppError('Scorer must belong to one of the teams playing', 'BAD_REQUEST', 400)
-            }
-          }
-
-          // Validate mutual exclusivity between scorerId and noScorer
-          if (validated.noScorer === true && validated.scorerId !== undefined) {
-            throw new AppError('Cannot set both scorer and no scorer', 'BAD_REQUEST', 400)
+            await validateScorerBelongsToTeam(
+              validated.scorerId, leagueMatch.Match.homeTeamId, leagueMatch.Match.awayTeamId, tx
+            )
           }
 
           const now = new Date()
@@ -215,28 +200,12 @@ export async function updateUserBet(input: UpdateUserBetInput) {
         )
       }
 
-      // Validate mutual exclusivity between scorerId and noScorer
-      if (validated.noScorer === true && validated.scorerId !== undefined) {
-        throw new AppError('Cannot set both scorer and no scorer', 'BAD_REQUEST', 400)
-      }
+      validateScorerExclusivity(validated.scorerId, validated.noScorer)
 
-      // Verify scorer belongs to one of the teams if provided
       if (validated.scorerId) {
-        const scorer = await prisma.leaguePlayer.findUnique({
-          where: { id: validated.scorerId, deletedAt: null },
-        })
-
-        if (!scorer) {
-          throw new AppError('Scorer not found', 'NOT_FOUND', 404)
-        }
-
-        const isValidScorer =
-          scorer.leagueTeamId === bet.LeagueMatch.Match.homeTeamId ||
-          scorer.leagueTeamId === bet.LeagueMatch.Match.awayTeamId
-
-        if (!isValidScorer) {
-          throw new AppError('Scorer must belong to one of the teams playing', 'BAD_REQUEST', 400)
-        }
+        await validateScorerBelongsToTeam(
+          validated.scorerId, bet.LeagueMatch.Match.homeTeamId, bet.LeagueMatch.Match.awayTeamId
+        )
       }
 
       await prisma.userBet.update({

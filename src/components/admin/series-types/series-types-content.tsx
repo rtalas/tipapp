@@ -293,7 +293,7 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog.open} onOpenChange={deleteDialog.setOpen}>
+      <Dialog open={deleteDialog.open} onOpenChange={deleteDialog.onOpenChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('dialog.deleteTitle')}</DialogTitle>
@@ -322,7 +322,7 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
       </Dialog>
 
       {/* Create Series Type Dialog */}
-      <Dialog open={createDialog.open} onOpenChange={createDialog.setOpen}>
+      <Dialog open={createDialog.open} onOpenChange={createDialog.onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('dialog.createTitle')}</DialogTitle>

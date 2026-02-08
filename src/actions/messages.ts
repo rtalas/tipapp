@@ -85,11 +85,15 @@ export async function getMessages(input: GetMessagesInput) {
         throw new AppError('You are not a member of this league or chat is disabled', 'FORBIDDEN', 403)
       }
 
+      const createdAtFilter: Record<string, Date> = {}
+      if (validated.before) createdAtFilter.lt = validated.before
+      if (validated.after) createdAtFilter.gt = validated.after
+
       const messages = await prisma.message.findMany({
         where: {
           leagueId: validated.leagueId,
           deletedAt: null,
-          ...(validated.before && { createdAt: { lt: validated.before } }),
+          ...(Object.keys(createdAtFilter).length > 0 && { createdAt: createdAtFilter }),
         },
         include: {
           LeagueUser: {

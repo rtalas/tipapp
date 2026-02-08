@@ -86,15 +86,22 @@ describe('useDeleteDialog', () => {
     expect(result.current.itemToDelete).toEqual({ id: 1, name: 'Team A' })
   })
 
-  it('should allow direct setOpen and setItemToDelete', () => {
+  it('should close and reset state via onOpenChange(false)', () => {
     const { result } = renderHook(() => useDeleteDialog<TestItem>())
 
     act(() => {
-      result.current.setOpen(true)
-      result.current.setItemToDelete({ id: 99, name: 'Direct' })
+      result.current.openDialog({ id: 99, name: 'Test' })
+      result.current.startDeleting()
     })
 
     expect(result.current.open).toBe(true)
-    expect(result.current.itemToDelete).toEqual({ id: 99, name: 'Direct' })
+
+    act(() => {
+      result.current.onOpenChange(false)
+    })
+
+    expect(result.current.open).toBe(false)
+    expect(result.current.itemToDelete).toBeNull()
+    expect(result.current.isDeleting).toBe(false)
   })
 })

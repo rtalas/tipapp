@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { AppError } from '@/lib/error-handler'
 
@@ -39,15 +39,20 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     }
   }, [urlLeagueId])
 
-  const setSelectedLeagueId = (leagueId: string | null) => {
+  const setSelectedLeagueId = useCallback((leagueId: string | null) => {
     if (typeof window !== 'undefined' && leagueId) {
       localStorage.setItem('tipapp_selected_league_id', leagueId)
     }
     setManuallySelectedLeagueId(leagueId)
-  }
+  }, [])
+
+  const value = useMemo(
+    () => ({ selectedLeagueId, setSelectedLeagueId }),
+    [selectedLeagueId, setSelectedLeagueId]
+  )
 
   return (
-    <LeagueContext.Provider value={{ selectedLeagueId, setSelectedLeagueId }}>
+    <LeagueContext.Provider value={value}>
       {children}
     </LeagueContext.Provider>
   )

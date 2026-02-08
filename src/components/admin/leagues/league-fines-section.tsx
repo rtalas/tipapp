@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { FineTierRow } from './fine-tier-row'
 import type { PrizeTier } from '@/lib/validation/admin'
+import { MAX_PRIZE_TIERS } from '@/lib/constants'
 
 interface LeagueFinesSectionProps {
   fines: PrizeTier[]
@@ -18,14 +19,14 @@ export function LeagueFinesSection({ fines, onChange }: LeagueFinesSectionProps)
 
   // Add a new fine tier with next available rank
   const handleAddFine = () => {
-    if (fines.length >= 10) {
+    if (fines.length >= MAX_PRIZE_TIERS) {
       return // Maximum 10 fine tiers
     }
 
     // Find next available rank (1-10)
     const usedRanks = new Set(fines.map(f => f.rank))
     let nextRank = 1
-    while (usedRanks.has(nextRank) && nextRank <= 10) {
+    while (usedRanks.has(nextRank) && nextRank <= MAX_PRIZE_TIERS) {
       nextRank++
     }
 
@@ -133,12 +134,12 @@ export function LeagueFinesSection({ fines, onChange }: LeagueFinesSectionProps)
         variant="outline"
         size="sm"
         onClick={handleAddFine}
-        disabled={fines.length >= 10}
+        disabled={fines.length >= MAX_PRIZE_TIERS}
         className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
       >
         <Plus className="h-4 w-4 mr-2" />
         {t('addTier')}
-        {fines.length >= 10 && t('maximumReached')}
+        {fines.length >= MAX_PRIZE_TIERS && t('maximumReached')}
       </Button>
 
       {/* Validation message */}

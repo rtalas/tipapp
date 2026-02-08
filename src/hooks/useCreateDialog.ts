@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 
 /**
  * Hook for managing create dialog state
@@ -12,43 +12,47 @@ export function useCreateDialog<T = unknown>(initialData: T) {
   const [form, setForm] = useState<T>(initialData)
   const [isCreating, setIsCreating] = useState(false)
 
-  const openDialog = useCallback(() => {
+  const openDialog = () => {
     setForm(initialData)
     setOpen(true)
-  }, [initialData])
+  }
 
-  const closeDialog = useCallback(() => {
+  const closeDialog = () => {
     setOpen(false)
     setForm(initialData)
     setIsCreating(false)
-  }, [initialData])
+  }
 
-  const updateForm = useCallback((updates: Partial<T>) => {
+  /** For Dialog onOpenChange — delegates to openDialog/closeDialog for proper cleanup */
+  const onOpenChange = (value: boolean) => {
+    if (!value) closeDialog()
+  }
+
+  const updateForm = (updates: Partial<T>) => {
     setForm((prev) => Object.assign({}, prev, updates))
-  }, [])
+  }
 
-  const startCreating = useCallback(() => {
+  const startCreating = () => {
     setIsCreating(true)
-  }, [])
+  }
 
-  const finishCreating = useCallback(() => {
+  const finishCreating = () => {
     setIsCreating(false)
     closeDialog()
-  }, [closeDialog])
+  }
 
-  const cancelCreating = useCallback(() => {
+  const cancelCreating = () => {
     setIsCreating(false)
     closeDialog()
-  }, [closeDialog])
+  }
 
   return {
     open,
-    setOpen,
     form,
-    setForm,
     isCreating,
     openDialog,
     closeDialog,
+    onOpenChange,
     updateForm,
     startCreating,
     finishCreating,

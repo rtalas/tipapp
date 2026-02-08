@@ -37,24 +37,6 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * Escape plain text to prevent injection attacks
- * @param text Text to escape
- * @returns Escaped text
- */
-function escapeText(text: string): string {
-  return text.replace(/[&<>"']/g, (char) => {
-    const map: Record<string, string> = {
-      '&': '&',
-      '<': '<',
-      '>': '>',
-      '"': '"',
-      "'": "'",
-    }
-    return map[char]
-  })
-}
-
-/**
  * Generate the HTML template for password reset email
  * All user inputs are escaped to prevent email injection attacks
  */
@@ -183,18 +165,18 @@ function generateResetEmailPlainText(resetUrl: string, username: string): string
   return `
 Reset Your Password
 
-Hello ${escapeText(username)},
+Hello ${username},
 
-We received a request to reset your password for your ${escapeText(APP_NAME)} account. Visit the link below to set a new password:
+We received a request to reset your password for your ${APP_NAME} account. Visit the link below to set a new password:
 
-${escapeText(resetUrl)}
+${resetUrl}
 
 Security Note:
 This password reset link is valid for 1 hour. After that, you'll need to request a new reset.
 
 If you didn't request a password reset, you can ignore this email. Your account is still secure.
 
-© ${new Date().getFullYear()} ${escapeText(APP_NAME)}. All rights reserved.
+© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.
 This is an automated email, please do not reply.
   `.trim();
 }
@@ -356,19 +338,19 @@ function generateRegistrationEmailPlainText(username: string, firstName: string)
   const loginUrl = `${APP_URL}/login`;
 
   return `
-Welcome to ${escapeText(APP_NAME)}!
+Welcome to ${APP_NAME}!
 
-Hello ${escapeText(firstName)},
+Hello ${firstName},
 
 Your account has been created successfully. You can now start making predictions and compete with your friends!
 
-Your Username: ${escapeText(username)}
+Your Username: ${username}
 
-Sign in at: ${escapeText(loginUrl)}
+Sign in at: ${loginUrl}
 
 Happy betting!
 
-© ${new Date().getFullYear()} ${escapeText(APP_NAME)}. All rights reserved.
+© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.
 This is an automated email, please do not reply.
   `.trim();
 }

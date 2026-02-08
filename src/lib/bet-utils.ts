@@ -9,6 +9,44 @@ export type TransactionClient = Omit<
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
 >
 
+// ==================== Scorer Validation ====================
+
+/**
+ * Validate mutual exclusivity between scorerId and noScorer.
+ * Throws if both are set simultaneously.
+ */
+export function validateScorerExclusivity(
+  scorerId: number | null | undefined,
+  noScorer: boolean | null | undefined
+): void {
+  if (noScorer === true && scorerId != null) {
+    throw new AppError('Cannot set both scorer and no scorer', 'VALIDATION_ERROR', 400)
+  }
+}
+
+/**
+ * Validate that a scorer belongs to one of the teams in the match.
+ * Throws if scorer is not found or doesn't belong to either team.
+ */
+export async function validateScorerBelongsToTeam(
+  scorerId: number,
+  homeTeamId: number,
+  awayTeamId: number,
+  db: TransactionClient | typeof prisma = prisma
+): Promise<void> {
+  const scorer = await db.leaguePlayer.findUnique({
+    where: { id: scorerId, deletedAt: null },
+  })
+
+  if (!scorer) {
+    throw new AppError('Scorer not found', 'NOT_FOUND', 404)
+  }
+
+  if (scorer.leagueTeamId !== homeTeamId && scorer.leagueTeamId !== awayTeamId) {
+    throw new AppError('Scorer must belong to one of the teams playing', 'VALIDATION_ERROR', 400)
+  }
+}
+
 // ==================== saveUserBet ====================
 
 interface SaveUserBetConfig<TValidated> {

@@ -360,6 +360,7 @@
       "noLeaguesAvailable": "Žádné dostupné ligy",
       "join": "Připojit se",
       "selectLeagueDescription": "Vyberte ligu k zobrazení",
+      "selectLeague": "Vybrat ligu",
       "leagueInfo": "Info o lize",
       "leagueInfoDescription": "Informace o lize",
       "joinedLeague": "Přidáno do ligy {leagueName}!",
@@ -592,6 +593,39 @@
         "doublePoints": "Dvojité body",
         "evaluated": "Vyhodnoceno",
         "saveResult": "Uložit výsledek"
+      },
+      "addDialog": {
+        "title": "Vytvořit zápas",
+        "description": "Přidat nový zápas do ligy. Vyberte týmy a naplánujte čas.",
+        "creating": "Vytvářím...",
+        "submit": "Vytvořit zápas",
+        "success": "Zápas úspěšně vytvořen",
+        "failed": "Nepodařilo se vytvořit zápas"
+      },
+      "editDialog": {
+        "title": "Upravit zápas",
+        "description": "Upravit detaily zápasu {teams}",
+        "updating": "Ukládám...",
+        "submit": "Uložit zápas",
+        "success": "Zápas úspěšně aktualizován",
+        "failed": "Nepodařilo se aktualizovat zápas"
+      },
+      "form": {
+        "requiredFields": "Prosím vyplňte všechna povinná pole",
+        "league": "Liga",
+        "selectLeague": "Vybrat ligu",
+        "homeTeam": "Domácí tým",
+        "awayTeam": "Hostující tým",
+        "selectTeam": "Vybrat tým",
+        "dateTimeUtc": "Datum a čas (UTC)",
+        "dateTimeHint": "Zadejte čas zápasu v UTC. Zobrazí se v místním časovém pásmu.",
+        "playoffGame": "Playoff zápas",
+        "doublePoints": "Dvojité body",
+        "matchPhase": "Fáze turnaje (Volitelné)",
+        "phasePlaceholder": "Žádná",
+        "bestOf": "(Best of {count})",
+        "single": "(Jednorázový)",
+        "gameNumber": "Číslo zápasu"
       }
     },
     "players": {
@@ -1168,7 +1202,10 @@
         "pointsInvalid": "Body musí být platné číslo",
         "rankConfigRequired": "Prosím nakonfigurujte body pro hodnocené a nehodnocené hráče",
         "invalidUnrankedPoints": "Neplatná hodnota bodů pro nehodnocené hráče",
-        "atLeastOneRank": "Je vyžadována alespoň jedna úroveň hodnocení"
+        "atLeastOneRank": "Je vyžadována alespoň jedna úroveň hodnocení",
+        "groupStageRequired": "Body za výhru a postup jsou povinné pro hodnotitele skupinové fáze",
+        "pointsMustBeNumbers": "Body musí být platná čísla",
+        "winnerMustBeGreater": "Body za výhru musí být vyšší než body za postup"
       },
       "toast": {
         "updated": "Hodnotitel aktualizován",
@@ -1209,7 +1246,19 @@
         "unrankedPointsPlaceholder": "Body pro nehodnocené střelce",
         "addRank": "Přidat umístění",
         "rankPlaceholder": "Umístění",
-        "pointsPlaceholder": "Body"
+        "pointsPlaceholder": "Body",
+        "pointsConfiguredBelow": "Body se konfigurují níže zvlášť pro výhru a postup",
+        "groupStageConfig": "Konfigurace bodů skupinové fáze",
+        "groupStageConfigDesc": "Nastavte odstupňované bodování pro predikce skupinové fáze",
+        "winnerPoints": "Body za výhru (pokud tipovaný tým vyhraje skupinu)",
+        "advancePoints": "Body za postup (pokud tým postoupí, ale nevyhraje)",
+        "groupStageExample": "Příklad: Body za výhru = 10, Body za postup = 5",
+        "groupStageWinnerEx": "Uživatel tipuje Tým A, Tým A vyhraje skupinu → 10 b",
+        "groupStageAdvanceEx": "Uživatel tipuje Tým B, Tým B postoupí (2./3.) → 5 b",
+        "groupStageNoAdvanceEx": "Uživatel tipuje Tým C, Tým C nepostoupí → 0 b",
+        "positionFilter": "Filtr pozic (Volitelné)",
+        "positionFilterDesc": "Vyberte pozice pro filtrování hráčů dostupných pro tuto sázku",
+        "noPositionsSelected": "Žádné pozice nevybrány - pro tuto sázku budou dostupní všichni hráči"
       }
     },
     "sidebar": {

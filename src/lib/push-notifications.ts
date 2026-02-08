@@ -143,6 +143,37 @@ export async function findUsersNeedingNotification(): Promise<UserNeedingNotific
     },
   })
 
+  // Batch-fetch all active league users for all relevant leagues (single query)
+  const leagueIds = [...new Set(upcomingMatches.map((m) => m.leagueId))]
+  const allLeagueUsers = await prisma.leagueUser.findMany({
+    where: {
+      leagueId: { in: leagueIds },
+      deletedAt: null,
+      active: true,
+      User: {
+        deletedAt: null,
+        notifyHours: { gt: 0 },
+      },
+    },
+    include: {
+      User: {
+        include: {
+          PushSubscription: {
+            where: { deletedAt: null },
+          },
+        },
+      },
+    },
+  })
+
+  // Group league users by leagueId for O(1) lookup
+  const leagueUsersByLeagueId = new Map<number, typeof allLeagueUsers>()
+  for (const lu of allLeagueUsers) {
+    const list = leagueUsersByLeagueId.get(lu.leagueId) || []
+    list.push(lu)
+    leagueUsersByLeagueId.set(lu.leagueId, list)
+  }
+
   const usersToNotify: UserNeedingNotification[] = []
 
   for (const leagueMatch of upcomingMatches) {
@@ -153,27 +184,7 @@ export async function findUsersNeedingNotification(): Promise<UserNeedingNotific
     const usersWithBetIds = new Set(leagueMatch.UserBet.map((bet) => bet.leagueUserId))
     const notifiedUserIds = new Set(leagueMatch.SentNotification.map((sn) => sn.userId))
 
-    // Get all active league users
-    const leagueUsers = await prisma.leagueUser.findMany({
-      where: {
-        leagueId: leagueMatch.leagueId,
-        deletedAt: null,
-        active: true,
-        User: {
-          deletedAt: null,
-          notifyHours: { gt: 0 },
-        },
-      },
-      include: {
-        User: {
-          include: {
-            PushSubscription: {
-              where: { deletedAt: null },
-            },
-          },
-        },
-      },
-    })
+    const leagueUsers = leagueUsersByLeagueId.get(leagueMatch.leagueId) || []
 
     for (const leagueUser of leagueUsers) {
       // Skip if user already placed a bet

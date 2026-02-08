@@ -15,6 +15,7 @@ import { LeagueSelectionDialog } from './league-selection-dialog'
 import { UserMenuDropdown } from './user-menu-dropdown'
 import { LanguageSwitcher } from './language-switcher'
 import { DemoBanner } from '@/components/demo-banner'
+import { SPORT_IDS } from '@/lib/constants'
 
 interface HeaderProps {
   user: {
@@ -42,9 +43,9 @@ interface HeaderProps {
 // Helper to get sport emoji
 function getSportEmoji(sportId?: number): string {
   switch (sportId) {
-    case 1: // HOCKEY
+    case SPORT_IDS.HOCKEY:
       return '🏒'
-    case 2: // FOOTBALL
+    case SPORT_IDS.FOOTBALL:
       return '⚽'
     default:
       return '🏆'
@@ -71,6 +72,7 @@ export function Header({ user, currentLeague, locale }: HeaderProps) {
             <button
               onClick={() => setShowLeagueDialog(true)}
               className="flex items-center gap-2 rounded-xl px-3 py-2 transition-colors hover:bg-secondary/50 active:bg-secondary"
+              aria-label={t('selectLeague')}
             >
               <span className="text-lg">
                 {getSportEmoji(currentLeague.sport?.id)}

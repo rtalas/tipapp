@@ -360,6 +360,7 @@
       "noLeaguesAvailable": "No leagues available",
       "join": "Join",
       "selectLeagueDescription": "Select a league to view",
+      "selectLeague": "Select league",
       "leagueInfo": "League Info",
       "leagueInfoDescription": "Information about the league",
       "joinedLeague": "Joined {leagueName}!",
@@ -592,6 +593,39 @@
         "doublePoints": "Double Points",
         "evaluated": "Evaluated",
         "saveResult": "Save Result"
+      },
+      "addDialog": {
+        "title": "Create Match",
+        "description": "Add a new match to a league. Select the teams and schedule.",
+        "creating": "Creating...",
+        "submit": "Create Match",
+        "success": "Match created successfully",
+        "failed": "Failed to create match"
+      },
+      "editDialog": {
+        "title": "Edit Match",
+        "description": "Update match details for {teams}",
+        "updating": "Updating...",
+        "submit": "Update Match",
+        "success": "Match updated successfully",
+        "failed": "Failed to update match"
+      },
+      "form": {
+        "requiredFields": "Please fill in all required fields",
+        "league": "League",
+        "selectLeague": "Select a league",
+        "homeTeam": "Home Team",
+        "awayTeam": "Away Team",
+        "selectTeam": "Select team",
+        "dateTimeUtc": "Date & Time (UTC)",
+        "dateTimeHint": "Enter the match time in UTC. It will be displayed in local timezone.",
+        "playoffGame": "Playoff Game",
+        "doublePoints": "Double Points",
+        "matchPhase": "Match Phase (Optional)",
+        "phasePlaceholder": "None",
+        "bestOf": "(Best of {count})",
+        "single": "(Single)",
+        "gameNumber": "Game Number"
       }
     },
     "players": {
@@ -1168,7 +1202,10 @@
         "pointsInvalid": "Points must be a valid number",
         "rankConfigRequired": "Please configure rank points and unranked points",
         "invalidUnrankedPoints": "Invalid unranked points value",
-        "atLeastOneRank": "At least one ranking level is required"
+        "atLeastOneRank": "At least one ranking level is required",
+        "groupStageRequired": "Winner points and advance points are required for group stage evaluator",
+        "pointsMustBeNumbers": "Points must be valid numbers",
+        "winnerMustBeGreater": "Winner points must be greater than advance points"
       },
       "toast": {
         "updated": "Evaluator updated",
@@ -1209,7 +1246,19 @@
         "unrankedPointsPlaceholder": "Points for unranked scorers",
         "addRank": "Add Rank",
         "rankPlaceholder": "Rank",
-        "pointsPlaceholder": "Points"
+        "pointsPlaceholder": "Points",
+        "pointsConfiguredBelow": "Points are configured separately for winner and advance below",
+        "groupStageConfig": "Group Stage Points Configuration",
+        "groupStageConfigDesc": "Configure tiered scoring for group stage predictions",
+        "winnerPoints": "Winner Points (if predicted team wins group)",
+        "advancePoints": "Advance Points (if team advances but doesn't win)",
+        "groupStageExample": "Example: Winner points = 10, Advance points = 5",
+        "groupStageWinnerEx": "User predicts Team A, Team A wins group → 10 pts",
+        "groupStageAdvanceEx": "User predicts Team B, Team B advances (2nd/3rd) → 5 pts",
+        "groupStageNoAdvanceEx": "User predicts Team C, Team C doesn't advance → 0 pts",
+        "positionFilter": "Position Filter (Optional)",
+        "positionFilterDesc": "Select positions to filter which players can be selected for this bet",
+        "noPositionsSelected": "No positions selected - all players will be available for this bet"
       }
     },
     "sidebar": {

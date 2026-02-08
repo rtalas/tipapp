@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { createMatch } from '@/actions/matches'
 import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
@@ -60,6 +61,9 @@ interface AddMatchDialogProps {
 }
 
 export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: AddMatchDialogProps) {
+  const t = useTranslations('admin.matches')
+  const tCommon = useTranslations('admin.common')
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>(league?.id.toString() || '')
   const [selectedHomeTeamId, setSelectedHomeTeamId] = useState<string>('')
@@ -90,7 +94,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
     e.preventDefault()
 
     if (!effectiveLeagueId || !selectedHomeTeamId || !selectedAwayTeamId || !dateTime) {
-      toast.error('Please fill in all required fields')
+      toast.error(t('form.requiredFields'))
       return
     }
 
@@ -108,14 +112,14 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
         gameNumber: gameNumber ? parseInt(gameNumber, 10) : null,
       })
 
-      toast.success('Match created successfully')
+      toast.success(t('addDialog.success'))
       onOpenChange(false)
       resetForm()
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error('Failed to create match')
+        toast.error(t('addDialog.failed'))
       }
       logger.error('Failed to create match', { error, leagueId: effectiveLeagueId })
     } finally {
@@ -148,19 +152,19 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create Match</DialogTitle>
+          <DialogTitle>{t('addDialog.title')}</DialogTitle>
           <DialogDescription>
-            Add a new match to a league. Select the teams and schedule.
+            {t('addDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!league && (
             <div className="space-y-2">
-              <Label htmlFor="league">League</Label>
+              <Label htmlFor="league">{t('form.league')}</Label>
               <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a league" />
+                  <SelectValue placeholder={t('form.selectLeague')} />
                 </SelectTrigger>
                 <SelectContent>
                   {leagues.map((league) => (
@@ -175,14 +179,14 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="homeTeam">Home Team</Label>
+              <Label htmlFor="homeTeam">{t('form.homeTeam')}</Label>
               <Select
                 value={selectedHomeTeamId}
                 onValueChange={setSelectedHomeTeamId}
                 disabled={!effectiveLeagueId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select team" />
+                  <SelectValue placeholder={t('form.selectTeam')} />
                 </SelectTrigger>
                 <SelectContent>
                   {homeTeamOptions.map((lt) => (
@@ -203,14 +207,14 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="awayTeam">Away Team</Label>
+              <Label htmlFor="awayTeam">{t('form.awayTeam')}</Label>
               <Select
                 value={selectedAwayTeamId}
                 onValueChange={setSelectedAwayTeamId}
                 disabled={!effectiveLeagueId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select team" />
+                  <SelectValue placeholder={t('form.selectTeam')} />
                 </SelectTrigger>
                 <SelectContent>
                   {awayTeamOptions.map((lt) => (
@@ -232,7 +236,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="dateTime">Date & Time (UTC)</Label>
+            <Label htmlFor="dateTime">{t('form.dateTimeUtc')}</Label>
             <Input
               id="dateTime"
               type="datetime-local"
@@ -241,7 +245,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
               required
             />
             <p className="text-xs text-muted-foreground">
-              Enter the match time in UTC. It will be displayed in local timezone.
+              {t('form.dateTimeHint')}
             </p>
           </div>
 
@@ -253,7 +257,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
                 onCheckedChange={(checked) => setIsPlayoffGame(checked === true)}
               />
               <Label htmlFor="isPlayoffGame" className="text-sm font-normal">
-                Playoff Game
+                {t('form.playoffGame')}
               </Label>
             </div>
 
@@ -264,21 +268,21 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
                 onCheckedChange={(checked) => setIsDoubled(checked === true)}
               />
               <Label htmlFor="isDoubled" className="text-sm font-normal">
-                Double Points
+                {t('form.doublePoints')}
               </Label>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="matchPhase">Match Phase (Optional)</Label>
+            <Label htmlFor="matchPhase">{t('form.matchPhase')}</Label>
             <Select value={selectedPhaseId || undefined} onValueChange={(value) => setSelectedPhaseId(value || '')}>
               <SelectTrigger>
-                <SelectValue placeholder="None" />
+                <SelectValue placeholder={t('form.phasePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {phases.map((phase) => (
                   <SelectItem key={phase.id} value={phase.id.toString()}>
-                    {phase.name} {phase.bestOf ? `(Best of ${phase.bestOf})` : '(Single)'}
+                    {phase.name} {phase.bestOf ? t('form.bestOf', { count: phase.bestOf }) : t('form.single')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -287,7 +291,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
 
           {selectedPhase?.bestOf && selectedPhase.bestOf > 1 && (
             <div className="space-y-2">
-              <Label htmlFor="gameNumber">Game Number</Label>
+              <Label htmlFor="gameNumber">{t('form.gameNumber')}</Label>
               <Input
                 id="gameNumber"
                 type="number"
@@ -307,10 +311,10 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Match'}
+              {isSubmitting ? t('addDialog.creating') : t('addDialog.submit')}
             </Button>
           </DialogFooter>
         </form>

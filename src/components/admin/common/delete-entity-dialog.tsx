@@ -27,7 +27,7 @@ interface DeleteEntityDialogProps {
  * ```tsx
  * <DeleteEntityDialog
  *   open={deleteDialog.open}
- *   onOpenChange={deleteDialog.setOpen}
+ *   onOpenChange={deleteDialog.onOpenChange}
  *   title={t('deleteTitle')}
  *   description={t('deleteConfirm', { name: item.name })}
  *   warningMessage={item.count > 0 ? t('deleteWarning', { count: item.count }) : undefined}

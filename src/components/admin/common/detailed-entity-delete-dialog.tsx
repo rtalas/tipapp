@@ -27,7 +27,7 @@ interface DetailedEntityDeleteDialogProps {
  * ```tsx
  * <DetailedEntityDeleteDialog
  *   open={deleteDialog.open}
- *   onOpenChange={deleteDialog.setOpen}
+ *   onOpenChange={deleteDialog.onOpenChange}
  *   title="Delete Match"
  *   description="Are you sure you want to delete this match?"
  *   onConfirm={handleDelete}

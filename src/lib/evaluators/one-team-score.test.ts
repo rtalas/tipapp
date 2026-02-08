@@ -39,7 +39,7 @@ describe("evaluateOneTeamScore", () => {
     expect(evaluateOneTeamScore(context)).toBe(true);
   });
 
-  it("should return false when exact score matches (no double points)", () => {
+  it("should return true even when exact score matches (exclusion handled by orchestrator)", () => {
     const context: MatchBetContext = {
       prediction: { homeScore: 3, awayScore: 2 },
       actual: {
@@ -54,15 +54,16 @@ describe("evaluateOneTeamScore", () => {
       },
     };
 
-    expect(evaluateOneTeamScore(context)).toBe(false);
+    // one_team_score is a pure predicate; exclusion is orchestrator's job
+    expect(evaluateOneTeamScore(context)).toBe(true);
   });
 
-  it("should return false when score difference matches (no double points)", () => {
+  it("should return false when neither score matches (even with same difference)", () => {
     const context: MatchBetContext = {
       prediction: { homeScore: 3, awayScore: 1 }, // +2 difference
       actual: {
         homeRegularScore: 5,
-        awayRegularScore: 3, // +2 difference
+        awayRegularScore: 3, // +2 difference, but neither individual score matches
         homeFinalScore: 5,
         awayFinalScore: 3,
         scorerIds: [],

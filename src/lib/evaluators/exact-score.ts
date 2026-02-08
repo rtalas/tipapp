@@ -1,4 +1,4 @@
-import type { MatchBetContext } from "./types";
+import { type MatchBetContext, hasRegularScores } from "./types";
 
 /**
  * EXACT_SCORE: Awards points if predicted score matches actual score exactly after regulation time
@@ -7,8 +7,8 @@ import type { MatchBetContext } from "./types";
 export function evaluateExactScore(context: MatchBetContext): boolean {
   const { prediction, actual } = context;
 
-  if (actual.homeRegularScore === null || actual.awayRegularScore === null) {
-    return false; // Match not finished
+  if (!hasRegularScores(actual)) {
+    return false;
   }
 
   // Scores must match

@@ -3,6 +3,13 @@
  */
 
 /**
+ * Check whether regulation-time scores are available (match finished)
+ */
+export function hasRegularScores(actual: MatchBetContext['actual']): boolean {
+  return actual.homeRegularScore !== null && actual.awayRegularScore !== null
+}
+
+/**
  * Match bet evaluation context
  */
 export interface MatchBetContext {

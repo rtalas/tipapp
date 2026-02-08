@@ -7,6 +7,11 @@ export const SPORT_IDS = {
 } as const
 
 /**
+ * Maximum number of prize/fine tiers per league
+ */
+export const MAX_PRIZE_TIERS = 10
+
+/**
  * Player positions by sport for filtering in exact_player evaluators
  */
 export const POSITIONS_BY_SPORT: Record<number, { value: string; label: string }[]> = {

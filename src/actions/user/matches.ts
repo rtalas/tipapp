@@ -6,7 +6,7 @@ import { userMatchBetSchema, type UserMatchBetInput } from '@/lib/validation/use
 import { AppError } from '@/lib/error-handler'
 import { SPORT_IDS } from '@/lib/constants'
 import { AuditLogger } from '@/lib/logging/audit-logger'
-import { saveUserBet, getFriendPredictions, type TransactionClient } from '@/lib/bet-utils'
+import { saveUserBet, getFriendPredictions, validateScorerExclusivity, validateScorerBelongsToTeam, type TransactionClient } from '@/lib/bet-utils'
 import { createCachedEntityFetcher } from '@/lib/cached-data-utils'
 
 /**
@@ -173,33 +173,17 @@ export async function saveMatchBet(input: UserMatchBetInput) {
         throw new AppError('Betting is closed for this match', 'BETTING_CLOSED', 400)
       }
 
-      // Validate mutual exclusivity between scorerId and noScorer
-      if (validated.noScorer === true && validated.scorerId !== null) {
-        throw new AppError('Cannot set both scorer and no scorer', 'VALIDATION_ERROR', 400)
-      }
+      validateScorerExclusivity(validated.scorerId, validated.noScorer)
 
       // Validate that noScorer can only be set for soccer matches
       if (validated.noScorer === true && leagueMatch.League.sportId !== SPORT_IDS.FOOTBALL) {
         throw new AppError('No scorer option is only available for soccer matches', 'VALIDATION_ERROR', 400)
       }
 
-      // Verify scorer belongs to one of the teams if provided
       if (validated.scorerId) {
-        const scorer = await tx.leaguePlayer.findUnique({
-          where: { id: validated.scorerId, deletedAt: null },
-        })
-
-        if (!scorer) {
-          throw new AppError('Scorer not found', 'NOT_FOUND', 404)
-        }
-
-        const isValidScorer =
-          scorer.leagueTeamId === leagueMatch.Match.homeTeamId ||
-          scorer.leagueTeamId === leagueMatch.Match.awayTeamId
-
-        if (!isValidScorer) {
-          throw new AppError('Scorer must belong to one of the teams playing', 'VALIDATION_ERROR', 400)
-        }
+        await validateScorerBelongsToTeam(
+          validated.scorerId, leagueMatch.Match.homeTeamId, leagueMatch.Match.awayTeamId, tx
+        )
       }
 
       const existingBet = await tx.userBet.findFirst({

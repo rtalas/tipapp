@@ -1,20 +1,13 @@
-import type { MatchBetContext } from "./types";
-import { evaluateExactScore } from "./exact-score";
-import { evaluateScoreDifference } from "./score-difference";
+import { type MatchBetContext, hasRegularScores } from "./types";
 
 /**
  * ONE_TEAM_SCORE: Awards points if user correctly predicted one team's score
- * Only evaluated if exact_score and score_difference are false
+ * Exclusion from exact_score and score_difference is handled by the match-evaluator orchestrator.
  */
 export function evaluateOneTeamScore(context: MatchBetContext): boolean {
   const { prediction, actual } = context;
 
-  if (actual.homeRegularScore === null || actual.awayRegularScore === null) {
-    return false; // Match not finished
-  }
-
-  // Don't award if exact score or score difference already matched
-  if (evaluateExactScore(context) || evaluateScoreDifference(context)) {
+  if (!hasRegularScores(actual)) {
     return false;
   }
 

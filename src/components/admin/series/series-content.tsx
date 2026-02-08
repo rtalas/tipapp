@@ -304,7 +304,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
       {/* Create Series Dialog */}
       <CreateSeriesDialog
         open={createDialog.open}
-        onOpenChange={createDialog.setOpen}
+        onOpenChange={createDialog.onOpenChange}
         formData={createDialog.form}
         onFormChange={createDialog.updateForm}
         onCreate={handleCreateSeries}
@@ -338,7 +338,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
       {/* Delete Confirmation Dialog */}
       <DetailedEntityDeleteDialog
         open={deleteDialog.open}
-        onOpenChange={deleteDialog.setOpen}
+        onOpenChange={deleteDialog.onOpenChange}
         title={t('deleteTitle')}
         description={t('deleteConfirm')}
         onConfirm={handleDelete}

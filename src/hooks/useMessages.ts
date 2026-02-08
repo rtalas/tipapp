@@ -70,44 +70,57 @@ export function useMessages({
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
 
-  // Track the newest message timestamp for polling
+  // Track the newest message timestamp for incremental polling
   const newestTimestamp = useRef<Date | null>(
     initialMessages.length > 0
       ? new Date(initialMessages[initialMessages.length - 1].createdAt)
       : null
   )
 
-  // Fetch new messages (for polling)
-  const fetchNewMessages = useCallback(async () => {
-    if (!enabled) return
+  // Track the oldest message timestamp for loadMore (avoids messages dependency)
+  const oldestTimestamp = useRef<Date | null>(
+    initialMessages.length > 0
+      ? new Date(initialMessages[0].createdAt)
+      : null
+  )
 
+  // Guard against concurrent fetch operations
+  const isFetchingRef = useRef(false)
+
+  // Fetch new messages (for polling) — incremental via `after` parameter
+  const fetchNewMessages = useCallback(async () => {
+    if (!enabled || isFetchingRef.current) return
+
+    isFetchingRef.current = true
     try {
-      const result = await getMessages({ leagueId, limit: 50 })
+      const result = await getMessages({
+        leagueId,
+        limit: 50,
+        after: newestTimestamp.current ?? undefined,
+      })
 
       if (result.success) {
         const newMessages = result.messages as ChatMessage[]
 
-        // Merge new messages, avoiding duplicates
-        setMessages((prev) => {
-          const existingIds = new Set(prev.map((m) => m.id))
-          const uniqueNew = newMessages.filter((m) => !existingIds.has(m.id))
+        if (newMessages.length > 0) {
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((m) => m.id))
+            const uniqueNew = newMessages.filter((m) => !existingIds.has(m.id))
 
-          if (uniqueNew.length > 0) {
-            const merged = [...prev, ...uniqueNew].sort(
-              (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-            )
-            // Update newest timestamp
-            if (merged.length > 0) {
+            if (uniqueNew.length > 0) {
+              const merged = [...prev, ...uniqueNew]
               newestTimestamp.current = new Date(merged[merged.length - 1].createdAt)
+              return merged
             }
-            return merged
-          }
-          return prev
-        })
+            return prev
+          })
+        }
       }
     } catch {
       // Silently fail polling - don't show error to user
       console.error('Polling failed')
+    } finally {
+      isFetchingRef.current = false
     }
   }, [leagueId, enabled])
 
@@ -176,32 +189,36 @@ export function useMessages({
 
   // Load older messages (pagination)
   const loadMore = useCallback(async () => {
-    if (!hasMore || isLoading) return
+    if (!hasMore || isLoading || isFetchingRef.current) return
 
+    isFetchingRef.current = true
     setIsLoading(true)
     setError(null)
 
     try {
-      const oldestMessage = messages[0]
       const result = await getMessages({
         leagueId,
         limit: 50,
-        before: oldestMessage ? new Date(oldestMessage.createdAt) : undefined,
+        before: oldestTimestamp.current ?? undefined,
       })
 
       if (!result.success) {
         setError(result.error || 'Failed to load messages')
       } else {
         const olderMessages = result.messages as ChatMessage[]
-        setMessages((prev) => [...olderMessages, ...prev])
+        if (olderMessages.length > 0) {
+          oldestTimestamp.current = new Date(olderMessages[0].createdAt)
+          setMessages((prev) => [...olderMessages, ...prev])
+        }
         setHasMore(result.hasMore ?? false)
       }
     } catch {
       setError('Failed to load messages')
     } finally {
       setIsLoading(false)
+      isFetchingRef.current = false
     }
-  }, [leagueId, messages, hasMore, isLoading])
+  }, [leagueId, hasMore, isLoading])
 
   // Manual refresh
   const refresh = useCallback(async () => {
@@ -214,8 +231,13 @@ export function useMessages({
       if (!result.success) {
         setError(result.error || 'Failed to refresh messages')
       } else {
-        setMessages(result.messages as ChatMessage[])
+        const refreshedMessages = result.messages as ChatMessage[]
+        setMessages(refreshedMessages)
         setHasMore(result.hasMore ?? false)
+        if (refreshedMessages.length > 0) {
+          newestTimestamp.current = new Date(refreshedMessages[refreshedMessages.length - 1].createdAt)
+          oldestTimestamp.current = new Date(refreshedMessages[0].createdAt)
+        }
       }
     } catch {
       setError('Failed to refresh messages')

@@ -117,17 +117,17 @@ export function EvaluatorCreateDialog({
     } else if (isGroupStage) {
       // Validate group stage config
       if (!winnerPoints || !advancePoints) {
-        toast.error('Winner points and advance points are required for group stage evaluator')
+        toast.error(t('validation.groupStageRequired'))
         return
       }
       const winner = Number(winnerPoints)
       const advance = Number(advancePoints)
       if (isNaN(winner) || isNaN(advance)) {
-        toast.error('Points must be valid numbers')
+        toast.error(t('validation.pointsMustBeNumbers'))
         return
       }
       if (winner <= advance) {
-        toast.error('Winner points must be greater than advance points')
+        toast.error(t('validation.winnerMustBeGreater'))
         return
       }
     } else {
@@ -283,7 +283,7 @@ export function EvaluatorCreateDialog({
             />
             {evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'group_stage_team' && (
               <p className="text-xs text-muted-foreground mt-1">
-                Points are configured separately for winner and advance below
+                {t('form.pointsConfiguredBelow')}
               </p>
             )}
           </div>
@@ -292,15 +292,15 @@ export function EvaluatorCreateDialog({
           {evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'group_stage_team' && (
             <div className="space-y-3 border-t pt-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Group Stage Points Configuration</Label>
+                <Label className="text-sm font-medium">{t('form.groupStageConfig')}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Configure tiered scoring for group stage predictions
+                  {t('form.groupStageConfigDesc')}
                 </p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="winner-points" className="text-xs">
-                  Winner Points (if predicted team wins group)
+                  {t('form.winnerPoints')}
                 </Label>
                 <Input
                   id="winner-points"
@@ -315,7 +315,7 @@ export function EvaluatorCreateDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="advance-points" className="text-xs">
-                  Advance Points (if team advances but doesn&apos;t win)
+                  {t('form.advancePoints')}
                 </Label>
                 <Input
                   id="advance-points"
@@ -329,13 +329,13 @@ export function EvaluatorCreateDialog({
               </div>
 
               <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
-                <strong>Example:</strong> Winner points = 10, Advance points = 5
+                <strong>{t('form.groupStageExample')}</strong>
                 <br />
-                • User predicts Team A, Team A wins group → <strong>10 pts</strong>
+                • {t('form.groupStageWinnerEx')}
                 <br />
-                • User predicts Team B, Team B advances (2nd/3rd) → <strong>5 pts</strong>
+                • {t('form.groupStageAdvanceEx')}
                 <br />
-                • User predicts Team C, Team C doesn&apos;t advance → <strong>0 pts</strong>
+                • {t('form.groupStageNoAdvanceEx')}
               </div>
             </div>
           )}
@@ -344,9 +344,9 @@ export function EvaluatorCreateDialog({
           {evaluatorTypes.find(t => t.id.toString() === createForm.evaluatorTypeId)?.name === 'exact_player' && availablePositions.length > 0 && (
             <div className="space-y-3 border-t pt-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Position Filter (Optional)</Label>
+                <Label className="text-sm font-medium">{t('form.positionFilter')}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Select positions to filter which players can be selected for this bet
+                  {t('form.positionFilterDesc')}
                 </p>
               </div>
 
@@ -376,7 +376,7 @@ export function EvaluatorCreateDialog({
 
               {selectedPositions.length === 0 && (
                 <p className="text-xs text-muted-foreground bg-muted p-2 rounded">
-                  No positions selected - all players will be available for this bet
+                  {t('form.noPositionsSelected')}
                 </p>
               )}
             </div>

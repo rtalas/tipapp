@@ -54,6 +54,8 @@ model Evaluator {
   EvaluatorType          EvaluatorType            @relation(fields: [evaluatorTypeId], references: [id], onDelete: NoAction)
   League                 League                   @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   LeagueSpecialBetSingle LeagueSpecialBetSingle[]
+
+  @@index([leagueId, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -82,7 +84,7 @@ model League {
   deletedAt                DateTime?                  @db.Timestamptz(6)
   chatSuspendedAt          DateTime?                  @db.Timestamptz(6)
   isChatEnabled            Boolean                    @default(false)
-  infoText                 String?
+  infoText                 String?                    @db.VarChar(5000)
   AuditLog                 AuditLog[]
   Evaluator                Evaluator[]
   Sport                    Sport                      @relation(fields: [sportId], references: [id], onDelete: NoAction)
@@ -172,7 +174,7 @@ model LeaguePrize {
 model LeagueSpecialBetQuestion {
   id                     Int                      @id @default(autoincrement())
   leagueId               Int
-  text                   String
+  text                   String                   @db.VarChar(5000)
   dateTime               DateTime                 @db.Timestamptz(6)
   result                 Boolean?
   isEvaluated            Boolean                  @default(false)
@@ -301,6 +303,8 @@ model LeagueUser {
   UserSpecialBetSingle   UserSpecialBetSingle[]
 
   @@unique([leagueId, userId, deletedAt])
+  @@index([leagueId, deletedAt])
+  @@index([userId, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -356,6 +360,8 @@ model MatchScorer {
   deletedAt     DateTime?    @db.Timestamptz(6)
   Match         Match        @relation(fields: [matchId], references: [id], onDelete: NoAction)
   LeaguePlayer  LeaguePlayer @relation(fields: [scorerId], references: [id], onDelete: NoAction)
+
+  @@index([matchId])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -363,7 +369,7 @@ model Message {
   id           Int        @id @default(autoincrement())
   leagueId     Int
   leagueUserId Int
-  text         String
+  text         String     @db.VarChar(2000)
   replyToId    Int?
   createdAt    DateTime   @db.Timestamptz(6)
   updatedAt    DateTime   @db.Timestamptz(6)
@@ -520,6 +526,7 @@ model TopScorerRankingVersion {
   @@index([leagueId, effectiveFrom])
   @@index([leagueId, effectiveTo])
   @@index([leaguePlayerId, effectiveFrom])
+  @@index([leaguePlayerId, leagueId])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -527,7 +534,7 @@ model User {
   id                      Int                       @id @default(autoincrement())
   firstName               String                    @db.VarChar(255)
   lastName                String                    @db.VarChar(255)
-  username                String                    @db.VarChar(255)
+  username                String                    @unique @db.VarChar(255)
   email                   String                    @unique @db.VarChar(255)
   mobileNumber            String?                   @db.VarChar(255)
   password                String                    @db.VarChar(255)

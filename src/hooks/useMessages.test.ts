@@ -69,7 +69,7 @@ describe('useMessages', () => {
       await vi.advanceTimersByTimeAsync(0)
     })
 
-    expect(mockGetMessages).toHaveBeenCalledWith({ leagueId: 1, limit: 50 })
+    expect(mockGetMessages).toHaveBeenCalledWith({ leagueId: 1, limit: 50, after: undefined })
     expect(result.current.messages).toHaveLength(1)
   })
 
@@ -271,6 +271,29 @@ describe('useMessages', () => {
       expect(result.current.messages[0].text).toBe('Older')
     })
 
+    it('should use oldest timestamp as before cursor', async () => {
+      const initial = [makeMessage(3, 'Current')]
+      mockGetMessages.mockResolvedValue({ success: true, messages: [], hasMore: false } as any)
+
+      const { result } = renderHook(() =>
+        useMessages({
+          leagueId: 1,
+          initialMessages: initial,
+          enabled: false,
+        })
+      )
+
+      await act(async () => {
+        await result.current.loadMore()
+      })
+
+      expect(mockGetMessages).toHaveBeenCalledWith({
+        leagueId: 1,
+        limit: 50,
+        before: new Date(initial[0].createdAt),
+      })
+    })
+
     it('should not load if hasMore is false', async () => {
       const { result } = renderHook(() =>
         useMessages({ leagueId: 1, initialMessages: [makeMessage(1, 'Msg')], enabled: false })
@@ -385,6 +408,31 @@ describe('useMessages', () => {
       expect(mockGetMessages).toHaveBeenCalledTimes(2)
     })
 
+    it('should use after parameter for incremental polling', async () => {
+      const initial = [makeMessage(1, 'First')]
+      mockGetMessages.mockResolvedValue({ success: true, messages: [], hasMore: false } as any)
+
+      renderHook(() =>
+        useMessages({
+          leagueId: 1,
+          initialMessages: initial,
+          enabled: true,
+          pollingInterval: 3000,
+        })
+      )
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3000)
+      })
+
+      // Should pass the newest message's timestamp as `after`
+      expect(mockGetMessages).toHaveBeenCalledWith({
+        leagueId: 1,
+        limit: 50,
+        after: new Date(initial[0].createdAt),
+      })
+    })
+
     it('should stop polling on unmount', async () => {
       mockGetMessages.mockResolvedValue({ success: true, messages: [], hasMore: false } as any)
 
@@ -404,6 +452,41 @@ describe('useMessages', () => {
       })
 
       expect(mockGetMessages).not.toHaveBeenCalled()
+    })
+
+    it('should not run concurrent fetches', async () => {
+      let resolveFirst: (v: any) => void
+      mockGetMessages.mockImplementationOnce(
+        () => new Promise(r => { resolveFirst = r })
+      )
+
+      const { result } = renderHook(() =>
+        useMessages({
+          leagueId: 1,
+          initialMessages: [makeMessage(1, 'Msg')],
+          enabled: true,
+          pollingInterval: 1000,
+        })
+      )
+
+      // Trigger first poll (will hang)
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000)
+      })
+
+      // Try loadMore while poll is in flight — should be skipped
+      mockGetMessages.mockResolvedValueOnce({ success: true, messages: [], hasMore: false } as any)
+      await act(async () => {
+        await result.current.loadMore()
+      })
+
+      // loadMore should not have called getMessages again (first call still pending)
+      expect(mockGetMessages).toHaveBeenCalledTimes(1)
+
+      // Resolve the first poll
+      await act(async () => {
+        resolveFirst!({ success: true, messages: [] })
+      })
     })
   })
 })

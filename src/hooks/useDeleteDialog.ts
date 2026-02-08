@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 
 /**
  * Hook for managing delete confirmation dialog state
@@ -11,38 +11,42 @@ export function useDeleteDialog<T>() {
   const [itemToDelete, setItemToDelete] = useState<T | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const openDialog = useCallback((item: T) => {
+  const openDialog = (item: T) => {
     setItemToDelete(item)
     setOpen(true)
-  }, [])
+  }
 
-  const closeDialog = useCallback(() => {
+  const closeDialog = () => {
     setOpen(false)
     setItemToDelete(null)
     setIsDeleting(false)
-  }, [])
+  }
 
-  const startDeleting = useCallback(() => {
+  /** For Dialog onOpenChange — delegates to openDialog/closeDialog for proper cleanup */
+  const onOpenChange = (value: boolean) => {
+    if (!value) closeDialog()
+  }
+
+  const startDeleting = () => {
     setIsDeleting(true)
-  }, [])
+  }
 
-  const finishDeleting = useCallback(() => {
+  const finishDeleting = () => {
     setIsDeleting(false)
     closeDialog()
-  }, [closeDialog])
+  }
 
-  const cancelDeleting = useCallback(() => {
+  const cancelDeleting = () => {
     setIsDeleting(false)
-  }, [])
+  }
 
   return {
     open,
-    setOpen,
     itemToDelete,
-    setItemToDelete,
     isDeleting,
     openDialog,
     closeDialog,
+    onOpenChange,
     startDeleting,
     finishDeleting,
     cancelDeleting,

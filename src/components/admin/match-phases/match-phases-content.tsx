@@ -244,7 +244,7 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
       {/* Delete Confirmation Dialog */}
       <DeleteEntityDialog
         open={deleteDialog.open}
-        onOpenChange={deleteDialog.setOpen}
+        onOpenChange={deleteDialog.onOpenChange}
         title={t('dialog.deleteTitle')}
         description={deleteDialog.itemToDelete ? t('dialog.deleteConfirm', { name: deleteDialog.itemToDelete.name }) : ''}
         warningMessage={
@@ -259,7 +259,7 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
       {/* Create Match Phase Dialog */}
       <CreateMatchPhaseDialog
         open={createDialog.open}
-        onOpenChange={createDialog.setOpen}
+        onOpenChange={createDialog.onOpenChange}
         formData={createDialog.form}
         onFormChange={createDialog.updateForm}
         onCreate={handleCreateMatchPhase}

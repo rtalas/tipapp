@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -44,10 +44,32 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
     match.userBet?.homeAdvanced ?? null
   )
   const [isSaving, setIsSaving] = useState(false)
-  const [isSaved, setIsSaved] = useState(!!match.userBet)
   const [showFriendsBets, setShowFriendsBets] = useState(false)
   const [friendPredictions, setFriendPredictions] = useState<FriendPrediction[]>([])
   const [isLoadingFriends, setIsLoadingFriends] = useState(false)
+
+  // Track last-saved values to derive dirty state
+  const savedValuesRef = useRef(
+    match.userBet
+      ? {
+          homeScore: match.userBet.homeScore ?? 0,
+          awayScore: match.userBet.awayScore ?? 0,
+          scorerId: match.userBet.scorerId ?? null,
+          noScorer: match.userBet.noScorer ?? null,
+          overtime: match.userBet.overtime ?? false,
+          homeAdvanced: match.userBet.homeAdvanced ?? null,
+        }
+      : null
+  )
+
+  const isSaved =
+    savedValuesRef.current !== null &&
+    homeScore === savedValuesRef.current.homeScore &&
+    awayScore === savedValuesRef.current.awayScore &&
+    scorerId === savedValuesRef.current.scorerId &&
+    noScorer === savedValuesRef.current.noScorer &&
+    overtime === savedValuesRef.current.overtime &&
+    homeAdvanced === savedValuesRef.current.homeAdvanced
 
   const handleSave = useCallback(async () => {
     if (isLocked) return
@@ -66,14 +88,12 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
 
       if (!result.success) {
         toast.error(result.error || 'Failed to save bet')
-        setIsSaved(false)
       } else {
-        setIsSaved(true)
+        savedValuesRef.current = { homeScore, awayScore, scorerId, noScorer, overtime, homeAdvanced }
         onBetSaved?.()
       }
     } catch {
       toast.error('Failed to save bet')
-      setIsSaved(false)
     } finally {
       setIsSaving(false)
     }
@@ -89,15 +109,12 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
     onBetSaved,
   ])
 
-  // Handle field changes - mark as unsaved
   const handleHomeScoreChange = (value: number) => {
     setHomeScore(value)
-    setIsSaved(false)
   }
 
   const handleAwayScoreChange = (value: number) => {
     setAwayScore(value)
-    setIsSaved(false)
   }
 
   const handleScorerChange = (value: number | null) => {
@@ -105,7 +122,6 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
     if (value !== null) {
       setNoScorer(null) // Clear noScorer when player selected
     }
-    setIsSaved(false)
   }
 
   const handleNoScorerChange = (value: boolean | null) => {
@@ -113,12 +129,10 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
     if (value === true) {
       setScorerId(null) // Clear scorerId when noScorer selected
     }
-    setIsSaved(false)
   }
 
   const handleOvertimeChange = (checked: boolean) => {
     setOvertime(checked)
-    setIsSaved(false)
   }
 
   const handleAdvancedChange = (value: string) => {
@@ -129,7 +143,6 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
     } else {
       setHomeAdvanced(null)
     }
-    setIsSaved(false)
   }
 
   // Determine actual result display

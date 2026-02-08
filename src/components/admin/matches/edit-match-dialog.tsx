@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { useTranslations } from 'next-intl'
 import { updateMatch } from '@/actions/matches'
 import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
@@ -72,6 +73,9 @@ export function EditMatchDialog({
   onOpenChange,
   phases,
 }: EditMatchDialogProps) {
+  const t = useTranslations('admin.matches')
+  const tCommon = useTranslations('admin.common')
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [dateTime, setDateTime] = useState<string>(() => {
     // Convert UTC date to local datetime-local format
@@ -93,7 +97,7 @@ export function EditMatchDialog({
     e.preventDefault()
 
     if (!dateTime) {
-      toast.error('Please fill in all required fields')
+      toast.error(t('form.requiredFields'))
       return
     }
 
@@ -107,13 +111,13 @@ export function EditMatchDialog({
         gameNumber: gameNumber ? parseInt(gameNumber, 10) : null,
       })
 
-      toast.success('Match updated successfully')
+      toast.success(t('editDialog.success'))
       onOpenChange(false)
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error('Failed to update match')
+        toast.error(t('editDialog.failed'))
       }
       logger.error('Failed to update match', { error, matchId: match.Match.id })
     } finally {
@@ -125,16 +129,15 @@ export function EditMatchDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Edit Match</DialogTitle>
+          <DialogTitle>{t('editDialog.title')}</DialogTitle>
           <DialogDescription>
-            Update match date/time and tournament phase for {homeTeam.Team.name} vs{' '}
-            {awayTeam.Team.name}
+            {t('editDialog.description', { teams: `${homeTeam.Team.name} vs ${awayTeam.Team.name}` })}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="dateTime">Date & Time (UTC)</Label>
+            <Label htmlFor="dateTime">{t('form.dateTimeUtc')}</Label>
             <Input
               id="dateTime"
               type="datetime-local"
@@ -143,23 +146,23 @@ export function EditMatchDialog({
               required
             />
             <p className="text-xs text-muted-foreground">
-              Enter the match time in UTC. It will be displayed in local timezone.
+              {t('form.dateTimeHint')}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="matchPhase">Match Phase (Optional)</Label>
+            <Label htmlFor="matchPhase">{t('form.matchPhase')}</Label>
             <Select
               value={selectedPhaseId || undefined}
               onValueChange={(value) => setSelectedPhaseId(value || '')}
             >
               <SelectTrigger>
-                <SelectValue placeholder="None" />
+                <SelectValue placeholder={t('form.phasePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {phases.map((phase) => (
                   <SelectItem key={phase.id} value={phase.id.toString()}>
-                    {phase.name} {phase.bestOf ? `(Best of ${phase.bestOf})` : '(Single)'}
+                    {phase.name} {phase.bestOf ? t('form.bestOf', { count: phase.bestOf }) : t('form.single')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -168,7 +171,7 @@ export function EditMatchDialog({
 
           {selectedPhase?.bestOf && selectedPhase.bestOf > 1 && (
             <div className="space-y-2">
-              <Label htmlFor="gameNumber">Game Number</Label>
+              <Label htmlFor="gameNumber">{t('form.gameNumber')}</Label>
               <Input
                 id="gameNumber"
                 type="number"
@@ -188,10 +191,10 @@ export function EditMatchDialog({
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Updating...' : 'Update Match'}
+              {isSubmitting ? t('editDialog.updating') : t('editDialog.submit')}
             </Button>
           </DialogFooter>
         </form>

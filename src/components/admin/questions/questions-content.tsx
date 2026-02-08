@@ -261,7 +261,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
       {/* Create Question Dialog */}
       <CreateQuestionDialog
         open={createDialog.open}
-        onOpenChange={createDialog.setOpen}
+        onOpenChange={createDialog.onOpenChange}
         formData={createDialog.form}
         onFormChange={createDialog.updateForm}
         onCreate={handleCreateQuestion}

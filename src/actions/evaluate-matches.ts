@@ -1,13 +1,11 @@
 'use server'
 
-import { revalidateTag } from 'next/cache'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { evaluateMatchAtomic } from '@/lib/evaluation/match-evaluator'
+import { evaluateAndLog } from '@/lib/evaluation/evaluate-action'
 import { z } from 'zod'
 import { AuditLogger } from '@/lib/logging/audit-logger'
-import { requireAdmin } from '@/lib/auth/auth-utils'
 
-// Validation schemas
 const evaluateMatchSchema = z.object({
   leagueMatchId: z.number().int().positive(),
   matchId: z.number().int().positive(),
@@ -16,46 +14,18 @@ const evaluateMatchSchema = z.object({
 
 export type EvaluateMatchInput = z.infer<typeof evaluateMatchSchema>
 
-/**
- * Server action: Evaluate match bets
- * If userId provided, evaluates only that user's bet
- * Otherwise evaluates all users' bets for the match
- */
 export async function evaluateMatchBets(input: EvaluateMatchInput) {
   return executeServerAction(input, {
     validator: evaluateMatchSchema,
-    handler: async (validated) => {
-      const startTime = Date.now()
-      const session = await requireAdmin()
-
-      const result = await evaluateMatchAtomic({
-        matchId: validated.matchId,
-        leagueMatchId: validated.leagueMatchId,
-        userId: validated.userId,
-      })
-
-      // Calculate total points awarded
-      const totalPoints = result.results.reduce(
-        (sum, r) => sum + r.totalPoints,
-        0
-      )
-
-      // Audit log (fire-and-forget)
-      const durationMs = Date.now() - startTime
-      AuditLogger.matchEvaluated(
-        Number(session.user.id),
-        validated.matchId,
-        result.totalUsersEvaluated,
-        totalPoints,
-        durationMs
-      ).catch((err) => console.error('Audit log failed:', err))
-
-      // Invalidate user-facing caches (match data + leaderboard)
-      revalidateTag('match-data', 'max')
-      revalidateTag('leaderboard', 'max')
-
-      return result
-    },
+    handler: async (validated) =>
+      evaluateAndLog({
+        input: { matchId: validated.matchId, leagueMatchId: validated.leagueMatchId, userId: validated.userId },
+        evaluate: evaluateMatchAtomic,
+        entityId: validated.matchId,
+        sumPoints: (r) => r.results.reduce((sum, res) => sum + res.totalPoints, 0),
+        auditLog: AuditLogger.matchEvaluated,
+        cacheTag: 'match-data',
+      }),
     revalidatePath: '/admin',
     requiresAdmin: true,
   })

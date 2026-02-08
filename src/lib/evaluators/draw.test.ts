@@ -21,7 +21,7 @@ describe("evaluateDraw", () => {
     expect(evaluateDraw(context)).toBe(true);
   });
 
-  it("should return false when exact score matches (no double points)", () => {
+  it("should return true even when exact score matches (exclusion handled by orchestrator)", () => {
     const context: MatchBetContext = {
       prediction: { homeScore: 2, awayScore: 2 },
       actual: {
@@ -36,7 +36,8 @@ describe("evaluateDraw", () => {
       },
     };
 
-    expect(evaluateDraw(context)).toBe(false);
+    // draw is a pure predicate; exact_score exclusion is orchestrator's job
+    expect(evaluateDraw(context)).toBe(true);
   });
 
   it("should return false when prediction is draw but actual is not", () => {
