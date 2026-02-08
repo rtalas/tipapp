@@ -113,6 +113,34 @@ describe('Matches Actions', () => {
       expect((result as any).error).toContain('Game number cannot exceed')
     })
 
+    it('should reject past dateTime', async () => {
+      const result = await createMatch({
+        leagueId: 1,
+        homeTeamId: 1,
+        awayTeamId: 2,
+        dateTime: new Date('2020-01-01'),
+        isPlayoffGame: false,
+        isDoubled: false,
+      })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Match date must be in the future')
+    })
+
+    it('should reject same team for home and away', async () => {
+      const result = await createMatch({
+        leagueId: 1,
+        homeTeamId: 1,
+        awayTeamId: 1,
+        dateTime: new Date('2026-06-01'),
+        isPlayoffGame: false,
+        isDoubled: false,
+      })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Home and away teams must be different')
+    })
+
     it('should invalidate match-data cache', async () => {
       mockPrisma.leagueTeam.findFirst
         .mockResolvedValueOnce({ id: 1 } as any)
@@ -157,6 +185,23 @@ describe('Matches Actions', () => {
 
       expect(result.success).toBe(false)
       expect((result as any).error).toContain('Match phase not found')
+    })
+
+    it('should reject game number exceeding bestOf', async () => {
+      mockPrisma.matchPhase.findFirst.mockResolvedValue({ id: 1, bestOf: 5 } as any)
+
+      const result = await updateMatch({ matchId: 1, matchPhaseId: 1, gameNumber: 6 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Game number cannot exceed')
+    })
+
+    it('should handle database error', async () => {
+      mockPrisma.match.update.mockRejectedValue(new Error('DB error'))
+
+      const result = await updateMatch({ matchId: 1, dateTime: new Date('2026-07-01') })
+
+      expect(result.success).toBe(false)
     })
   })
 

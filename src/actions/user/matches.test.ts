@@ -205,12 +205,13 @@ describe('User Matches Actions', () => {
     })
 
     it('should create a new bet successfully', async () => {
+      const createMock = vi.fn()
       mockPrisma.$transaction.mockImplementation(async (fn: any) => {
         const tx = {
           leagueMatch: { findUnique: vi.fn().mockResolvedValue(mockLeagueMatch) },
           userBet: {
             findFirst: vi.fn().mockResolvedValue(null),
-            create: vi.fn(),
+            create: createMock,
           },
           leaguePlayer: { findUnique: vi.fn() },
         }
@@ -220,17 +221,30 @@ describe('User Matches Actions', () => {
       const result = await saveMatchBet(validInput)
 
       expect(result.success).toBe(true)
+      expect(createMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            leagueMatchId: 100,
+            leagueUserId: mockLeagueUser.id,
+            homeScore: 2,
+            awayScore: 1,
+            overtime: false,
+            totalPoints: 0,
+          }),
+        })
+      )
     })
 
     it('should update an existing bet', async () => {
       const existingBet = { id: 50, leagueMatchId: 100, leagueUserId: 10 }
+      const updateMock = vi.fn()
 
       mockPrisma.$transaction.mockImplementation(async (fn: any) => {
         const tx = {
           leagueMatch: { findUnique: vi.fn().mockResolvedValue(mockLeagueMatch) },
           userBet: {
             findFirst: vi.fn().mockResolvedValue(existingBet),
-            update: vi.fn(),
+            update: updateMock,
           },
           leaguePlayer: { findUnique: vi.fn() },
         }
@@ -240,6 +254,16 @@ describe('User Matches Actions', () => {
       const result = await saveMatchBet(validInput)
 
       expect(result.success).toBe(true)
+      expect(updateMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 50 },
+          data: expect.objectContaining({
+            homeScore: 2,
+            awayScore: 1,
+            overtime: false,
+          }),
+        })
+      )
     })
 
     it('should return error when match not found (pre-transaction)', async () => {

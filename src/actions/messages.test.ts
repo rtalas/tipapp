@@ -92,6 +92,32 @@ describe('Messages Actions', () => {
       expect(result.success).toBe(false)
       expect((result as any).error).toContain('Reply target')
     })
+
+    it('should reject reply to a deleted message', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10 } as any)
+      mockPrisma.league.findUnique.mockResolvedValue({ chatSuspendedAt: null } as any)
+      // findFirst with deletedAt: null filter excludes deleted messages
+      mockPrisma.message.findFirst.mockResolvedValue(null)
+
+      const result = await sendMessage({ leagueId: 1, text: 'Reply to deleted', replyToId: 42 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Reply target')
+    })
+
+    it('should trim message text', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10, User: { isSuperadmin: false } } as any)
+      mockPrisma.league.findUnique.mockResolvedValue({ chatSuspendedAt: null } as any)
+      mockPrisma.message.create.mockResolvedValue({ id: 1, text: 'Hello' } as any)
+
+      await sendMessage({ leagueId: 1, text: '  Hello  ' })
+
+      expect(mockPrisma.message.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ text: '  Hello  ' }),
+        })
+      )
+    })
   })
 
   describe('deleteMessage', () => {

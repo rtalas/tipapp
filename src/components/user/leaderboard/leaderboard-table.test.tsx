@@ -199,9 +199,10 @@ describe('LeaderboardTable', () => {
         <LeaderboardTable entries={entries} prizes={prizes} fines={[]} />
       )
 
-      // Only one prize badge (rank 1)
-      const prizeBadges = container.querySelectorAll('.bg-yellow-500\\/20')
-      expect(prizeBadges.length).toBeGreaterThanOrEqual(1)
+      // Rank 1 gets bg-yellow-500/20 on rank circle + prize badge = 2 elements
+      // Rank 2 gets neither = 0 elements
+      const yellowElements = container.querySelectorAll('.bg-yellow-500\\/20')
+      expect(yellowElements).toHaveLength(2)
     })
   })
 
