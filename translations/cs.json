@@ -744,7 +744,16 @@
       "homeScoreOptional": "Volitelné - pro dokončené série",
       "awayScoreOptional": "Volitelné - pro dokončené série",
       "seriesCreated": "Série úspěšně vytvořena",
-      "seriesCreateFailed": "Nepodařilo se vytvořit sérii"
+      "seriesCreateFailed": "Nepodařilo se vytvořit sérii",
+      "editSeriesDetails": "Upravit detaily série: {matchup}",
+      "editDetailsDialog": {
+        "title": "Upravit sérii",
+        "description": "Upravit detaily série {matchup}",
+        "updating": "Ukládám...",
+        "submit": "Uložit sérii",
+        "success": "Série úspěšně aktualizována",
+        "failed": "Nepodařilo se aktualizovat sérii"
+      }
     },
     "specialBets": {
       "title": "Speciální sázky",
@@ -778,7 +787,16 @@
       "specialBetDeleted": "Speciální sázka úspěšně smazána",
       "specialBetDeleteFailed": "Nepodařilo se smazat speciální sázku",
       "specialBetEvaluated": "Speciální sázka vyhodnocena! {count} uživatel(ů) aktualizováno.",
-      "specialBetEvaluateFailed": "Nepodařilo se vyhodnotit speciální sázku"
+      "specialBetEvaluateFailed": "Nepodařilo se vyhodnotit speciální sázku",
+      "editSpecialBetDetails": "Upravit detaily speciální sázky: {name}",
+      "editDetailsDialog": {
+        "title": "Upravit speciální sázku",
+        "description": "Upravit detaily pro {name}",
+        "updating": "Ukládám...",
+        "submit": "Uložit speciální sázku",
+        "success": "Speciální sázka úspěšně aktualizována",
+        "failed": "Nepodařilo se aktualizovat speciální sázku"
+      }
     },
     "questions": {
       "title": "Otázky",

@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/select'
 import { AddSpecialBetDialog } from './add-special-bet-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
+import { EditSpecialBetDialog } from './edit-special-bet-dialog'
 import { SpecialBetTableRow } from './special-bet-table-row'
 import { CreateSpecialBetUserBetDialog } from './create-special-bet-user-bet-dialog'
 import { type SpecialBetWithUserBets } from '@/actions/special-bet-bets'
@@ -85,6 +86,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [selectedSpecialBet, setSelectedSpecialBet] = useState<SpecialBet | null>(null)
+  const [editDetailsSpecialBet, setEditDetailsSpecialBet] = useState<SpecialBet | null>(null)
   const deleteDialog = useDeleteDialog<SpecialBet>()
   const [createBetSpecialBetId, setCreateBetSpecialBetId] = useState<number | null>(null)
 
@@ -288,6 +290,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
                         league={sbLeague}
                         isExpanded={isExpanded(sb.id)}
                         onToggleExpand={() => toggleRow(sb.id)}
+                        onEditDetails={() => setEditDetailsSpecialBet(sb)}
                         onEdit={() => setSelectedSpecialBet(sb)}
                         onEvaluate={() => handleEvaluate(sb.id)}
                         onDelete={() => deleteDialog.openDialog(sb)}
@@ -311,6 +314,15 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
         evaluators={evaluators}
         league={league}
       />
+
+      {/* Edit Special Bet Details Dialog */}
+      {editDetailsSpecialBet && (
+        <EditSpecialBetDialog
+          specialBet={editDetailsSpecialBet}
+          open={!!editDetailsSpecialBet}
+          onOpenChange={(open) => !open && setEditDetailsSpecialBet(null)}
+        />
+      )}
 
       {/* Result Entry Dialog */}
       {selectedSpecialBet && (

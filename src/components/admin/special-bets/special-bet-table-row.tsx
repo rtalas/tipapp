@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Edit, Trash2, ChevronDown, Calculator, Plus } from 'lucide-react'
+import { Edit, Trash2, ChevronDown, Calculator, Plus, Calendar } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ interface SpecialBetTableRowProps {
   league?: League
   isExpanded: boolean
   onToggleExpand: () => void
+  onEditDetails: () => void
   onEdit: () => void
   onEvaluate: () => void
   onDelete: () => void
@@ -75,6 +76,7 @@ export function SpecialBetTableRow({
   league,
   isExpanded,
   onToggleExpand,
+  onEditDetails,
   onEdit,
   onEvaluate,
   onDelete,
@@ -170,6 +172,17 @@ export function SpecialBetTableRow({
             className="flex items-center gap-2"
             onClick={(e) => e.stopPropagation()}
           >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                onEditDetails()
+              }}
+              aria-label={t('editSpecialBetDetails', { name: specialBet.name })}
+            >
+              <Calendar className="h-4 w-4 text-blue-600" />
+            </Button>
             <Button
               variant="ghost"
               size="sm"

@@ -10,8 +10,10 @@ import { AppError } from '@/lib/error-handler'
 import {
   createSeriesSchema,
   updateSeriesResultSchema,
+  updateSeriesSchema,
   type CreateSeriesInput,
   type UpdateSeriesResultInput,
+  type UpdateSeriesInput,
 } from '@/lib/validation/admin'
 
 export async function createSeries(input: CreateSeriesInput) {
@@ -101,6 +103,32 @@ export async function updateSeriesResult(input: UpdateSeriesResultInput) {
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSerie', validated.seriesId,
         { homeTeamScore: validated.homeTeamScore, awayTeamScore: validated.awayTeamScore }
+      ).catch(() => {})
+
+      return {}
+    },
+    revalidatePath: '/admin/series',
+    requiresAdmin: true,
+  })
+}
+
+export async function updateSeries(input: UpdateSeriesInput) {
+  return executeServerAction(input, {
+    validator: updateSeriesSchema,
+    handler: async (validated, session) => {
+      await prisma.leagueSpecialBetSerie.update({
+        where: { id: validated.seriesId },
+        data: {
+          dateTime: validated.dateTime,
+          updatedAt: new Date(),
+        },
+      })
+
+      revalidateTag('series-data', 'max')
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSerie', validated.seriesId,
+        { dateTime: validated.dateTime }
       ).catch(() => {})
 
       return {}

@@ -16,6 +16,7 @@ import { ContentFilterHeader } from '@/components/admin/common/content-filter-he
 import { DetailedEntityDeleteDialog } from '@/components/admin/common/detailed-entity-delete-dialog'
 import { SeriesTableRow } from './series-table-row'
 import { CreateSeriesDialog } from './create-series-dialog'
+import { EditSeriesDialog } from './edit-series-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
 import { CreateSeriesBetDialog } from './create-series-bet-dialog'
 import { Button } from '@/components/ui/button'
@@ -67,6 +68,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
   const [leagueFilter, setLeagueFilter] = useState<string>('all')
   const [userFilter, setUserFilter] = useState<string>('all')
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null)
+  const [editDetailsSeries, setEditDetailsSeries] = useState<Series | null>(null)
   const [createBetSeriesId, setCreateBetSeriesId] = useState<number | null>(null)
 
   // Expandable rows
@@ -287,6 +289,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                       series={s}
                       isExpanded={isExpanded(s.id)}
                       onToggleExpand={() => toggleRow(s.id)}
+                      onEditDetails={() => setEditDetailsSeries(s)}
                       onEdit={() => setSelectedSeries(s)}
                       onEvaluate={() => handleEvaluate(s.id)}
                       onDelete={() => deleteDialog.openDialog(s)}
@@ -313,6 +316,15 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
         specialBetSeries={specialBetSeries}
         league={league}
       />
+
+      {/* Edit Series Details Dialog */}
+      {editDetailsSeries && (
+        <EditSeriesDialog
+          series={editDetailsSeries}
+          open={!!editDetailsSeries}
+          onOpenChange={(open) => !open && setEditDetailsSeries(null)}
+        />
+      )}
 
       {/* Result Entry Dialog */}
       {selectedSeries && (

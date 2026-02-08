@@ -12,8 +12,10 @@ import { AppError } from '@/lib/error-handler'
 import {
   createSpecialBetSchema,
   updateSpecialBetResultSchema,
+  updateSpecialBetSchema,
   type CreateSpecialBetInput,
   type UpdateSpecialBetResultInput,
+  type UpdateSpecialBetInput,
 } from '@/lib/validation/admin'
 
 export async function createSpecialBet(input: CreateSpecialBetInput) {
@@ -208,6 +210,32 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
         wasEvaluated: specialBet.isEvaluated,
         needsReEvaluation: true, // Always needs re-evaluation after result update
       }
+    },
+    revalidatePath: '/admin/special-bets',
+    requiresAdmin: true,
+  })
+}
+
+export async function updateSpecialBet(input: UpdateSpecialBetInput) {
+  return executeServerAction(input, {
+    validator: updateSpecialBetSchema,
+    handler: async (validated, session) => {
+      await prisma.leagueSpecialBetSingle.update({
+        where: { id: validated.specialBetId },
+        data: {
+          dateTime: validated.dateTime,
+          updatedAt: new Date(),
+        },
+      })
+
+      revalidateTag('special-bet-data', 'max')
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSingle', validated.specialBetId,
+        { dateTime: validated.dateTime }
+      ).catch(() => {})
+
+      return {}
     },
     revalidatePath: '/admin/special-bets',
     requiresAdmin: true,

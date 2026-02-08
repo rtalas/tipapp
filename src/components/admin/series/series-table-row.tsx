@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-import { Edit, Trash2, Calculator, ChevronDown, Plus } from 'lucide-react'
+import { Edit, Trash2, Calculator, ChevronDown, Plus, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -23,6 +23,7 @@ interface SeriesTableRowProps {
   series: Series
   isExpanded: boolean
   onToggleExpand: () => void
+  onEditDetails: () => void
   onEdit: () => void
   onEvaluate: () => void
   onDelete: () => void
@@ -40,6 +41,7 @@ export function SeriesTableRow({
   series,
   isExpanded,
   onToggleExpand,
+  onEditDetails,
   onEdit,
   onEvaluate,
   onDelete,
@@ -142,6 +144,17 @@ export function SeriesTableRow({
             className="flex items-center gap-2"
             onClick={(e) => e.stopPropagation()}
           >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                onEditDetails()
+              }}
+              aria-label={t('editSeriesDetails', { matchup: `${homeTeam.name} ${t('vs')} ${awayTeam.name}` })}
+            >
+              <Calendar className="h-4 w-4 text-blue-600" />
+            </Button>
             <Button
               variant="ghost"
               size="sm"

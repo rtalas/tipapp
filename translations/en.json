@@ -744,7 +744,16 @@
       "homeScoreOptional": "Optional - for completed series",
       "awayScoreOptional": "Optional - for completed series",
       "seriesCreated": "Series created successfully",
-      "seriesCreateFailed": "Failed to create series"
+      "seriesCreateFailed": "Failed to create series",
+      "editSeriesDetails": "Edit series details: {matchup}",
+      "editDetailsDialog": {
+        "title": "Edit Series",
+        "description": "Update series details for {matchup}",
+        "updating": "Updating...",
+        "submit": "Update Series",
+        "success": "Series updated successfully",
+        "failed": "Failed to update series"
+      }
     },
     "specialBets": {
       "title": "Special Bets",
@@ -778,7 +787,16 @@
       "specialBetDeleted": "Special bet deleted successfully",
       "specialBetDeleteFailed": "Failed to delete special bet",
       "specialBetEvaluated": "Special bet evaluated! {count} user(s) updated.",
-      "specialBetEvaluateFailed": "Failed to evaluate special bet"
+      "specialBetEvaluateFailed": "Failed to evaluate special bet",
+      "editSpecialBetDetails": "Edit special bet details: {name}",
+      "editDetailsDialog": {
+        "title": "Edit Special Bet",
+        "description": "Update details for {name}",
+        "updating": "Updating...",
+        "submit": "Update Special Bet",
+        "success": "Special bet updated successfully",
+        "failed": "Failed to update special bet"
+      }
     },
     "questions": {
       "title": "Questions",
