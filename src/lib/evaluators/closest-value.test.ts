@@ -10,7 +10,7 @@ describe("evaluateClosestValue", () => {
       allPredictions: [5, 10, 20, 25], // 10 is closest (diff: 2)
     };
 
-    expect(evaluateClosestValue(context)).toBe(0.33);
+    expect(evaluateClosestValue(context)).toBeCloseTo(1 / 3, 5);
   });
 
   it("should return 1.0 (full points) when user guessed exact value", () => {
@@ -41,7 +41,7 @@ describe("evaluateClosestValue", () => {
       allPredictions: [8, 10, 14, 20], // Both 10 and 14 are closest (diff: 2)
     };
 
-    expect(evaluateClosestValue(context)).toBe(0.33);
+    expect(evaluateClosestValue(context)).toBeCloseTo(1 / 3, 5);
   });
 
   it("should handle negative differences correctly", () => {

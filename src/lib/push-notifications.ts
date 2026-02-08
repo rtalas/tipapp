@@ -138,6 +138,7 @@ export async function findUsersNeedingNotification(): Promise<UserNeedingNotific
         select: { leagueUserId: true },
       },
       SentNotification: {
+        where: { deletedAt: null },
         select: { userId: true },
       },
     },

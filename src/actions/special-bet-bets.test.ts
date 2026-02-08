@@ -46,7 +46,7 @@ describe('Special Bet Bets Actions', () => {
     it('should create special bet with team prediction', async () => {
       const txMocks = {
         leagueSpecialBetSingle: { findUnique: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }) },
-        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5 }) },
+        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 1 }) },
         userSpecialBetSingle: {
           findFirst: vi.fn().mockResolvedValue(null),
           create: vi.fn().mockResolvedValue({ id: 100 }),
@@ -68,7 +68,7 @@ describe('Special Bet Bets Actions', () => {
     it('should reject duplicate bet', async () => {
       const txMocks = {
         leagueSpecialBetSingle: { findUnique: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }) },
-        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5 }) },
+        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 1 }) },
         userSpecialBetSingle: {
           findFirst: vi.fn().mockResolvedValue({ id: 99 }),
         },
@@ -87,10 +87,30 @@ describe('Special Bet Bets Actions', () => {
       expect((result as any).error).toContain('already has a bet')
     })
 
+    it('should reject cross-league bet creation', async () => {
+      const txMocks = {
+        leagueSpecialBetSingle: { findUnique: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }) },
+        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 2 }) },
+        userSpecialBetSingle: { findFirst: vi.fn() },
+        leagueTeam: { findFirst: vi.fn() },
+        leaguePlayer: { findFirst: vi.fn() },
+      }
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
+
+      const result = await createUserSpecialBet({
+        leagueSpecialBetSingleId: 1,
+        leagueUserId: 5,
+        teamResultId: 10,
+      })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('does not belong to the same league')
+    })
+
     it('should validate team belongs to league', async () => {
       const txMocks = {
         leagueSpecialBetSingle: { findUnique: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }) },
-        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5 }) },
+        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 1 }) },
         userSpecialBetSingle: { findFirst: vi.fn().mockResolvedValue(null) },
         leagueTeam: { findFirst: vi.fn().mockResolvedValue(null) }, // team not found
         leaguePlayer: { findFirst: vi.fn() },

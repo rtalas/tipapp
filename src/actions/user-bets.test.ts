@@ -48,10 +48,11 @@ describe('User Bets Actions', () => {
         leagueMatch: {
           findUnique: vi.fn().mockResolvedValue({
             id: 1,
+            leagueId: 1,
             Match: { homeTeamId: 10, awayTeamId: 20, deletedAt: null },
           }),
         },
-        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5 }) },
+        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 1 }) },
         userBet: {
           findFirst: vi.fn().mockResolvedValue(null), // no existing bet
           create: vi.fn().mockResolvedValue({ id: 100 }),
@@ -77,10 +78,11 @@ describe('User Bets Actions', () => {
         leagueMatch: {
           findUnique: vi.fn().mockResolvedValue({
             id: 1,
+            leagueId: 1,
             Match: { homeTeamId: 10, awayTeamId: 20, deletedAt: null },
           }),
         },
-        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5 }) },
+        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 1 }) },
         userBet: {
           findFirst: vi.fn().mockResolvedValue({ id: 99 }), // existing bet
         },
@@ -121,15 +123,43 @@ describe('User Bets Actions', () => {
       expect((result as any).error).toContain('Match not found')
     })
 
+    it('should reject cross-league bet creation', async () => {
+      const txMocks = {
+        leagueMatch: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: 1,
+            leagueId: 1,
+            Match: { homeTeamId: 10, awayTeamId: 20, deletedAt: null },
+          }),
+        },
+        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 2 }) },
+        userBet: { findFirst: vi.fn() },
+        leaguePlayer: { findUnique: vi.fn() },
+      }
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
+
+      const result = await createUserBet({
+        leagueMatchId: 1,
+        leagueUserId: 5,
+        homeScore: 2,
+        awayScore: 1,
+        overtime: false,
+      })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('does not belong to the same league')
+    })
+
     it('should validate scorer belongs to playing teams', async () => {
       const txMocks = {
         leagueMatch: {
           findUnique: vi.fn().mockResolvedValue({
             id: 1,
+            leagueId: 1,
             Match: { homeTeamId: 10, awayTeamId: 20, deletedAt: null },
           }),
         },
-        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5 }) },
+        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 1 }) },
         userBet: { findFirst: vi.fn().mockResolvedValue(null) },
         leaguePlayer: {
           findUnique: vi.fn().mockResolvedValue({ id: 30, leagueTeamId: 99 }), // wrong team

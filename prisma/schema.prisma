@@ -164,7 +164,7 @@ model LeaguePrize {
   createdAt DateTime  @db.Timestamptz(6)
   updatedAt DateTime  @db.Timestamptz(6)
   deletedAt DateTime? @db.Timestamptz(6)
-  League    League    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  League    League    @relation(fields: [leagueId], references: [id], onDelete: NoAction)
 
   @@unique([leagueId, rank, type, deletedAt])
   @@index([leagueId, deletedAt])
@@ -250,7 +250,7 @@ model LeagueSpecialBetSingleTeamAdvanced {
   createdAt                DateTime               @db.Timestamptz(6)
   updatedAt                DateTime               @db.Timestamptz(6)
   deletedAt                DateTime?              @db.Timestamptz(6)
-  LeagueSpecialBetSingle   LeagueSpecialBetSingle @relation(fields: [leagueSpecialBetSingleId], references: [id], onDelete: Cascade)
+  LeagueSpecialBetSingle   LeagueSpecialBetSingle @relation(fields: [leagueSpecialBetSingleId], references: [id], onDelete: NoAction)
   LeagueTeam               LeagueTeam             @relation(fields: [leagueTeamId], references: [id], onDelete: NoAction)
 
   @@unique([leagueSpecialBetSingleId, leagueTeamId, deletedAt])
@@ -421,21 +421,22 @@ model PushSubscription {
   createdAt DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt DateTime  @db.Timestamptz(6)
   deletedAt DateTime? @db.Timestamptz(6)
-  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction)
 
   @@unique([userId, endpoint, deletedAt])
   @@index([userId, deletedAt])
 }
 
 model SentNotification {
-  id            Int         @id @default(autoincrement())
+  id            Int          @id @default(autoincrement())
   userId        Int
   leagueMatchId Int
-  sentAt        DateTime    @default(now()) @db.Timestamptz(6)
-  LeagueMatch   LeagueMatch @relation(fields: [leagueMatchId], references: [id], onDelete: Cascade)
-  User          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sentAt        DateTime     @default(now()) @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  LeagueMatch   LeagueMatch  @relation(fields: [leagueMatchId], references: [id], onDelete: NoAction)
+  User          User         @relation(fields: [userId], references: [id], onDelete: NoAction)
 
-  @@unique([userId, leagueMatchId])
+  @@unique([userId, leagueMatchId, deletedAt])
   @@index([leagueMatchId])
   @@index([userId])
 }
@@ -573,7 +574,7 @@ model UserBet {
   deletedAt     DateTime?     @db.Timestamptz(6)
   noScorer      Boolean?
   LeagueMatch   LeagueMatch   @relation(fields: [leagueMatchId], references: [id], onDelete: NoAction)
-  LeagueUser    LeagueUser    @relation(fields: [leagueUserId], references: [id], onDelete: Cascade)
+  LeagueUser    LeagueUser    @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
   LeaguePlayer  LeaguePlayer? @relation(fields: [scorerId], references: [id])
 
   @@unique([leagueMatchId, leagueUserId, deletedAt])

@@ -114,6 +114,11 @@ export async function createUserSpecialBet(input: CreateUserSpecialBetInput) {
             throw new AppError('League user not found', 'NOT_FOUND', 404)
           }
 
+          // Verify leagueUser belongs to the same league as the special bet
+          if (leagueUser.leagueId !== specialBet.leagueId) {
+            throw new AppError('User does not belong to the same league as this special bet', 'BAD_REQUEST', 400)
+          }
+
           // Check for duplicate bet
           const existingBet = await tx.userSpecialBetSingle.findFirst({
             where: {

@@ -5,8 +5,24 @@ import { isPrismaError, handlePrismaError } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { AuditLogger } from "@/lib/logging/audit-logger";
 import { sendRegistrationConfirmationEmail } from "@/lib/email/email";
+import { getClientIp, checkRegistrationRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  // Rate limit registration by IP
+  const ip = getClientIp(request);
+  const { limited, retryAfterMs } = checkRegistrationRateLimit(ip);
+
+  if (limited) {
+    const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
+    return NextResponse.json(
+      { error: "Too many registration attempts. Please try again later." },
+      {
+        status: 429,
+        headers: { "Retry-After": retryAfterSeconds.toString() },
+      }
+    );
+  }
+
   try {
     const body = await request.json();
 

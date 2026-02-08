@@ -83,6 +83,11 @@ export async function createUserQuestionBet(input: CreateUserQuestionBetInput) {
           throw new AppError('League user not found', 'NOT_FOUND', 404)
         }
 
+        // Verify leagueUser belongs to the same league as the question
+        if (leagueUser.leagueId !== question.leagueId) {
+          throw new AppError('User does not belong to the same league as this question', 'BAD_REQUEST', 400)
+        }
+
         // Check for duplicate bet (same user + question)
         const existingBet = await tx.userSpecialBetQuestion.findFirst({
           where: {

@@ -46,8 +46,8 @@ describe('Question Bets Actions', () => {
     it('should create question bet in transaction', async () => {
       mockPrisma.$transaction.mockImplementation(async (fn: any) => {
         const tx = {
-          leagueSpecialBetQuestion: { findUnique: vi.fn().mockResolvedValue({ id: 1 }) },
-          leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5 }) },
+          leagueSpecialBetQuestion: { findUnique: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }) },
+          leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 1 }) },
           userSpecialBetQuestion: {
             findFirst: vi.fn().mockResolvedValue(null),
             create: vi.fn().mockResolvedValue({ id: 100 }),
@@ -69,8 +69,8 @@ describe('Question Bets Actions', () => {
     it('should reject duplicate bet', async () => {
       mockPrisma.$transaction.mockImplementation(async (fn: any) => {
         const tx = {
-          leagueSpecialBetQuestion: { findUnique: vi.fn().mockResolvedValue({ id: 1 }) },
-          leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5 }) },
+          leagueSpecialBetQuestion: { findUnique: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }) },
+          leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 1 }) },
           userSpecialBetQuestion: {
             findFirst: vi.fn().mockResolvedValue({ id: 99 }),
           },
@@ -86,6 +86,26 @@ describe('Question Bets Actions', () => {
 
       expect(result.success).toBe(false)
       expect((result as any).error).toContain('already has a bet')
+    })
+
+    it('should reject cross-league bet creation', async () => {
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          leagueSpecialBetQuestion: { findUnique: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }) },
+          leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 2 }) },
+          userSpecialBetQuestion: { findFirst: vi.fn() },
+        }
+        return fn(tx)
+      })
+
+      const result = await createUserQuestionBet({
+        leagueSpecialBetQuestionId: 1,
+        leagueUserId: 5,
+        userBet: true,
+      })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('does not belong to the same league')
     })
 
     it('should reject when question not found', async () => {

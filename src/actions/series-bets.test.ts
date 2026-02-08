@@ -40,8 +40,8 @@ describe('Series Bets Actions', () => {
   describe('createUserSeriesBet', () => {
     it('should create bet in serializable transaction', async () => {
       const txMocks = {
-        leagueSpecialBetSerie: { findUnique: vi.fn().mockResolvedValue({ id: 1 }) },
-        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5 }) },
+        leagueSpecialBetSerie: { findUnique: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }) },
+        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 1 }) },
         userSpecialBetSerie: {
           findFirst: vi.fn().mockResolvedValue(null),
           create: vi.fn().mockResolvedValue({ id: 100 }),
@@ -60,10 +60,29 @@ describe('Series Bets Actions', () => {
       expect((result as any).betId).toBe(100)
     })
 
+    it('should reject cross-league bet creation', async () => {
+      const txMocks = {
+        leagueSpecialBetSerie: { findUnique: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }) },
+        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 2 }) },
+        userSpecialBetSerie: { findFirst: vi.fn() },
+      }
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
+
+      const result = await createUserSeriesBet({
+        leagueSpecialBetSerieId: 1,
+        leagueUserId: 5,
+        homeTeamScore: 4,
+        awayTeamScore: 2,
+      })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('does not belong to the same league')
+    })
+
     it('should reject duplicate bet', async () => {
       const txMocks = {
-        leagueSpecialBetSerie: { findUnique: vi.fn().mockResolvedValue({ id: 1 }) },
-        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5 }) },
+        leagueSpecialBetSerie: { findUnique: vi.fn().mockResolvedValue({ id: 1, leagueId: 1 }) },
+        leagueUser: { findUnique: vi.fn().mockResolvedValue({ id: 5, leagueId: 1 }) },
         userSpecialBetSerie: {
           findFirst: vi.fn().mockResolvedValue({ id: 99 }),
         },
