@@ -7,7 +7,7 @@
 - **Admin:** Manual league, team, match, and result management with audit logging.
 
 ## Tech Stack
-Next.js 16 (App Router) • React 19 • Auth.js v5 (CredentialsProvider + JWT) • PostgreSQL (Supabase) • Prisma 6 • Zod 4 • Vitest 4 + Testing Library • Tailwind CSS v4 • Lucide Icons • next-intl v4 (i18n) • Resend (email) • web-push (notifications)
+Next.js 16 (App Router) • React 19 • Auth.js v5 (CredentialsProvider + JWT) • PostgreSQL (Supabase) • Prisma 6 • Zod 4 • Vitest 4 + Testing Library • Tailwind CSS v4 • Lucide Icons • next-intl v4 (i18n) • Resend (email) • web-push (notifications) • date-fns v4
 
 ## Internationalization (i18n)
 **Supported Languages:** English (en), Czech (cs)
@@ -25,7 +25,7 @@ Next.js 16 (App Router) • React 19 • Auth.js v5 (CredentialsProvider + JWT) 
 - **Date/Time Formatting:** Uses Intl API via next-intl (automatic locale-aware formatting)
 
 ### Translation Structure
-Nested JSON organized by namespaces (~1350 lines each):
+Nested JSON organized by namespaces (~1490 lines each):
 ```json
 {
   "common": { "save": "Save", "cancel": "Cancel" },
@@ -102,14 +102,14 @@ Nested JSON organized by namespaces (~1350 lines each):
 app/                              # 39 pages
 ├── [leagueId]/                   # User pages (matches, series, special-bets, questions, leaderboard, chat, profile)
 ├── admin/
-│   ├── [leagueId]/               # League-scoped (matches, series, special-bets, questions, teams, players, evaluators)
+│   ├── [leagueId]/               # League-scoped (matches, series, special-bets, questions, teams, players, evaluators, users)
 │   └── */                        # Global (leagues, teams, players, users, matches, series, special-bets,
 │                                 #         series-types, evaluators, match-phases, audit-logs, profile)
 ├── login/, register/             # Auth pages
 ├── forgot-password/              # Password reset request
 └── reset-password/[token]/       # Password reset form
 src/
-├── actions/                      # Server actions (50 files with tests)
+├── actions/                      # Server actions (32 action files + 31 test files)
 │   ├── evaluators.ts             # updateEvaluator() supports config for scorer rank-based points
 │   ├── league-prizes.ts          # getLeaguePrizes(), updateLeaguePrizes() - handles prizes & fines
 │   ├── evaluate-matches.ts       # Match evaluation engine
@@ -128,27 +128,27 @@ src/
 │       ├── profile.ts            # User profile operations
 │       └── locale.ts             # Language preference management
 ├── components/                   # React components
-│   ├── admin/                    # 17 subdirectories (layout, common, leagues, matches, series, etc.)
+│   ├── admin/                    # 16 subdirectories (layout, common, leagues, matches, series, etc.)
 │   │   └── leagues/
 │   │       ├── league-prizes-section.tsx  # Prize management UI
 │   │       ├── league-fines-section.tsx   # Fine management UI
 │   │       └── fine-tier-row.tsx          # Individual fine tier component
-│   └── user/                     # 10 subdirectories (layout, common, matches, leaderboard, etc.)
+│   └── user/                     # 9 subdirectories (layout, common, matches, leaderboard, etc.)
 │       └── leaderboard/
 │           └── leaderboard-table.tsx      # Displays prizes & fines
 ├── contexts/                     # league-context.tsx, user-league-context.tsx
 ├── hooks/                        # useRefresh, useInlineEdit, useDeleteDialog, useCreateDialog,
-│                                 # useExpandableRow, useMessages, useDateLocale
+│                                 # useExpandableRow, useMessages, useDateLocale, useFriendPredictions
 ├── i18n/                         # request.ts (next-intl config)
 ├── lib/
 │   ├── auth/                     # auth-utils.ts (requireAdmin), user-auth-utils.ts (requireLeagueMember)
 │   ├── email/                    # email.ts (sendPasswordResetEmail via Resend)
 │   ├── logging/                  # audit-logger.ts (AuditLogger), client-logger.ts
-│   ├── evaluators/               # 14 evaluators + types.ts, evaluator-mapper.ts, context-builders.ts
-│   ├── evaluation/               # match-evaluator.ts, series-evaluator.ts, special-bet-evaluator.ts, question-evaluator.ts
+│   ├── evaluators/               # 15 evaluators + types.ts, evaluator-mapper.ts, context-builders.ts, index.ts
+│   ├── evaluation/               # match-evaluator.ts, series-evaluator.ts, special-bet-evaluator.ts, question-evaluator.ts, evaluate-action.ts
 │   ├── cache/                    # badge-counts.ts (getCachedBadgeCounts)
 │   ├── chat/                     # emoji-data.ts
-│   ├── validation/               # admin.ts, user.ts, message.ts (Zod schemas)
+│   ├── validation/               # admin.ts, user.ts (Zod schemas; message schemas in admin.ts)
 │   ├── constants.ts              # SPORT_IDS.HOCKEY=1, SPORT_IDS.FOOTBALL=2
 │   ├── error-handler.ts          # AppError, handleActionError()
 │   ├── server-action-utils.ts    # executeServerAction() wrapper
@@ -167,14 +167,22 @@ src/
 │   ├── push-notifications.ts     # Push notification service
 │   ├── delete-utils.ts           # Soft delete utilities
 │   ├── date-grouping-utils.ts    # Date grouping for UI
-│   └── user-display-utils.ts     # User display formatting
+│   ├── user-display-utils.ts     # User display formatting
+│   ├── special-bet-utils.ts      # Special bet utilities
+│   ├── audit-queries.ts          # Audit log query helpers
+│   ├── image-utils.ts            # Image processing utilities
+│   ├── utils.ts                  # General utility functions
+│   ├── env.ts                    # Environment variable helpers
+│   ├── supabase.ts               # Supabase client
+│   ├── validation.ts             # Shared validation utilities
+│   └── validation-client.ts      # Client-side validation helpers
 └── types/                        # next-auth.d.ts, user.ts
 prisma/
 ├── schema.prisma                 # 36 models
 └── seed-demo.ts                  # Demo data generator
 translations/
-├── en.json                       # English (~1350 lines)
-└── cs.json                       # Czech (~1350 lines)
+├── en.json                       # English (~1490 lines)
+└── cs.json                       # Czech (~1490 lines)
 ```
 
 ## Database Models (36 total)
@@ -193,7 +201,7 @@ translations/
 - Email normalization: All emails stored in lowercase for consistent authentication
 
 ## Evaluators (src/lib/evaluators/)
-14 modular evaluators with full test coverage:
+15 modular evaluators with full test coverage:
 1. **exact-score** - Exact match (regulation time score + overtime prediction must match)
 2. **score-difference** - Goal diff (excl. exact)
 3. **one-team-score** - One team's score correct (excl. exact & score diff)
@@ -219,12 +227,13 @@ translations/
 12. **exact-value** - Numeric value exact
 13. **closest-value** - Tiered scoring: exact = full points (1.0x), closest = 1/3 points (0.33x), not closest = 0 points
 14. **question** - Yes/no question (correct = +pts, wrong = -pts/2)
+15. **group-stage-team** - Group stage team prediction (full pts for group winner, partial for advance)
 
 ## Development Status
 - ✅ **Phase 1:** Infrastructure (Next.js, Prisma, Auth.js v5)
 - ✅ **Phase 2:** Admin Management (CRUD, inline editing, code quality, security audit)
 - ✅ **Phase 3:** Admin User Betting (expandable rows, league-scoped architecture, questions)
-- ✅ **Phase 4:** Evaluation Engine (14 evaluators with full test coverage)
+- ✅ **Phase 4:** Evaluation Engine (15 evaluators with full test coverage)
 - ✅ **Phase 5:** User-Side App (mobile-first, PWA, bottom nav, friend predictions, pull-to-refresh)
 - ✅ **Phase 6:** Polish (prizes & fines, race condition fixes, performance caching, security hardening, chat replies, audit logs)
 - ✅ **Phase 7:** Production (push notifications, cron job, monitoring, final deployment)
@@ -271,7 +280,7 @@ translations/
 ## Code Quality & Security
 
 ### Testing
-- **1072 tests** across **81 test files**, runs in ~6 seconds
+- **1197 tests** across **91 test files**, runs in ~8 seconds
 - Global mocks in `vitest.setup.ts`: Prisma (36 models + groupBy/aggregate), audit-logger, next/cache, next/navigation, next-auth/react, @/auth
 - Test pattern: Don't add per-file `vi.mock('@/lib/prisma')` — use the global mock, just `vi.mocked(prisma)` for typed refs
 - `executeServerAction` returns `{ success: true, ...result }` (spread), not nested `data`
@@ -279,7 +288,7 @@ translations/
 
 ### Refactoring
 - **Centralized:** auth (`requireAdmin()`), errors (`AppError`, `handleActionError()`), validation (`validation-client.ts`)
-- **Hooks:** `useInlineEdit`, `useDeleteDialog`, `useCreateDialog`, `useExpandableRow`, `useRefresh`, `useMessages`, `useDateLocale`
+- **Hooks:** `useInlineEdit`, `useDeleteDialog`, `useCreateDialog`, `useExpandableRow`, `useRefresh`, `useMessages`, `useDateLocale`, `useFriendPredictions`
 - **Utils:** `executeServerAction()` wrapper eliminates duplicate try-catch
 - **Type consolidation:** `ScorerRankedConfig` interface consolidated to single source in `lib/evaluators/types.ts`
 
@@ -305,7 +314,7 @@ translations/
 - CORS, token blacklist, email retry queue
 
 ### Build Status
-✅ Production build clean (0 errors/warnings) • ✅ 1072 tests pass • ✅ 39 routes • ✅ PWA ready
+✅ Production build clean (0 errors/warnings) • ✅ 1197 tests • ✅ 39 routes • ✅ PWA ready
 
 ### Race Condition Prevention
 User betting actions use **atomic upserts** to prevent duplicate bets during concurrent submissions:

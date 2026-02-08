@@ -7,7 +7,7 @@ A modern, mobile-first sports betting application built with Next.js 16 for frie
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-green)](https://supabase.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2D3748)](https://www.prisma.io/)
-[![Vitest](https://img.shields.io/badge/Vitest-1072_tests-6E9F18)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-1197_tests-6E9F18)](https://vitest.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8)](https://web.dev/progressive-web-apps/)
 
 ---
@@ -39,12 +39,12 @@ TipApp was designed for small groups of friends and family (dozens of users) who
 
 - **Mobile-First PWA** - Installable on any device, works offline, supports push notifications
 - **Dual Sport Support** - Football (soccer) and hockey with sport-specific betting options
-- **Flexible Scoring** - 14 configurable evaluators for custom point systems per league
+- **Flexible Scoring** - 15 configurable evaluators for custom point systems per league
 - **Social Features** - See friends' predictions after match starts, compete on leaderboards, in-app chat with replies
 - **Gamification** - Prize tiers for top performers, fine tiers for worst performers
 - **Multi-League** - Run multiple leagues simultaneously (Euro 2024, NHL Playoffs, etc.)
-- **Bilingual** - Full English and Czech translations with auto-detection (~1350 translation keys per language)
-- **Comprehensive Testing** - 1072 tests across 81 files, running in ~6 seconds
+- **Bilingual** - Full English and Czech translations with auto-detection (~1490 translation keys per language)
+- **Comprehensive Testing** - 1197 tests across 91 files, running in ~8 seconds
 
 ### Who Is This For?
 
@@ -99,7 +99,7 @@ TipApp was designed for small groups of friends and family (dozens of users) who
 - **Sport-Specific Options** - Different options for football vs hockey
 
 #### Scoring Configuration
-- **14 Evaluators** - Choose which scoring rules apply to each league
+- **15 Evaluators** - Choose which scoring rules apply to each league
 - **Custom Points** - Set point values for each evaluator type
 - **Doubled Matches** - Mark important matches for 2x points
 - **Rank-Based Scoring** - Variable points based on scorer rankings
@@ -156,7 +156,7 @@ TipApp was designed for small groups of friends and family (dozens of users) who
 | Technology | Purpose |
 |------------|---------|
 | TypeScript 5 | Type safety (strict mode) |
-| Vitest 4 | Unit & integration testing (1072 tests) |
+| Vitest 4 | Unit & integration testing (1197 tests) |
 | Testing Library | Component testing |
 | happy-dom | Test environment |
 | ESLint | Code linting |
@@ -186,11 +186,11 @@ TipApp was designed for small groups of friends and family (dozens of users) who
 │  │  • Data fetching  • Auth checks  • SSR rendering    │    │
 │  └─────────────────────────────────────────────────────┘    │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │           Server Actions (50 files)                  │    │
+│  │           Server Actions (32 action files)             │    │
 │  │  • CSRF protection  • Zod validation  • Audit log   │    │
 │  └──────────────────────────┬──────────────────────────┘    │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │        Evaluation Engine (14 evaluators)             │    │
+│  │        Evaluation Engine (15 evaluators)             │    │
 │  │  • Point calculation  • Rankings  • Caching          │    │
 │  └─────────────────────────────────────────────────────┘    │
 │  ┌─────────────────────────────────────────────────────┐    │
@@ -349,6 +349,7 @@ The heart of TipApp is its modular evaluation engine with 14 independent evaluat
 | 12 | `exact-value` | Exact numeric value | 5 pts |
 | 13 | `closest-value` | Tiered: exact=full, closest=1/3 | varies |
 | 14 | `question` | Yes/no: correct=+pts, wrong=-pts/2 | ±3 pts |
+| 15 | `group-stage-team` | Group stage team prediction (winner/advance) | varies |
 
 *Scorer evaluator supports rank-based scoring with configurable points per rank.
 
@@ -401,7 +402,7 @@ Match Completed
 
 ### Prerequisites
 
-- Node.js 20 or higher
+- Node.js 18.18.0 or higher
 - PostgreSQL database (Supabase recommended for easy setup)
 - Resend account for transactional emails (optional for development)
 
@@ -462,7 +463,7 @@ APP_URL="http://localhost:3000"
 | `npm run dev` | Start development server with hot reload |
 | `npm run build` | Build production bundle (runs `prisma generate` first) |
 | `npm start` | Start production server |
-| `npm test` | Run all tests once (~6s for 1072 tests) |
+| `npm test` | Run all tests once (~8s for 1197 tests) |
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run test:ui` | Run tests with Vitest UI |
 | `npm run test:coverage` | Generate test coverage report |
@@ -532,7 +533,7 @@ APP_URL="http://localhost:3000"
 - [ ] Database created and migrations applied
 - [ ] All environment variables configured in Vercel
 - [ ] `npm run build` passes locally
-- [ ] `npm test` passes (1072 tests)
+- [ ] `npm test` passes (1197 tests)
 - [ ] PWA manifest and icons present
 - [ ] Live URL updated
 
@@ -559,7 +560,8 @@ tipapp/
 │   │   │   ├── questions/        # Manage questions
 │   │   │   ├── evaluators/       # Configure scoring rules
 │   │   │   ├── teams/            # League teams
-│   │   │   └── players/          # League players
+│   │   │   ├── players/          # League players
+│   │   │   └── users/            # League users
 │   │   ├── leagues/              # Global: manage leagues (+ setup, evaluators, users)
 │   │   ├── teams/                # Global: all teams
 │   │   ├── players/              # Global: all players
@@ -578,7 +580,7 @@ tipapp/
 │   └── reset-password/[token]/   # Password reset form
 │
 ├── src/
-│   ├── actions/                  # Server Actions (50 files with tests)
+│   ├── actions/                  # Server Actions (32 action files + 31 test files)
 │   │   ├── *.ts                  # Admin actions (matches, teams, players, etc.)
 │   │   ├── evaluate-*.ts         # Evaluation engines (matches, series, special-bets, questions)
 │   │   ├── league-prizes.ts      # Prize & fine management
@@ -586,14 +588,14 @@ tipapp/
 │   │   ├── shared-queries.ts     # Shared DB query utilities
 │   │   └── user/                 # User actions (betting, leaderboard, leagues, profile, locale)
 │   ├── components/               # React components
-│   │   ├── admin/                # 17 component groups (layout, common, leagues, matches, etc.)
-│   │   ├── user/                 # 10 component groups (layout, common, matches, leaderboard, etc.)
+│   │   ├── admin/                # 16 component groups (layout, common, leagues, matches, etc.)
+│   │   ├── user/                 # 9 component groups (layout, common, matches, leaderboard, etc.)
 │   │   └── ui/                   # Shared UI primitives (Radix-based)
 │   ├── contexts/                 # React Context providers (league-context, user-league-context)
-│   ├── hooks/                    # Custom hooks (7 hooks with tests)
+│   ├── hooks/                    # Custom hooks (8 hooks with tests)
 │   ├── i18n/                     # next-intl configuration
 │   ├── lib/
-│   │   ├── evaluators/           # 14 evaluation modules + types + mapper
+│   │   ├── evaluators/           # 15 evaluation modules + types + mapper
 │   │   ├── evaluation/           # Evaluation orchestration (match, series, special-bet, question)
 │   │   ├── validation/           # Zod schemas (admin, user, message)
 │   │   ├── auth/                 # Auth utilities (requireAdmin, requireLeagueMember)
@@ -609,19 +611,18 @@ tipapp/
 │   └── seed-demo.ts              # Demo data generator
 │
 ├── translations/                 # i18n translations
-│   ├── en.json                   # English (~1350 lines)
-│   └── cs.json                   # Czech (~1350 lines)
+│   ├── en.json                   # English (~1490 lines)
+│   └── cs.json                   # Czech (~1490 lines)
 │
 ├── public/                       # Static assets (PWA icons, manifest)
-├── CLAUDE.md                     # Technical documentation
-└── FINES_FEATURE.md              # Fines feature documentation
+└── CLAUDE.md                     # Technical documentation
 ```
 
 ---
 
 ## Testing
 
-TipApp has comprehensive test coverage with **1072 tests** across **81 test files** that run in approximately **6 seconds**.
+TipApp has comprehensive test coverage with **1197 tests** across **91 test files** that run in approximately **8 seconds**.
 
 ### Running Tests
 
@@ -656,7 +657,7 @@ src/lib/evaluators/
 
 | Category | Description |
 |----------|-------------|
-| Evaluators | All 14 evaluators with edge cases |
+| Evaluators | All 15 evaluators with edge cases |
 | Server Actions | Admin and user action validation, auth, business logic |
 | Evaluation Engine | Match, series, special bet, question evaluation orchestration |
 | Components | React component rendering and interaction tests |
@@ -684,8 +685,8 @@ TipApp supports **English** and **Czech** with cookie-based locale storage.
 
 ```
 translations/
-├── en.json    # English translations (~1350 lines)
-└── cs.json    # Czech translations (~1350 lines)
+├── en.json    # English translations (~1490 lines)
+└── cs.json    # Czech translations (~1490 lines)
 ```
 
 ### Using Translations

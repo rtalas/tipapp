@@ -159,6 +159,7 @@ describe('Leagues Actions', () => {
 
   describe('assignTeamToLeague', () => {
     it('assigns team when not already assigned', async () => {
+      vi.useFakeTimers()
       const now = new Date()
       mockPrisma.leagueTeam.upsert.mockResolvedValue({ id: 1, createdAt: now } as never)
 
@@ -179,6 +180,7 @@ describe('Leagues Actions', () => {
         })
       )
       expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-teams', 'max')
+      vi.useRealTimers()
     })
 
     it('returns error when team already assigned', async () => {
