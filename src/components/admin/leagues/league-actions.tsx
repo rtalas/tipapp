@@ -64,6 +64,8 @@ export function LeagueActions({
   const [isChatSuspended, setIsChatSuspended] = useState(chatSuspendedAt !== null)
   const [prizes, setPrizes] = useState<PrizeTier[]>([])
   const [fines, setFines] = useState<PrizeTier[]>([])
+  const [originalPrizes, setOriginalPrizes] = useState<PrizeTier[]>([])
+  const [originalFines, setOriginalFines] = useState<PrizeTier[]>([])
   const [prizesLoaded, setPrizesLoaded] = useState(false)
 
   // Fetch prizes and fines when dialog opens
@@ -81,6 +83,7 @@ export function LeagueActions({
               type: 'prize' as const,
             }))
             setPrizes(mappedPrizes)
+            setOriginalPrizes(mappedPrizes)
           }
 
           // Map fines to PrizeTier format
@@ -93,6 +96,7 @@ export function LeagueActions({
               type: 'fine' as const,
             }))
             setFines(mappedFines)
+            setOriginalFines(mappedFines)
           }
         }
         setPrizesLoaded(true)
@@ -144,16 +148,22 @@ export function LeagueActions({
         }
       }
 
-      // Update prizes and fines
-      const prizesResult = await updateLeaguePrizes({
-        leagueId,
-        prizes,
-        fines,
-      })
-      if (!prizesResult.success) {
-        const errorMessage = 'error' in prizesResult ? prizesResult.error : t('toast.updateFailed')
-        toast.error(errorMessage)
-        return
+      // Update prizes and fines only if changed
+      const prizesChanged = JSON.stringify(prizes) !== JSON.stringify(originalPrizes)
+      const finesChanged = JSON.stringify(fines) !== JSON.stringify(originalFines)
+      if (prizesChanged || finesChanged) {
+        const prizesResult = await updateLeaguePrizes({
+          leagueId,
+          prizes,
+          fines,
+        })
+        if (!prizesResult.success) {
+          const errorMessage = 'error' in prizesResult ? prizesResult.error : t('toast.updateFailed')
+          toast.error(errorMessage)
+          return
+        }
+        setOriginalPrizes(prizes)
+        setOriginalFines(fines)
       }
 
       toast.success(t('toast.updated'))

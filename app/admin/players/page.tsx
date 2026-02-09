@@ -1,10 +1,16 @@
+import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
 import { getAllPlayers } from '@/actions/shared-queries'
 import { PlayersContent } from '@/components/admin/players/players-content'
+import { TableSkeleton } from '@/components/admin/common/table-skeleton'
+
+async function PlayersData() {
+  const players = await getAllPlayers()
+  return <PlayersContent players={players} />
+}
 
 export default async function PlayersPage() {
   const t = await getTranslations('admin.players')
-  const players = await getAllPlayers()
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -13,7 +19,9 @@ export default async function PlayersPage() {
         <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      <PlayersContent players={players} />
+      <Suspense fallback={<TableSkeleton rows={5} columns={5} />}>
+        <PlayersData />
+      </Suspense>
     </div>
   )
 }

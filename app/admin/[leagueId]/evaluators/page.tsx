@@ -1,9 +1,31 @@
+import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
 import { validateLeagueAccess } from '@/lib/league-utils'
 import { getLeagueEvaluators } from '@/actions/evaluators'
 import { getEvaluatorTypes } from '@/actions/shared-queries'
 import { prisma } from '@/lib/prisma'
 import { EvaluatorsContent } from '@/components/admin/evaluators/evaluators-content'
+import { TableSkeleton } from '@/components/admin/common/table-skeleton'
+import type { League } from '@prisma/client'
+
+async function EvaluatorsData({ league }: { league: League }) {
+  const [evaluators, leagues, evaluatorTypes] = await Promise.all([
+    getLeagueEvaluators(league.id),
+    prisma.league.findMany({
+      where: { id: league.id, deletedAt: null },
+    }),
+    getEvaluatorTypes(),
+  ])
+
+  return (
+    <EvaluatorsContent
+      evaluators={evaluators}
+      leagues={leagues}
+      evaluatorTypes={evaluatorTypes}
+      league={league}
+    />
+  )
+}
 
 export default async function LeagueEvaluatorsPage({
   params,
@@ -12,15 +34,7 @@ export default async function LeagueEvaluatorsPage({
 }) {
   const { leagueId } = await params
   const league = await validateLeagueAccess(leagueId)
-
-  const [evaluators, leagues, evaluatorTypes, t] = await Promise.all([
-    getLeagueEvaluators(league.id),
-    prisma.league.findMany({
-      where: { id: league.id, deletedAt: null },
-    }),
-    getEvaluatorTypes(),
-    getTranslations('admin.leagueEvaluators'),
-  ])
+  const t = await getTranslations('admin.leagueEvaluators')
 
   return (
     <div className="space-y-6">
@@ -31,12 +45,9 @@ export default async function LeagueEvaluatorsPage({
         </p>
       </div>
 
-      <EvaluatorsContent
-        evaluators={evaluators}
-        leagues={leagues}
-        evaluatorTypes={evaluatorTypes}
-        league={league}
-      />
+      <Suspense fallback={<TableSkeleton rows={5} columns={5} />}>
+        <EvaluatorsData league={league} />
+      </Suspense>
     </div>
   )
 }

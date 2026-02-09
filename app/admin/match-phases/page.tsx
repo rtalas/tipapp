@@ -1,10 +1,16 @@
+import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
 import { getMatchPhases } from '@/actions/match-phases'
 import { MatchPhasesContent } from '@/components/admin/match-phases/match-phases-content'
+import { TableSkeleton } from '@/components/admin/common/table-skeleton'
+
+async function MatchPhasesData() {
+  const phases = await getMatchPhases()
+  return <MatchPhasesContent initialPhases={phases} />
+}
 
 export default async function MatchPhasesPage() {
   const t = await getTranslations('admin.matchPhases')
-  const phases = await getMatchPhases()
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -13,7 +19,9 @@ export default async function MatchPhasesPage() {
         <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      <MatchPhasesContent initialPhases={phases} />
+      <Suspense fallback={<TableSkeleton rows={3} columns={4} />}>
+        <MatchPhasesData />
+      </Suspense>
     </div>
   )
 }

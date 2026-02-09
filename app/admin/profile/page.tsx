@@ -1,10 +1,12 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { auth } from '@/auth'
 import { getCurrentUserProfile } from '@/actions/profile'
 import { ProfileContent } from '@/components/admin/profile/profile-content'
+import { CardFormSkeleton } from '@/components/admin/common/table-skeleton'
 
-export default async function ProfilePage() {
+async function ProfileData() {
   const t = await getTranslations('admin.profile')
   const session = await auth()
 
@@ -23,4 +25,12 @@ export default async function ProfilePage() {
   }
 
   return <ProfileContent user={result.user} />
+}
+
+export default async function ProfilePage() {
+  return (
+    <Suspense fallback={<CardFormSkeleton />}>
+      <ProfileData />
+    </Suspense>
+  )
 }

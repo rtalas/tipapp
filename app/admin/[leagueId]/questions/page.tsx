@@ -1,8 +1,25 @@
+import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
 import { validateLeagueAccess } from '@/lib/league-utils'
 import { getQuestionsWithUserBets } from '@/actions/question-bets'
 import { getUsers } from '@/actions/users'
 import { QuestionsContent } from '@/components/admin/questions/questions-content'
+import { TableSkeleton } from '@/components/admin/common/table-skeleton'
+
+async function QuestionsData({ league }: { league: { id: number; name: string; seasonFrom: number; seasonTo: number } }) {
+  const [questions, users] = await Promise.all([
+    getQuestionsWithUserBets({ leagueId: league.id }),
+    getUsers(),
+  ])
+
+  return (
+    <QuestionsContent
+      questions={questions}
+      users={users}
+      league={league}
+    />
+  )
+}
 
 export default async function LeagueQuestionsPage({
   params,
@@ -12,11 +29,6 @@ export default async function LeagueQuestionsPage({
   const t = await getTranslations('admin.questions')
   const { leagueId } = await params
   const league = await validateLeagueAccess(leagueId)
-
-  const [questions, users] = await Promise.all([
-    getQuestionsWithUserBets({ leagueId: league.id }),
-    getUsers(),
-  ])
 
   return (
     <div className="space-y-6">
@@ -30,11 +42,9 @@ export default async function LeagueQuestionsPage({
         </p>
       </div>
 
-      <QuestionsContent
-        questions={questions}
-        users={users}
-        league={league}
-      />
+      <Suspense fallback={<TableSkeleton rows={5} columns={5} />}>
+        <QuestionsData league={league} />
+      </Suspense>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp, Filter, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -76,6 +76,7 @@ export function AuditLogsContent({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [isRefreshing, startRefresh] = useTransition();
 
   const toggleRow = (logId: number) => {
     setExpandedRows((prev) => {
@@ -107,7 +108,9 @@ export function AuditLogsContent({
   };
 
   const refresh = () => {
-    router.refresh();
+    startRefresh(() => {
+      router.refresh();
+    });
   };
 
   const getEventBadgeColor = (category: string) => {
@@ -183,9 +186,10 @@ export function AuditLogsContent({
                 variant="outline"
                 size="sm"
                 onClick={refresh}
+                disabled={isRefreshing}
                 className="w-full sm:w-auto"
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
                 {t("refresh")}
               </Button>
             </div>

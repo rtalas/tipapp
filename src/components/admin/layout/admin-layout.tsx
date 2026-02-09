@@ -6,6 +6,7 @@ import { Topbar } from './topbar'
 import { Sheet, SheetContent, SheetTitle, SheetDescription, VisuallyHidden } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { LeagueProvider } from '@/contexts/league-context'
+import { NavigationProgress } from '@/components/admin/common/navigation-progress'
 import type { League } from '@prisma/client'
 
 interface AdminLayoutProps {
@@ -24,6 +25,7 @@ export function AdminLayout({ children, user, leagues, locale }: AdminLayoutProp
 
   return (
     <LeagueProvider>
+      <NavigationProgress />
       <div className="flex min-h-screen w-full bg-background">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block">

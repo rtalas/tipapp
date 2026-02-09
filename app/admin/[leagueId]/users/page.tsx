@@ -1,8 +1,29 @@
+import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
 import { validateLeagueAccess } from '@/lib/league-utils'
 import { getPendingRequests, getLeagueUsers } from '@/actions/users'
 import { prisma } from '@/lib/prisma'
 import { UsersContent } from '@/components/admin/users/users-content'
+import { TableSkeleton } from '@/components/admin/common/table-skeleton'
+
+async function LeagueUsersData({ league }: { league: { id: number; name: string; seasonFrom: number; seasonTo: number } }) {
+  const [pendingRequests, leagueUsers, leagues] = await Promise.all([
+    getPendingRequests({ leagueId: league.id }),
+    getLeagueUsers({ leagueId: league.id }),
+    prisma.league.findMany({
+      where: { id: league.id, deletedAt: null },
+    }),
+  ])
+
+  return (
+    <UsersContent
+      pendingRequests={pendingRequests}
+      leagueUsers={leagueUsers}
+      leagues={leagues}
+      league={league}
+    />
+  )
+}
 
 export default async function LeagueUsersPage({
   params,
@@ -12,15 +33,6 @@ export default async function LeagueUsersPage({
   const t = await getTranslations('admin.users')
   const { leagueId } = await params
   const league = await validateLeagueAccess(leagueId)
-
-  // Fetch data in parallel - filtered by current league
-  const [pendingRequests, leagueUsers, leagues] = await Promise.all([
-    getPendingRequests({ leagueId: league.id }),
-    getLeagueUsers({ leagueId: league.id }),
-    prisma.league.findMany({
-      where: { id: league.id, deletedAt: null },
-    }),
-  ])
 
   return (
     <div className="space-y-6">
@@ -34,12 +46,9 @@ export default async function LeagueUsersPage({
         </p>
       </div>
 
-      <UsersContent
-        pendingRequests={pendingRequests}
-        leagueUsers={leagueUsers}
-        leagues={leagues}
-        league={league}
-      />
+      <Suspense fallback={<TableSkeleton rows={5} columns={5} />}>
+        <LeagueUsersData league={league} />
+      </Suspense>
     </div>
   )
 }
