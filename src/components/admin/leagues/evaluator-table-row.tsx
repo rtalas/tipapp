@@ -105,7 +105,7 @@ export function EvaluatorTableRow({
             </span>
           </TableCell>
           <TableCell className="text-center">
-            {evaluator.config && typeof evaluator.config === 'object' ? (
+            {evaluator.config && typeof evaluator.config === 'object' && (evaluator.config as ScorerRankedConfig).rankedPoints ? (
               <div className="text-xs space-y-1">
                 {Object.entries((evaluator.config as ScorerRankedConfig).rankedPoints)
                   .sort(([a], [b]) => Number(a) - Number(b))

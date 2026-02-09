@@ -44,7 +44,7 @@ export default async function LeagueEvaluatorsPage({ params }: LeagueEvaluatorsP
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{league.name}</h1>
-          <p className="text-muted-foreground">{t('description')}</p>
+          <p className="text-muted-foreground">{t('description', { leagueName: league.name, season: `${league.seasonFrom}/${league.seasonTo}` })}</p>
         </div>
       </div>
 
