@@ -267,6 +267,9 @@ export async function markChatAsRead(leagueId: number) {
         },
       })
 
+      // Revalidate layout so badge count updates on next navigation
+      revalidatePath(`/${validated.leagueId}`, 'layout')
+
       return {}
     },
   })

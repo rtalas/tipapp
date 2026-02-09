@@ -103,7 +103,8 @@ export function BottomNav({
         {filteredNavItems.map((item) => {
           const isActive = item.matchPattern.test(pathname)
           const Icon = item.icon
-          const badgeCount = badges?.[item.id as keyof typeof badges]
+          // Hide badge when user is on that page (e.g. chat badge clears when viewing chat)
+          const badgeCount = isActive ? undefined : badges?.[item.id as keyof typeof badges]
 
           return (
             <Link
