@@ -81,6 +81,67 @@ export async function sendPushNotification(
   }
 }
 
+// ── Chat notifications (event-driven, not cron) ─────────────────────
+
+/**
+ * Send push notifications for a new chat message to all league members
+ * (except the sender) who have chat notifications enabled.
+ * Uses Web Push `tag` for browser-level dedup per league.
+ */
+export async function sendChatNotifications(params: {
+  leagueId: number
+  leagueName: string
+  senderUserId: number
+  senderName: string
+  messageText: string
+}): Promise<void> {
+  if (!vapidPublicKey || !vapidPrivateKey) return
+
+  const leagueUsers = await prisma.leagueUser.findMany({
+    where: {
+      leagueId: params.leagueId,
+      deletedAt: null,
+      active: true,
+      User: {
+        deletedAt: null,
+        notifyChat: true,
+        id: { not: params.senderUserId },
+      },
+    },
+    include: {
+      User: {
+        include: {
+          PushSubscription: { where: { deletedAt: null } },
+        },
+      },
+    },
+  })
+
+  const truncatedText = params.messageText.length > 100
+    ? params.messageText.slice(0, 100) + '...'
+    : params.messageText
+
+  const payload: PushPayload = {
+    title: params.leagueName,
+    body: `${params.senderName}: ${truncatedText}`,
+    icon: '/favicon-32x32.png',
+    badge: '/favicon-32x32.png',
+    tag: `chat-${params.leagueId}`,
+    data: { url: `/${params.leagueId}/chat` },
+  }
+
+  const sends = leagueUsers.flatMap((lu) =>
+    lu.User.PushSubscription.map((sub) =>
+      sendPushNotification(
+        { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+        payload,
+      )
+    )
+  )
+
+  await Promise.allSettled(sends)
+}
+
 // ── Notification finding ──────────────────────────────────────────────
 
 interface EventNotification {

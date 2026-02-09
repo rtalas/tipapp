@@ -469,6 +469,7 @@ export async function getLeagueById(id: number) {
           LeaguePlayer: {
             where: { deletedAt: null },
             include: { Player: true },
+            orderBy: { Player: { lastName: 'asc' } },
           },
         },
         orderBy: { Team: { name: 'asc' } },

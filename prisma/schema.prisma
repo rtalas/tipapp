@@ -556,6 +556,7 @@ model User {
   updatedAt               DateTime                  @db.Timestamptz(6)
   deletedAt               DateTime?                 @db.Timestamptz(6)
   notifyHours             Int                       @default(0)
+  notifyChat              Boolean                   @default(false)
   avatarUrl               String?                   @db.VarChar(500)
   AuditLog                AuditLog[]
   LeagueUser              LeagueUser[]

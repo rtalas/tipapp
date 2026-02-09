@@ -29,6 +29,7 @@ interface ProfileContentProps {
     email: string
     mobileNumber: string | null
     notifyHours: number
+    notifyChat: boolean
     isSuperadmin: boolean
     createdAt: Date
     updatedAt: Date
@@ -115,6 +116,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
           email: user.email,
           mobileNumber: user.mobileNumber,
           notifyHours: user.notifyHours,
+          notifyChat: user.notifyChat,
         }}
         variant="admin"
         onUpdate={handleProfileUpdate}

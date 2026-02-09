@@ -28,6 +28,7 @@ interface ProfileContentProps {
     lastName: string | null
     mobileNumber: string | null
     notifyHours: number
+    notifyChat: boolean
     createdAt: Date
     avatarUrl: string | null
   }
@@ -101,6 +102,7 @@ export function ProfileContent({ profile }: ProfileContentProps) {
           email: profile.email,
           mobileNumber: profile.mobileNumber,
           notifyHours: profile.notifyHours,
+          notifyChat: profile.notifyChat,
         }}
         variant="user"
         onUpdate={handleProfileUpdate}

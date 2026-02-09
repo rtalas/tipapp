@@ -92,6 +92,7 @@ export const updateProfileSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
   mobileNumber: z.string().max(255).optional().nullable(),
   notifyHours: z.number().int().min(0).max(1440).default(0),
+  notifyChat: z.boolean().default(false),
 })
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>

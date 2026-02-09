@@ -3,6 +3,11 @@ import { getMessages, sendMessage, deleteMessage, markChatAsRead } from './messa
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 
+const mockSendChatNotifications = vi.fn().mockResolvedValue(undefined)
+vi.mock('@/lib/push-notifications', () => ({
+  sendChatNotifications: (...args: unknown[]) => mockSendChatNotifications(...args),
+}))
+
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
   parseSessionUserId: vi.fn((id: string) => parseInt(id, 10)),
@@ -53,15 +58,24 @@ describe('Messages Actions', () => {
   })
 
   describe('sendMessage', () => {
-    it('should send message', async () => {
-      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10, User: { isSuperadmin: false } } as any)
-      mockPrisma.league.findUnique.mockResolvedValue({ chatSuspendedAt: null } as any)
+    it('should send message and trigger chat notifications', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({
+        id: 10, userId: 5, User: { isSuperadmin: false, firstName: 'John', lastName: 'Doe' },
+      } as any)
+      mockPrisma.league.findUnique.mockResolvedValue({ name: 'Test League', chatSuspendedAt: null } as any)
       mockPrisma.message.create.mockResolvedValue({ id: 1, text: 'Hello' } as any)
 
       const result = await sendMessage({ leagueId: 1, text: 'Hello' })
 
       expect(result.success).toBe(true)
       expect((result as any).message).toBeDefined()
+      expect(mockSendChatNotifications).toHaveBeenCalledWith({
+        leagueId: 1,
+        leagueName: 'Test League',
+        senderUserId: 5,
+        senderName: 'John Doe',
+        messageText: 'Hello',
+      })
     })
 
     it('should return error when chat suspended', async () => {
@@ -107,8 +121,10 @@ describe('Messages Actions', () => {
     })
 
     it('should trim message text', async () => {
-      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10, User: { isSuperadmin: false } } as any)
-      mockPrisma.league.findUnique.mockResolvedValue({ chatSuspendedAt: null } as any)
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({
+        id: 10, userId: 5, User: { isSuperadmin: false, firstName: 'John', lastName: 'Doe' },
+      } as any)
+      mockPrisma.league.findUnique.mockResolvedValue({ name: 'Test', chatSuspendedAt: null } as any)
       mockPrisma.message.create.mockResolvedValue({ id: 1, text: 'Hello' } as any)
 
       await sendMessage({ leagueId: 1, text: '  Hello  ' })

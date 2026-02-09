@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { User, Mail, Phone, Bell, ChevronLeft, ChevronRight, BellRing, BellOff, Loader2, Check } from 'lucide-react'
+import { User, Mail, Phone, Bell, MessageCircle, ChevronLeft, ChevronRight, BellRing, BellOff, Loader2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -54,6 +54,7 @@ export interface UpdateProfileInput {
   email: string
   mobileNumber: string
   notifyHours: number
+  notifyChat: boolean
 }
 
 export interface ActionResult {
@@ -69,6 +70,7 @@ interface ProfileInformationFormProps {
     email: string | null
     mobileNumber: string | null
     notifyHours: number
+    notifyChat: boolean
   }
   variant: 'admin' | 'user'
   onUpdate: (data: UpdateProfileInput) => Promise<ActionResult>
@@ -94,6 +96,7 @@ export function ProfileInformationForm({
   const [email, setEmail] = useState(user.email || '')
   const [mobileNumber, setMobileNumber] = useState(user.mobileNumber || '')
   const [notifyMinutes, setNotifyMinutes] = useState(findClosestOption(user.notifyHours))
+  const [notifyChat, setNotifyChat] = useState(user.notifyChat)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleNotifyDecrement = () => {
@@ -124,6 +127,7 @@ export function ProfileInformationForm({
         email,
         mobileNumber,
         notifyHours: notifyMinutes,
+        notifyChat,
       })
 
       if (result.success) {
@@ -261,6 +265,31 @@ export function ProfileInformationForm({
             </p>
           </div>}
 
+          {showPushNotifications && <div className="space-y-2">
+            <Label>
+              <MessageCircle className="mr-2 inline h-4 w-4" />
+              {t('chatNotifications')}
+            </Label>
+            <Button
+              type="button"
+              variant={notifyChat ? 'default' : 'outline'}
+              size="sm"
+              disabled={isSubmitting}
+              onClick={() => setNotifyChat(!notifyChat)}
+              className="w-full"
+            >
+              {notifyChat ? (
+                <BellRing className="mr-2 h-4 w-4" />
+              ) : (
+                <BellOff className="mr-2 h-4 w-4" />
+              )}
+              {notifyChat ? t('chatNotificationsOn') : t('chatNotificationsOff')}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              {notifyChat ? t('chatOnHelper') : t('chatOffHelper')}
+            </p>
+          </div>}
+
           {variant === 'admin' && (
             <div className="space-y-2">
               <Label htmlFor="username">{t('username')}</Label>
@@ -292,7 +321,7 @@ export function ProfileInformationForm({
               </div>
 
               {/* Push Notifications Toggle */}
-              {showPushNotifications && notifyMinutes > 0 && (
+              {showPushNotifications && (notifyMinutes > 0 || notifyChat) && (
                 <div className="space-y-2">
                   <Label>
                     <BellRing className="mr-2 inline h-4 w-4" />

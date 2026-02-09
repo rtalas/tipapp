@@ -32,6 +32,7 @@ export async function getUserProfile() {
       lastName: true,
       mobileNumber: true,
       notifyHours: true,
+      notifyChat: true,
       isSuperadmin: true,
       createdAt: true,
       avatarUrl: true,
@@ -84,6 +85,7 @@ export async function updateProfile(input: UpdateProfileInput) {
             email: normalizedEmail,
             mobileNumber: validated.mobileNumber || null,
             notifyHours: validated.notifyHours,
+            notifyChat: validated.notifyChat,
             updatedAt: new Date(),
           },
         })

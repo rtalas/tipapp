@@ -17,6 +17,7 @@ import {
 } from '@/lib/validation/admin'
 import { z } from 'zod'
 import { messageWithRelationsInclude } from '@/lib/prisma-helpers'
+import { sendChatNotifications } from '@/lib/push-notifications'
 
 const markChatAsReadSchema = z.object({
   leagueId: z.number().int().positive(),
@@ -42,6 +43,8 @@ async function getLeagueUser(userId: number, leagueId: number) {
       User: {
         select: {
           isSuperadmin: true,
+          firstName: true,
+          lastName: true,
         },
       },
     },
@@ -115,7 +118,7 @@ export async function sendMessage(input: SendMessageInput) {
 
       const league = await prisma.league.findUnique({
         where: { id: validated.leagueId, deletedAt: null },
-        select: { chatSuspendedAt: true },
+        select: { name: true, chatSuspendedAt: true },
       })
 
       if (league?.chatSuspendedAt) {
@@ -148,6 +151,15 @@ export async function sendMessage(input: SendMessageInput) {
       })
 
       AuditLogger.chatMessageSent(userId, validated.leagueId, message.id).catch(() => {})
+
+      // Fire-and-forget — don't block the response
+      sendChatNotifications({
+        leagueId: validated.leagueId,
+        leagueName: league?.name || '',
+        senderUserId: userId,
+        senderName: `${leagueUser.User.firstName} ${leagueUser.User.lastName}`,
+        messageText: validated.text,
+      }).catch((err) => console.error('Chat notification error:', err))
 
       return { message }
     },
