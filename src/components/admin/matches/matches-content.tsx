@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Plus } from 'lucide-react'
+import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { deleteMatch } from '@/actions/matches'
@@ -22,6 +22,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { MobileCard, MobileCardField } from '@/components/admin/common/mobile-card'
+import { ActionMenu } from '@/components/admin/common/action-menu'
+import { TeamFlag } from '@/components/common/team-flag'
 import { MatchFilters } from './match-filters'
 import { MatchTableRow } from './match-table-row'
 import { AddMatchDialog } from './add-match-dialog'
@@ -174,7 +178,9 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
               </Button>
             </div>
           ) : (
-            <div className="rounded-lg border">
+            <>
+            {/* Desktop Table */}
+            <div className="hidden md:block rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -207,6 +213,107 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                 </TableBody>
               </Table>
             </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-3">
+              {filteredMatches.map((lm) => {
+                const status = getMatchStatus(lm.Match)
+                const homeTeam = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team
+                const awayTeam = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team
+                const expanded = isExpanded(lm.id)
+
+                return (
+                  <MobileCard key={lm.id}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TeamFlag flagIcon={homeTeam.flagIcon} flagType={homeTeam.flagType} teamName={homeTeam.name} size="xs" />
+                        <span className="font-medium text-sm">{homeTeam.shortcut}</span>
+                        <span className="text-muted-foreground text-xs">{t('vs')}</span>
+                        <TeamFlag flagIcon={awayTeam.flagIcon} flagType={awayTeam.flagType} teamName={awayTeam.name} size="xs" />
+                        <span className="font-medium text-sm">{awayTeam.shortcut}</span>
+                      </div>
+                      <ActionMenu items={[
+                        { label: t('editMatch'), icon: <Calendar className="h-4 w-4" />, onClick: () => setEditMatch(lm) },
+                        { label: t('enterResult'), icon: <Edit className="h-4 w-4" />, onClick: () => setSelectedMatch(lm) },
+                        { label: t('evaluateLabel'), icon: <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(lm.id, lm.Match.id) },
+                        { label: t('addMissingBet'), icon: <UserPlus className="h-4 w-4" />, onClick: () => setCreateBetMatchId(lm.id) },
+                        { label: t('deleteTitle'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(lm), variant: 'destructive' },
+                      ]} />
+                    </div>
+                    <MobileCardField label={t('dateTime')}>
+                      {format(new Date(lm.Match.dateTime), 'd.M.yyyy HH:mm')}
+                    </MobileCardField>
+                    <div className="flex items-center justify-between">
+                      <MobileCardField label={t('score')}>
+                        {lm.Match.homeRegularScore !== null ? (
+                          <span className="font-mono font-bold">
+                            {lm.Match.homeRegularScore}:{lm.Match.awayRegularScore}
+                          </span>
+                        ) : '-'}
+                      </MobileCardField>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={status === 'evaluated' ? 'evaluated' : status === 'finished' ? 'finished' : status === 'live' ? 'live' : 'scheduled'}>
+                        {status === 'evaluated' ? t('evaluated') : status === 'finished' ? t('finished') : status === 'live' ? t('inProgress') : t('scheduled')}
+                      </Badge>
+                      <Badge variant="outline">{lm.UserBet.length} {t('userBets').toLowerCase()}</Badge>
+                    </div>
+
+                    {/* Expand/Collapse bets */}
+                    {lm.UserBet.length > 0 && (
+                      <>
+                        <button
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground w-full justify-center pt-1"
+                          onClick={() => toggleRow(lm.id)}
+                        >
+                          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          {expanded ? t('hideBets') : t('showBets')}
+                        </button>
+                        {expanded && (
+                          <div className="border-t pt-3 space-y-2">
+                            {lm.UserBet.map((bet) => (
+                              <div key={bet.id} className="text-sm bg-muted/30 rounded px-2 py-1.5 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium">{bet.LeagueUser.User.firstName} {bet.LeagueUser.User.lastName}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono">{bet.homeScore}:{bet.awayScore}</span>
+                                    {bet.overtime && <span className="text-xs text-muted-foreground">{t('overtime')}</span>}
+                                    {bet.totalPoints !== 0 && (
+                                      <Badge variant="outline" className="text-xs">{bet.totalPoints}pts</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                {(bet.LeaguePlayer || bet.noScorer) && (
+                                  <div className="text-xs text-muted-foreground">
+                                    {t('scorer')}: {bet.noScorer
+                                      ? <span className="italic">{t('noScorer')}</span>
+                                      : bet.LeaguePlayer
+                                        ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
+                                        : '-'}
+                                  </div>
+                                )}
+                                {bet.homeAdvanced !== null && (
+                                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                    {t('advanced')}: <TeamFlag
+                                      flagIcon={bet.homeAdvanced ? homeTeam.flagIcon : awayTeam.flagIcon}
+                                      flagType={bet.homeAdvanced ? homeTeam.flagType : awayTeam.flagType}
+                                      teamName={bet.homeAdvanced ? homeTeam.name : awayTeam.name}
+                                      size="xs"
+                                    />
+                                    <span>{bet.homeAdvanced ? homeTeam.shortcut : awayTeam.shortcut}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </MobileCard>
+                )
+              })}
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

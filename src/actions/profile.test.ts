@@ -68,6 +68,7 @@ describe('Profile Actions', () => {
         lastName: 'Doe',
         email: 'john@test.com',
         notifyHours: 2,
+        notifyChat: true,
       })
 
       expect(result.success).toBe(true)
@@ -81,6 +82,7 @@ describe('Profile Actions', () => {
         lastName: 'Doe',
         email: 'taken@test.com',
         notifyHours: 2,
+        notifyChat: true,
       })
 
       expect(result.success).toBe(false)
@@ -96,6 +98,7 @@ describe('Profile Actions', () => {
         lastName: 'Doe',
         email: 'John@Test.COM',
         notifyHours: 2,
+        notifyChat: true,
       })
 
       expect(mockPrisma.user.findFirst).toHaveBeenCalledWith(
@@ -118,6 +121,7 @@ describe('Profile Actions', () => {
         lastName: 'Doe',
         email: 'john@test.com',
         notifyHours: 2,
+        notifyChat: true,
       })
 
       expect(result.success).toBe(false)

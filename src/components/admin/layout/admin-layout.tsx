@@ -69,7 +69,7 @@ export function AdminLayout({ children, user, leagues, locale }: AdminLayoutProp
           />
 
           {/* Main content */}
-          <main className="flex-1 overflow-auto p-6 pt-24 lg:pt-16">
+          <main className="flex-1 overflow-auto px-4 py-6 pt-24 md:px-6 lg:pt-16">
             <div className="mx-auto max-w-7xl">{children}</div>
           </main>
         </div>

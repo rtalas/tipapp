@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Plus } from 'lucide-react'
+import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { deleteSpecialBet } from '@/actions/special-bets'
@@ -30,6 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { MobileCard, MobileCardField } from '@/components/admin/common/mobile-card'
+import { ActionMenu } from '@/components/admin/common/action-menu'
 import { AddSpecialBetDialog } from './add-special-bet-dialog'
 import { ResultEntryDialog } from './result-entry-dialog'
 import { EditSpecialBetDialog } from './edit-special-bet-dialog'
@@ -181,15 +183,15 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
     <>
       {/* Filters */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-1 gap-4 flex-wrap">
+        <div className="flex flex-1 flex-col gap-2 md:flex-row md:gap-4 md:flex-wrap">
           <Input
             placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
+            className="w-full md:max-w-sm"
           />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-full md:w-[150px]">
               <SelectValue placeholder={tCommon('status')} />
             </SelectTrigger>
             <SelectContent>
@@ -201,7 +203,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
           </Select>
           {!league && (
             <Select value={leagueFilter} onValueChange={setLeagueFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder={tSeries('league')} />
               </SelectTrigger>
               <SelectContent>
@@ -215,7 +217,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
             </Select>
           )}
           <Select value={userFilter} onValueChange={setUserFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder={tSeries('allUsers')} />
             </SelectTrigger>
             <SelectContent>
@@ -228,7 +230,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-full md:w-[150px]">
               <SelectValue placeholder={t('type')} />
             </SelectTrigger>
             <SelectContent>
@@ -239,7 +241,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
+        <Button onClick={() => setAddDialogOpen(true)} className="w-full md:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           {t('createSpecialBet')}
         </Button>
@@ -263,7 +265,9 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
               </Button>
             </div>
           ) : (
-            <div className="rounded-lg border">
+            <>
+            {/* Desktop Table */}
+            <div className="hidden md:block rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -302,6 +306,72 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
                 </TableBody>
               </Table>
             </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-3">
+              {filteredSpecialBets.map((sb) => {
+                const status = getSpecialBetStatus(sb)
+                const resultInfo = getResultTypeAndDisplay(sb)
+                const expanded = isExpanded(sb.id)
+
+                return (
+                  <MobileCard key={sb.id}>
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium text-sm flex-1 mr-2">{sb.name}</div>
+                      <ActionMenu items={[
+                        { label: t('editDetails'), icon: <Calendar className="h-4 w-4" />, onClick: () => setEditDetailsSpecialBet(sb) },
+                        { label: t('editResult'), icon: <Edit className="h-4 w-4" />, onClick: () => setSelectedSpecialBet(sb) },
+                        { label: t('evaluate'), icon: <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(sb.id) },
+                        { label: t('addMissingBet'), icon: <UserPlus className="h-4 w-4" />, onClick: () => setCreateBetSpecialBetId(sb.id) },
+                        { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(sb), variant: 'destructive' },
+                      ]} />
+                    </div>
+                    <MobileCardField label={tSeries('dateTime')}>
+                      {format(new Date(sb.dateTime), 'd.M.yyyy HH:mm')}
+                    </MobileCardField>
+                    <MobileCardField label={t('result')}>
+                      {resultInfo.display}
+                    </MobileCardField>
+                    <MobileCardField label={tSeries('points')}>
+                      {sb.points}
+                    </MobileCardField>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={status === 'evaluated' ? 'evaluated' : status === 'finished' ? 'finished' : 'scheduled'}>
+                        {status === 'evaluated' ? tSeries('evaluated') : status === 'finished' ? tSeries('finished') : tSeries('scheduled')}
+                      </Badge>
+                      <Badge variant="outline">{sb.UserSpecialBetSingle.length} {tSeries('bets').toLowerCase()}</Badge>
+                    </div>
+
+                    {sb.UserSpecialBetSingle.length > 0 && (
+                      <>
+                        <button
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground w-full justify-center pt-1"
+                          onClick={() => toggleRow(sb.id)}
+                        >
+                          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          {expanded ? t('hideBets') : t('showBets')}
+                        </button>
+                        {expanded && (
+                          <div className="border-t pt-3 space-y-2">
+                            {sb.UserSpecialBetSingle.map((bet) => (
+                              <div key={bet.id} className="text-sm flex items-center justify-between bg-muted/30 rounded px-2 py-1.5">
+                                <span className="font-medium">{bet.LeagueUser.User.firstName} {bet.LeagueUser.User.lastName}</span>
+                                <div className="flex items-center gap-2">
+                                  {bet.totalPoints !== 0 && (
+                                    <Badge variant="outline" className="text-xs">{bet.totalPoints}pts</Badge>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </MobileCard>
+                )
+              })}
+            </div>
+          </>
           )}
         </CardContent>
       </Card>

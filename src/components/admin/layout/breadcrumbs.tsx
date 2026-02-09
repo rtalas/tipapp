@@ -73,23 +73,26 @@ export function Breadcrumbs({ leagues = [] }: BreadcrumbsProps) {
         <Home className="h-4 w-4" />
       </Link>
 
-      {breadcrumbs.slice(1).map((crumb) => (
-        <div key={crumb.href} className="flex items-center min-w-0">
-          <ChevronRight className="h-4 w-4 text-muted-foreground mx-1 flex-shrink-0" />
-          {crumb.isLast ? (
-            <span className="font-medium text-foreground truncate">{crumb.label}</span>
-          ) : (
-            <Link
-              href={crumb.href}
-              className={cn(
-                'text-muted-foreground hover:text-foreground transition-colors truncate'
-              )}
-            >
-              {crumb.label}
-            </Link>
-          )}
-        </div>
-      ))}
+      {breadcrumbs.slice(1).map((crumb, index) => {
+        const isMiddle = !crumb.isLast && index < breadcrumbs.length - 2
+        return (
+          <div key={crumb.href} className={cn('flex items-center min-w-0', isMiddle && 'hidden md:flex')}>
+            <ChevronRight className="h-4 w-4 text-muted-foreground mx-1 flex-shrink-0" />
+            {crumb.isLast ? (
+              <span className="font-medium text-foreground truncate">{crumb.label}</span>
+            ) : (
+              <Link
+                href={crumb.href}
+                className={cn(
+                  'text-muted-foreground hover:text-foreground transition-colors truncate'
+                )}
+              >
+                {crumb.label}
+              </Link>
+            )}
+          </div>
+        )
+      })}
     </nav>
   )
 }

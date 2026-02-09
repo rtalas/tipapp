@@ -91,7 +91,7 @@ export function ContentFilterHeader({
           placeholder={searchPlaceholder}
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="max-w-sm"
+          className="w-full md:max-w-sm"
           aria-label={searchPlaceholder}
         />
 
@@ -103,7 +103,7 @@ export function ContentFilterHeader({
             onValueChange={filter.onChange}
           >
             <SelectTrigger
-              className={filter.width || 'w-[180px]'}
+              className={filter.width || 'w-full md:w-[180px]'}
               aria-label={filter.placeholder || `Filter by ${filter.name}`}
             >
               <SelectValue placeholder={filter.placeholder || filter.name} />
@@ -124,6 +124,7 @@ export function ContentFilterHeader({
         onClick={onCreateClick}
         disabled={createButtonDisabled}
         aria-label={createButtonLabel}
+        className="w-full md:w-auto"
       >
         <Plus className="mr-2 h-4 w-4" />
         {createButtonLabel}

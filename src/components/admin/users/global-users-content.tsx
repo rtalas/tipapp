@@ -12,6 +12,8 @@ import { validate } from '@/lib/validation-client'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
+import { MobileCard, MobileCardField } from '@/components/admin/common/mobile-card'
+import { ActionMenu } from '@/components/admin/common/action-menu'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -153,73 +155,118 @@ export function GlobalUsersContent({ users }: GlobalUsersContentProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('firstName')}</TableHead>
-                  <TableHead>{t('lastName')}</TableHead>
-                  <TableHead>{t('username')}</TableHead>
-                  <TableHead>{t('email')}</TableHead>
-                  <TableHead className="text-center">{t('leagues')}</TableHead>
-                  <TableHead>{t('role')}</TableHead>
-                  <TableHead>{t('registered')}</TableHead>
-                  <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.length === 0 ? (
+          <div className="hidden md:block">
+            <div className="rounded-lg border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                      {t('noUsersFound')}
-                    </TableCell>
+                    <TableHead>{t('firstName')}</TableHead>
+                    <TableHead>{t('lastName')}</TableHead>
+                    <TableHead>{t('username')}</TableHead>
+                    <TableHead>{t('email')}</TableHead>
+                    <TableHead className="text-center">{t('leagues')}</TableHead>
+                    <TableHead>{t('role')}</TableHead>
+                    <TableHead>{t('registered')}</TableHead>
+                    <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
                   </TableRow>
-                ) : (
-                  filteredUsers.map((user) => {
-                    const isEditing = inlineEdit.editingId === user.id
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                        {t('noUsersFound')}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredUsers.map((user) => {
+                      const isEditing = inlineEdit.editingId === user.id
 
-                    if (isEditing && inlineEdit.form) {
+                      if (isEditing && inlineEdit.form) {
+                        return (
+                          <TableRow key={user.id}>
+                            <TableCell>
+                              <Input
+                                value={inlineEdit.form.firstName}
+                                onChange={(e) => inlineEdit.updateForm({ firstName: e.target.value })}
+                                className="h-8 w-28"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                value={inlineEdit.form.lastName}
+                                onChange={(e) => inlineEdit.updateForm({ lastName: e.target.value })}
+                                className="h-8 w-28"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                value={inlineEdit.form.username}
+                                onChange={(e) => inlineEdit.updateForm({ username: e.target.value })}
+                                className="h-8 w-28"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                value={inlineEdit.form.email}
+                                onChange={(e) => inlineEdit.updateForm({ email: e.target.value })}
+                                className="h-8 w-40"
+                              />
+                            </TableCell>
+                            <TableCell className="text-center">{user._count.LeagueUser}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  checked={inlineEdit.form.isSuperadmin}
+                                  onCheckedChange={(checked) =>
+                                    inlineEdit.updateForm({ isSuperadmin: checked === true })
+                                  }
+                                />
+                                <span className="text-sm">{t('superadmin')}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {format(new Date(user.createdAt), 'yyyy-MM-dd')}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => handleSaveEdit(user.id)}
+                                  disabled={inlineEdit.isSaving}
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={inlineEdit.cancelEdit}
+                                  disabled={inlineEdit.isSaving}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      }
+
                       return (
                         <TableRow key={user.id}>
-                          <TableCell>
-                            <Input
-                              value={inlineEdit.form.firstName}
-                              onChange={(e) => inlineEdit.updateForm({ firstName: e.target.value })}
-                              className="h-8 w-28"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              value={inlineEdit.form.lastName}
-                              onChange={(e) => inlineEdit.updateForm({ lastName: e.target.value })}
-                              className="h-8 w-28"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              value={inlineEdit.form.username}
-                              onChange={(e) => inlineEdit.updateForm({ username: e.target.value })}
-                              className="h-8 w-28"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              value={inlineEdit.form.email}
-                              onChange={(e) => inlineEdit.updateForm({ email: e.target.value })}
-                              className="h-8 w-40"
-                            />
-                          </TableCell>
+                          <TableCell className="font-medium">{user.firstName}</TableCell>
+                          <TableCell>{user.lastName}</TableCell>
+                          <TableCell className="text-muted-foreground">{user.username}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{user.email}</TableCell>
                           <TableCell className="text-center">{user._count.LeagueUser}</TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                checked={inlineEdit.form.isSuperadmin}
-                                onCheckedChange={(checked) =>
-                                  inlineEdit.updateForm({ isSuperadmin: checked === true })
-                                }
-                              />
-                              <span className="text-sm">{t('superadmin')}</span>
-                            </div>
+                            {user.isSuperadmin && (
+                              <Badge variant="default" className="gap-1">
+                                <Shield className="h-3 w-3" />
+                                {t('superadmin')}
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell className="text-muted-foreground text-sm">
                             {format(new Date(user.createdAt), 'yyyy-MM-dd')}
@@ -230,70 +277,81 @@ export function GlobalUsersContent({ users }: GlobalUsersContentProps) {
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7"
-                                onClick={() => handleSaveEdit(user.id)}
-                                disabled={inlineEdit.isSaving}
+                                onClick={() => handleStartEdit(user)}
                               >
-                                <Check className="h-4 w-4" />
+                                <Pencil className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7"
-                                onClick={inlineEdit.cancelEdit}
-                                disabled={inlineEdit.isSaving}
+                                className="h-7 w-7 text-destructive"
+                                onClick={() => deleteDialog.openDialog(user)}
                               >
-                                <X className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </TableCell>
                         </TableRow>
                       )
-                    }
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
 
-                    return (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.firstName}</TableCell>
-                        <TableCell>{user.lastName}</TableCell>
-                        <TableCell className="text-muted-foreground">{user.username}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">{user.email}</TableCell>
-                        <TableCell className="text-center">{user._count.LeagueUser}</TableCell>
-                        <TableCell>
-                          {user.isSuperadmin && (
-                            <Badge variant="default" className="gap-1">
-                              <Shield className="h-3 w-3" />
-                              {t('superadmin')}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {format(new Date(user.createdAt), 'yyyy-MM-dd')}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleStartEdit(user)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive"
-                              onClick={() => deleteDialog.openDialog(user)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {filteredUsers.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">{t('noUsersFound')}</div>
+            ) : (
+              filteredUsers.map((user) => {
+                const isEditing = inlineEdit.editingId === user.id
+                return (
+                  <MobileCard key={user.id}>
+                    {isEditing && inlineEdit.form ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input value={inlineEdit.form.firstName} onChange={(e) => inlineEdit.updateForm({ firstName: e.target.value })} placeholder={t('firstName')} className="h-8" disabled={inlineEdit.isSaving} />
+                          <Input value={inlineEdit.form.lastName} onChange={(e) => inlineEdit.updateForm({ lastName: e.target.value })} placeholder={t('lastName')} className="h-8" disabled={inlineEdit.isSaving} />
+                        </div>
+                        <Input value={inlineEdit.form.username} onChange={(e) => inlineEdit.updateForm({ username: e.target.value })} placeholder={t('username')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <Input value={inlineEdit.form.email} onChange={(e) => inlineEdit.updateForm({ email: e.target.value })} placeholder={t('email')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <div className="flex items-center gap-2">
+                          <Checkbox checked={inlineEdit.form.isSuperadmin} onCheckedChange={(checked) => inlineEdit.updateForm({ isSuperadmin: checked === true })} />
+                          <span className="text-sm">{t('superadmin')}</span>
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="outline" onClick={inlineEdit.cancelEdit} disabled={inlineEdit.isSaving}>{tCommon('button.cancel')}</Button>
+                          <Button size="sm" onClick={() => handleSaveEdit(user.id)} disabled={inlineEdit.isSaving}>{tCommon('button.save')}</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium">{user.firstName} {user.lastName}</div>
+                            <div className="text-sm text-muted-foreground">@{user.username}</div>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
+                          <ActionMenu items={[
+                            { label: tCommon('edit'), icon: <Pencil className="h-4 w-4" />, onClick: () => handleStartEdit(user) },
+                            { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(user), variant: 'destructive' },
+                          ]} />
+                        </div>
+                        <MobileCardField label={t('email')}>{user.email || '-'}</MobileCardField>
+                        <MobileCardField label={t('leagues')}>{user._count.LeagueUser}</MobileCardField>
+                        {user.isSuperadmin && (
+                          <MobileCardField label={t('role')}>
+                            <Badge variant="default" className="gap-1"><Shield className="h-3 w-3" />{t('superadmin')}</Badge>
+                          </MobileCardField>
+                        )}
+                        <MobileCardField label={t('registered')}>{format(new Date(user.createdAt), 'yyyy-MM-dd')}</MobileCardField>
+                      </>
+                    )}
+                  </MobileCard>
+                )
+              })
+            )}
           </div>
         </CardContent>
       </Card>

@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
-import { Plus } from 'lucide-react'
+import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus } from 'lucide-react'
 import { deleteSeries, createSeries } from '@/actions/series'
 import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { getErrorMessage } from '@/lib/error-handler'
@@ -12,6 +12,10 @@ import { logger } from '@/lib/logging/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
+import { Badge } from '@/components/ui/badge'
+import { MobileCard, MobileCardField } from '@/components/admin/common/mobile-card'
+import { ActionMenu } from '@/components/admin/common/action-menu'
+import { TeamFlag } from '@/components/common/team-flag'
 import { ContentFilterHeader } from '@/components/admin/common/content-filter-header'
 import { DetailedEntityDeleteDialog } from '@/components/admin/common/detailed-entity-delete-dialog'
 import { SeriesTableRow } from './series-table-row'
@@ -266,7 +270,9 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
               </Button>
             </div>
           ) : (
-            <div className="rounded-lg border">
+            <>
+            {/* Desktop Table */}
+            <div className="hidden md:block rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -300,6 +306,84 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                 </TableBody>
               </Table>
             </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-3">
+              {filteredSeries.map((s) => {
+                const status = getSeriesStatus(s)
+                const homeTeam = s.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team
+                const awayTeam = s.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team
+                const expanded = isExpanded(s.id)
+
+                return (
+                  <MobileCard key={s.id}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TeamFlag flagIcon={homeTeam.flagIcon} flagType={homeTeam.flagType} teamName={homeTeam.name} size="xs" />
+                        <span className="font-medium text-sm">{homeTeam.shortcut}</span>
+                        <span className="text-muted-foreground text-xs">{t('vs')}</span>
+                        <TeamFlag flagIcon={awayTeam.flagIcon} flagType={awayTeam.flagType} teamName={awayTeam.name} size="xs" />
+                        <span className="font-medium text-sm">{awayTeam.shortcut}</span>
+                      </div>
+                      <ActionMenu items={[
+                        { label: t('editDetails'), icon: <Calendar className="h-4 w-4" />, onClick: () => setEditDetailsSeries(s) },
+                        { label: t('editResult'), icon: <Edit className="h-4 w-4" />, onClick: () => setSelectedSeries(s) },
+                        { label: t('evaluate'), icon: <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(s.id) },
+                        { label: t('addMissingBet'), icon: <UserPlus className="h-4 w-4" />, onClick: () => setCreateBetSeriesId(s.id) },
+                        { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(s), variant: 'destructive' },
+                      ]} />
+                    </div>
+                    <MobileCardField label={t('type')}>
+                      {s.SpecialBetSerie.name} ({t('bestOf', { count: s.SpecialBetSerie.bestOf })})
+                    </MobileCardField>
+                    <MobileCardField label={t('dateTime')}>
+                      {format(new Date(s.dateTime), 'd.M.yyyy HH:mm')}
+                    </MobileCardField>
+                    <MobileCardField label={t('score')}>
+                      {s.homeTeamScore !== null ? (
+                        <span className="font-mono font-bold">{s.homeTeamScore}:{s.awayTeamScore}</span>
+                      ) : '-'}
+                    </MobileCardField>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={status === 'evaluated' ? 'evaluated' : status === 'finished' ? 'finished' : 'scheduled'}>
+                        {status === 'evaluated' ? t('evaluated') : status === 'finished' ? t('finished') : t('scheduled')}
+                      </Badge>
+                      <Badge variant="outline">{s.UserSpecialBetSerie.length} {t('bets').toLowerCase()}</Badge>
+                    </div>
+
+                    {s.UserSpecialBetSerie.length > 0 && (
+                      <>
+                        <button
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground w-full justify-center pt-1"
+                          onClick={() => toggleRow(s.id)}
+                        >
+                          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          {expanded ? t('hideBets') : t('showBets')}
+                        </button>
+                        {expanded && (
+                          <div className="border-t pt-3 space-y-2">
+                            {s.UserSpecialBetSerie.map((bet) => (
+                              <div key={bet.id} className="text-sm flex items-center justify-between bg-muted/30 rounded px-2 py-1.5">
+                                <span className="font-medium">{bet.LeagueUser.User.firstName} {bet.LeagueUser.User.lastName}</span>
+                                <div className="flex items-center gap-2">
+                                  {bet.homeTeamScore !== null && (
+                                    <span className="font-mono">{bet.homeTeamScore}:{bet.awayTeamScore}</span>
+                                  )}
+                                  {bet.totalPoints !== 0 && (
+                                    <Badge variant="outline" className="text-xs">{bet.totalPoints}pts</Badge>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </MobileCard>
+                )
+              })}
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

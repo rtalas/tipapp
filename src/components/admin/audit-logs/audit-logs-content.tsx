@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MobileCard, MobileCardField } from '@/components/admin/common/mobile-card';
 
 interface AuditLog {
   id: number;
@@ -205,166 +206,238 @@ export function AuditLogsContent({
       {/* Logs Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]"></TableHead>
-                  <TableHead>{t("timestamp")}</TableHead>
-                  <TableHead>{t("eventCategory")}</TableHead>
-                  <TableHead>{t("user")}</TableHead>
-                  <TableHead>{t("action")}</TableHead>
-                  <TableHead>{t("resource")}</TableHead>
-                  <TableHead>{t("status")}</TableHead>
-                  <TableHead className="text-right">{t("duration")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logs.length === 0 ? (
+          {/* Desktop Table */}
+          <div className="hidden md:block">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                      {t("noLogs")}
-                    </TableCell>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead>{t("timestamp")}</TableHead>
+                    <TableHead>{t("eventCategory")}</TableHead>
+                    <TableHead>{t("user")}</TableHead>
+                    <TableHead>{t("action")}</TableHead>
+                    <TableHead>{t("resource")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead className="text-right">{t("duration")}</TableHead>
                   </TableRow>
-                ) : (
-                  logs.map((log) => {
-                    const isExpanded = expandedRows.has(log.id);
-                    return (
-                      <React.Fragment key={log.id}>
-                        <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => toggleRow(log.id)}>
-                          <TableCell>
-                            {isExpanded ? (
-                              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </TableCell>
-                          <TableCell className="font-mono text-xs">
-                            {format(new Date(log.timestamp), "yyyy-MM-dd HH:mm:ss")}
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getEventBadgeColor(log.eventCategory)}>
-                              {t(`categories.${log.eventCategory}`)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {log.User ? (
-                              <div className="text-sm">
-                                <div className="font-medium">{log.User.username}</div>
-                                <div className="text-muted-foreground text-xs">
-                                  {log.User.firstName} {log.User.lastName}
-                                </div>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">{t("noUser")}</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {log.action && (
-                              <Badge variant="outline" className="font-mono text-xs">
-                                {log.action}
+                </TableHeader>
+                <TableBody>
+                  {logs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                        {t("noLogs")}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    logs.map((log) => {
+                      const isExpanded = expandedRows.has(log.id);
+                      return (
+                        <React.Fragment key={log.id}>
+                          <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => toggleRow(log.id)}>
+                            <TableCell>
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {format(new Date(log.timestamp), "yyyy-MM-dd HH:mm:ss")}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={getEventBadgeColor(log.eventCategory)}>
+                                {t(`categories.${log.eventCategory}`)}
                               </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {log.resourceType && (
-                              <div className="text-sm">
-                                <div className="font-medium">{log.resourceType}</div>
-                                {log.resourceId && (
-                                  <div className="text-muted-foreground text-xs">#{log.resourceId}</div>
-                                )}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              className={
-                                log.success
-                                  ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                                  : "bg-red-500/10 text-red-700 dark:text-red-400"
-                              }
-                            >
-                              {log.success ? t("success") : t("failed")}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-xs">
-                            {log.durationMs !== null ? `${log.durationMs}${t("ms")}` : "—"}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Expanded Details Row */}
-                        {isExpanded && (
-                          <TableRow>
-                            <TableCell colSpan={8} className="bg-muted/30">
-                              <div className="p-4 space-y-3">
-                                {/* Description */}
-                                {log.description && (
-                                  <div>
-                                    <div className="text-sm font-medium mb-1">{t("details")}:</div>
-                                    <div className="text-sm text-muted-foreground">{log.description}</div>
-                                  </div>
-                                )}
-
-                                {/* Event Type & Severity */}
-                                <div className="flex gap-4">
-                                  <div>
-                                    <div className="text-sm font-medium mb-1">{t("eventType")}:</div>
-                                    <Badge variant="outline" className="font-mono text-xs">
-                                      {log.eventType}
-                                    </Badge>
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-medium mb-1">{t("severity.INFO")}:</div>
-                                    <Badge className={getSeverityBadgeColor(log.severity)}>
-                                      {t(`severity.${log.severity}`)}
-                                    </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {log.User ? (
+                                <div className="text-sm">
+                                  <div className="font-medium">{log.User.username}</div>
+                                  <div className="text-muted-foreground text-xs">
+                                    {log.User.firstName} {log.User.lastName}
                                   </div>
                                 </div>
-
-                                {/* League */}
-                                {log.League && (
-                                  <div>
-                                    <div className="text-sm font-medium mb-1">League:</div>
-                                    <div className="text-sm text-muted-foreground">{log.League.name}</div>
-                                  </div>
-                                )}
-
-                                {/* Error Message */}
-                                {!log.success && log.errorMessage && (
-                                  <div>
-                                    <div className="text-sm font-medium mb-1 text-red-600 dark:text-red-400">
-                                      {t("errorMessage")}:
-                                    </div>
-                                    <div className="text-sm text-red-600/80 dark:text-red-400/80 font-mono bg-red-50 dark:bg-red-950/20 p-2 rounded">
-                                      {log.errorMessage}
-                                    </div>
-                                    {log.errorCode && (
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        Code: {log.errorCode}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Metadata */}
-                                {isValidMetadata(log.metadata) && Object.keys(log.metadata).length > 0 && (
-                                  <div>
-                                    <div className="text-sm font-medium mb-1">{t("metadata")}:</div>
-                                    <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
-                                      {JSON.stringify(log.metadata, null, 2)}
-                                    </pre>
-                                  </div>
-                                )}
-                              </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">{t("noUser")}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {log.action && (
+                                <Badge variant="outline" className="font-mono text-xs">
+                                  {log.action}
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {log.resourceType && (
+                                <div className="text-sm">
+                                  <div className="font-medium">{log.resourceType}</div>
+                                  {log.resourceId && (
+                                    <div className="text-muted-foreground text-xs">#{log.resourceId}</div>
+                                  )}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                className={
+                                  log.success
+                                    ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                                    : "bg-red-500/10 text-red-700 dark:text-red-400"
+                                }
+                              >
+                                {log.success ? t("success") : t("failed")}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono text-xs">
+                              {log.durationMs !== null ? `${log.durationMs}${t("ms")}` : "—"}
                             </TableCell>
                           </TableRow>
+
+                          {/* Expanded Details Row */}
+                          {isExpanded && (
+                            <TableRow>
+                              <TableCell colSpan={8} className="bg-muted/30">
+                                <div className="p-4 space-y-3">
+                                  {/* Description */}
+                                  {log.description && (
+                                    <div>
+                                      <div className="text-sm font-medium mb-1">{t("details")}:</div>
+                                      <div className="text-sm text-muted-foreground">{log.description}</div>
+                                    </div>
+                                  )}
+
+                                  {/* Event Type & Severity */}
+                                  <div className="flex gap-4">
+                                    <div>
+                                      <div className="text-sm font-medium mb-1">{t("eventType")}:</div>
+                                      <Badge variant="outline" className="font-mono text-xs">
+                                        {log.eventType}
+                                      </Badge>
+                                    </div>
+                                    <div>
+                                      <div className="text-sm font-medium mb-1">{t("severity.INFO")}:</div>
+                                      <Badge className={getSeverityBadgeColor(log.severity)}>
+                                        {t(`severity.${log.severity}`)}
+                                      </Badge>
+                                    </div>
+                                  </div>
+
+                                  {/* League */}
+                                  {log.League && (
+                                    <div>
+                                      <div className="text-sm font-medium mb-1">League:</div>
+                                      <div className="text-sm text-muted-foreground">{log.League.name}</div>
+                                    </div>
+                                  )}
+
+                                  {/* Error Message */}
+                                  {!log.success && log.errorMessage && (
+                                    <div>
+                                      <div className="text-sm font-medium mb-1 text-red-600 dark:text-red-400">
+                                        {t("errorMessage")}:
+                                      </div>
+                                      <div className="text-sm text-red-600/80 dark:text-red-400/80 font-mono bg-red-50 dark:bg-red-950/20 p-2 rounded">
+                                        {log.errorMessage}
+                                      </div>
+                                      {log.errorCode && (
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                          Code: {log.errorCode}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Metadata */}
+                                  {isValidMetadata(log.metadata) && Object.keys(log.metadata).length > 0 && (
+                                    <div>
+                                      <div className="text-sm font-medium mb-1">{t("metadata")}:</div>
+                                      <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                                        {JSON.stringify(log.metadata, null, 2)}
+                                      </pre>
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3 p-4">
+            {logs.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">{t("noLogs")}</div>
+            ) : (
+              logs.map((log) => {
+                const isExpanded = expandedRows.has(log.id);
+                return (
+                  <MobileCard key={log.id} onClick={() => toggleRow(log.id)} expandable expanded={isExpanded}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs">{format(new Date(log.timestamp), "yyyy-MM-dd HH:mm")}</span>
+                      <Badge className={log.success ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-700 dark:text-red-400"}>
+                        {log.success ? t("success") : t("failed")}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge className={getEventBadgeColor(log.eventCategory)}>{t(`categories.${log.eventCategory}`)}</Badge>
+                      {log.action && <Badge variant="outline" className="font-mono text-xs">{log.action}</Badge>}
+                    </div>
+                    {log.User && (
+                      <MobileCardField label={t("user")}>{log.User.username}</MobileCardField>
+                    )}
+                    {log.resourceType && (
+                      <MobileCardField label={t("resource")}>{log.resourceType}{log.resourceId ? ` #${log.resourceId}` : ''}</MobileCardField>
+                    )}
+                    {isExpanded && (
+                      <div className="border-t pt-3 mt-1 space-y-3">
+                        {log.description && (
+                          <div>
+                            <div className="text-sm font-medium mb-1">{t("details")}:</div>
+                            <div className="text-sm text-muted-foreground">{log.description}</div>
+                          </div>
                         )}
-                      </React.Fragment>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
+                        <div className="flex gap-4">
+                          <div>
+                            <div className="text-sm font-medium mb-1">{t("eventType")}:</div>
+                            <Badge variant="outline" className="font-mono text-xs">{log.eventType}</Badge>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium mb-1">{t("severity.INFO")}:</div>
+                            <Badge className={getSeverityBadgeColor(log.severity)}>{t(`severity.${log.severity}`)}</Badge>
+                          </div>
+                        </div>
+                        {log.League && (
+                          <div>
+                            <div className="text-sm font-medium mb-1">League:</div>
+                            <div className="text-sm text-muted-foreground">{log.League.name}</div>
+                          </div>
+                        )}
+                        {!log.success && log.errorMessage && (
+                          <div>
+                            <div className="text-sm font-medium mb-1 text-red-600 dark:text-red-400">{t("errorMessage")}:</div>
+                            <div className="text-sm text-red-600/80 dark:text-red-400/80 font-mono bg-red-50 dark:bg-red-950/20 p-2 rounded">{log.errorMessage}</div>
+                          </div>
+                        )}
+                        {isValidMetadata(log.metadata) && Object.keys(log.metadata).length > 0 && (
+                          <div>
+                            <div className="text-sm font-medium mb-1">{t("metadata")}:</div>
+                            <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">{JSON.stringify(log.metadata, null, 2)}</pre>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </MobileCard>
+                );
+              })
+            )}
           </div>
         </CardContent>
       </Card>

@@ -430,7 +430,8 @@
         "actions": "Akce",
         "name": "Název",
         "status": "Stav"
-      }
+      },
+      "moreActions": "Další akce"
     },
     "auditLogs": {
       "title": "Audit Logy",
@@ -600,6 +601,10 @@
       "points": "Body",
       "addMissingBet": "Přidat chybějící tip",
       "addMissingBetAria": "Přidat chybějící tip pro tento zápas",
+      "editMatch": "Upravit zápas",
+      "evaluateLabel": "Vyhodnotit",
+      "hideBets": "Skrýt tipy",
+      "showBets": "Zobrazit tipy",
       "resultDialog": {
         "title": "Zadat výsledek zápasu",
         "regularScoresRequired": "Zadejte skóre v řádném čase",
@@ -758,7 +763,12 @@
         "submit": "Uložit sérii",
         "success": "Série úspěšně aktualizována",
         "failed": "Nepodařilo se aktualizovat sérii"
-      }
+      },
+      "editDetails": "Upravit detaily",
+      "editResult": "Upravit výsledek",
+      "evaluate": "Vyhodnotit",
+      "hideBets": "Skrýt tipy",
+      "showBets": "Zobrazit tipy"
     },
     "specialBets": {
       "title": "Speciální sázky",
@@ -801,7 +811,13 @@
         "submit": "Uložit speciální sázku",
         "success": "Speciální sázka úspěšně aktualizována",
         "failed": "Nepodařilo se aktualizovat speciální sázku"
-      }
+      },
+      "editDetails": "Upravit detaily",
+      "editResult": "Upravit výsledek",
+      "evaluate": "Vyhodnotit",
+      "addMissingBet": "Přidat chybějící tip",
+      "hideBets": "Skrýt tipy",
+      "showBets": "Zobrazit tipy"
     },
     "questions": {
       "title": "Otázky",
@@ -841,7 +857,11 @@
       "questionMinLength": "Otázka musí mít alespoň 10 znaků",
       "questionMaxLength": "Otázka nesmí přesáhnout 500 znaků",
       "questionCreated": "Otázka úspěšně vytvořena",
-      "questionCreateFailed": "Nepodařilo se vytvořit otázku"
+      "questionCreateFailed": "Nepodařilo se vytvořit otázku",
+      "evaluate": "Vyhodnotit",
+      "addMissingBet": "Přidat chybějící tip",
+      "hideBets": "Skrýt tipy",
+      "showBets": "Zobrazit tipy"
     },
     "users": {
       "title": "Správa uživatelů",

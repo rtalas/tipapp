@@ -55,15 +55,15 @@ export function MatchFilters({
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div className="flex flex-1 flex-wrap gap-2">
+      <div className="flex flex-1 flex-col gap-2 md:flex-row md:flex-wrap">
         <Input
           placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="max-w-sm"
+          className="w-full md:max-w-sm"
         />
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-full md:w-[150px]">
             <SelectValue placeholder={t('status')} />
           </SelectTrigger>
           <SelectContent>
@@ -76,7 +76,7 @@ export function MatchFilters({
         </Select>
         {showLeagueFilter && (
           <Select value={leagueFilter} onValueChange={onLeagueFilterChange}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder={t('league')} />
             </SelectTrigger>
             <SelectContent>
@@ -90,7 +90,7 @@ export function MatchFilters({
           </Select>
         )}
         <Select value={userFilter} onValueChange={onUserFilterChange}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full md:w-[180px]">
             <SelectValue placeholder={t('allUsers')} />
           </SelectTrigger>
           <SelectContent>
@@ -103,7 +103,7 @@ export function MatchFilters({
           </SelectContent>
         </Select>
       </div>
-      <Button onClick={onAddMatch}>
+      <Button onClick={onAddMatch} className="w-full md:w-auto">
         <Plus className="mr-2 h-4 w-4" />
         {t('addMatch')}
       </Button>

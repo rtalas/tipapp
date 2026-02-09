@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Plus } from 'lucide-react'
+import { Plus, Edit, Trash2, Calculator, ChevronDown, ChevronUp, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { deleteQuestion, createQuestion } from '@/actions/questions'
@@ -12,6 +12,9 @@ import { logger } from '@/lib/logging/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
+import { Badge } from '@/components/ui/badge'
+import { MobileCard, MobileCardField } from '@/components/admin/common/mobile-card'
+import { ActionMenu } from '@/components/admin/common/action-menu'
 import { ContentFilterHeader } from '@/components/admin/common/content-filter-header'
 import { DetailedEntityDeleteDialog } from '@/components/admin/common/detailed-entity-delete-dialog'
 import { QuestionTableRow } from './question-table-row'
@@ -217,7 +220,9 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
               </Button>
             </div>
           ) : (
-            <div className="rounded-lg border">
+            <>
+            {/* Desktop Table */}
+            <div className="hidden md:block rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -248,6 +253,68 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                 </TableBody>
               </Table>
             </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-3">
+              {filteredQuestions.map((q) => {
+                const status = getQuestionStatus(q)
+                const expanded = isExpanded(q.id)
+
+                return (
+                  <MobileCard key={q.id}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="font-medium text-sm flex-1">{q.text}</div>
+                      <ActionMenu items={[
+                        { label: tCommon('edit'), icon: <Edit className="h-4 w-4" />, onClick: () => setQuestionToEdit(q) },
+                        { label: t('evaluate'), icon: <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(q.id) },
+                        { label: t('addMissingBet'), icon: <UserPlus className="h-4 w-4" />, onClick: () => setCreateBetQuestionId(q.id) },
+                        { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(q), variant: 'destructive' },
+                      ]} />
+                    </div>
+                    <MobileCardField label={tSeries('dateTime')}>
+                      {format(new Date(q.dateTime), 'd.M.yyyy HH:mm')}
+                    </MobileCardField>
+                    <MobileCardField label={t('result')}>
+                      {q.result !== null ? (q.result ? t('yes') : t('no')) : '-'}
+                    </MobileCardField>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={status === 'evaluated' ? 'evaluated' : status === 'finished' ? 'finished' : 'scheduled'}>
+                        {status === 'evaluated' ? tSeries('evaluated') : status === 'finished' ? tSeries('finished') : tSeries('scheduled')}
+                      </Badge>
+                      <Badge variant="outline">{q.UserSpecialBetQuestion.length} {tSeries('bets').toLowerCase()}</Badge>
+                    </div>
+
+                    {q.UserSpecialBetQuestion.length > 0 && (
+                      <>
+                        <button
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground w-full justify-center pt-1"
+                          onClick={() => toggleRow(q.id)}
+                        >
+                          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          {expanded ? t('hideBets') : t('showBets')}
+                        </button>
+                        {expanded && (
+                          <div className="border-t pt-3 space-y-2">
+                            {q.UserSpecialBetQuestion.map((bet) => (
+                              <div key={bet.id} className="text-sm flex items-center justify-between bg-muted/30 rounded px-2 py-1.5">
+                                <span className="font-medium">{bet.LeagueUser.User.firstName} {bet.LeagueUser.User.lastName}</span>
+                                <div className="flex items-center gap-2">
+                                  <span>{bet.userBet ? t('yes') : t('no')}</span>
+                                  {bet.totalPoints !== 0 && (
+                                    <Badge variant="outline" className="text-xs">{bet.totalPoints}pts</Badge>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </MobileCard>
+                )
+              })}
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import {
@@ -16,10 +16,13 @@ import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
+import { MobileCard, MobileCardField } from '@/components/admin/common/mobile-card'
+import { ActionMenu } from '@/components/admin/common/action-menu'
 import { PlayerTableRow } from './player-table-row'
 import { CreatePlayerDialog } from './create-player-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
@@ -252,10 +255,10 @@ export function PlayersContent({ players }: PlayersContentProps) {
             placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
+            className="w-full md:max-w-sm"
           />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder={tCommon('status')} />
             </SelectTrigger>
             <SelectContent>
@@ -265,7 +268,7 @@ export function PlayersContent({ players }: PlayersContentProps) {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={createDialog.openDialog}>
+        <Button onClick={createDialog.openDialog} className="w-full md:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           {t('addPlayer')}
         </Button>
@@ -283,35 +286,77 @@ export function PlayersContent({ players }: PlayersContentProps) {
               <p className="text-muted-foreground">{t('noPlayersFound')}</p>
             </div>
           ) : (
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{tCommon('name')}</TableHead>
-                    <TableHead>{t('position')}</TableHead>
-                    <TableHead>{tCommon('status')}</TableHead>
-                    <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPlayers.map((player) => (
-                    <PlayerTableRow
-                      key={player.id}
-                      player={player}
-                      isEditing={inlineEdit.editingId === player.id}
-                      editForm={inlineEdit.form}
-                      onStartEdit={() => handleStartEdit(player)}
-                      onSaveEdit={() => handleSaveEdit(player.id)}
-                      onCancelEdit={inlineEdit.cancelEdit}
-                      onDelete={() => deleteDialog.openDialog(player)}
-                      onToggleActive={() => handleToggleActive(player)}
-                      onFormChange={inlineEdit.updateForm}
-                      isSaving={inlineEdit.isSaving}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
+            <>
+            <div className="hidden md:block">
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{tCommon('name')}</TableHead>
+                      <TableHead>{t('position')}</TableHead>
+                      <TableHead>{tCommon('status')}</TableHead>
+                      <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPlayers.map((player) => (
+                      <PlayerTableRow
+                        key={player.id}
+                        player={player}
+                        isEditing={inlineEdit.editingId === player.id}
+                        editForm={inlineEdit.form}
+                        onStartEdit={() => handleStartEdit(player)}
+                        onSaveEdit={() => handleSaveEdit(player.id)}
+                        onCancelEdit={inlineEdit.cancelEdit}
+                        onDelete={() => deleteDialog.openDialog(player)}
+                        onToggleActive={() => handleToggleActive(player)}
+                        onFormChange={inlineEdit.updateForm}
+                        isSaving={inlineEdit.isSaving}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-3">
+              {filteredPlayers.map((player) => {
+                const isEditing = inlineEdit.editingId === player.id
+                const playerName = getPlayerName(player)
+                return (
+                  <MobileCard key={player.id}>
+                    {isEditing && inlineEdit.form ? (
+                      <div className="space-y-3">
+                        <Input value={inlineEdit.form.firstName} onChange={(e) => inlineEdit.updateForm({ firstName: e.target.value })} placeholder={t('firstName')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <Input value={inlineEdit.form.lastName} onChange={(e) => inlineEdit.updateForm({ lastName: e.target.value })} placeholder={t('lastName')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <Input value={inlineEdit.form.position} onChange={(e) => inlineEdit.updateForm({ position: e.target.value })} placeholder={t('position')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="outline" onClick={inlineEdit.cancelEdit}>{tCommon('button.cancel')}</Button>
+                          <Button size="sm" onClick={() => handleSaveEdit(player.id)} disabled={inlineEdit.isSaving}>{tCommon('button.save')}</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">{playerName}</div>
+                          <ActionMenu items={[
+                            { label: tCommon('edit'), icon: <Pencil className="h-4 w-4" />, onClick: () => handleStartEdit(player) },
+                            { label: player.isActive ? t('inactive') : t('active'), onClick: () => handleToggleActive(player) },
+                            { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(player), variant: 'destructive' },
+                          ]} />
+                        </div>
+                        {player.position && <MobileCardField label={t('position')}>{player.position}</MobileCardField>}
+                        <MobileCardField label={tCommon('status')}>
+                          <Badge variant={player.isActive ? 'default' : 'secondary'}>{player.isActive ? t('active') : t('inactive')}</Badge>
+                        </MobileCardField>
+                      </>
+                    )}
+                  </MobileCard>
+                )
+              })}
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

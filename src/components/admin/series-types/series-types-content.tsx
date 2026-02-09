@@ -14,6 +14,8 @@ import { logger } from '@/lib/logging/client-logger'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
+import { MobileCard, MobileCardField } from '@/components/admin/common/mobile-card'
+import { ActionMenu } from '@/components/admin/common/action-menu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -173,10 +175,10 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
             placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
+            className="w-full md:max-w-sm"
           />
         </div>
-        <Button onClick={createDialog.openDialog}>
+        <Button onClick={createDialog.openDialog} className="w-full md:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           {t('addButton')}
         </Button>
@@ -194,100 +196,138 @@ export function SeriesTypesContent({ seriesTypes }: SeriesTypesContentProps) {
               <p className="text-muted-foreground">{t('emptyState')}</p>
             </div>
           ) : (
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('table.name')}</TableHead>
-                    <TableHead>{t('table.bestOf')}</TableHead>
-                    <TableHead className="w-[80px]">{tCommon('table.actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSeriesTypes.map((item) => (
-                    <TableRow key={item.id} className="table-row-hover">
-                      <TableCell>
-                        {inlineEdit.editingId === item.id && inlineEdit.form ? (
-                          <div className="flex items-start gap-2 min-w-max">
-                            <div className="flex-1 space-y-2">
-                              <Input
-                                type="text"
-                                value={inlineEdit.form.name}
-                                onChange={(e) =>
-                                  inlineEdit.updateForm({ name: e.target.value })
-                                }
-                                placeholder={t('form.namePlaceholder')}
-                                className="h-8"
-                                disabled={inlineEdit.isSaving}
-                                autoFocus
-                                aria-label={t('form.nameLabel')}
-                              />
-                              <Input
-                                type="number"
-                                min="1"
-                                max="7"
-                                value={inlineEdit.form.bestOf}
-                                onChange={(e) =>
-                                  inlineEdit.updateForm({ bestOf: e.target.value })
-                                }
-                                placeholder={t('form.bestOfPlaceholder')}
-                                className="h-8"
-                                disabled={inlineEdit.isSaving}
-                                aria-label={t('form.bestOfLabel')}
-                              />
-                            </div>
-                            <div className="flex items-center gap-2 mt-8">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                                aria-label={t('form.cancelLabel')}
-                              >
-                                {tCommon('button.cancel')}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleSaveEdit(item.id)}
-                                disabled={inlineEdit.isSaving}
-                                aria-label={t('form.saveLabel')}
-                              >
-                                {tCommon('button.save')}
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="font-medium">{item.name}</div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{t('bestOf', { count: item.bestOf })}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStartEdit(item)}
-                            aria-label={`Edit series type: ${item.name}`}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteDialog.openDialog(item)}
-                            aria-label={`Delete series type: ${item.name}`}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            <>
+            <div className="hidden md:block">
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('table.name')}</TableHead>
+                      <TableHead>{t('table.bestOf')}</TableHead>
+                      <TableHead className="w-[80px]">{tCommon('table.actions')}</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSeriesTypes.map((item) => (
+                      <TableRow key={item.id} className="table-row-hover">
+                        <TableCell>
+                          {inlineEdit.editingId === item.id && inlineEdit.form ? (
+                            <div className="flex items-start gap-2 min-w-max">
+                              <div className="flex-1 space-y-2">
+                                <Input
+                                  type="text"
+                                  value={inlineEdit.form.name}
+                                  onChange={(e) =>
+                                    inlineEdit.updateForm({ name: e.target.value })
+                                  }
+                                  placeholder={t('form.namePlaceholder')}
+                                  className="h-8"
+                                  disabled={inlineEdit.isSaving}
+                                  autoFocus
+                                  aria-label={t('form.nameLabel')}
+                                />
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max="7"
+                                  value={inlineEdit.form.bestOf}
+                                  onChange={(e) =>
+                                    inlineEdit.updateForm({ bestOf: e.target.value })
+                                  }
+                                  placeholder={t('form.bestOfPlaceholder')}
+                                  className="h-8"
+                                  disabled={inlineEdit.isSaving}
+                                  aria-label={t('form.bestOfLabel')}
+                                />
+                              </div>
+                              <div className="flex items-center gap-2 mt-8">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEdit}
+                                  aria-label={t('form.cancelLabel')}
+                                >
+                                  {tCommon('button.cancel')}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => handleSaveEdit(item.id)}
+                                  disabled={inlineEdit.isSaving}
+                                  aria-label={t('form.saveLabel')}
+                                >
+                                  {tCommon('button.save')}
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="font-medium">{item.name}</div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{t('bestOf', { count: item.bestOf })}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleStartEdit(item)}
+                              aria-label={`Edit series type: ${item.name}`}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteDialog.openDialog(item)}
+                              aria-label={`Delete series type: ${item.name}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-3">
+              {filteredSeriesTypes.map((item) => {
+                const isEditing = inlineEdit.editingId === item.id
+                return (
+                  <MobileCard key={item.id}>
+                    {isEditing && inlineEdit.form ? (
+                      <div className="space-y-3">
+                        <Input value={inlineEdit.form.name} onChange={(e) => inlineEdit.updateForm({ name: e.target.value })} placeholder={t('form.namePlaceholder')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <Input type="number" min="1" max="7" value={inlineEdit.form.bestOf} onChange={(e) => inlineEdit.updateForm({ bestOf: e.target.value })} placeholder={t('form.bestOfPlaceholder')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="outline" onClick={handleCancelEdit}>{tCommon('button.cancel')}</Button>
+                          <Button size="sm" onClick={() => handleSaveEdit(item.id)} disabled={inlineEdit.isSaving}>{tCommon('button.save')}</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">{item.name}</div>
+                          <ActionMenu items={[
+                            { label: tCommon('edit'), icon: <Edit className="h-4 w-4" />, onClick: () => handleStartEdit(item) },
+                            { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(item), variant: 'destructive' },
+                          ]} />
+                        </div>
+                        <MobileCardField label={t('table.bestOf')}>
+                          <Badge variant="secondary">{t('bestOf', { count: item.bestOf })}</Badge>
+                        </MobileCardField>
+                      </>
+                    )}
+                  </MobileCard>
+                )
+              })}
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

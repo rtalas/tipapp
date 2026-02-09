@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import {
@@ -37,6 +37,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { MobileCard, MobileCardField } from '@/components/admin/common/mobile-card'
+import { ActionMenu } from '@/components/admin/common/action-menu'
 import { EvaluatorCreateDialog } from './evaluator-create-dialog'
 import { EvaluatorTableRow } from './evaluator-table-row'
 import { ScorerRankingEditor } from './scorer-ranking-editor'
@@ -252,11 +254,11 @@ export function EvaluatorsContent({
             placeholder={league ? t('searchPlaceholderLeague') : t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
+            className="w-full md:max-w-sm"
           />
           {!league && (
             <Select value={leagueFilter} onValueChange={setLeagueFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder={t('table.league')} />
               </SelectTrigger>
               <SelectContent>
@@ -270,7 +272,7 @@ export function EvaluatorsContent({
             </Select>
           )}
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
+        <Button onClick={() => setCreateDialogOpen(true)} className="w-full md:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           {t('addButton')}
         </Button>
@@ -292,79 +294,153 @@ export function EvaluatorsContent({
               <p className="text-muted-foreground">{t('noEvaluatorsFound')}</p>
             </div>
           ) : (
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {!league && <TableHead>{t('table.league')}</TableHead>}
-                    <TableHead>{t('table.ruleName')}</TableHead>
-                    <TableHead>{t('table.type')}</TableHead>
-                    <TableHead className="text-center">{t('table.points')}</TableHead>
-                    <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEvaluators.map((evaluator) => {
-                    const isEditingThisRow = editingId === evaluator.id
-                    const isEditingScorer = isEditingThisRow && editConfig !== null
-                    const isEditingExactPlayer = isEditingThisRow && editExactPlayerConfig !== null
+            <>
+            <div className="hidden md:block">
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {!league && <TableHead>{t('table.league')}</TableHead>}
+                      <TableHead>{t('table.ruleName')}</TableHead>
+                      <TableHead>{t('table.type')}</TableHead>
+                      <TableHead className="text-center">{t('table.points')}</TableHead>
+                      <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredEvaluators.map((evaluator) => {
+                      const isEditingThisRow = editingId === evaluator.id
+                      const isEditingScorer = isEditingThisRow && editConfig !== null
+                      const isEditingExactPlayer = isEditingThisRow && editExactPlayerConfig !== null
 
-                    if (isEditingExactPlayer && editExactPlayerConfig) {
+                      if (isEditingExactPlayer && editExactPlayerConfig) {
+                        return (
+                          <ExactPlayerEditor
+                            key={evaluator.id}
+                            colSpan={colSpan}
+                            editNameValue={editNameValue}
+                            editPointsValue={editPointsValue}
+                            editConfig={editExactPlayerConfig}
+                            availablePositions={availablePositions}
+                            isSaving={isSaving}
+                            onNameChange={setEditNameValue}
+                            onPointsChange={setEditPointsValue}
+                            onConfigChange={setEditExactPlayerConfig}
+                            onCancel={handleCancelEdit}
+                            onSave={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
+                          />
+                        )
+                      }
+
+                      if (isEditingScorer && editConfig) {
+                        return (
+                          <ScorerRankingEditor
+                            key={evaluator.id}
+                            colSpan={colSpan}
+                            editNameValue={editNameValue}
+                            editConfig={editConfig}
+                            isSaving={isSaving}
+                            onNameChange={setEditNameValue}
+                            onConfigChange={setEditConfig}
+                            onCancel={handleCancelEdit}
+                            onSave={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
+                          />
+                        )
+                      }
+
                       return (
-                        <ExactPlayerEditor
+                        <EvaluatorTableRow
                           key={evaluator.id}
-                          colSpan={colSpan}
+                          evaluator={evaluator}
+                          showLeague={!league}
+                          isEditing={isEditingThisRow}
                           editNameValue={editNameValue}
                           editPointsValue={editPointsValue}
-                          editConfig={editExactPlayerConfig}
-                          availablePositions={availablePositions}
                           isSaving={isSaving}
+                          onStartEdit={() => handleStartEdit(evaluator)}
+                          onCancelEdit={handleCancelEdit}
+                          onSave={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
+                          onDelete={() => deleteDialog.openDialog(evaluator)}
                           onNameChange={setEditNameValue}
                           onPointsChange={setEditPointsValue}
-                          onConfigChange={setEditExactPlayerConfig}
-                          onCancel={handleCancelEdit}
-                          onSave={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
                         />
                       )
-                    }
-
-                    if (isEditingScorer && editConfig) {
-                      return (
-                        <ScorerRankingEditor
-                          key={evaluator.id}
-                          colSpan={colSpan}
-                          editNameValue={editNameValue}
-                          editConfig={editConfig}
-                          isSaving={isSaving}
-                          onNameChange={setEditNameValue}
-                          onConfigChange={setEditConfig}
-                          onCancel={handleCancelEdit}
-                          onSave={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
-                        />
-                      )
-                    }
-
-                    return (
-                      <EvaluatorTableRow
-                        key={evaluator.id}
-                        evaluator={evaluator}
-                        showLeague={!league}
-                        isEditing={isEditingThisRow}
-                        editNameValue={editNameValue}
-                        editPointsValue={editPointsValue}
-                        isSaving={isSaving}
-                        onStartEdit={() => handleStartEdit(evaluator)}
-                        onCancelEdit={handleCancelEdit}
-                        onSave={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
-                        onDelete={() => deleteDialog.openDialog(evaluator)}
-                        onNameChange={setEditNameValue}
-                        onPointsChange={setEditPointsValue}
-                      />
-                    )
-                  })}
-                </TableBody>
-              </Table>
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-3">
+              {filteredEvaluators.map((evaluator) => {
+                const isEditingThisRow = editingId === evaluator.id
+                const isEditingScorer = isEditingThisRow && editConfig !== null
+                const isEditingExactPlayer = isEditingThisRow && editExactPlayerConfig !== null
+
+                return (
+                  <MobileCard key={evaluator.id}>
+                    {isEditingThisRow ? (
+                      <div className="space-y-3">
+                        <Input value={editNameValue} onChange={(e) => setEditNameValue(e.target.value)} placeholder={t('table.ruleName')} className="h-8" disabled={isSaving} />
+                        {!isEditingScorer && !isEditingExactPlayer && (
+                          <Input type="number" value={editPointsValue} onChange={(e) => setEditPointsValue(e.target.value)} placeholder={t('table.points')} className="h-8" disabled={isSaving} />
+                        )}
+                        {isEditingScorer && editConfig && (
+                          <ScorerRankingEditor
+                            colSpan={colSpan}
+                            editNameValue={editNameValue}
+                            editConfig={editConfig}
+                            isSaving={isSaving}
+                            onNameChange={setEditNameValue}
+                            onConfigChange={setEditConfig}
+                            onCancel={handleCancelEdit}
+                            onSave={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
+                          />
+                        )}
+                        {isEditingExactPlayer && editExactPlayerConfig && (
+                          <ExactPlayerEditor
+                            colSpan={colSpan}
+                            editNameValue={editNameValue}
+                            editPointsValue={editPointsValue}
+                            editConfig={editExactPlayerConfig}
+                            availablePositions={availablePositions}
+                            isSaving={isSaving}
+                            onNameChange={setEditNameValue}
+                            onPointsChange={setEditPointsValue}
+                            onConfigChange={setEditExactPlayerConfig}
+                            onCancel={handleCancelEdit}
+                            onSave={() => handleSave(evaluator.id, evaluator.name, evaluator.points)}
+                          />
+                        )}
+                        {!isEditingScorer && !isEditingExactPlayer && (
+                          <div className="flex gap-2 justify-end">
+                            <Button size="sm" variant="outline" onClick={handleCancelEdit}>{tCommon('button.cancel')}</Button>
+                            <Button size="sm" onClick={() => handleSave(evaluator.id, evaluator.name, evaluator.points)} disabled={isSaving}>{tCommon('button.save')}</Button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">{evaluator.name}</div>
+                          <ActionMenu items={[
+                            { label: tCommon('edit'), icon: <Pencil className="h-4 w-4" />, onClick: () => handleStartEdit(evaluator) },
+                            { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(evaluator), variant: 'destructive' },
+                          ]} />
+                        </div>
+                        <MobileCardField label={t('table.type')}>{evaluator.EvaluatorType.name}</MobileCardField>
+                        <MobileCardField label={t('table.points')}>
+                          {evaluator.config ? t('table.points') : evaluator.points}
+                        </MobileCardField>
+                        {!league && <MobileCardField label={t('table.league')}>{evaluator.League.name}</MobileCardField>}
+                      </>
+                    )}
+                  </MobileCard>
+                )
+              })}
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

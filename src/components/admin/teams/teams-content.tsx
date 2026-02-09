@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import {
@@ -16,8 +17,12 @@ import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { ContentFilterHeader } from '@/components/admin/common/content-filter-header'
 import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
+import { MobileCard, MobileCardField } from '@/components/admin/common/mobile-card'
+import { ActionMenu } from '@/components/admin/common/action-menu'
 import { TeamTableRow } from './team-table-row'
 import { CreateTeamDialog } from './create-team-dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
@@ -276,35 +281,72 @@ export function TeamsContent({ teams, sports }: TeamsContentProps) {
               <p className="text-muted-foreground">{t('noTeamsFound')}</p>
             </div>
           ) : (
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{tCommon('name')}</TableHead>
-                    <TableHead>{t('shortcut')}</TableHead>
-                    <TableHead>{t('sport')}</TableHead>
-                    <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTeams.map((team) => (
-                    <TeamTableRow
-                      key={team.id}
-                      team={team}
-                      isEditing={inlineEdit.editingId === team.id}
-                      editForm={inlineEdit.form}
-                      onStartEdit={() => handleStartEdit(team)}
-                      onSaveEdit={() => handleSaveEdit(team.id)}
-                      onCancelEdit={inlineEdit.cancelEdit}
-                      onDelete={() => deleteDialog.openDialog(team)}
-                      onFormChange={inlineEdit.updateForm}
-                      isSaving={inlineEdit.isSaving}
-                      sports={sports}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
+            <>
+            <div className="hidden md:block">
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{tCommon('name')}</TableHead>
+                      <TableHead>{t('shortcut')}</TableHead>
+                      <TableHead>{t('sport')}</TableHead>
+                      <TableHead className="w-[80px]">{tCommon('actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTeams.map((team) => (
+                      <TeamTableRow
+                        key={team.id}
+                        team={team}
+                        isEditing={inlineEdit.editingId === team.id}
+                        editForm={inlineEdit.form}
+                        onStartEdit={() => handleStartEdit(team)}
+                        onSaveEdit={() => handleSaveEdit(team.id)}
+                        onCancelEdit={inlineEdit.cancelEdit}
+                        onDelete={() => deleteDialog.openDialog(team)}
+                        onFormChange={inlineEdit.updateForm}
+                        isSaving={inlineEdit.isSaving}
+                        sports={sports}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-3">
+              {filteredTeams.map((team) => {
+                const isEditing = inlineEdit.editingId === team.id
+                return (
+                  <MobileCard key={team.id}>
+                    {isEditing && inlineEdit.form ? (
+                      <div className="space-y-3">
+                        <Input value={inlineEdit.form.name} onChange={(e) => inlineEdit.updateForm({ name: e.target.value })} placeholder={t('teamName')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <Input value={inlineEdit.form.shortcut} onChange={(e) => inlineEdit.updateForm({ shortcut: e.target.value })} placeholder={t('shortcut')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="outline" onClick={inlineEdit.cancelEdit}>{tCommon('button.cancel')}</Button>
+                          <Button size="sm" onClick={() => handleSaveEdit(team.id)} disabled={inlineEdit.isSaving}>{tCommon('button.save')}</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">{team.name}{team.nickname ? ` (${team.nickname})` : ''}</div>
+                          <ActionMenu items={[
+                            { label: tCommon('edit'), icon: <Pencil className="h-4 w-4" />, onClick: () => handleStartEdit(team) },
+                            { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(team), variant: 'destructive' },
+                          ]} />
+                        </div>
+                        <MobileCardField label={t('shortcut')}>{team.shortcut}</MobileCardField>
+                        <MobileCardField label={t('sport')}>{team.Sport.name}</MobileCardField>
+                      </>
+                    )}
+                  </MobileCard>
+                )
+              })}
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import {
@@ -15,10 +15,13 @@ import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useDeleteDialog } from '@/hooks/useDeleteDialog'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { DeleteEntityDialog } from '@/components/admin/common/delete-entity-dialog'
+import { MobileCard, MobileCardField } from '@/components/admin/common/mobile-card'
+import { ActionMenu } from '@/components/admin/common/action-menu'
 import { MatchPhaseTableRow } from './match-phase-table-row'
 import { CreateMatchPhaseDialog } from './create-match-phase-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
@@ -187,10 +190,10 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
             placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
+            className="w-full md:max-w-sm"
           />
         </div>
-        <Button onClick={createDialog.openDialog}>
+        <Button onClick={createDialog.openDialog} className="w-full md:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           {t('addButton')}
         </Button>
@@ -208,35 +211,76 @@ export function MatchPhasesContent({ initialPhases }: MatchPhasesContentProps) {
               <p className="text-muted-foreground">{t('emptyState')}</p>
             </div>
           ) : (
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('table.name')}</TableHead>
-                    <TableHead>{t('table.rank')}</TableHead>
-                    <TableHead>{t('table.bestOf')}</TableHead>
-                    <TableHead>{t('table.usage')}</TableHead>
-                    <TableHead className="w-[80px]">{tCommon('table.actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPhases.map((item) => (
-                    <MatchPhaseTableRow
-                      key={item.id}
-                      matchPhase={item}
-                      isEditing={inlineEdit.editingId === item.id}
-                      editForm={inlineEdit.form}
-                      onStartEdit={() => handleStartEdit(item)}
-                      onSaveEdit={() => handleSaveEdit(item.id)}
-                      onCancelEdit={inlineEdit.cancelEdit}
-                      onDelete={() => deleteDialog.openDialog(item)}
-                      onFormChange={inlineEdit.updateForm}
-                      isSaving={inlineEdit.isSaving}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
+            <>
+            <div className="hidden md:block">
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('table.name')}</TableHead>
+                      <TableHead>{t('table.rank')}</TableHead>
+                      <TableHead>{t('table.bestOf')}</TableHead>
+                      <TableHead>{t('table.usage')}</TableHead>
+                      <TableHead className="w-[80px]">{tCommon('table.actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPhases.map((item) => (
+                      <MatchPhaseTableRow
+                        key={item.id}
+                        matchPhase={item}
+                        isEditing={inlineEdit.editingId === item.id}
+                        editForm={inlineEdit.form}
+                        onStartEdit={() => handleStartEdit(item)}
+                        onSaveEdit={() => handleSaveEdit(item.id)}
+                        onCancelEdit={inlineEdit.cancelEdit}
+                        onDelete={() => deleteDialog.openDialog(item)}
+                        onFormChange={inlineEdit.updateForm}
+                        isSaving={inlineEdit.isSaving}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-3">
+              {filteredPhases.map((item) => {
+                const isEditing = inlineEdit.editingId === item.id
+                return (
+                  <MobileCard key={item.id}>
+                    {isEditing && inlineEdit.form ? (
+                      <div className="space-y-3">
+                        <Input value={inlineEdit.form.name} onChange={(e) => inlineEdit.updateForm({ name: e.target.value })} placeholder={t('table.name')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <Input type="number" value={inlineEdit.form.rank} onChange={(e) => inlineEdit.updateForm({ rank: e.target.value })} placeholder={t('table.rank')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <Input type="number" value={inlineEdit.form.bestOf} onChange={(e) => inlineEdit.updateForm({ bestOf: e.target.value })} placeholder={t('table.bestOf')} className="h-8" disabled={inlineEdit.isSaving} />
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="outline" onClick={inlineEdit.cancelEdit}>{tCommon('button.cancel')}</Button>
+                          <Button size="sm" onClick={() => handleSaveEdit(item.id)} disabled={inlineEdit.isSaving}>{tCommon('button.save')}</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">{item.name}</div>
+                          <ActionMenu items={[
+                            { label: tCommon('edit'), icon: <Pencil className="h-4 w-4" />, onClick: () => handleStartEdit(item) },
+                            { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(item), variant: 'destructive' },
+                          ]} />
+                        </div>
+                        <MobileCardField label={t('table.rank')}>{item.rank}</MobileCardField>
+                        <MobileCardField label={t('table.bestOf')}>{item.bestOf ?? '-'}</MobileCardField>
+                        <MobileCardField label={t('table.usage')}>
+                          <Badge variant="secondary">{item._count.Match}</Badge>
+                        </MobileCardField>
+                      </>
+                    )}
+                  </MobileCard>
+                )
+              })}
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

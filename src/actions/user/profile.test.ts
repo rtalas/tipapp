@@ -57,6 +57,7 @@ describe('User Profile Actions', () => {
         lastName: 'Doe',
         email: 'john@test.com',
         notifyHours: 2,
+        notifyChat: true,
       })
 
       expect(result.success).toBe(true)
@@ -76,6 +77,7 @@ describe('User Profile Actions', () => {
         lastName: 'Doe',
         email: 'taken@test.com',
         notifyHours: 2,
+        notifyChat: true,
       })
 
       expect(result.success).toBe(false)
@@ -90,6 +92,7 @@ describe('User Profile Actions', () => {
         lastName: 'D',
         email: 'j@test.com',
         notifyHours: 1,
+        notifyChat: true,
       })
 
       expect(result.success).toBe(false)

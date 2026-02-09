@@ -430,7 +430,8 @@
         "actions": "Actions",
         "name": "Name",
         "status": "Status"
-      }
+      },
+      "moreActions": "More actions"
     },
     "auditLogs": {
       "title": "Audit Logs",
@@ -600,6 +601,10 @@
       "points": "Points",
       "addMissingBet": "Add Missing Bet",
       "addMissingBetAria": "Add missing bet for this match",
+      "editMatch": "Edit Match",
+      "evaluateLabel": "Evaluate",
+      "hideBets": "Hide bets",
+      "showBets": "Show bets",
       "resultDialog": {
         "title": "Enter Match Result",
         "regularScoresRequired": "Please enter regular time scores",
@@ -758,7 +763,12 @@
         "submit": "Update Series",
         "success": "Series updated successfully",
         "failed": "Failed to update series"
-      }
+      },
+      "editDetails": "Edit Details",
+      "editResult": "Edit Result",
+      "evaluate": "Evaluate",
+      "hideBets": "Hide bets",
+      "showBets": "Show bets"
     },
     "specialBets": {
       "title": "Special Bets",
@@ -801,7 +811,13 @@
         "submit": "Update Special Bet",
         "success": "Special bet updated successfully",
         "failed": "Failed to update special bet"
-      }
+      },
+      "editDetails": "Edit Details",
+      "editResult": "Edit Result",
+      "evaluate": "Evaluate",
+      "addMissingBet": "Add Missing Bet",
+      "hideBets": "Hide bets",
+      "showBets": "Show bets"
     },
     "questions": {
       "title": "Questions",
@@ -841,7 +857,11 @@
       "questionMinLength": "Question must be at least 10 characters",
       "questionMaxLength": "Question must not exceed 500 characters",
       "questionCreated": "Question created successfully",
-      "questionCreateFailed": "Failed to create question"
+      "questionCreateFailed": "Failed to create question",
+      "evaluate": "Evaluate",
+      "addMissingBet": "Add Missing Bet",
+      "hideBets": "Hide bets",
+      "showBets": "Show bets"
     },
     "users": {
       "title": "User Management",
