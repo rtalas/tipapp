@@ -1,27 +1,12 @@
 import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
-import { getPendingRequests, getLeagueUsers } from '@/actions/users'
-import { prisma } from '@/lib/prisma'
-import { UsersContent } from '@/components/admin/users/users-content'
+import { getAllUsersForAdmin } from '@/actions/users'
+import { GlobalUsersContent } from '@/components/admin/users/global-users-content'
 import { TableSkeleton } from '@/components/admin/common/table-skeleton'
 
 async function UsersData() {
-  const [pendingRequests, leagueUsers, leagues] = await Promise.all([
-    getPendingRequests(),
-    getLeagueUsers(),
-    prisma.league.findMany({
-      where: { deletedAt: null },
-      orderBy: { name: 'asc' },
-    }),
-  ])
-
-  return (
-    <UsersContent
-      pendingRequests={pendingRequests}
-      leagueUsers={leagueUsers}
-      leagues={leagues}
-    />
-  )
+  const users = await getAllUsersForAdmin()
+  return <GlobalUsersContent users={users} />
 }
 
 export default async function UsersPage() {

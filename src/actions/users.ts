@@ -13,9 +13,11 @@ import {
   updateLeagueUserBooleanSchema,
   addUserToLeagueSchema,
   removeLeagueUserSchema,
+  updateUserSchema,
   type UpdateLeagueUserBooleanInput,
   type AddUserToLeagueInput,
   type RemoveLeagueUserInput,
+  type UpdateUserInput,
 } from '@/lib/validation/admin'
 
 // Get pending user requests
@@ -176,6 +178,31 @@ export async function getUsers() {
 
 // Export type for components
 export type UserBasic = Awaited<ReturnType<typeof getUsers>>[number]
+
+// Get all users with league counts (for global admin users page)
+export async function getAllUsersForAdmin() {
+  await requireAdmin()
+  return prisma.user.findMany({
+    where: { deletedAt: null },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      username: true,
+      email: true,
+      isSuperadmin: true,
+      createdAt: true,
+      _count: {
+        select: {
+          LeagueUser: { where: { deletedAt: null } },
+        },
+      },
+    },
+    orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+  })
+}
+
+export type AdminUser = Awaited<ReturnType<typeof getAllUsersForAdmin>>[number]
 
 // Get league users with filters
 export async function getLeagueUsers(filters?: { leagueId?: number }) {
@@ -338,6 +365,92 @@ export async function addUserToLeague(input: AddUserToLeagueInput) {
         parseSessionUserId(session!.user!.id!), 'LeagueUser', result.id,
         { userId: validated.userId, leagueId: validated.leagueId },
         validated.leagueId
+      ).catch(() => {})
+
+      return {}
+    },
+    revalidatePath: '/admin/users',
+    requiresAdmin: true,
+  })
+}
+
+// Update user (global admin)
+export async function updateUser(input: UpdateUserInput) {
+  return executeServerAction(input, {
+    validator: updateUserSchema,
+    handler: async (validated, session) => {
+      const user = await prisma.user.findUnique({
+        where: { id: validated.id, deletedAt: null },
+      })
+
+      if (!user) {
+        throw new AppError('User not found', 'NOT_FOUND', 404)
+      }
+
+      // Check unique username if changed
+      if (validated.username && validated.username !== user.username) {
+        const existing = await prisma.user.findFirst({
+          where: { username: validated.username, deletedAt: null, id: { not: validated.id } },
+        })
+        if (existing) {
+          throw new AppError('Username is already taken', 'CONFLICT', 409)
+        }
+      }
+
+      // Check unique email if changed
+      if (validated.email && validated.email !== user.email) {
+        const normalizedEmail = validated.email.toLowerCase()
+        const existing = await prisma.user.findFirst({
+          where: { email: normalizedEmail, deletedAt: null, id: { not: validated.id } },
+        })
+        if (existing) {
+          throw new AppError('Email is already taken', 'CONFLICT', 409)
+        }
+        validated.email = normalizedEmail
+      }
+
+      const { id, ...updateData } = validated
+      await prisma.user.update({
+        where: { id },
+        data: {
+          ...updateData,
+          updatedAt: new Date(),
+        },
+      })
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'User', id,
+        updateData
+      ).catch(() => {})
+
+      return {}
+    },
+    revalidatePath: '/admin/users',
+    requiresAdmin: true,
+  })
+}
+
+// Delete user (soft delete, global admin)
+export async function deleteUser(id: number) {
+  return executeServerAction({ id }, {
+    validator: deleteByIdSchema,
+    handler: async (validated, session) => {
+      const user = await prisma.user.findUnique({
+        where: { id: validated.id, deletedAt: null },
+      })
+
+      if (!user) {
+        throw new AppError('User not found', 'NOT_FOUND', 404)
+      }
+
+      await prisma.user.update({
+        where: { id: validated.id },
+        data: { deletedAt: new Date() },
+      })
+
+      AuditLogger.adminDeleted(
+        parseSessionUserId(session!.user!.id!), 'User', validated.id,
+        { username: user.username }
       ).catch(() => {})
 
       return {}

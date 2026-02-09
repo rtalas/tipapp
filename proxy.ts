@@ -73,11 +73,14 @@ export default auth((req) => {
 
   // ===== CSRF PROTECTION =====
   // Verify origin for state-changing requests (POST, PUT, DELETE, PATCH)
+  // Skip CSRF for cron API routes (they authenticate via Bearer token)
+  const isCronRoute = pathname.startsWith('/api/cron/')
   if (
-    req.method === 'POST' ||
+    !isCronRoute &&
+    (req.method === 'POST' ||
     req.method === 'PUT' ||
     req.method === 'DELETE' ||
-    req.method === 'PATCH'
+    req.method === 'PATCH')
   ) {
     const origin = req.headers.get('origin');
     const referer = req.headers.get('referer');

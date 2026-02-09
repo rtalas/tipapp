@@ -25,6 +25,7 @@ import {
   updateQuestionSchema,
   createUserQuestionBetSchema,
   updateUserQuestionBetSchema,
+  updateUserSchema,
 } from './validation/admin'
 import {
   forgotPasswordSchema,
@@ -51,4 +52,5 @@ export const validate = {
   questionEdit: (data: unknown) => updateQuestionSchema.safeParse(data),
   userQuestionBetCreate: (data: unknown) => createUserQuestionBetSchema.safeParse(data),
   userQuestionBetEdit: (data: unknown) => updateUserQuestionBetSchema.safeParse(data),
+  userEdit: (data: unknown) => updateUserSchema.safeParse(data),
 } as const

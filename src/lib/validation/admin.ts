@@ -571,6 +571,18 @@ export const updateLeaguePrizesSchema = z.object({
 export type UpdateLeaguePrizesInput = z.infer<typeof updateLeaguePrizesSchema>
 export type PrizeTier = z.infer<typeof prizeTierSchema>
 
+// User management schemas (global admin)
+export const updateUserSchema = z.object({
+  id: z.number().int().positive('User ID is required'),
+  firstName: z.string().min(1, 'First name is required').max(255).optional(),
+  lastName: z.string().min(1, 'Last name is required').max(255).optional(),
+  username: z.string().min(1, 'Username is required').max(255).optional(),
+  email: z.string().email('Invalid email').max(255).optional(),
+  isSuperadmin: z.boolean().optional(),
+})
+
+export type UpdateUserInput = z.infer<typeof updateUserSchema>
+
 // League user management schemas
 export const updateLeagueUserBooleanSchema = z.object({
   leagueUserId: z.number().int().positive('League User ID is required'),
