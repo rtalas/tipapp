@@ -9,6 +9,7 @@ import {
   Target,
   Trophy,
   MessageCircle,
+  Loader2,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -82,6 +83,12 @@ export function BottomNav({
 }: BottomNavProps) {
   const pathname = usePathname()
   const t = useTranslations('user.navigation')
+  const [pendingTab, setPendingTab] = React.useState<string | null>(null)
+
+  // Clear pending tab when pathname changes (navigation completed)
+  React.useEffect(() => {
+    setPendingTab(null)
+  }, [pathname])
 
   // Filter out chat if disabled and series if no series exist
   let filteredNavItems = navItems
@@ -102,6 +109,7 @@ export function BottomNav({
       <div className="flex h-16 items-center justify-around pb-safe max-w-lg mx-auto">
         {filteredNavItems.map((item) => {
           const isActive = item.matchPattern.test(pathname)
+          const isLoading = pendingTab === item.id
           const Icon = item.icon
           // Hide badge when user is on that page (e.g. chat badge clears when viewing chat)
           const badgeCount = isActive ? undefined : badges?.[item.id as keyof typeof badges]
@@ -110,6 +118,9 @@ export function BottomNav({
             <Link
               key={item.id}
               href={item.href(leagueId)}
+              onClick={() => {
+                if (!isActive) setPendingTab(item.id)
+              }}
               className={cn(
                 'relative flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-all duration-200',
                 item.id === 'chat'
@@ -129,7 +140,11 @@ export function BottomNav({
                       isActive ? 'bg-orange-500 scale-110' : 'bg-orange-500/90'
                     )}
                   >
-                    <Icon className="h-5 w-5 text-white" />
+                    {isLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-white" />
+                    ) : (
+                      <Icon className="h-5 w-5 text-white" />
+                    )}
                   </div>
                 ) : (
                   <div
@@ -138,12 +153,16 @@ export function BottomNav({
                       isActive && 'bg-primary/10'
                     )}
                   >
-                    <Icon
-                      className={cn(
-                        'h-5 w-5 transition-transform',
-                        isActive && 'scale-110'
-                      )}
-                    />
+                    {isLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    ) : (
+                      <Icon
+                        className={cn(
+                          'h-5 w-5 transition-transform',
+                          isActive && 'scale-110'
+                        )}
+                      />
+                    )}
                   </div>
                 )}
                 {badgeCount && badgeCount > 0 && (
