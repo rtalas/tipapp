@@ -35,10 +35,12 @@ export function ChatView({
     error,
     send,
     remove,
+    react,
     loadMore,
     hasMore,
   } = useMessages({
     leagueId,
+    currentUserId,
     initialMessages,
     pollingInterval: 30000,
     enabled: true,
@@ -100,6 +102,7 @@ export function ChatView({
           onLoadMore={loadMore}
           onDelete={remove}
           onReply={handleReply}
+          onReaction={react}
           onScrollToMessage={handleScrollToMessage}
         />
       </div>

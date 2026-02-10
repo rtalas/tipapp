@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
-import { AppError } from '@/lib/error-handler'
+import { AppError, isPrismaError } from '@/lib/error-handler'
 import { parseSessionUserId } from '@/lib/auth/auth-utils'
 import { AuditLogger } from '@/lib/logging/audit-logger'
 import { executeServerAction } from '@/lib/server-action-utils'
@@ -11,13 +11,16 @@ import {
   sendMessageSchema,
   getMessagesSchema,
   deleteMessageSchema,
+  toggleReactionSchema,
   type SendMessageInput,
   type GetMessagesInput,
   type DeleteMessageInput,
+  type ToggleReactionInput,
 } from '@/lib/validation/admin'
 import { z } from 'zod'
 import { messageWithRelationsInclude } from '@/lib/prisma-helpers'
-import { sendChatNotifications } from '@/lib/push-notifications'
+import { sendChatNotifications, sendReactionNotification } from '@/lib/push-notifications'
+import { getUserDisplayName } from '@/lib/user-display-utils'
 
 const markChatAsReadSchema = z.object({
   leagueId: z.number().int().positive(),
@@ -45,6 +48,7 @@ async function getLeagueUser(userId: number, leagueId: number) {
           isSuperadmin: true,
           firstName: true,
           lastName: true,
+          username: true,
         },
       },
     },
@@ -236,6 +240,113 @@ export async function deleteMessage(input: DeleteMessageInput) {
       revalidatePath(`/${message.leagueId}/chat`)
 
       return {}
+    },
+  })
+}
+
+/**
+ * Toggle an emoji reaction on a message.
+ * Same emoji = remove, different emoji = change, no existing = add.
+ * One reaction per user per message (WhatsApp-style).
+ */
+export async function toggleReaction(input: ToggleReactionInput) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { success: false as const, error: 'Authentication required' }
+  }
+
+  const userId = parseSessionUserId(session.user.id)
+
+  return executeServerAction(input, {
+    validator: toggleReactionSchema,
+    handler: async (validated) => {
+      const leagueUser = await getLeagueUser(userId, validated.leagueId)
+      if (!leagueUser) {
+        throw new AppError('You are not a member of this league or chat is disabled', 'FORBIDDEN', 403)
+      }
+
+      const message = await prisma.message.findFirst({
+        where: { id: validated.messageId, leagueId: validated.leagueId, deletedAt: null },
+        include: {
+          LeagueUser: true,
+          League: { select: { name: true } },
+        },
+      })
+      if (!message) {
+        throw new AppError('Message not found', 'NOT_FOUND', 404)
+      }
+
+      const existing = await prisma.messageReaction.findFirst({
+        where: {
+          messageId: validated.messageId,
+          leagueUserId: leagueUser.id,
+          deletedAt: null,
+        },
+      })
+
+      let action: 'added' | 'removed' | 'changed'
+
+      if (existing) {
+        if (existing.emoji === validated.emoji) {
+          // Same emoji: remove
+          await prisma.messageReaction.update({
+            where: { id: existing.id },
+            data: { deletedAt: new Date() },
+          })
+          action = 'removed'
+        } else {
+          // Different emoji: change (soft delete old + create new)
+          await prisma.$transaction([
+            prisma.messageReaction.update({
+              where: { id: existing.id },
+              data: { deletedAt: new Date() },
+            }),
+            prisma.messageReaction.create({
+              data: {
+                messageId: validated.messageId,
+                leagueUserId: leagueUser.id,
+                emoji: validated.emoji,
+                createdAt: new Date(),
+              },
+            }),
+          ])
+          action = 'changed'
+        }
+      } else {
+        // No existing reaction: add
+        // Catch P2002 (unique constraint) from concurrent double-taps — treat as no-op
+        try {
+          await prisma.messageReaction.create({
+            data: {
+              messageId: validated.messageId,
+              leagueUserId: leagueUser.id,
+              emoji: validated.emoji,
+              createdAt: new Date(),
+            },
+          })
+        } catch (err) {
+          if (isPrismaError(err) && err.code === 'P2002') {
+            return { action: 'added' as const }
+          }
+          throw err
+        }
+        action = 'added'
+      }
+
+      // Notify message author on add/change (not on remove, not on own message)
+      if (action !== 'removed' && message.LeagueUser.userId !== userId) {
+        const reactorName = getUserDisplayName(leagueUser.User)
+        sendReactionNotification({
+          leagueId: validated.leagueId,
+          leagueName: message.League.name,
+          messageAuthorUserId: message.LeagueUser.userId,
+          reactorName,
+          emoji: validated.emoji,
+          messagePreview: message.text,
+        }).catch((err) => console.error('Reaction notification error:', err))
+      }
+
+      return { action }
     },
   })
 }

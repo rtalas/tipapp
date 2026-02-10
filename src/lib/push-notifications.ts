@@ -142,6 +142,67 @@ export async function sendChatNotifications(params: {
   await Promise.allSettled(sends)
 }
 
+/**
+ * Send a push notification to the message author when someone reacts.
+ * Only notifies if the author has chat notifications enabled.
+ */
+export async function sendReactionNotification(params: {
+  leagueId: number
+  leagueName: string
+  messageAuthorUserId: number
+  reactorName: string
+  emoji: string
+  messagePreview: string
+}): Promise<void> {
+  if (!vapidPublicKey || !vapidPrivateKey) return
+
+  const leagueUsers = await prisma.leagueUser.findMany({
+    where: {
+      leagueId: params.leagueId,
+      deletedAt: null,
+      active: true,
+      User: {
+        id: params.messageAuthorUserId,
+        deletedAt: null,
+        notifyChat: true,
+      },
+    },
+    include: {
+      User: {
+        include: {
+          PushSubscription: { where: { deletedAt: null } },
+        },
+      },
+    },
+  })
+
+  if (leagueUsers.length === 0) return
+
+  const truncatedPreview = params.messagePreview.length > 50
+    ? params.messagePreview.slice(0, 50) + '...'
+    : params.messagePreview
+
+  const payload: PushPayload = {
+    title: params.leagueName,
+    body: `${params.reactorName} ${params.emoji} "${truncatedPreview}"`,
+    icon: '/favicon-32x32.png',
+    badge: '/favicon-32x32.png',
+    tag: `reaction-${params.leagueId}`,
+    data: { url: `/${params.leagueId}/chat` },
+  }
+
+  const sends = leagueUsers.flatMap((lu) =>
+    lu.User.PushSubscription.map((sub) =>
+      sendPushNotification(
+        { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+        payload,
+      )
+    )
+  )
+
+  await Promise.allSettled(sends)
+}
+
 // ── Notification finding ──────────────────────────────────────────────
 
 interface EventNotification {

@@ -344,6 +344,10 @@
       "scrollToOriginal": "Scroll to original message",
       "you": "You",
       "deleteMessage": "Delete message",
+      "addReaction": "Add reaction",
+      "reactWith": "React with {emoji}",
+      "moreReactions": "More reactions",
+      "removeReaction": "Remove reaction",
       "emojiCategories": {
         "smileys": "Smileys & Emotion",
         "gestures": "Gestures & People",

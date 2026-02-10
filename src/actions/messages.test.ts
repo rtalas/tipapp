@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { getMessages, sendMessage, deleteMessage, markChatAsRead } from './messages'
+import { getMessages, sendMessage, deleteMessage, markChatAsRead, toggleReaction } from './messages'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 
 const mockSendChatNotifications = vi.fn().mockResolvedValue(undefined)
+const mockSendReactionNotification = vi.fn().mockResolvedValue(undefined)
 vi.mock('@/lib/push-notifications', () => ({
   sendChatNotifications: (...args: unknown[]) => mockSendChatNotifications(...args),
+  sendReactionNotification: (...args: unknown[]) => mockSendReactionNotification(...args),
 }))
 
 vi.mock('@/lib/auth/auth-utils', () => ({
@@ -229,6 +231,84 @@ describe('Messages Actions', () => {
       const result = await markChatAsRead(1)
 
       expect(result.success).toBe(false)
+    })
+  })
+
+  describe('toggleReaction', () => {
+    it('should add reaction for league member', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10, userId: 5, User: { firstName: 'John', lastName: 'Doe' } } as any)
+      mockPrisma.message.findFirst.mockResolvedValue({ id: 1, leagueId: 1, text: 'Hello', LeagueUser: { userId: 99 }, League: { name: 'Test' } } as any)
+      mockPrisma.messageReaction.findFirst.mockResolvedValue(null)
+      mockPrisma.messageReaction.create.mockResolvedValue({ id: 1, emoji: '👍' } as any)
+
+      const result = await toggleReaction({ leagueId: 1, messageId: 1, emoji: '👍' })
+
+      expect(result.success).toBe(true)
+      expect((result as any).action).toBe('added')
+      expect(mockPrisma.messageReaction.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ messageId: 1, leagueUserId: 10, emoji: '👍' }),
+        })
+      )
+    })
+
+    it('should remove reaction when same emoji tapped again', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10 } as any)
+      mockPrisma.message.findFirst.mockResolvedValue({ id: 1, leagueId: 1 } as any)
+      mockPrisma.messageReaction.findFirst.mockResolvedValue({ id: 5, emoji: '👍' } as any)
+      mockPrisma.messageReaction.update.mockResolvedValue({ id: 5 } as any)
+
+      const result = await toggleReaction({ leagueId: 1, messageId: 1, emoji: '👍' })
+
+      expect(result.success).toBe(true)
+      expect((result as any).action).toBe('removed')
+      expect(mockPrisma.messageReaction.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 5 },
+          data: expect.objectContaining({ deletedAt: expect.any(Date) }),
+        })
+      )
+    })
+
+    it('should change reaction when different emoji tapped', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10, userId: 5, User: { firstName: 'John', lastName: 'Doe' } } as any)
+      mockPrisma.message.findFirst.mockResolvedValue({ id: 1, leagueId: 1, text: 'Hello', LeagueUser: { userId: 99 }, League: { name: 'Test' } } as any)
+      mockPrisma.messageReaction.findFirst.mockResolvedValue({ id: 5, emoji: '👍' } as any)
+      mockPrisma.$transaction.mockResolvedValue([{}, {}] as any)
+
+      const result = await toggleReaction({ leagueId: 1, messageId: 1, emoji: '❤️' })
+
+      expect(result.success).toBe(true)
+      expect((result as any).action).toBe('changed')
+      expect(mockPrisma.$transaction).toHaveBeenCalled()
+    })
+
+    it('should reject unauthenticated user', async () => {
+      mockAuth.mockResolvedValue(null as any)
+
+      const result = await toggleReaction({ leagueId: 1, messageId: 1, emoji: '👍' })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Authentication required')
+    })
+
+    it('should reject non-league member', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue(null)
+
+      const result = await toggleReaction({ leagueId: 1, messageId: 1, emoji: '👍' })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('not a member')
+    })
+
+    it('should reject reaction on non-existent message', async () => {
+      mockPrisma.leagueUser.findFirst.mockResolvedValue({ id: 10 } as any)
+      mockPrisma.message.findFirst.mockResolvedValue(null)
+
+      const result = await toggleReaction({ leagueId: 1, messageId: 999, emoji: '👍' })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Message not found')
     })
   })
 })

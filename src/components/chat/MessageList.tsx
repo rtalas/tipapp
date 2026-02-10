@@ -20,6 +20,7 @@ interface MessageListProps {
   onLoadMore: () => void
   onDelete: (id: number) => void
   onReply: (message: ChatMessage) => void
+  onReaction: (messageId: number, emoji: string) => void
   onScrollToMessage: (messageId: number) => void
 }
 
@@ -35,6 +36,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
       onLoadMore,
       onDelete,
       onReply,
+      onReaction,
       onScrollToMessage,
     },
     ref
@@ -126,8 +128,10 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
               message={message}
               isOwn={message.LeagueUser.userId === currentUserId}
               canDelete={canDeleteMessage(message)}
+              currentUserId={currentUserId}
               onDelete={onDelete}
               onReply={onReply}
+              onReaction={onReaction}
               onScrollToOriginal={onScrollToMessage}
             />
           </div>

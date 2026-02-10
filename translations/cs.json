@@ -344,6 +344,10 @@
       "scrollToOriginal": "Přejít na původní zprávu",
       "you": "Vy",
       "deleteMessage": "Smazat zprávu",
+      "addReaction": "Přidat reakci",
+      "reactWith": "Reagovat {emoji}",
+      "moreReactions": "Další reakce",
+      "removeReaction": "Odebrat reakci",
       "emojiCategories": {
         "smileys": "Emotikony & Emoce",
         "gestures": "Gesta & Lidé",

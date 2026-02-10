@@ -92,6 +92,7 @@ vi.mock('@/lib/prisma', () => {
       match: createModelMock(),
       matchScorer: createModelMock(),
       message: createModelMock(),
+      messageReaction: createModelMock(),
       userRequest: createModelMock(),
       leagueSpecialBetSerie: createModelMock(),
       leagueSpecialBetSingle: createModelMock(),

@@ -530,6 +530,15 @@ export const deleteMessageSchema = z.object({
 
 export type DeleteMessageInput = z.infer<typeof deleteMessageSchema>
 
+// Reaction schema
+export const toggleReactionSchema = z.object({
+  leagueId: z.number().int().positive('League ID is required'),
+  messageId: z.number().int().positive('Message ID is required'),
+  emoji: z.string().min(1, 'Emoji is required').max(16, 'Invalid emoji'),
+})
+
+export type ToggleReactionInput = z.infer<typeof toggleReactionSchema>
+
 // League chat settings schema
 export const updateLeagueChatSettingsSchema = z.object({
   leagueId: z.number().int().positive('League ID is required'),

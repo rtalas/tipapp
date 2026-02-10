@@ -6,13 +6,15 @@ vi.mock('@/actions/messages', () => ({
   getMessages: vi.fn(),
   sendMessage: vi.fn(),
   deleteMessage: vi.fn(),
+  toggleReaction: vi.fn(),
 }))
 
-import { getMessages, sendMessage, deleteMessage } from '@/actions/messages'
+import { getMessages, sendMessage, deleteMessage, toggleReaction } from '@/actions/messages'
 
 const mockGetMessages = vi.mocked(getMessages)
 const mockSendMessage = vi.mocked(sendMessage)
 const mockDeleteMessage = vi.mocked(deleteMessage)
+const mockToggleReaction = vi.mocked(toggleReaction)
 
 function makeMessage(id: number, text: string, overrides: Partial<ChatMessage> = {}): ChatMessage {
   return {
@@ -37,6 +39,7 @@ function makeMessage(id: number, text: string, overrides: Partial<ChatMessage> =
       lastChatReadAt: null,
       User: { id: 5, firstName: 'John', lastName: 'Doe', username: 'john', avatarUrl: null },
     },
+    MessageReaction: [],
     ReplyTo: null,
     ...overrides,
   }
@@ -56,7 +59,7 @@ describe('useMessages', () => {
   it('should initialize with provided messages', () => {
     const initial = [makeMessage(1, 'Hello'), makeMessage(2, 'World')]
     const { result } = renderHook(() =>
-      useMessages({ leagueId: 1, initialMessages: initial, enabled: false })
+      useMessages({ leagueId: 1, currentUserId: 5, initialMessages: initial, enabled: false })
     )
 
     expect(result.current.messages).toHaveLength(2)
@@ -71,7 +74,7 @@ describe('useMessages', () => {
     mockGetMessages.mockResolvedValue({ success: true, messages: msgs, hasMore: false } as any)
 
     const { result } = renderHook(() =>
-      useMessages({ leagueId: 1, initialMessages: [], pollingInterval: 60000 })
+      useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [], pollingInterval: 60000 })
     )
 
     await act(async () => {
@@ -88,7 +91,7 @@ describe('useMessages', () => {
       mockSendMessage.mockResolvedValue({ success: true, message: newMsg } as any)
 
       const { result } = renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [makeMessage(1, 'Existing')], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [makeMessage(1, 'Existing')], enabled: false })
       )
 
       let success: boolean
@@ -106,7 +109,7 @@ describe('useMessages', () => {
       mockSendMessage.mockResolvedValue({ success: true, message: makeMessage(2, 'Reply') } as any)
 
       const { result } = renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [], enabled: false })
       )
 
       await act(async () => {
@@ -118,7 +121,7 @@ describe('useMessages', () => {
 
     it('should reject empty/whitespace messages', async () => {
       const { result } = renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [], enabled: false })
       )
 
       let success: boolean
@@ -134,7 +137,7 @@ describe('useMessages', () => {
       mockSendMessage.mockResolvedValue({ success: true, message: makeMessage(1, 'Trimmed') } as any)
 
       const { result } = renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [], enabled: false })
       )
 
       await act(async () => {
@@ -150,7 +153,7 @@ describe('useMessages', () => {
       mockSendMessage.mockResolvedValue({ success: false, error: 'Rate limited' } as any)
 
       const { result } = renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [], enabled: false })
       )
 
       let success: boolean
@@ -167,7 +170,7 @@ describe('useMessages', () => {
       mockSendMessage.mockImplementation(() => new Promise(r => { resolveSend = r }))
 
       const { result } = renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [], enabled: false })
       )
 
       let sendPromise: Promise<boolean>
@@ -189,7 +192,7 @@ describe('useMessages', () => {
       mockSendMessage.mockRejectedValue(new Error('Network error'))
 
       const { result } = renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [], enabled: false })
       )
 
       let success: boolean
@@ -210,6 +213,7 @@ describe('useMessages', () => {
       const { result } = renderHook(() =>
         useMessages({
           leagueId: 1,
+          currentUserId: 5,
           initialMessages: [makeMessage(1, 'First'), makeMessage(2, 'Second')],
           enabled: false,
         })
@@ -229,7 +233,7 @@ describe('useMessages', () => {
       mockDeleteMessage.mockResolvedValue({ success: false, error: 'Not authorized' } as any)
 
       const { result } = renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [makeMessage(1, 'Msg')], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [makeMessage(1, 'Msg')], enabled: false })
       )
 
       let success: boolean
@@ -246,7 +250,7 @@ describe('useMessages', () => {
       mockDeleteMessage.mockRejectedValue(new Error('Network'))
 
       const { result } = renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [makeMessage(1, 'Msg')], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [makeMessage(1, 'Msg')], enabled: false })
       )
 
       let success: boolean
@@ -267,6 +271,7 @@ describe('useMessages', () => {
       const { result } = renderHook(() =>
         useMessages({
           leagueId: 1,
+          currentUserId: 5,
           initialMessages: [makeMessage(1, 'Current')],
           enabled: false,
         })
@@ -287,6 +292,7 @@ describe('useMessages', () => {
       const { result } = renderHook(() =>
         useMessages({
           leagueId: 1,
+          currentUserId: 5,
           initialMessages: initial,
           enabled: false,
         })
@@ -305,7 +311,7 @@ describe('useMessages', () => {
 
     it('should not load if hasMore is false', async () => {
       const { result } = renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [makeMessage(1, 'Msg')], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [makeMessage(1, 'Msg')], enabled: false })
       )
 
       // Set hasMore to false via refresh
@@ -328,6 +334,7 @@ describe('useMessages', () => {
       const { result } = renderHook(() =>
         useMessages({
           leagueId: 1,
+          currentUserId: 5,
           initialMessages: [makeMessage(1, 'Msg')],
           enabled: false,
         })
@@ -349,6 +356,7 @@ describe('useMessages', () => {
       const { result } = renderHook(() =>
         useMessages({
           leagueId: 1,
+          currentUserId: 5,
           initialMessages: [makeMessage(9, 'Old')],
           enabled: false,
         })
@@ -367,7 +375,7 @@ describe('useMessages', () => {
       mockGetMessages.mockRejectedValue(new Error('Network'))
 
       const { result } = renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [], enabled: false })
       )
 
       await act(async () => {
@@ -379,10 +387,98 @@ describe('useMessages', () => {
     })
   })
 
+  describe('react', () => {
+    it('should optimistically add reaction and persist to server', async () => {
+      mockToggleReaction.mockResolvedValue({ success: true, action: 'added' } as any)
+
+      const { result } = renderHook(() =>
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [makeMessage(1, 'Hello')], enabled: false })
+      )
+
+      let success: boolean
+      await act(async () => {
+        success = await result.current.react(1, '👍')
+      })
+
+      expect(success!).toBe(true)
+      expect(mockToggleReaction).toHaveBeenCalledWith({ leagueId: 1, messageId: 1, emoji: '👍' })
+      // Optimistic: reaction added to local state
+      expect(result.current.messages[0].MessageReaction).toHaveLength(1)
+      expect(result.current.messages[0].MessageReaction[0].emoji).toBe('👍')
+      // No refresh call — optimistic update is sufficient
+      expect(mockGetMessages).not.toHaveBeenCalled()
+    })
+
+    it('should optimistically remove reaction when same emoji toggled', async () => {
+      mockToggleReaction.mockResolvedValue({ success: true, action: 'removed' } as any)
+
+      const msgWithReaction = makeMessage(1, 'Hello', {
+        MessageReaction: [{
+          id: 10,
+          messageId: 1,
+          leagueUserId: 100,
+          emoji: '👍',
+          createdAt: new Date(),
+          deletedAt: null,
+          LeagueUser: {
+            id: 100, leagueId: 1, userId: 5, createdAt: new Date(), updatedAt: new Date(),
+            deletedAt: null, paid: false, active: true, admin: false, lastChatReadAt: null,
+            User: { id: 5, firstName: 'John', lastName: 'Doe', username: 'john' },
+          },
+        }] as any,
+      })
+
+      const { result } = renderHook(() =>
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [msgWithReaction], enabled: false })
+      )
+
+      expect(result.current.messages[0].MessageReaction).toHaveLength(1)
+
+      await act(async () => {
+        await result.current.react(1, '👍')
+      })
+
+      // Optimistic: reaction removed
+      expect(result.current.messages[0].MessageReaction).toHaveLength(0)
+    })
+
+    it('should rollback on server failure', async () => {
+      mockToggleReaction.mockResolvedValue({ success: false, error: 'Not found' } as any)
+
+      const { result } = renderHook(() =>
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [makeMessage(1, 'Hello')], enabled: false })
+      )
+
+      await act(async () => {
+        await result.current.react(1, '👍')
+      })
+
+      expect(result.current.error).toBe('Not found')
+      // Rolled back — no reactions
+      expect(result.current.messages[0].MessageReaction).toHaveLength(0)
+    })
+
+    it('should rollback on exception', async () => {
+      mockToggleReaction.mockRejectedValue(new Error('Network'))
+
+      const { result } = renderHook(() =>
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [makeMessage(1, 'Hello')], enabled: false })
+      )
+
+      await act(async () => {
+        await result.current.react(1, '👍')
+      })
+
+      expect(result.current.error).toBe('Failed to toggle reaction')
+      // Rolled back — no reactions
+      expect(result.current.messages[0].MessageReaction).toHaveLength(0)
+    })
+  })
+
   describe('polling', () => {
     it('should not poll when disabled', async () => {
       renderHook(() =>
-        useMessages({ leagueId: 1, initialMessages: [makeMessage(1, 'Msg')], enabled: false })
+        useMessages({ leagueId: 1, currentUserId: 5, initialMessages: [makeMessage(1, 'Msg')], enabled: false })
       )
 
       await act(async () => {
@@ -398,6 +494,7 @@ describe('useMessages', () => {
       renderHook(() =>
         useMessages({
           leagueId: 1,
+          currentUserId: 5,
           initialMessages: [makeMessage(1, 'Msg')],
           enabled: true,
           pollingInterval: 3000,
@@ -424,6 +521,7 @@ describe('useMessages', () => {
       renderHook(() =>
         useMessages({
           leagueId: 1,
+          currentUserId: 5,
           initialMessages: initial,
           enabled: true,
           pollingInterval: 3000,
@@ -448,6 +546,7 @@ describe('useMessages', () => {
       const { unmount } = renderHook(() =>
         useMessages({
           leagueId: 1,
+          currentUserId: 5,
           initialMessages: [makeMessage(1, 'Msg')],
           enabled: true,
           pollingInterval: 1000,
@@ -472,6 +571,7 @@ describe('useMessages', () => {
       const { result } = renderHook(() =>
         useMessages({
           leagueId: 1,
+          currentUserId: 5,
           initialMessages: [makeMessage(1, 'Msg')],
           enabled: true,
           pollingInterval: 1000,

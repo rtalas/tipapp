@@ -309,6 +309,7 @@ model LeagueUser {
   UserSpecialBetQuestion UserSpecialBetQuestion[]
   UserSpecialBetSerie    UserSpecialBetSerie[]
   UserSpecialBetSingle   UserSpecialBetSingle[]
+  MessageReaction        MessageReaction[]
 
   @@unique([leagueId, userId, deletedAt])
   @@index([leagueId, deletedAt])
@@ -384,11 +385,26 @@ model Message {
   deletedAt    DateTime?  @db.Timestamptz(6)
   League       League     @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   LeagueUser   LeagueUser @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
-  ReplyTo      Message?   @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
-  Replies      Message[]  @relation("MessageReplies")
+  ReplyTo          Message?          @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  Replies          Message[]         @relation("MessageReplies")
+  MessageReaction  MessageReaction[]
 
   @@index([leagueId, deletedAt, createdAt])
   @@index([replyToId])
+}
+
+model MessageReaction {
+  id           Int        @id @default(autoincrement())
+  messageId    Int
+  leagueUserId Int
+  emoji        String     @db.VarChar(16)
+  createdAt    DateTime   @db.Timestamptz(6)
+  deletedAt    DateTime?  @db.Timestamptz(6)
+  Message      Message    @relation(fields: [messageId], references: [id], onDelete: NoAction)
+  LeagueUser   LeagueUser @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
+
+  @@unique([messageId, leagueUserId, deletedAt])
+  @@index([messageId, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

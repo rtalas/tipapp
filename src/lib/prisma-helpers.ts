@@ -25,7 +25,7 @@ const replyToInclude = {
   },
 } as const
 
-/** Include pattern for Message with user and reply-to relations */
+/** Include pattern for Message with user, reply-to, and reactions */
 export const messageWithRelationsInclude = {
   LeagueUser: {
     include: {
@@ -41,6 +41,23 @@ export const messageWithRelationsInclude = {
     },
   },
   ...replyToInclude,
+  MessageReaction: {
+    where: { deletedAt: null },
+    include: {
+      LeagueUser: {
+        include: {
+          User: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true,
+            },
+          },
+        },
+      },
+    },
+  },
 } as const
 
 /** Type-safe Message with relations, derived from Prisma include */

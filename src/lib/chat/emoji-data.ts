@@ -1,3 +1,5 @@
+export const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'] as const
+
 export interface EmojiCategory {
   id: string
   name: string // translation key under user.chat.emojiCategories

@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getMessages, sendMessage, deleteMessage } from '@/actions/messages'
+import { getMessages, sendMessage, deleteMessage, toggleReaction } from '@/actions/messages'
 import type { MessageWithRelations } from '@/lib/prisma-helpers'
 
 export type ChatMessage = MessageWithRelations
 
 interface UseMessagesOptions {
   leagueId: number
+  currentUserId: number
   initialMessages?: ChatMessage[]
   pollingInterval?: number // in milliseconds
   enabled?: boolean // whether to enable polling
@@ -20,6 +21,7 @@ interface UseMessagesReturn {
   error: string | null
   send: (text: string, replyToId?: number) => Promise<boolean>
   remove: (messageId: number) => Promise<boolean>
+  react: (messageId: number, emoji: string) => Promise<boolean>
   loadMore: () => Promise<void>
   hasMore: boolean
   refresh: () => Promise<void>
@@ -32,8 +34,31 @@ interface UseMessagesReturn {
  * Concurrency: All fetch operations (polling, loadMore, refresh) share a single
  * isFetchingRef guard to prevent overlapping requests. Only one can run at a time.
  */
+/**
+ * Find the current user's LeagueUser info from existing messages
+ * (needed for optimistic reaction inserts).
+ */
+function findUserLeagueInfo(messages: ChatMessage[], currentUserId: number) {
+  // Check messages sent by the user
+  for (const msg of messages) {
+    if (msg.LeagueUser.User.id === currentUserId) {
+      return { leagueUserId: msg.leagueUserId, leagueUser: msg.LeagueUser }
+    }
+  }
+  // Check reactions by the user
+  for (const msg of messages) {
+    for (const r of msg.MessageReaction) {
+      if (r.LeagueUser.User.id === currentUserId) {
+        return { leagueUserId: r.leagueUserId, leagueUser: r.LeagueUser }
+      }
+    }
+  }
+  return null
+}
+
 export function useMessages({
   leagueId,
+  currentUserId,
   initialMessages = [],
   pollingInterval = 5000,
   enabled = true,
@@ -217,8 +242,9 @@ export function useMessages({
   }, [leagueId])
 
   // Manual refresh — replaces all messages with fresh data
-  const refresh = useCallback(async () => {
-    if (isFetchingRef.current) return
+  // force=true bypasses the isFetchingRef guard (used after toggleReaction)
+  const refresh = useCallback(async (force = false) => {
+    if (isFetchingRef.current && !force) return
 
     isFetchingRef.current = true
     setIsLoading(true)
@@ -251,6 +277,78 @@ export function useMessages({
     }
   }, [leagueId])
 
+  // Toggle emoji reaction on a message (optimistic update)
+  const react = useCallback(
+    async (messageId: number, emoji: string): Promise<boolean> => {
+      // Capture snapshot for rollback
+      let snapshot: ChatMessage[] | null = null
+
+      // Optimistic update — instant UI feedback
+      setMessages((prev) => {
+        snapshot = prev
+        return prev.map((msg) => {
+          if (msg.id !== messageId) return msg
+
+          const existingIdx = msg.MessageReaction.findIndex(
+            (r) => r.LeagueUser.User.id === currentUserId
+          )
+
+          let newReactions: typeof msg.MessageReaction
+
+          if (existingIdx >= 0) {
+            const existing = msg.MessageReaction[existingIdx]
+            if (existing.emoji === emoji) {
+              // Same emoji → remove
+              newReactions = msg.MessageReaction.filter((_, i) => i !== existingIdx)
+            } else {
+              // Different emoji → change
+              newReactions = msg.MessageReaction.map((r, i) =>
+                i === existingIdx ? { ...r, emoji } : r
+              )
+            }
+          } else {
+            // New reaction → add (need user's LeagueUser info)
+            const userInfo = findUserLeagueInfo(prev, currentUserId)
+            if (!userInfo) return msg // no info available, skip optimistic
+
+            newReactions = [
+              ...msg.MessageReaction,
+              {
+                id: -Date.now(),
+                messageId,
+                leagueUserId: userInfo.leagueUserId,
+                emoji,
+                createdAt: new Date(),
+                deletedAt: null,
+                LeagueUser: userInfo.leagueUser,
+              },
+            ]
+          }
+
+          return { ...msg, MessageReaction: newReactions }
+        })
+      })
+
+      // Server persist (single round-trip, no refresh needed)
+      try {
+        const result = await toggleReaction({ leagueId, messageId, emoji })
+
+        if (!result.success) {
+          if (snapshot) setMessages(snapshot)
+          setError(result.error || 'Failed to toggle reaction')
+          return false
+        }
+
+        return true
+      } catch {
+        if (snapshot) setMessages(snapshot)
+        setError('Failed to toggle reaction')
+        return false
+      }
+    },
+    [leagueId, currentUserId]
+  )
+
   return {
     messages,
     isLoading,
@@ -258,6 +356,7 @@ export function useMessages({
     error,
     send,
     remove,
+    react,
     loadMore,
     hasMore,
     refresh,
