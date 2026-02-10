@@ -6,7 +6,6 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { ChatView } from '@/components/chat/ChatView'
 import { ChatSkeleton } from '@/components/chat/chat-skeleton'
-import { markChatAsRead } from '@/actions/messages'
 import { messageWithRelationsInclude } from '@/lib/prisma-helpers'
 
 export const metadata: Metadata = { title: 'Chat' }
@@ -28,19 +27,15 @@ async function ChatContent({
   isSuperadmin: boolean
   isSuspended: boolean
 }) {
-  // Mark chat as read and fetch messages in parallel
-  const [, messages] = await Promise.all([
-    markChatAsRead(leagueId),
-    prisma.message.findMany({
-      where: {
-        leagueId,
-        deletedAt: null,
-      },
-      include: messageWithRelationsInclude,
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    }),
-  ])
+  const messages = await prisma.message.findMany({
+    where: {
+      leagueId,
+      deletedAt: null,
+    },
+    include: messageWithRelationsInclude,
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  })
 
   const initialMessages = messages.reverse()
 

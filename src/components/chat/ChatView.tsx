@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { AlertTriangle } from 'lucide-react'
+import { markChatAsRead } from '@/actions/messages'
 import { useMessages, type ChatMessage } from '@/hooks/useMessages'
 import { MessageList, type MessageListHandle } from './MessageList'
 import { MessageInput } from './MessageInput'
@@ -27,6 +28,11 @@ export function ChatView({
   const t = useTranslations('user.chat')
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
   const messageListRef = useRef<MessageListHandle>(null)
+
+  // Mark chat as read on mount — must be client-triggered so revalidatePath works
+  useEffect(() => {
+    markChatAsRead(leagueId)
+  }, [leagueId])
 
   const {
     messages,
