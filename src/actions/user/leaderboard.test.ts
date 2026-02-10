@@ -267,6 +267,27 @@ describe('User Leaderboard Actions', () => {
       await expect(getUserPicks(1, 10)).rejects.toThrow('Not a member')
     })
 
+    it('should filter bets to only show entries past their deadline (server time)', async () => {
+      mockPrisma.userBet.findMany.mockResolvedValue([])
+      mockPrisma.userSpecialBetSerie.findMany.mockResolvedValue([])
+      mockPrisma.userSpecialBetSingle.findMany.mockResolvedValue([])
+      mockPrisma.userSpecialBetQuestion.findMany.mockResolvedValue([])
+
+      await getUserPicks(1, 10)
+
+      const matchWhere = mockPrisma.userBet.findMany.mock.calls[0][0].where
+      expect(matchWhere.LeagueMatch.Match.dateTime.lt).toBeInstanceOf(Date)
+
+      const seriesWhere = mockPrisma.userSpecialBetSerie.findMany.mock.calls[0][0].where
+      expect(seriesWhere.LeagueSpecialBetSerie.dateTime.lt).toBeInstanceOf(Date)
+
+      const specialBetWhere = mockPrisma.userSpecialBetSingle.findMany.mock.calls[0][0].where
+      expect(specialBetWhere.LeagueSpecialBetSingle.dateTime.lt).toBeInstanceOf(Date)
+
+      const questionWhere = mockPrisma.userSpecialBetQuestion.findMany.mock.calls[0][0].where
+      expect(questionWhere.LeagueSpecialBetQuestion.dateTime.lt).toBeInstanceOf(Date)
+    })
+
     it('should transform match bets correctly', async () => {
       mockPrisma.userBet.findMany.mockResolvedValue([
         {

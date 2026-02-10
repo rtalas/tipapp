@@ -75,7 +75,7 @@ export const userQuestionBetSchema = z.object({
     .number()
     .int()
     .positive('Question ID is required'),
-  userBet: z.boolean(),
+  userBet: z.boolean().nullable(),
 })
 
 export type UserQuestionBetInput = z.infer<typeof userQuestionBetSchema>

@@ -82,9 +82,11 @@ export async function getUserPicks(
 ): Promise<UserPicksData> {
   await requireLeagueMember(leagueId)
 
+  const now = new Date()
+
   // Fetch all bets in parallel (4 independent queries)
   const [matchBets, seriesBets, specialBetResults, questionBets] = await Promise.all([
-    // Match bets (only for this league)
+    // Match bets (only for this league, only after deadline — server time)
     prisma.userBet.findMany({
       where: {
         leagueUserId,
@@ -92,6 +94,9 @@ export async function getUserPicks(
         LeagueMatch: {
           leagueId, // Filter by league to prevent showing bets from other leagues
           deletedAt: null,
+          Match: {
+            dateTime: { lt: now }, // Only show bets for matches that have already started
+          },
         },
       },
       include: {
@@ -132,7 +137,7 @@ export async function getUserPicks(
       },
     }),
 
-    // Series bets (only for this league)
+    // Series bets (only for this league, only after deadline — server time)
     prisma.userSpecialBetSerie.findMany({
       where: {
         leagueUserId,
@@ -140,6 +145,7 @@ export async function getUserPicks(
         LeagueSpecialBetSerie: {
           leagueId, // Filter by league to prevent showing bets from other leagues
           deletedAt: null,
+          dateTime: { lt: now }, // Only show bets for series that have already started
         },
       },
       include: {
@@ -164,7 +170,7 @@ export async function getUserPicks(
       },
     }),
 
-    // Special bets (only for this league)
+    // Special bets (only for this league, only after deadline — server time)
     prisma.userSpecialBetSingle.findMany({
       where: {
         leagueUserId,
@@ -172,6 +178,7 @@ export async function getUserPicks(
         LeagueSpecialBetSingle: {
           leagueId, // Filter by league to prevent showing bets from other leagues
           deletedAt: null,
+          dateTime: { lt: now }, // Only show bets after deadline has passed
         },
       },
       include: {
@@ -196,7 +203,7 @@ export async function getUserPicks(
       },
     }),
 
-    // Question bets (only for this league)
+    // Question bets (only for this league, only after deadline — server time)
     prisma.userSpecialBetQuestion.findMany({
       where: {
         leagueUserId,
@@ -204,6 +211,7 @@ export async function getUserPicks(
         LeagueSpecialBetQuestion: {
           leagueId, // Filter by league to prevent showing bets from other leagues
           deletedAt: null,
+          dateTime: { lt: now }, // Only show bets after deadline has passed
         },
       },
       include: {

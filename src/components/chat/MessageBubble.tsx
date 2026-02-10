@@ -284,8 +284,15 @@ export function MessageBubble({ message, isOwn, canDelete, currentUserId, onDele
 
           {/* Mobile long-press reaction bar */}
           {showReactionBar && (
-            <div className="sm:hidden mt-1">
-              <ReactionBar onReact={handleReact} onClose={handleCloseReactionBar} />
+            <div className="sm:hidden">
+              {/* Transparent backdrop — tap anywhere outside to dismiss */}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={handleCloseReactionBar}
+              />
+              <div className="relative z-50 mt-1">
+                <ReactionBar onReact={handleReact} onClose={handleCloseReactionBar} />
+              </div>
             </div>
           )}
 

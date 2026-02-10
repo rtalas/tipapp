@@ -48,7 +48,7 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
   }
 
   const handleSave = async () => {
-    if (isLocked || selectedAnswer === null) return
+    if (isLocked) return
 
     setIsSaving(true)
 

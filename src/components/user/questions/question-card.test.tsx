@@ -115,19 +115,20 @@ describe('QuestionCard', () => {
       })
     })
 
-    it('clears answer when No Answer button clicked', async () => {
+    it('saves "no answer" when No Answer button clicked', async () => {
       const question = createQuestion({
         userBet: { userBet: true, totalPoints: 0 },
       })
       render(<QuestionCard question={question} onSaved={mockOnSaved} />)
 
       await user.click(screen.getByText('noAnswer'))
-
-      // handleSave returns early when selectedAnswer is null, so clicking save does nothing
       await user.click(screen.getByText('save'))
 
       await waitFor(() => {
-        expect(mockSaveQuestionBet).not.toHaveBeenCalled()
+        expect(mockSaveQuestionBet).toHaveBeenCalledWith({
+          leagueSpecialBetQuestionId: 1,
+          userBet: null,
+        })
       })
     })
   })
