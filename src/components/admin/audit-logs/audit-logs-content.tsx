@@ -54,12 +54,20 @@ interface AuditLog {
   } | null;
 }
 
+interface User {
+  id: number;
+  username: string;
+  firstName: string;
+  lastName: string;
+}
+
 interface AuditLogsContentProps {
   logs: AuditLog[];
   total: number;
   currentPage: number;
   totalPages: number;
   hasMore: boolean;
+  users: User[];
 }
 
 function isValidMetadata(metadata: unknown): metadata is Record<string, unknown> {
@@ -72,6 +80,7 @@ export function AuditLogsContent({
   currentPage,
   totalPages,
   hasMore,
+  users,
 }: AuditLogsContentProps) {
   const t = useTranslations("admin.auditLogs");
   const router = useRouter();
@@ -144,6 +153,7 @@ export function AuditLogsContent({
 
   const currentCategory = searchParams.get("category") || "all";
   const currentStatus = searchParams.get("status") || "all";
+  const currentUserId = searchParams.get("userId") || "all";
 
   return (
     <div className="space-y-4">
@@ -180,6 +190,21 @@ export function AuditLogsContent({
                   <SelectItem value="all">{t("allStatuses")}</SelectItem>
                   <SelectItem value="success">{t("successOnly")}</SelectItem>
                   <SelectItem value="failed">{t("failedOnly")}</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* User Filter */}
+              <Select value={currentUserId} onValueChange={(value) => updateFilters("userId", value)}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder={t("allUsers")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("allUsers")}</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={String(user.id)}>
+                      {user.username}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 

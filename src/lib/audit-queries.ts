@@ -7,6 +7,7 @@ export interface AuditLogFilters {
   offset?: number;
   eventCategory?: EventCategory;
   eventType?: string;
+  userId?: number;
   leagueId?: number;
   startDate?: Date;
   endDate?: Date;
@@ -24,6 +25,7 @@ export async function getRecentAuditLogs(options?: AuditLogFilters) {
     offset = 0,
     eventCategory,
     eventType,
+    userId,
     leagueId,
     startDate,
     endDate,
@@ -39,6 +41,10 @@ export async function getRecentAuditLogs(options?: AuditLogFilters) {
 
   if (eventType) {
     where.eventType = eventType;
+  }
+
+  if (userId) {
+    where.userId = userId;
   }
 
   if (leagueId) {

@@ -4,6 +4,7 @@ import { AuditLogsContent } from '@/components/admin/audit-logs/audit-logs-conte
 import { getRecentAuditLogs } from '@/lib/audit-queries'
 import { EventCategory } from '@/lib/logging/audit-logger'
 import { TableSkeleton } from '@/components/admin/common/table-skeleton'
+import { getUsers } from '@/actions/users'
 
 async function AuditLogsData({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
   const page = Number(searchParams.page) || 1
@@ -13,14 +14,19 @@ async function AuditLogsData({ searchParams }: { searchParams: { [key: string]: 
   const eventCategory = searchParams.category as string | undefined
   const failedOnly = searchParams.status === 'failed'
   const successOnly = searchParams.status === 'success'
+  const userId = searchParams.userId ? Number(searchParams.userId) : undefined
 
-  const { logs, total, hasMore } = await getRecentAuditLogs({
-    limit,
-    offset,
-    eventCategory: eventCategory as EventCategory | undefined,
-    failedOnly,
-    successOnly,
-  })
+  const [{ logs, total, hasMore }, users] = await Promise.all([
+    getRecentAuditLogs({
+      limit,
+      offset,
+      eventCategory: eventCategory as EventCategory | undefined,
+      failedOnly,
+      successOnly,
+      userId,
+    }),
+    getUsers(),
+  ])
 
   const totalPages = Math.ceil(total / limit)
 
@@ -31,6 +37,7 @@ async function AuditLogsData({ searchParams }: { searchParams: { [key: string]: 
       currentPage={page}
       totalPages={totalPages}
       hasMore={hasMore}
+      users={users}
     />
   )
 }
