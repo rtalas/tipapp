@@ -1,4 +1,5 @@
-import { Zap } from 'lucide-react'
+import { Zap, Clock } from 'lucide-react'
+import { format } from 'date-fns'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { StatusBadge } from '@/components/user/common/status-badge'
@@ -58,9 +59,13 @@ export function MatchHeader({
         )}
         {/* Status badge: Scheduled or Awaiting evaluation */}
         <StatusBadge dateTime={match.Match.dateTime} isEvaluated={isEvaluated} />
-        {/* Countdown badge - only show for non-evaluated events */}
+        {/* Countdown and time badges - only show for non-evaluated events */}
+        {!isEvaluated && match.isBettingOpen && <CountdownBadge deadline={match.Match.dateTime} />}
         {!isEvaluated && (
-          <CountdownBadge deadline={match.Match.dateTime} />
+          <span className="badge-upcoming flex items-center gap-1 text-[10px]">
+            <Clock className="w-3 h-3" />
+            {format(match.Match.dateTime, 'HH:mm')}
+          </span>
         )}
         {/* Points badge - only show for evaluated matches */}
         {isEvaluated && match.userBet && (
