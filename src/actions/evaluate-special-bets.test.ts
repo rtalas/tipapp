@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { evaluateSpecialBetBets } from './evaluate-special-bets'
 import * as authUtils from '@/lib/auth/auth-utils'
 import { AuditLogger } from '@/lib/logging/audit-logger'
-import { revalidateTag, revalidatePath } from 'next/cache'
+import { updateTag, revalidatePath } from 'next/cache'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn(),
@@ -16,7 +16,7 @@ import { evaluateSpecialBetAtomic } from '@/lib/evaluation/special-bet-evaluator
 
 const mockRequireAdmin = vi.mocked(authUtils.requireAdmin)
 const mockEvaluateSpecialBetAtomic = vi.mocked(evaluateSpecialBetAtomic)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 const mockRevalidatePath = vi.mocked(revalidatePath)
 const mockAuditLogger = vi.mocked(AuditLogger)
 
@@ -71,8 +71,7 @@ describe('evaluateSpecialBetBets', () => {
   it('should invalidate special-bet-data and leaderboard caches', async () => {
     await evaluateSpecialBetBets({ specialBetId: 7 })
 
-    expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-data', 'max')
-    expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
+    expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-data')
   })
 
   it('should revalidate admin path', async () => {

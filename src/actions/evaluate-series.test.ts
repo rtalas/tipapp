@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { evaluateSeriesBets } from './evaluate-series'
 import * as authUtils from '@/lib/auth/auth-utils'
 import { AuditLogger } from '@/lib/logging/audit-logger'
-import { revalidateTag, revalidatePath } from 'next/cache'
+import { updateTag, revalidatePath } from 'next/cache'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn(),
@@ -16,7 +16,7 @@ import { evaluateSeriesAtomic } from '@/lib/evaluation/series-evaluator'
 
 const mockRequireAdmin = vi.mocked(authUtils.requireAdmin)
 const mockEvaluateSeriesAtomic = vi.mocked(evaluateSeriesAtomic)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 const mockRevalidatePath = vi.mocked(revalidatePath)
 const mockAuditLogger = vi.mocked(AuditLogger)
 
@@ -72,8 +72,7 @@ describe('evaluateSeriesBets', () => {
   it('should invalidate series-data and leaderboard caches', async () => {
     await evaluateSeriesBets({ seriesId: 5 })
 
-    expect(mockRevalidateTag).toHaveBeenCalledWith('series-data', 'max')
-    expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
+    expect(mockUpdateTag).toHaveBeenCalledWith('series-data')
   })
 
   it('should revalidate admin path', async () => {

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getLeaguePrizes, updateLeaguePrizes } from './league-prizes'
 import { prisma } from '@/lib/prisma'
 import * as authUtils from '@/lib/auth/auth-utils'
-import { revalidateTag, revalidatePath } from 'next/cache'
+import { updateTag, revalidatePath } from 'next/cache'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
@@ -11,7 +11,7 @@ vi.mock('@/lib/auth/auth-utils', () => ({
 
 const mockPrisma = vi.mocked(prisma, true)
 const mockRequireAdmin = vi.mocked(authUtils.requireAdmin)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 const mockRevalidatePath = vi.mocked(revalidatePath)
 
 describe('League Prizes Actions', () => {
@@ -106,12 +106,12 @@ describe('League Prizes Actions', () => {
   })
 
   describe('updateLeaguePrizes', () => {
-    it('should soft delete old and create new prizes atomically', async () => {
+    it('should delete old and create new prizes atomically', async () => {
       mockRequireAdmin.mockResolvedValue({ user: { id: '1', isSuperadmin: true } } as any)
       mockPrisma.$transaction.mockImplementation(async (fn: any) => {
         const tx = {
           leaguePrize: {
-            updateMany: vi.fn(),
+            deleteMany: vi.fn(),
             createMany: vi.fn(),
           },
         }
@@ -127,12 +127,12 @@ describe('League Prizes Actions', () => {
       expect(result.success).toBe(true)
     })
 
-    it('should call transaction with soft delete then create', async () => {
+    it('should call transaction with hard delete then create', async () => {
       mockRequireAdmin.mockResolvedValue({ user: { id: '1', isSuperadmin: true } } as any)
 
       const txMocks = {
         leaguePrize: {
-          updateMany: vi.fn(),
+          deleteMany: vi.fn(),
           createMany: vi.fn(),
         },
       }
@@ -144,13 +144,9 @@ describe('League Prizes Actions', () => {
         fines: [],
       })
 
-      // Soft delete existing
-      expect(txMocks.leaguePrize.updateMany).toHaveBeenCalledWith({
-        where: { leagueId: 5, deletedAt: null },
-        data: expect.objectContaining({
-          deletedAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        }),
+      // Hard delete existing
+      expect(txMocks.leaguePrize.deleteMany).toHaveBeenCalledWith({
+        where: { leagueId: 5 },
       })
 
       // Create new prizes with type 'prize'
@@ -172,7 +168,7 @@ describe('League Prizes Actions', () => {
 
       const txMocks = {
         leaguePrize: {
-          updateMany: vi.fn(),
+          deleteMany: vi.fn(),
           createMany: vi.fn(),
         },
       }
@@ -201,7 +197,7 @@ describe('League Prizes Actions', () => {
 
       const txMocks = {
         leaguePrize: {
-          updateMany: vi.fn(),
+          deleteMany: vi.fn(),
           createMany: vi.fn(),
         },
       }
@@ -213,17 +209,17 @@ describe('League Prizes Actions', () => {
         fines: [],
       })
 
-      // Soft delete always happens
-      expect(txMocks.leaguePrize.updateMany).toHaveBeenCalledTimes(1)
+      // Hard delete always happens
+      expect(txMocks.leaguePrize.deleteMany).toHaveBeenCalledTimes(1)
       // No createMany since both arrays empty
       expect(txMocks.leaguePrize.createMany).not.toHaveBeenCalled()
     })
 
-    it('should invalidate leaderboard cache', async () => {
+    it('should succeed with prizes and no fines', async () => {
       mockRequireAdmin.mockResolvedValue({ user: { id: '1', isSuperadmin: true } } as any)
       mockPrisma.$transaction.mockImplementation(async (fn: any) => {
         return fn({
-          leaguePrize: { updateMany: vi.fn(), createMany: vi.fn() },
+          leaguePrize: { deleteMany: vi.fn(), createMany: vi.fn() },
         })
       })
 
@@ -233,14 +229,13 @@ describe('League Prizes Actions', () => {
         fines: [],
       })
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
     })
 
     it('should revalidate admin leagues path', async () => {
       mockRequireAdmin.mockResolvedValue({ user: { id: '1', isSuperadmin: true } } as any)
       mockPrisma.$transaction.mockImplementation(async (fn: any) => {
         return fn({
-          leaguePrize: { updateMany: vi.fn(), createMany: vi.fn() },
+          leaguePrize: { deleteMany: vi.fn(), createMany: vi.fn() },
         })
       })
 
@@ -321,7 +316,7 @@ describe('League Prizes Actions', () => {
 
       const txMocks = {
         leaguePrize: {
-          updateMany: vi.fn(),
+          deleteMany: vi.fn(),
           createMany: vi.fn(),
         },
       }

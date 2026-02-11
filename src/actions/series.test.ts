@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createSeries, updateSeriesResult, deleteSeries } from './series'
 import { prisma } from '@/lib/prisma'
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { requireAdmin } from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
@@ -10,7 +10,7 @@ vi.mock('@/lib/auth/auth-utils', () => ({
 }))
 
 const mockPrisma = vi.mocked(prisma, true)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 const mockRequireAdmin = vi.mocked(requireAdmin)
 
 describe('Series Actions', () => {
@@ -88,7 +88,7 @@ describe('Series Actions', () => {
         dateTime: new Date('2026-06-01'),
       })
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith('series-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('series-data')
     })
   })
 
@@ -116,7 +116,7 @@ describe('Series Actions', () => {
 
       await updateSeriesResult({ seriesId: 1, homeTeamScore: 4, awayTeamScore: 1 })
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith('series-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('series-data')
     })
   })
 
@@ -138,7 +138,7 @@ describe('Series Actions', () => {
 
       await deleteSeries(1)
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith('series-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('series-data')
     })
 
     it('should reject invalid id', async () => {

@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
@@ -95,8 +95,7 @@ export async function approveRequest(requestId: number) {
         return req
       })
 
-      revalidateTag('league-selector', 'max')
-      revalidateTag('leaderboard', 'max')
+      updateTag('league-selector')
       revalidatePath(`/admin/leagues/${request.leagueId}/users`)
 
       AuditLogger.adminUpdated(
@@ -260,7 +259,7 @@ export async function updateLeagueUserActive(input: UpdateLeagueUserBooleanInput
         },
       })
 
-      revalidateTag('league-selector', 'max')
+      updateTag('league-selector')
       revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
 
       AuditLogger.adminUpdated(
@@ -357,8 +356,7 @@ export async function addUserToLeague(input: AddUserToLeagueInput) {
         throw new AppError('User is already a member of this league', 'CONFLICT', 409)
       }
 
-      revalidateTag('league-selector', 'max')
-      revalidateTag('leaderboard', 'max')
+      updateTag('league-selector')
       revalidatePath(`/admin/${validated.leagueId}/users`)
 
       AuditLogger.adminCreated(
@@ -472,8 +470,7 @@ export async function removeLeagueUser(input: RemoveLeagueUserInput) {
         },
       })
 
-      revalidateTag('league-selector', 'max')
-      revalidateTag('leaderboard', 'max')
+      updateTag('league-selector')
       revalidatePath(`/admin/leagues/${leagueUser.leagueId}/users`)
 
       AuditLogger.adminDeleted(

@@ -15,7 +15,7 @@ import {
   updateLeagueChatSettings,
 } from './leagues'
 import { prisma } from '@/lib/prisma'
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
@@ -32,7 +32,7 @@ vi.mock('@/lib/evaluators', () => ({
 }))
 
 const mockPrisma = vi.mocked(prisma, true)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 
 describe('Leagues Actions', () => {
   beforeEach(() => {
@@ -72,7 +72,7 @@ describe('Leagues Actions', () => {
       // Non-scorer evaluators batched via createMany, scorer created individually
       expect(mockPrisma.evaluator.createMany).toHaveBeenCalledTimes(1)
       expect(mockPrisma.evaluator.create).toHaveBeenCalledTimes(1)
-      expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('league-selector')
     })
 
     it('creates league with custom evaluator rules', async () => {
@@ -136,7 +136,7 @@ describe('Leagues Actions', () => {
           data: expect.objectContaining({ name: 'Updated League' }),
         })
       )
-      expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('league-selector')
     })
   })
 
@@ -153,7 +153,7 @@ describe('Leagues Actions', () => {
           data: expect.objectContaining({ deletedAt: expect.any(Date) }),
         })
       )
-      expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('league-selector')
     })
   })
 
@@ -179,7 +179,7 @@ describe('Leagues Actions', () => {
           }),
         })
       )
-      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-teams', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-teams')
       vi.useRealTimers()
     })
 
@@ -211,7 +211,7 @@ describe('Leagues Actions', () => {
           data: expect.objectContaining({ deletedAt: expect.any(Date) }),
         })
       )
-      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-teams', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-teams')
     })
   })
 
@@ -231,7 +231,7 @@ describe('Leagues Actions', () => {
           data: expect.objectContaining({ group: 'B' }),
         })
       )
-      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-teams', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-teams')
     })
 
     it('clears team group with null', async () => {
@@ -277,7 +277,7 @@ describe('Leagues Actions', () => {
           }),
         })
       )
-      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-players', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-players')
       vi.useRealTimers()
     })
 
@@ -309,7 +309,7 @@ describe('Leagues Actions', () => {
           data: expect.objectContaining({ deletedAt: expect.any(Date) }),
         })
       )
-      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-players', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-players')
     })
   })
 

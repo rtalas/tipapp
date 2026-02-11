@@ -42,7 +42,7 @@ vi.mock('@/auth', () => ({
 
 // Mock next/cache
 vi.mock('next/cache', () => ({
-  revalidateTag: vi.fn(),
+  updateTag: vi.fn(),
   revalidatePath: vi.fn(),
   unstable_cache: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
 }));

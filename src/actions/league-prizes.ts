@@ -1,7 +1,6 @@
 'use server'
 
 import { z } from 'zod'
-import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { parseSessionUserId } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
@@ -66,15 +65,11 @@ export async function updateLeaguePrizes(input: UpdateLeaguePrizesInput) {
       const now = new Date()
 
       await prisma.$transaction(async (tx) => {
-        // Soft delete all existing prizes and fines for this league
-        await tx.leaguePrize.updateMany({
+        // Hard delete all existing prizes and fines for this league
+        // (prizes are configuration data, not user transactions — hard delete is appropriate)
+        await tx.leaguePrize.deleteMany({
           where: {
             leagueId: validated.leagueId,
-            deletedAt: null,
-          },
-          data: {
-            deletedAt: now,
-            updatedAt: now,
           },
         })
 
@@ -110,9 +105,6 @@ export async function updateLeaguePrizes(input: UpdateLeaguePrizesInput) {
           })
         }
       })
-
-      // Invalidate leaderboard cache so prize/fine changes appear immediately
-      revalidateTag('leaderboard', 'max')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'LeaguePrize', validated.leagueId,

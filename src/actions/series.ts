@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { parseSessionUserId } from '@/lib/auth/auth-utils'
@@ -66,7 +66,7 @@ export async function createSeries(input: CreateSeriesInput) {
       })
 
       // Invalidate user-facing series cache
-      revalidateTag('series-data', 'max')
+      updateTag('series-data')
 
       AuditLogger.adminCreated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSerie', series.id,
@@ -98,7 +98,7 @@ export async function updateSeriesResult(input: UpdateSeriesResultInput) {
       })
 
       // Invalidate user-facing series cache
-      revalidateTag('series-data', 'max')
+      updateTag('series-data')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSerie', validated.seriesId,
@@ -124,7 +124,7 @@ export async function updateSeries(input: UpdateSeriesInput) {
         },
       })
 
-      revalidateTag('series-data', 'max')
+      updateTag('series-data')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSerie', validated.seriesId,
@@ -148,7 +148,7 @@ export async function deleteSeries(id: number) {
       })
 
       // Invalidate user-facing series cache
-      revalidateTag('series-data', 'max')
+      updateTag('series-data')
 
       AuditLogger.adminDeleted(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSerie', validated.id

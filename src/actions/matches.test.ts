@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createMatch, updateMatch, updateMatchResult, deleteMatch, getMatches, getMatchById } from './matches'
 import { prisma } from '@/lib/prisma'
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { requireAdmin } from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
@@ -18,7 +18,7 @@ vi.mock('@/lib/prisma-helpers', () => ({
 }))
 
 const mockPrisma = vi.mocked(prisma, true)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 const mockRequireAdmin = vi.mocked(requireAdmin)
 
 describe('Matches Actions', () => {
@@ -162,7 +162,7 @@ describe('Matches Actions', () => {
         isDoubled: false,
       })
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith('match-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('match-data')
     })
   })
 
@@ -176,7 +176,7 @@ describe('Matches Actions', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(mockRevalidateTag).toHaveBeenCalledWith('match-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('match-data')
     })
 
     it('should validate match phase if provided', async () => {
@@ -297,7 +297,7 @@ describe('Matches Actions', () => {
         where: { id: 1 },
         data: { deletedAt: expect.any(Date) },
       })
-      expect(mockRevalidateTag).toHaveBeenCalledWith('match-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('match-data')
     })
 
     it('should reject invalid id', async () => {

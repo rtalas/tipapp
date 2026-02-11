@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getAllLeaguesForSelector, joinLeague } from './leagues'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn(),
@@ -11,7 +11,7 @@ vi.mock('@/lib/auth/auth-utils', () => ({
 
 const mockPrisma = vi.mocked(prisma, true)
 const mockAuth = vi.mocked(auth)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 
 const mockSession = { user: { id: '5', isSuperadmin: false } }
 
@@ -76,8 +76,7 @@ describe('User Leagues Actions', () => {
           timeout: 10000,
         }
       )
-      expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
-      expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('league-selector')
     })
 
     it('should return error when league not found', async () => {

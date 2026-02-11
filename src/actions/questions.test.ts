@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createQuestion, updateQuestion, updateQuestionResult, deleteQuestion } from './questions'
 import { prisma } from '@/lib/prisma'
-import { revalidateTag, revalidatePath } from 'next/cache'
+import { updateTag, revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
@@ -10,7 +10,7 @@ vi.mock('@/lib/auth/auth-utils', () => ({
 }))
 
 const mockPrisma = vi.mocked(prisma, true)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 const mockRevalidatePath = vi.mocked(revalidatePath)
 const mockRequireAdmin = vi.mocked(requireAdmin)
 
@@ -54,7 +54,7 @@ describe('Questions Actions', () => {
 
       await createQuestion({ leagueId: 1, text: 'Will there be overtime in game 1?', dateTime: new Date('2026-06-01') })
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith('question-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('question-data')
     })
 
     it('should revalidate admin path', async () => {
@@ -75,7 +75,7 @@ describe('Questions Actions', () => {
       const result = await updateQuestion({ id: 1, text: 'Updated question text here?' })
 
       expect(result.success).toBe(true)
-      expect(mockRevalidateTag).toHaveBeenCalledWith('question-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('question-data')
     })
 
     it('should return error when question not found', async () => {
@@ -113,7 +113,7 @@ describe('Questions Actions', () => {
 
       await updateQuestionResult({ questionId: 1, result: true })
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith('question-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('question-data')
     })
   })
 
@@ -146,7 +146,7 @@ describe('Questions Actions', () => {
 
       await deleteQuestion(1)
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith('question-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('question-data')
     })
   })
 })

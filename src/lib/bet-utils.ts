@@ -1,4 +1,4 @@
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember, isBettingOpen } from '@/lib/auth/user-auth-utils'
 import { AppError } from '@/lib/error-handler'
@@ -135,7 +135,7 @@ export async function saveUserBet<TValidated>(
       (err) => console.error('Audit log failed:', err)
     )
 
-    revalidateTag('bet-badges', 'max')
+    updateTag('bet-badges')
     revalidatePath(`/${leagueId}${config.revalidatePathSuffix}`)
     return { success: true }
   } catch (error) {

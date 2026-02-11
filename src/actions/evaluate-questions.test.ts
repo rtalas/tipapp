@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { evaluateQuestionBets } from './evaluate-questions'
 import * as authUtils from '@/lib/auth/auth-utils'
 import { AuditLogger } from '@/lib/logging/audit-logger'
-import { revalidateTag, revalidatePath } from 'next/cache'
+import { updateTag, revalidatePath } from 'next/cache'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn(),
@@ -16,7 +16,7 @@ import { evaluateQuestionAtomic } from '@/lib/evaluation/question-evaluator'
 
 const mockRequireAdmin = vi.mocked(authUtils.requireAdmin)
 const mockEvaluateQuestionAtomic = vi.mocked(evaluateQuestionAtomic)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 const mockRevalidatePath = vi.mocked(revalidatePath)
 const mockAuditLogger = vi.mocked(AuditLogger)
 
@@ -76,8 +76,7 @@ describe('evaluateQuestionBets', () => {
   it('should invalidate question-data and leaderboard caches', async () => {
     await evaluateQuestionBets({ questionId: 3 })
 
-    expect(mockRevalidateTag).toHaveBeenCalledWith('question-data', 'max')
-    expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
+    expect(mockUpdateTag).toHaveBeenCalledWith('question-data')
   })
 
   it('should revalidate admin path', async () => {

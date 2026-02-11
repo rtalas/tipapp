@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
@@ -141,7 +141,7 @@ export async function createLeague(input: CreateLeagueInput) {
       })
 
       // Invalidate league selector cache for all users
-      revalidateTag('league-selector', 'max')
+      updateTag('league-selector')
 
       AuditLogger.adminCreated(
         parseSessionUserId(session!.user!.id!), 'League', result.id,
@@ -170,7 +170,7 @@ export async function updateLeague(input: UpdateLeagueInput) {
       })
 
       // Invalidate league selector cache (name, isActive, etc. could change)
-      revalidateTag('league-selector', 'max')
+      updateTag('league-selector')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'League', id, data, id
@@ -193,7 +193,7 @@ export async function deleteLeague(input: DeleteByIdInput) {
       })
 
       // Invalidate league selector cache
-      revalidateTag('league-selector', 'max')
+      updateTag('league-selector')
 
       AuditLogger.adminDeleted(
         parseSessionUserId(session!.user!.id!), 'League', validated.id
@@ -236,7 +236,7 @@ export async function assignTeamToLeague(input: AssignTeamInput) {
         throw new AppError('Team is already assigned to this league', 'CONFLICT', 409)
       }
 
-      revalidateTag('special-bet-teams', 'max')
+      updateTag('special-bet-teams')
 
       AuditLogger.adminCreated(
         parseSessionUserId(session!.user!.id!), 'LeagueTeam', result.id,
@@ -260,7 +260,7 @@ export async function removeTeamFromLeague(input: DeleteByIdInput) {
         data: { deletedAt: new Date() },
       })
 
-      revalidateTag('special-bet-teams', 'max')
+      updateTag('special-bet-teams')
 
       AuditLogger.adminDeleted(
         parseSessionUserId(session!.user!.id!), 'LeagueTeam', validated.id
@@ -285,7 +285,7 @@ export async function updateLeagueTeamGroup(input: UpdateLeagueTeamGroupInput) {
         },
       })
 
-      revalidateTag('special-bet-teams', 'max')
+      updateTag('special-bet-teams')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'LeagueTeam', validated.leagueTeamId,
@@ -331,7 +331,7 @@ export async function assignPlayerToLeagueTeam(input: AssignPlayerInput) {
         throw new AppError('Player is already assigned to this team in this league', 'CONFLICT', 409)
       }
 
-      revalidateTag('special-bet-players', 'max')
+      updateTag('special-bet-players')
 
       AuditLogger.adminCreated(
         parseSessionUserId(session!.user!.id!), 'LeaguePlayer', result.id,
@@ -354,7 +354,7 @@ export async function removePlayerFromLeagueTeam(input: DeleteByIdInput) {
         data: { deletedAt: new Date() },
       })
 
-      revalidateTag('special-bet-players', 'max')
+      updateTag('special-bet-players')
 
       AuditLogger.adminDeleted(
         parseSessionUserId(session!.user!.id!), 'LeaguePlayer', validated.id

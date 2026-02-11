@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildLeagueMatchWhere } from '@/lib/query-builders'
@@ -95,7 +95,7 @@ export async function createMatch(input: CreateMatchInput) {
       })
 
       // Invalidate user-facing match cache
-      revalidateTag('match-data', 'max')
+      updateTag('match-data')
 
       AuditLogger.adminCreated(
         parseSessionUserId(session!.user!.id!), 'Match', result.id,
@@ -158,7 +158,7 @@ export async function updateMatch(input: UpdateMatchInput) {
       })
 
       // Invalidate user-facing match cache
-      revalidateTag('match-data', 'max')
+      updateTag('match-data')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'Match', validated.matchId,
@@ -217,7 +217,7 @@ export async function updateMatchResult(input: UpdateMatchResultInput) {
       })
 
       // Invalidate user-facing match cache (results updated)
-      revalidateTag('match-data', 'max')
+      updateTag('match-data')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'Match', validated.matchId,
@@ -241,7 +241,7 @@ export async function deleteMatch(id: number) {
       })
 
       // Invalidate user-facing match cache
-      revalidateTag('match-data', 'max')
+      updateTag('match-data')
 
       AuditLogger.adminDeleted(
         parseSessionUserId(session!.user!.id!), 'Match', validated.id

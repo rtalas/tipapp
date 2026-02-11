@@ -1,4 +1,4 @@
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { requireAdmin } from '@/lib/auth/auth-utils'
 
 interface EvaluateActionOptions<TInput, TResult extends { totalUsersEvaluated: number }> {
@@ -39,8 +39,7 @@ export async function evaluateAndLog<TInput, TResult extends { totalUsersEvaluat
     durationMs,
   ).catch((err) => console.error('Audit log failed:', err))
 
-  revalidateTag(cacheTag, 'max')
-  revalidateTag('leaderboard', 'max')
+  updateTag(cacheTag)
 
   return result
 }

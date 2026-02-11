@@ -6,7 +6,7 @@ import { joinLeagueSchema } from '@/lib/validation/user'
 import { AppError, handleActionError } from '@/lib/error-handler'
 import { parseSessionUserId } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
-import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
+import { revalidatePath, updateTag, unstable_cache } from 'next/cache'
 
 type LeagueWithSport = {
   id: number
@@ -249,8 +249,7 @@ export async function joinLeague(leagueId: number) {
         }
       )
 
-      revalidateTag('league-selector', 'max')
-      revalidateTag('leaderboard', 'max')
+      updateTag('league-selector')
       revalidatePath('/[leagueId]', 'layout')
 
       return { leagueId: validated.leagueId }

@@ -13,7 +13,7 @@ import {
 } from './users'
 import { prisma } from '@/lib/prisma'
 import * as authUtils from '@/lib/auth/auth-utils'
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
   requireAdmin: vi.fn().mockResolvedValue({ user: { id: '1', isSuperadmin: true } }),
@@ -26,7 +26,7 @@ vi.mock('@/lib/query-builders', () => ({
 
 const mockPrisma = vi.mocked(prisma, true)
 const mockRequireAdmin = vi.mocked(authUtils.requireAdmin)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 
 describe('Users Actions', () => {
   beforeEach(() => {
@@ -144,8 +144,7 @@ describe('Users Actions', () => {
 
       await approveRequest(1)
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
-      expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('league-selector')
     })
 
     it('should reject invalid requestId', async () => {
@@ -239,7 +238,7 @@ describe('Users Actions', () => {
       const result = await updateLeagueUserActive({ leagueUserId: 1, value: false })
 
       expect(result.success).toBe(true)
-      expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('league-selector')
     })
 
     it('should reject invalid input', async () => {
@@ -277,8 +276,7 @@ describe('Users Actions', () => {
       const result = await addUserToLeague({ userId: 5, leagueId: 1 })
 
       expect(result.success).toBe(true)
-      expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
-      expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('league-selector')
     })
 
     it('should return error when user not found', async () => {
@@ -328,8 +326,7 @@ describe('Users Actions', () => {
         where: { id: 1 },
         data: { deletedAt: expect.any(Date) },
       })
-      expect(mockRevalidateTag).toHaveBeenCalledWith('league-selector', 'max')
-      expect(mockRevalidateTag).toHaveBeenCalledWith('leaderboard', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('league-selector')
     })
 
     it('should reject invalid input', async () => {

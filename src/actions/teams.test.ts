@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getAllTeams, createTeam, updateTeam, deleteTeam } from './teams'
 import { prisma } from '@/lib/prisma'
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import * as authUtils from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
@@ -11,7 +11,7 @@ vi.mock('@/lib/auth/auth-utils', () => ({
 
 const mockPrisma = vi.mocked(prisma, true)
 const mockRevalidatePath = vi.mocked(revalidatePath)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 const mockRequireAdmin = vi.mocked(authUtils.requireAdmin)
 
 describe('Teams Actions', () => {
@@ -87,7 +87,7 @@ describe('Teams Actions', () => {
       await createTeam({ name: 'T', shortcut: 'T', sportId: 1, flagType: 'icon' })
 
       expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/teams')
-      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-teams', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-teams')
     })
 
     it('should trim name and shortcut', async () => {
@@ -118,7 +118,7 @@ describe('Teams Actions', () => {
           data: expect.objectContaining({ name: 'Updated' }),
         })
       )
-      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-teams', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-teams')
     })
 
     it('should return error when team not found', async () => {
@@ -156,7 +156,7 @@ describe('Teams Actions', () => {
         where: { id: 1 },
         data: { deletedAt: expect.any(Date) },
       })
-      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-teams', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-teams')
     })
 
     it('should return error when team not found', async () => {

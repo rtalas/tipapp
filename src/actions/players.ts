@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { parseSessionUserId } from '@/lib/auth/auth-utils'
@@ -25,7 +25,7 @@ export async function createPlayer(input: CreatePlayerInput) {
         },
       })
 
-      revalidateTag('special-bet-players', 'max')
+      updateTag('special-bet-players')
 
       AuditLogger.adminCreated(
         parseSessionUserId(session!.user!.id!), 'Player', player.id,
@@ -69,7 +69,7 @@ export async function updatePlayer(input: UpdatePlayerInput) {
         },
       })
 
-      revalidateTag('special-bet-players', 'max')
+      updateTag('special-bet-players')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'Player', validated.id!,
@@ -118,7 +118,7 @@ export async function deletePlayer(id: number) {
           data: { deletedAt: new Date() },
         })
 
-        revalidateTag('special-bet-players', 'max')
+        updateTag('special-bet-players')
 
         AuditLogger.adminDeleted(
           parseSessionUserId(session!.user!.id!), 'Player', validated.id,

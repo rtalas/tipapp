@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createSpecialBet, updateSpecialBetResult, deleteSpecialBet } from './special-bets'
 import { prisma } from '@/lib/prisma'
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { requireAdmin } from '@/lib/auth/auth-utils'
 
 vi.mock('@/lib/auth/auth-utils', () => ({
@@ -14,7 +14,7 @@ vi.mock('@/lib/prisma-helpers', () => ({
 }))
 
 const mockPrisma = vi.mocked(prisma, true)
-const mockRevalidateTag = vi.mocked(revalidateTag)
+const mockUpdateTag = vi.mocked(updateTag)
 const mockRequireAdmin = vi.mocked(requireAdmin)
 
 describe('Special Bets Actions', () => {
@@ -81,7 +81,7 @@ describe('Special Bets Actions', () => {
         dateTime: new Date('2026-06-01'),
       })
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-data')
     })
   })
 
@@ -195,7 +195,7 @@ describe('Special Bets Actions', () => {
 
       await updateSpecialBetResult({ specialBetId: 1, specialBetValue: 5 })
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-data')
     })
   })
 
@@ -210,7 +210,7 @@ describe('Special Bets Actions', () => {
         where: { id: 1 },
         data: { deletedAt: expect.any(Date) },
       })
-      expect(mockRevalidateTag).toHaveBeenCalledWith('special-bet-data', 'max')
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-data')
     })
 
     it('should reject invalid id', async () => {

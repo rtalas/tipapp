@@ -2,7 +2,7 @@
 
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { parseSessionUserId } from '@/lib/auth/auth-utils'
@@ -69,7 +69,7 @@ export async function createSpecialBet(input: CreateSpecialBetInput) {
       })
 
       // Invalidate user-facing special bet cache
-      revalidateTag('special-bet-data', 'max')
+      updateTag('special-bet-data')
 
       AuditLogger.adminCreated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSingle', specialBet.id,
@@ -198,7 +198,7 @@ export async function updateSpecialBetResult(input: UpdateSpecialBetResultInput)
       })
 
       // Invalidate user-facing special bet cache
-      revalidateTag('special-bet-data', 'max')
+      updateTag('special-bet-data')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSingle', validated.specialBetId,
@@ -228,7 +228,7 @@ export async function updateSpecialBet(input: UpdateSpecialBetInput) {
         },
       })
 
-      revalidateTag('special-bet-data', 'max')
+      updateTag('special-bet-data')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSingle', validated.specialBetId,
@@ -252,7 +252,7 @@ export async function deleteSpecialBet(id: number) {
       })
 
       // Invalidate user-facing special bet cache
-      revalidateTag('special-bet-data', 'max')
+      updateTag('special-bet-data')
 
       AuditLogger.adminDeleted(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSingle', validated.id

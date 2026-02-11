@@ -1,6 +1,5 @@
 'use server'
 
-import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember } from '@/lib/auth/user-auth-utils'
 import type { LeaderboardEntry } from '@/types/user'
@@ -312,164 +311,110 @@ export async function getUserPicks(
 }
 
 /**
- * Cached leaderboard data (30 min TTL)
- * Same data for all users in a league - only isCurrentUser differs
- */
-const getCachedLeaderboardData = unstable_cache(
-  async (leagueId: number) => {
-    // Fetch league users (without bet includes)
-    const leagueUsers = await prisma.leagueUser.findMany({
-      where: {
-        leagueId,
-        active: true,
-        deletedAt: null,
-      },
-      include: {
-        User: {
-          select: {
-            id: true,
-            username: true,
-            firstName: true,
-            lastName: true,
-            avatarUrl: true,
-          },
-        },
-      },
-    })
-
-    const leagueUserIds = leagueUsers.map((lu) => lu.id)
-
-    // Aggregate points in database instead of loading all bet rows
-    const [matchTotals, seriesTotals, specialBetTotals, questionTotals] = await Promise.all([
-      prisma.userBet.groupBy({
-        by: ['leagueUserId'],
-        where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
-        _sum: { totalPoints: true },
-      }),
-      prisma.userSpecialBetSerie.groupBy({
-        by: ['leagueUserId'],
-        where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
-        _sum: { totalPoints: true },
-      }),
-      prisma.userSpecialBetSingle.groupBy({
-        by: ['leagueUserId'],
-        where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
-        _sum: { totalPoints: true },
-      }),
-      prisma.userSpecialBetQuestion.groupBy({
-        by: ['leagueUserId'],
-        where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
-        _sum: { totalPoints: true },
-      }),
-    ])
-
-    // Build lookup maps for O(1) access
-    const matchMap = new Map(matchTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
-    const seriesMap = new Map(seriesTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
-    const specialBetMap = new Map(specialBetTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
-    const questionMap = new Map(questionTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
-
-    // Merge user data with aggregated points
-    const entries = leagueUsers.map((lu) => {
-      const matchPoints = matchMap.get(lu.id) || 0
-      const seriesPoints = seriesMap.get(lu.id) || 0
-      const specialBetPoints = specialBetMap.get(lu.id) || 0
-      const questionPoints = questionMap.get(lu.id) || 0
-
-      return {
-        leagueUserId: lu.id,
-        odataUserId: lu.User.id,
-        username: lu.User.username,
-        firstName: lu.User.firstName,
-        lastName: lu.User.lastName,
-        avatarUrl: lu.User.avatarUrl,
-        matchPoints,
-        seriesPoints,
-        specialBetPoints,
-        questionPoints,
-        totalPoints: matchPoints + seriesPoints + specialBetPoints + questionPoints,
-      }
-    })
-
-    // Sort by total points descending
-    entries.sort((a, b) => b.totalPoints - a.totalPoints)
-
-    // Add ranks
-    const rankedEntries = entries.map((entry, index) => ({
-      ...entry,
-      rank: index + 1,
-    }))
-
-    // Fetch prizes and fines for this league
-    const prizeRecords = await prisma.leaguePrize.findMany({
-      where: {
-        leagueId,
-        deletedAt: null,
-      },
-      orderBy: {
-        rank: 'asc',
-      },
-      select: {
-        rank: true,
-        amount: true,
-        currency: true,
-        label: true,
-        type: true,
-      },
-    })
-
-    // Separate prizes and fines
-    const prizes = prizeRecords
-      .filter((p) => p.type === 'prize')
-      .map(({ rank, amount, currency, label }) => ({
-        rank,
-        amount,
-        currency,
-        label,
-      }))
-
-    const fines = prizeRecords
-      .filter((p) => p.type === 'fine')
-      .map(({ rank, amount, currency, label }) => ({
-        rank,
-        amount,
-        currency,
-        label,
-      }))
-
-    return { entries: rankedEntries, prizes, fines }
-  },
-  ['leaderboard'],
-  {
-    revalidate: 1800, // 30 minutes
-    tags: ['leaderboard'],
-  }
-)
-
-/**
  * Fetches leaderboard for a league with aggregated points and prizes
  */
 export async function getLeaderboard(leagueId: number): Promise<LeaderboardData> {
   const { userId } = await requireLeagueMember(leagueId)
 
-  // Get cached leaderboard data (shared across all users)
-  const cachedData = await getCachedLeaderboardData(leagueId)
+  // Fetch league users (without bet includes)
+  const leagueUsers = await prisma.leagueUser.findMany({
+    where: {
+      leagueId,
+      active: true,
+      deletedAt: null,
+    },
+    include: {
+      User: {
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+        },
+      },
+    },
+  })
 
-  // Add isCurrentUser flag for this specific user
-  const entries = cachedData.entries.map((entry) => {
-    const { odataUserId, ...rest } = entry
+  const leagueUserIds = leagueUsers.map((lu) => lu.id)
+
+  // Aggregate points in database instead of loading all bet rows
+  const [matchTotals, seriesTotals, specialBetTotals, questionTotals, prizeRecords] = await Promise.all([
+    prisma.userBet.groupBy({
+      by: ['leagueUserId'],
+      where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
+      _sum: { totalPoints: true },
+    }),
+    prisma.userSpecialBetSerie.groupBy({
+      by: ['leagueUserId'],
+      where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
+      _sum: { totalPoints: true },
+    }),
+    prisma.userSpecialBetSingle.groupBy({
+      by: ['leagueUserId'],
+      where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
+      _sum: { totalPoints: true },
+    }),
+    prisma.userSpecialBetQuestion.groupBy({
+      by: ['leagueUserId'],
+      where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
+      _sum: { totalPoints: true },
+    }),
+    prisma.leaguePrize.findMany({
+      where: { leagueId, deletedAt: null },
+      orderBy: { rank: 'asc' },
+      select: { rank: true, amount: true, currency: true, label: true, type: true },
+    }),
+  ])
+
+  // Build lookup maps for O(1) access
+  const matchMap = new Map(matchTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
+  const seriesMap = new Map(seriesTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
+  const specialBetMap = new Map(specialBetTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
+  const questionMap = new Map(questionTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
+
+  // Merge user data with aggregated points
+  const entries = leagueUsers.map((lu) => {
+    const matchPoints = matchMap.get(lu.id) || 0
+    const seriesPoints = seriesMap.get(lu.id) || 0
+    const specialBetPoints = specialBetMap.get(lu.id) || 0
+    const questionPoints = questionMap.get(lu.id) || 0
+
     return {
-      ...rest,
-      userId: odataUserId,
-      isCurrentUser: odataUserId === userId,
+      leagueUserId: lu.id,
+      userId: lu.User.id,
+      username: lu.User.username,
+      firstName: lu.User.firstName,
+      lastName: lu.User.lastName,
+      avatarUrl: lu.User.avatarUrl,
+      matchPoints,
+      seriesPoints,
+      specialBetPoints,
+      questionPoints,
+      totalPoints: matchPoints + seriesPoints + specialBetPoints + questionPoints,
+      isCurrentUser: lu.User.id === userId,
     }
   })
 
-  return {
-    entries,
-    prizes: cachedData.prizes,
-    fines: cachedData.fines,
-  }
+  // Sort by total points descending
+  entries.sort((a, b) => b.totalPoints - a.totalPoints)
+
+  // Add ranks
+  const rankedEntries = entries.map((entry, index) => ({
+    ...entry,
+    rank: index + 1,
+  }))
+
+  // Separate prizes and fines
+  const prizes = prizeRecords
+    .filter((p) => p.type === 'prize')
+    .map(({ rank, amount, currency, label }) => ({ rank, amount, currency, label }))
+
+  const fines = prizeRecords
+    .filter((p) => p.type === 'fine')
+    .map(({ rank, amount, currency, label }) => ({ rank, amount, currency, label }))
+
+  return { entries: rankedEntries, prizes, fines }
 }
 
 

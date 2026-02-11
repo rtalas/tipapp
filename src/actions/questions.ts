@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { parseSessionUserId } from '@/lib/auth/auth-utils'
@@ -49,7 +49,7 @@ export async function createQuestion(input: CreateQuestionInput) {
       })
 
       // Invalidate user-facing question cache
-      revalidateTag('question-data', 'max')
+      updateTag('question-data')
 
       AuditLogger.adminCreated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetQuestion', question.id,
@@ -93,7 +93,7 @@ export async function updateQuestion(input: UpdateQuestionInput) {
       })
 
       // Invalidate user-facing question cache
-      revalidateTag('question-data', 'max')
+      updateTag('question-data')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetQuestion', validated.id,
@@ -135,7 +135,7 @@ export async function updateQuestionResult(input: UpdateQuestionResultInput) {
       })
 
       // Invalidate user-facing question cache
-      revalidateTag('question-data', 'max')
+      updateTag('question-data')
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetQuestion', validated.questionId,
@@ -172,7 +172,7 @@ export async function deleteQuestion(id: number) {
       })
 
       // Invalidate user-facing question cache
-      revalidateTag('question-data', 'max')
+      updateTag('question-data')
 
       AuditLogger.adminDeleted(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetQuestion', validated.id
