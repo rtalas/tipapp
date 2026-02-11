@@ -1,6 +1,8 @@
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, Check } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { UserAvatar } from '@/components/common/user-avatar'
 import { cn } from '@/lib/utils'
+import { SPORT_IDS } from '@/lib/constants'
 import { getUserDisplayName } from '@/lib/user-display-utils'
 import type { FriendPrediction, UserMatch } from '@/actions/user/matches'
 
@@ -15,6 +17,13 @@ export function FriendPredictionsList({
   match,
   isEvaluated,
 }: FriendPredictionsListProps) {
+  const t = useTranslations('user.matches')
+  const sportId = match.League.sportId
+  const isPlayoff = match.Match.isPlayoffGame
+  const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
+  const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
+  const homeTeamName = homeTeam.Team.shortcut || homeTeam.Team.name
+  const awayTeamName = awayTeam.Team.shortcut || awayTeam.Team.name
   const hasResult =
     match.Match.homeRegularScore !== null && match.Match.awayRegularScore !== null
 
@@ -64,6 +73,17 @@ export function FriendPredictionsList({
                     {isScorerCorrect && (
                       <CheckCircle className="w-3 h-3 text-primary" />
                     )}
+                  </span>
+                )}
+                {sportId === SPORT_IDS.FOOTBALL && isPlayoff && prediction.homeAdvanced !== null && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    {t('advancing')}: {prediction.homeAdvanced ? homeTeamName : awayTeamName}
+                  </span>
+                )}
+                {!(sportId === SPORT_IDS.FOOTBALL && isPlayoff) && prediction.overtime && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    {t('overtimeShootout')}
                   </span>
                 )}
               </div>
