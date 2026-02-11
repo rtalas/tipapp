@@ -111,8 +111,8 @@ export function BottomNav({
           const isActive = item.matchPattern.test(pathname)
           const isLoading = pendingTab === item.id
           const Icon = item.icon
-          // Hide badge when user is on that page (e.g. chat badge clears when viewing chat)
-          const badgeCount = isActive ? undefined : badges?.[item.id as keyof typeof badges]
+          // Hide chat badge when on chat page (viewing = reading), keep other badges visible
+          const badgeCount = (item.id === 'chat' && isActive) ? undefined : badges?.[item.id as keyof typeof badges]
 
           return (
             <Link
