@@ -85,6 +85,7 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
                     key={entry.leagueUserId}
                     entry={entry}
                     index={index}
+                    prevPoints={entries[index - 1]?.totalPoints}
                     prizes={prizes}
                     fines={fines}
                     totalEntries={entries.length}
@@ -102,6 +103,7 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
                     key={entry.leagueUserId}
                     entry={entry}
                     index={index + prizeEntries.length}
+                    prevPoints={entries[index + prizeEntries.length - 1]?.totalPoints}
                     prizes={prizes}
                     fines={fines}
                     totalEntries={entries.length}
@@ -119,6 +121,7 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
                     key={entry.leagueUserId}
                     entry={entry}
                     index={index + prizeEntries.length + middleEntries.length}
+                    prevPoints={entries[index + prizeEntries.length + middleEntries.length - 1]?.totalPoints}
                     prizes={prizes}
                     fines={fines}
                     totalEntries={entries.length}
@@ -143,19 +146,21 @@ export function LeaderboardTable({ entries, prizes, fines }: LeaderboardTablePro
 interface RankingRowProps {
   entry: LeaderboardEntry
   index: number
+  prevPoints: number | undefined
   prizes: LeaguePrize[]
   fines: LeaguePrize[]
   totalEntries: number
   onClick: () => void
 }
 
-function RankingRow({ entry, index, prizes, fines, totalEntries, onClick }: RankingRowProps) {
+function RankingRow({ entry, index, prevPoints, prizes, fines, totalEntries, onClick }: RankingRowProps) {
   const t = useTranslations('user.leaderboard')
   const locale = useLocale()
   const displayName = getUserDisplayName(entry)
   const rankStyle = getRankStyle(entry.rank)
   const prize = getPrize(entry.rank, prizes, locale)
   const fine = getFine(entry.rank, totalEntries, fines, locale)
+  const isTied = prevPoints !== undefined && entry.totalPoints === prevPoints
 
   return (
     <button
@@ -174,7 +179,7 @@ function RankingRow({ entry, index, prizes, fines, totalEntries, onClick }: Rank
           rankStyle.text
         )}
       >
-        {entry.rank}
+        {isTied ? '' : entry.rank}
       </div>
 
       {/* Avatar */}

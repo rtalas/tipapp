@@ -11,6 +11,11 @@ export default async function Home() {
     redirect('/login')
   }
 
+  // Superadmins go straight to admin section
+  if (session.user.isSuperadmin) {
+    redirect('/admin')
+  }
+
   // Try to get the user's most active league
   const leagueId = await getMostActiveLeagueId()
 
