@@ -106,17 +106,17 @@ export function UserPicksModal({ selectedUser, leagueId, onClose }: UserPicksMod
                           {match.isEvaluated && match.actualHomeScore !== null && match.actualAwayScore !== null && (
                             <span className="text-xs font-semibold text-foreground ml-2">
                               ({match.actualHomeScore}:{match.actualAwayScore}
-                              {match.actualOvertime && ' OT'})
+                              {match.actualOvertime && `${t('overtimeSuffix')}`})
                             </span>
                           )}
                         </div>
                         <PointsBadge points={match.totalPoints} />
                       </div>
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="text-muted-foreground">Tip:</span>
+                        <span className="text-muted-foreground">{t('tip')}</span>
                         <span className="font-mono font-medium">
                           {match.homeScore}:{match.awayScore}
-                          {match.overtime && ' (OT)'}
+                          {match.overtime && `${t('overtimeSuffix')}`}
                         </span>
                         {match.scorerName && (
                           <>

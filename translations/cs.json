@@ -228,7 +228,9 @@
       "yes": "Ano",
       "no": "Ne",
       "picksLoadError": "Nepodařilo se načíst tipy",
-      "lastUpdate": "Poslední aktualizace: {time}"
+      "lastUpdate": "Poslední aktualizace: {time}",
+      "tip": "Tip:",
+      "overtimeSuffix": "(P)"
     },
     "series": {
       "title": "Série",
