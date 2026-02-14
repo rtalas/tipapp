@@ -1,4 +1,4 @@
-import { CheckCircle, Check } from 'lucide-react'
+import { CheckCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { UserAvatar } from '@/components/common/user-avatar'
 import { cn } from '@/lib/utils'
@@ -80,12 +80,6 @@ export function FriendPredictionsList({
                     {t('advancing')}: {prediction.homeAdvanced ? homeTeamName : awayTeamName}
                   </span>
                 )}
-                {!(sportId === SPORT_IDS.FOOTBALL && isPlayoff) && prediction.overtime && (
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Check className="w-3 h-3" />
-                    {t('overtimeShootout')}
-                  </span>
-                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -95,7 +89,10 @@ export function FriendPredictionsList({
                   isCorrect ? 'text-primary' : 'text-foreground'
                 )}
               >
-                {prediction.homeScore} : {prediction.awayScore}
+                {prediction.homeScore}:{prediction.awayScore}
+                {!(sportId === SPORT_IDS.FOOTBALL && isPlayoff) && prediction.overtime && (
+                  <span className="ml-0.5">{t('overtimeSuffix')}</span>
+                )}
               </span>
               {isEvaluated && prediction.totalPoints !== 0 && (
                 <span

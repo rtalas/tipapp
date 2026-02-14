@@ -183,6 +183,7 @@
       "friendsLoadError": "Failed to load friend predictions",
       "loading": "Loading matches...",
       "overtimeShootout": "Overtime / Shootout",
+      "overtimeSuffix": "(OT)",
       "whoWillAdvance": "Who will advance?",
       "advancing": "Advancing:",
       "yourBet": "Your bet:",
