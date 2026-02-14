@@ -11,8 +11,8 @@ interface LeaderboardPageProps {
 }
 
 async function LeaderboardContent({ leagueId }: { leagueId: number }) {
-  const { entries, prizes, fines } = await getLeaderboard(leagueId)
-  return <LeaderboardTable entries={entries} prizes={prizes} fines={fines} />
+  const { entries, prizes, fines, lastEvaluatedAt } = await getLeaderboard(leagueId)
+  return <LeaderboardTable entries={entries} prizes={prizes} fines={fines} lastEvaluatedAt={lastEvaluatedAt} />
 }
 
 export default async function LeaderboardPage({ params }: LeaderboardPageProps) {

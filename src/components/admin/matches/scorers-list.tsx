@@ -1,20 +1,15 @@
-import React from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+'use client'
+
+import { useState } from 'react'
+import { Plus, Trash2, Search, Check, ChevronsUpDown } from 'lucide-react'
 import { SPORT_IDS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
 
 interface Team {
   id: number
@@ -55,6 +50,165 @@ interface ScorersListProps {
   onHasScorersChange: (hasScorers: boolean) => void
 }
 
+function getPlayerName(lp: LeaguePlayer): string {
+  const { firstName, lastName } = lp.Player
+  if (firstName && lastName) return `${firstName} ${lastName}`
+  return firstName || lastName || 'Unknown'
+}
+
+function sortPlayers(players: LeaguePlayer[]): LeaguePlayer[] {
+  return [...players].sort((a, b) => {
+    const lastA = (a.Player.lastName ?? '').toLowerCase()
+    const lastB = (b.Player.lastName ?? '').toLowerCase()
+    if (lastA !== lastB) return lastA.localeCompare(lastB)
+    const firstA = (a.Player.firstName ?? '').toLowerCase()
+    const firstB = (b.Player.firstName ?? '').toLowerCase()
+    return firstA.localeCompare(firstB)
+  })
+}
+
+interface ScorerSelectProps {
+  value: string
+  allPlayers: LeaguePlayer[]
+  homeTeamName: string
+  awayTeamName: string
+  homePlayers: LeaguePlayer[]
+  awayPlayers: LeaguePlayer[]
+  onChange: (value: string) => void
+}
+
+function ScorerSelect({
+  value,
+  allPlayers,
+  homeTeamName,
+  awayTeamName,
+  homePlayers,
+  awayPlayers,
+  onChange,
+}: ScorerSelectProps) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const selectedPlayer = allPlayers.find((lp) => lp.id.toString() === value)
+
+  const searchLower = search.toLowerCase()
+  const filteredHome = search
+    ? homePlayers.filter((lp) =>
+        getPlayerName(lp).toLowerCase().includes(searchLower)
+      )
+    : homePlayers
+  const filteredAway = search
+    ? awayPlayers.filter((lp) =>
+        getPlayerName(lp).toLowerCase().includes(searchLower)
+      )
+    : awayPlayers
+
+  const handleSelect = (id: string) => {
+    onChange(id)
+    setOpen(false)
+    setSearch('')
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="flex-1 justify-between font-normal"
+        >
+          <span className="truncate">
+            {selectedPlayer ? getPlayerName(selectedPlayer) : 'Select player'}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <div className="flex items-center border-b px-3 py-2">
+          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+          <Input
+            placeholder="Search player..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+        </div>
+        <div
+          className="h-[260px] overflow-y-auto"
+          onWheelCapture={(e) => {
+            e.stopPropagation()
+            e.currentTarget.scrollTop += e.deltaY
+          }}
+        >
+          <div className="p-1">
+            {filteredHome.length > 0 && (
+              <>
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                  {homeTeamName}
+                </div>
+                {filteredHome.map((lp) => (
+                  <button
+                    key={lp.id}
+                    type="button"
+                    onClick={() => handleSelect(lp.id.toString())}
+                    className={cn(
+                      'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                      value === lp.id.toString() && 'bg-accent'
+                    )}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        value === lp.id.toString() ? 'opacity-100' : 'opacity-0'
+                      )}
+                    />
+                    {getPlayerName(lp)}
+                  </button>
+                ))}
+              </>
+            )}
+
+            {filteredAway.length > 0 && (
+              <>
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                  {awayTeamName}
+                </div>
+                {filteredAway.map((lp) => (
+                  <button
+                    key={lp.id}
+                    type="button"
+                    onClick={() => handleSelect(lp.id.toString())}
+                    className={cn(
+                      'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                      value === lp.id.toString() && 'bg-accent'
+                    )}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        value === lp.id.toString() ? 'opacity-100' : 'opacity-0'
+                      )}
+                    />
+                    {getPlayerName(lp)}
+                  </button>
+                ))}
+              </>
+            )}
+
+            {filteredHome.length === 0 && filteredAway.length === 0 && search && (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                No players found.
+              </div>
+            )}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 export function ScorersList({
   scorers,
   hasScorers,
@@ -67,6 +221,10 @@ export function ScorersList({
   onScorerChange,
   onHasScorersChange,
 }: ScorersListProps) {
+  const sortedHome = sortPlayers(players.home)
+  const sortedAway = sortPlayers(players.away)
+  const allPlayers = [...sortedHome, ...sortedAway]
+
   return (
     <>
       <Separator />
@@ -114,34 +272,15 @@ export function ScorersList({
           <div className="space-y-3">
             {scorers.map((scorer, index) => (
               <div key={index} className="flex items-center gap-2">
-                <Select
+                <ScorerSelect
                   value={scorer.playerId}
-                  onValueChange={(value) => onScorerChange(index, 'playerId', value)}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select player" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* Home team players */}
-                    <SelectGroup>
-                      <SelectLabel>{homeTeam.Team.name}</SelectLabel>
-                      {players.home.map((lp) => (
-                        <SelectItem key={lp.id} value={lp.id.toString()}>
-                          {lp.Player.firstName} {lp.Player.lastName}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                    {/* Away team players */}
-                    <SelectGroup>
-                      <SelectLabel>{awayTeam.Team.name}</SelectLabel>
-                      {players.away.map((lp) => (
-                        <SelectItem key={lp.id} value={lp.id.toString()}>
-                          {lp.Player.firstName} {lp.Player.lastName}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                  allPlayers={allPlayers}
+                  homeTeamName={homeTeam.Team.name}
+                  awayTeamName={awayTeam.Team.name}
+                  homePlayers={sortedHome}
+                  awayPlayers={sortedAway}
+                  onChange={(value) => onScorerChange(index, 'playerId', value)}
+                />
                 <Input
                   type="number"
                   min="1"

@@ -226,7 +226,8 @@
       "noPicksYet": "Zatím žádné tipy",
       "yes": "Ano",
       "no": "Ne",
-      "picksLoadError": "Nepodařilo se načíst tipy"
+      "picksLoadError": "Nepodařilo se načíst tipy",
+      "lastUpdate": "Poslední aktualizace: {time}"
     },
     "series": {
       "title": "Série",

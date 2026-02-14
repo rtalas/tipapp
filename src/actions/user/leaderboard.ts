@@ -15,6 +15,7 @@ export interface LeaderboardData {
   entries: LeaderboardEntry[]
   prizes: LeaguePrize[]
   fines: LeaguePrize[]
+  lastEvaluatedAt: Date | null
 }
 
 export interface UserMatchPick {
@@ -339,7 +340,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
   const leagueUserIds = leagueUsers.map((lu) => lu.id)
 
   // Aggregate points in database instead of loading all bet rows
-  const [matchTotals, seriesTotals, specialBetTotals, questionTotals, prizeRecords] = await Promise.all([
+  const [matchTotals, seriesTotals, specialBetTotals, questionTotals, prizeRecords, lastEvalTimestamps] = await Promise.all([
     prisma.userBet.groupBy({
       by: ['leagueUserId'],
       where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
@@ -365,6 +366,25 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
       orderBy: { rank: 'asc' },
       select: { rank: true, amount: true, currency: true, label: true, type: true },
     }),
+    // Find the most recent evaluation timestamp across all evaluated entity types
+    Promise.all([
+      prisma.match.aggregate({
+        where: { isEvaluated: true, deletedAt: null, LeagueMatch: { some: { leagueId, deletedAt: null } } },
+        _max: { updatedAt: true },
+      }),
+      prisma.leagueSpecialBetSerie.aggregate({
+        where: { isEvaluated: true, deletedAt: null, leagueId },
+        _max: { updatedAt: true },
+      }),
+      prisma.leagueSpecialBetSingle.aggregate({
+        where: { isEvaluated: true, deletedAt: null, leagueId },
+        _max: { updatedAt: true },
+      }),
+      prisma.leagueSpecialBetQuestion.aggregate({
+        where: { isEvaluated: true, deletedAt: null, leagueId },
+        _max: { updatedAt: true },
+      }),
+    ]),
   ])
 
   // Build lookup maps for O(1) access
@@ -414,7 +434,12 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
     .filter((p) => p.type === 'fine')
     .map(({ rank, amount, currency, label }) => ({ rank, amount, currency, label }))
 
-  return { entries: rankedEntries, prizes, fines }
+  const lastEvaluatedAt = lastEvalTimestamps
+    .map((r) => r._max.updatedAt)
+    .filter((d): d is Date => d !== null)
+    .reduce<Date | null>((max, d) => (max === null || d > max ? d : max), null)
+
+  return { entries: rankedEntries, prizes, fines, lastEvaluatedAt }
 }
 
 

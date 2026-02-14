@@ -226,7 +226,8 @@
       "noPicksYet": "No predictions yet",
       "yes": "Yes",
       "no": "No",
-      "picksLoadError": "Failed to load predictions"
+      "picksLoadError": "Failed to load predictions",
+      "lastUpdate": "Last update: {time}"
     },
     "series": {
       "title": "Series",
