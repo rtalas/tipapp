@@ -175,6 +175,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
         <MatchTeamsDisplay
           match={match}
           isLocked={isLocked}
+          isEvaluated={isEvaluated}
           homeScore={homeScore}
           awayScore={awayScore}
           onHomeScoreChange={handleHomeScoreChange}
@@ -229,7 +230,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
         onOpenChange={friends.setShowModal}
         title={`${homeTeamName} vs ${awayTeamName}`}
         subtitle={
-          hasResult
+          isEvaluated && hasResult
             ? `${t('final')} ${match.Match.homeRegularScore} - ${match.Match.awayRegularScore}${
                 match.Match.isOvertime ? ' (OT)' : ''
               }${match.Match.isShootout ? ' (SO)' : ''}`

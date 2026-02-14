@@ -6,6 +6,7 @@ import type { UserMatch } from '@/actions/user/matches'
 interface MatchTeamsDisplayProps {
   match: UserMatch
   isLocked: boolean
+  isEvaluated: boolean
   homeScore: number
   awayScore: number
   onHomeScoreChange: (value: number) => void
@@ -15,6 +16,7 @@ interface MatchTeamsDisplayProps {
 export function MatchTeamsDisplay({
   match,
   isLocked,
+  isEvaluated,
   homeScore,
   awayScore,
   onHomeScoreChange,
@@ -51,7 +53,7 @@ export function MatchTeamsDisplay({
       <div className="flex items-center gap-2 shrink-0">
         {isLocked ? (
           <div className="flex flex-col items-center gap-1">
-            {hasResult && (
+            {isEvaluated && hasResult && (
               <>
                 <span className="text-[10px] text-muted-foreground uppercase">{t('result')}</span>
                 <span className="text-lg font-black text-foreground">
