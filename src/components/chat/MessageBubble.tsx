@@ -170,7 +170,7 @@ export function MessageBubble({ message, isOwn, canDelete, currentUserId, onDele
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         className={cn(
-          'flex gap-2 group',
+          'flex gap-2 group select-none',
           isOwn ? 'flex-row-reverse' : 'flex-row'
         )}
       >
