@@ -57,14 +57,13 @@ export function MatchTeamsDisplay({
               <>
                 <span className="text-[10px] text-muted-foreground uppercase">{t('result')}</span>
                 <span className="text-lg font-black text-foreground">
-                  {match.Match.homeRegularScore} : {match.Match.awayRegularScore}
+                  {match.Match.homeFinalScore ?? match.Match.homeRegularScore} : {match.Match.awayFinalScore ?? match.Match.awayRegularScore}
+                  {(match.Match.isOvertime || match.Match.isShootout) && (
+                    <span className="text-lg font-black text-foreground ml-1">
+                      {match.Match.isShootout ? t('shootoutSuffix') : t('overtimeSuffix')}
+                    </span>
+                  )}
                 </span>
-                {(match.Match.isOvertime || match.Match.isShootout) && (
-                  <span className="text-[10px] text-muted-foreground">
-                    {match.Match.isOvertime && 'OT'}
-                    {match.Match.isShootout && 'SO'}
-                  </span>
-                )}
               </>
             )}
             {match.userBet && (
@@ -72,6 +71,9 @@ export function MatchTeamsDisplay({
                 <span className="text-[10px] text-muted-foreground">{t('yourBetShort')}</span>
                 <span className="text-xs font-semibold text-primary">
                   {match.userBet.homeScore}:{match.userBet.awayScore}
+                  {match.userBet.overtime && (
+                    <span className="ml-1">{t('overtimeSuffix')}</span>
+                  )}
                 </span>
               </div>
             )}

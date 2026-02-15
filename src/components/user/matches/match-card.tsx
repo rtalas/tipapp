@@ -231,9 +231,9 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
         title={`${homeTeamName} vs ${awayTeamName}`}
         subtitle={
           isEvaluated && hasResult
-            ? `${t('final')} ${match.Match.homeRegularScore} - ${match.Match.awayRegularScore}${
-                match.Match.isOvertime ? ' (OT)' : ''
-              }${match.Match.isShootout ? ' (SO)' : ''}`
+            ? `${t('final')} ${match.Match.homeFinalScore ?? match.Match.homeRegularScore} - ${match.Match.awayFinalScore ?? match.Match.awayRegularScore}${
+                match.Match.isShootout ? ` ${t('shootoutSuffix')}` : match.Match.isOvertime ? ` ${t('overtimeSuffix')}` : ''
+              }`
             : undefined
         }
         sectionLabel={t('friendsPredictions')}
