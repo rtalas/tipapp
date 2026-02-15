@@ -75,4 +75,23 @@ describe("evaluateDraw", () => {
 
     expect(evaluateDraw(context)).toBe(false);
   });
+
+  it("should return true when OT final score convention predicts a regulation draw (e.g. 2:3 OT = regulation 2:2)", () => {
+    // Game ends 2:2 regulation (draw). User bets 2:3 OT = predicted regulation 2:2 = draw
+    const context: MatchBetContext = {
+      prediction: { homeScore: 2, awayScore: 3, overtime: true },
+      actual: {
+        homeRegularScore: 2,
+        awayRegularScore: 2,
+        homeFinalScore: 2,
+        awayFinalScore: 2,
+        scorerIds: [],
+        isOvertime: false,
+        isShootout: false,
+        isPlayoffGame: false,
+      },
+    };
+
+    expect(evaluateDraw(context)).toBe(true);
+  });
 });

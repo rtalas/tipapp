@@ -10,6 +10,24 @@ export function hasRegularScores(actual: MatchBetContext['actual']): boolean {
 }
 
 /**
+ * Get the predicted regulation-time scores from a bet.
+ * Users may enter either:
+ *   - Regulation score (tied): { homeScore: 2, awayScore: 2, overtime: true }
+ *   - Final score (with OT goal): { homeScore: 2, awayScore: 3, overtime: true }
+ * When scores are uneven with overtime=true, the user entered the final score —
+ * subtract the OT goal from the winning team to get the regulation (tied) score.
+ */
+export function getPredictedRegulationScores(prediction: { homeScore: number; awayScore: number; overtime?: boolean }): { homeScore: number; awayScore: number } {
+  if (!prediction.overtime || prediction.homeScore === prediction.awayScore) {
+    return { homeScore: prediction.homeScore, awayScore: prediction.awayScore }
+  }
+  if (prediction.homeScore > prediction.awayScore) {
+    return { homeScore: prediction.homeScore - 1, awayScore: prediction.awayScore }
+  }
+  return { homeScore: prediction.homeScore, awayScore: prediction.awayScore - 1 }
+}
+
+/**
  * Match bet evaluation context
  */
 export interface MatchBetContext {

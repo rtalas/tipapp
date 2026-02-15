@@ -18,6 +18,7 @@ import { logger } from '@/lib/logging/client-logger'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 import { TeamFlag } from '@/components/common/team-flag'
+import { CheckCircle } from 'lucide-react'
 type Team = { id: number; name: string; shortcut: string; flagIcon: string | null; flagType: string | null }
 type LeaguePlayer = { id: number; Player: { id: number; firstName: string | null; lastName: string | null } }
 
@@ -35,6 +36,7 @@ interface UserBetRowProps {
   matchAwayTeam: Team
   availablePlayers: LeaguePlayer[]
   isMatchEvaluated: boolean
+  actualScorerIds: number[]
   leagueMatchId: number
   matchId: number
 }
@@ -45,6 +47,7 @@ export function UserBetRow({
   matchAwayTeam,
   availablePlayers,
   isMatchEvaluated,
+  actualScorerIds,
   leagueMatchId,
   matchId,
 }: UserBetRowProps) {
@@ -142,6 +145,12 @@ export function UserBetRow({
     ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
     : '-'
 
+  const isScorerCorrect =
+    isMatchEvaluated &&
+    bet.scorerId !== null &&
+    bet.scorerId !== undefined &&
+    actualScorerIds.includes(bet.scorerId)
+
   const advancedDisplay =
     bet.homeAdvanced === null
       ? '-'
@@ -178,10 +187,19 @@ export function UserBetRow({
                 className="w-16"
                 aria-label={t('awayTeamScore')}
               />
+              <Checkbox
+                checked={inlineEdit.form.overtime}
+                onCheckedChange={(checked) =>
+                  inlineEdit.updateForm({ overtime: checked === true })
+                }
+                aria-label={t('overtimePrediction')}
+              />
+              <Label className="text-xs text-muted-foreground">{t('overtime')}</Label>
             </div>
           ) : (
             <span>
               {bet.homeScore}:{bet.awayScore}
+              {bet.overtime && <span className="ml-1">{t('overtimeSuffix')}</span>}
             </span>
           )}
         </TableCell>
@@ -206,24 +224,10 @@ export function UserBetRow({
               </SelectContent>
             </Select>
           ) : (
-            <span className={bet.noScorer ? 'italic text-muted-foreground' : ''}>
+            <span className={`flex items-center gap-1${bet.noScorer ? ' italic text-muted-foreground' : ''}`}>
               {scorerDisplay}
+              {isScorerCorrect && <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />}
             </span>
-          )}
-        </TableCell>
-
-        {/* Overtime */}
-        <TableCell>
-          {isEditing && inlineEdit.form ? (
-            <Checkbox
-              checked={inlineEdit.form.overtime}
-              onCheckedChange={(checked) =>
-                inlineEdit.updateForm({ overtime: checked === true })
-              }
-              aria-label={t('overtimePrediction')}
-            />
-          ) : (
-            <span>{bet.overtime ? '✓' : '-'}</span>
           )}
         </TableCell>
 

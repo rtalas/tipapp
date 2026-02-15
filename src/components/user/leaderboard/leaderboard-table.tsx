@@ -18,7 +18,7 @@ interface LeaderboardTableProps {
   entries: LeaderboardEntry[]
   prizes: LeaguePrize[]
   fines: LeaguePrize[]
-  lastEvaluatedAt: Date | null
+  lastEvaluatedAt?: Date | null
 }
 
 export function LeaderboardTable({ entries, prizes, fines, lastEvaluatedAt }: LeaderboardTableProps) {

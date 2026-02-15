@@ -116,9 +116,9 @@ export function MatchTableRow({
         <TableCell className="text-center">
           {match.Match.homeRegularScore !== null ? (
             <span className="font-mono font-bold text-base whitespace-nowrap">
-              {match.Match.homeRegularScore}:{match.Match.awayRegularScore}
-              {match.Match.isShootout && ` ${t('shootout')}`}
-              {match.Match.isOvertime && !match.Match.isShootout && ` ${t('overtimeSuffix')}`}
+              {match.Match.homeFinalScore ?? match.Match.homeRegularScore}:{match.Match.awayFinalScore ?? match.Match.awayRegularScore}
+              {match.Match.isShootout && `${t('shootout')}`}
+              {match.Match.isOvertime && !match.Match.isShootout && `${t('overtimeSuffix')}`}
             </span>
           ) : (
             <span className="text-muted-foreground">-</span>
@@ -205,6 +205,7 @@ export function MatchTableRow({
               matchAwayTeam={awayTeam}
               availablePlayers={allPlayers}
               isMatchEvaluated={match.Match.isEvaluated}
+              actualScorerIds={match.Match.MatchScorer?.map((ms) => ms.scorerId) ?? []}
               leagueMatchId={match.id}
               matchId={match.Match.id}
               onAddMissingBet={onAddMissingBet}

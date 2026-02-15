@@ -21,6 +21,11 @@ describe('User Leaderboard Actions', () => {
       userId: 5,
       leagueUser: { id: 10, userId: 5, leagueId: 1 },
     } as any)
+    // Default aggregate mocks for lastEvalTimestamps
+    mockPrisma.match.aggregate.mockResolvedValue({ _max: { updatedAt: null } } as any)
+    mockPrisma.leagueSpecialBetSerie.aggregate.mockResolvedValue({ _max: { updatedAt: null } } as any)
+    mockPrisma.leagueSpecialBetSingle.aggregate.mockResolvedValue({ _max: { updatedAt: null } } as any)
+    mockPrisma.leagueSpecialBetQuestion.aggregate.mockResolvedValue({ _max: { updatedAt: null } } as any)
   })
 
   describe('getLeaderboard', () => {
@@ -275,16 +280,16 @@ describe('User Leaderboard Actions', () => {
 
       await getUserPicks(1, 10)
 
-      const matchWhere = mockPrisma.userBet.findMany.mock.calls[0][0].where
+      const matchWhere = mockPrisma.userBet.findMany.mock.calls[0]![0]!.where as any
       expect(matchWhere.LeagueMatch.Match.dateTime.lt).toBeInstanceOf(Date)
 
-      const seriesWhere = mockPrisma.userSpecialBetSerie.findMany.mock.calls[0][0].where
+      const seriesWhere = mockPrisma.userSpecialBetSerie.findMany.mock.calls[0]![0]!.where as any
       expect(seriesWhere.LeagueSpecialBetSerie.dateTime.lt).toBeInstanceOf(Date)
 
-      const specialBetWhere = mockPrisma.userSpecialBetSingle.findMany.mock.calls[0][0].where
+      const specialBetWhere = mockPrisma.userSpecialBetSingle.findMany.mock.calls[0]![0]!.where as any
       expect(specialBetWhere.LeagueSpecialBetSingle.dateTime.lt).toBeInstanceOf(Date)
 
-      const questionWhere = mockPrisma.userSpecialBetQuestion.findMany.mock.calls[0][0].where
+      const questionWhere = mockPrisma.userSpecialBetQuestion.findMany.mock.calls[0]![0]!.where as any
       expect(questionWhere.LeagueSpecialBetQuestion.dateTime.lt).toBeInstanceOf(Date)
     })
 

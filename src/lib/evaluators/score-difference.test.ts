@@ -75,4 +75,61 @@ describe("evaluateScoreDifference", () => {
 
     expect(evaluateScoreDifference(context)).toBe(true);
   });
+
+  it("should handle OT prediction with final score convention (uneven scores + overtime=true)", () => {
+    // Game: 4:3 OT (regulation 3:3). User bets 2:3 OT = predicted regulation 2:2 (diff 0 = matches)
+    const context: MatchBetContext = {
+      prediction: { homeScore: 2, awayScore: 3, overtime: true },
+      actual: {
+        homeRegularScore: 3,
+        awayRegularScore: 3,
+        homeFinalScore: 4,
+        awayFinalScore: 3,
+        scorerIds: [],
+        isOvertime: true,
+        isShootout: false,
+        isPlayoffGame: false,
+      },
+    };
+
+    expect(evaluateScoreDifference(context)).toBe(true);
+  });
+
+  it("should handle OT prediction with regulation score convention (tied scores + overtime=true)", () => {
+    // User bets 2:2 OT = predicted regulation 2:2 (diff 0 = matches 3:3 reg)
+    const context: MatchBetContext = {
+      prediction: { homeScore: 2, awayScore: 2, overtime: true },
+      actual: {
+        homeRegularScore: 3,
+        awayRegularScore: 3,
+        homeFinalScore: 4,
+        awayFinalScore: 3,
+        scorerIds: [],
+        isOvertime: true,
+        isShootout: false,
+        isPlayoffGame: false,
+      },
+    };
+
+    expect(evaluateScoreDifference(context)).toBe(true);
+  });
+
+  it("should return false when OT final score prediction has wrong difference", () => {
+    // Game: 4:3 OT (regulation 3:3, diff 0). User bets 3:1 OT = predicted regulation 2:1 (diff +1 ≠ 0)
+    const context: MatchBetContext = {
+      prediction: { homeScore: 3, awayScore: 1, overtime: true },
+      actual: {
+        homeRegularScore: 3,
+        awayRegularScore: 3,
+        homeFinalScore: 4,
+        awayFinalScore: 3,
+        scorerIds: [],
+        isOvertime: true,
+        isShootout: false,
+        isPlayoffGame: false,
+      },
+    };
+
+    expect(evaluateScoreDifference(context)).toBe(false);
+  });
 });

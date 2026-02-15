@@ -56,10 +56,6 @@ export function GlobalUsersContent({ users }: GlobalUsersContentProps) {
     return searchable.includes(searchLower)
   })
 
-  const getUserName = (user: AdminUser) => {
-    return `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username
-  }
-
   const handleStartEdit = (user: AdminUser) => {
     inlineEdit.startEdit(user.id, {
       firstName: user.firstName || '',

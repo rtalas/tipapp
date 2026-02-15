@@ -117,8 +117,8 @@ describe('LeaderboardTable', () => {
 
     it('displays rank numbers', () => {
       const entries = [
-        createEntry({ rank: 1, leagueUserId: 1 }),
-        createEntry({ rank: 2, leagueUserId: 2, username: 'user2' }),
+        createEntry({ rank: 1, leagueUserId: 1, totalPoints: 20 }),
+        createEntry({ rank: 2, leagueUserId: 2, username: 'user2', totalPoints: 10 }),
       ]
 
       render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} />)

@@ -1,4 +1,4 @@
-import { type MatchBetContext, hasRegularScores } from "./types";
+import { type MatchBetContext, hasRegularScores, getPredictedRegulationScores } from "./types";
 
 /**
  * DRAW: Awards points if match ends in draw and prediction was also a draw
@@ -11,7 +11,9 @@ export function evaluateDraw(context: MatchBetContext): boolean {
     return false;
   }
 
-  const predictedDraw = prediction.homeScore === prediction.awayScore;
+  // Compare predicted regulation scores (adjusts for OT goal if user entered final score)
+  const predictedReg = getPredictedRegulationScores(prediction);
+  const predictedDraw = predictedReg.homeScore === predictedReg.awayScore;
   const actualDraw = actual.homeRegularScore === actual.awayRegularScore;
 
   return predictedDraw && actualDraw;

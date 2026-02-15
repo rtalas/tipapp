@@ -11,7 +11,7 @@ vi.mock('@/lib/auth/auth-utils', () => ({
 
 const mockPrisma = vi.mocked(prisma, true)
 const mockRequireAdmin = vi.mocked(authUtils.requireAdmin)
-const mockUpdateTag = vi.mocked(updateTag)
+const _mockUpdateTag = vi.mocked(updateTag)
 const mockRevalidatePath = vi.mocked(revalidatePath)
 
 describe('League Prizes Actions', () => {

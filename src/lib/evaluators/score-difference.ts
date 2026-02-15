@@ -1,4 +1,4 @@
-import { type MatchBetContext, hasRegularScores } from "./types";
+import { type MatchBetContext, hasRegularScores, getPredictedRegulationScores } from "./types";
 
 /**
  * SCORE_DIFFERENCE: Awards points if predicted goal difference matches actual goal difference
@@ -11,7 +11,8 @@ export function evaluateScoreDifference(context: MatchBetContext): boolean {
     return false;
   }
 
-  const predictedDiff = prediction.homeScore - prediction.awayScore;
+  const predictedReg = getPredictedRegulationScores(prediction);
+  const predictedDiff = predictedReg.homeScore - predictedReg.awayScore;
   const actualDiff = actual.homeRegularScore! - actual.awayRegularScore!;
 
   return predictedDiff === actualDiff;

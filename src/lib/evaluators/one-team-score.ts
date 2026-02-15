@@ -1,4 +1,4 @@
-import { type MatchBetContext, hasRegularScores } from "./types";
+import { type MatchBetContext, hasRegularScores, getPredictedRegulationScores } from "./types";
 
 /**
  * ONE_TEAM_SCORE: Awards points if user correctly predicted one team's score
@@ -11,9 +11,10 @@ export function evaluateOneTeamScore(context: MatchBetContext): boolean {
     return false;
   }
 
-  // Check if either team's score matches
-  const homeScoreMatch = prediction.homeScore === actual.homeRegularScore;
-  const awayScoreMatch = prediction.awayScore === actual.awayRegularScore;
+  // Compare predicted regulation scores (adjusts for OT goal if user entered final score)
+  const predictedReg = getPredictedRegulationScores(prediction);
+  const homeScoreMatch = predictedReg.homeScore === actual.homeRegularScore;
+  const awayScoreMatch = predictedReg.awayScore === actual.awayRegularScore;
 
   return homeScoreMatch || awayScoreMatch;
 }

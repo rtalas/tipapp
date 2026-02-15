@@ -129,4 +129,43 @@ describe("evaluateOneTeamScore", () => {
 
     expect(evaluateOneTeamScore(context)).toBe(true);
   });
+
+  it("should not give false positive when OT goal coincidentally matches regulation score", () => {
+    // Game: 4:3 OT (regulation 3:3). User bets 2:3 OT. Raw awayScore(3) would match awayRegularScore(3),
+    // but predicted regulation away score is 2 — should NOT match
+    const context: MatchBetContext = {
+      prediction: { homeScore: 2, awayScore: 3, overtime: true },
+      actual: {
+        homeRegularScore: 3,
+        awayRegularScore: 3,
+        homeFinalScore: 4,
+        awayFinalScore: 3,
+        scorerIds: [],
+        isOvertime: true,
+        isShootout: false,
+        isPlayoffGame: false,
+      },
+    };
+
+    expect(evaluateOneTeamScore(context)).toBe(false);
+  });
+
+  it("should return true when OT regulation score matches one team", () => {
+    // Game: 4:3 OT (regulation 3:3). User bets 4:3 OT = predicted regulation 3:3. Home 3 matches!
+    const context: MatchBetContext = {
+      prediction: { homeScore: 4, awayScore: 3, overtime: true },
+      actual: {
+        homeRegularScore: 3,
+        awayRegularScore: 3,
+        homeFinalScore: 4,
+        awayFinalScore: 3,
+        scorerIds: [],
+        isOvertime: true,
+        isShootout: false,
+        isPlayoffGame: false,
+      },
+    };
+
+    expect(evaluateOneTeamScore(context)).toBe(true);
+  });
 });

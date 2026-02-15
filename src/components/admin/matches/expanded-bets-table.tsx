@@ -21,6 +21,7 @@ interface ExpandedBetsTableProps {
   matchAwayTeam: Team
   availablePlayers: LeaguePlayer[]
   isMatchEvaluated: boolean
+  actualScorerIds: number[]
   leagueMatchId: number
   matchId: number
   onAddMissingBet: () => void
@@ -32,6 +33,7 @@ export function ExpandedBetsTable({
   matchAwayTeam,
   availablePlayers,
   isMatchEvaluated,
+  actualScorerIds,
   leagueMatchId,
   matchId,
   onAddMissingBet,
@@ -53,7 +55,6 @@ export function ExpandedBetsTable({
                 <TableHead>{t('user')}</TableHead>
                 <TableHead>{t('score')}</TableHead>
                 <TableHead>{t('scorer')}</TableHead>
-                <TableHead>{t('overtime')}</TableHead>
                 <TableHead>{t('advanced')}</TableHead>
                 <TableHead>{t('points')}</TableHead>
                 <TableHead className="text-right">{tCommon('actions')}</TableHead>
@@ -68,6 +69,7 @@ export function ExpandedBetsTable({
                   matchAwayTeam={matchAwayTeam}
                   availablePlayers={availablePlayers}
                   isMatchEvaluated={isMatchEvaluated}
+                  actualScorerIds={actualScorerIds}
                   leagueMatchId={leagueMatchId}
                   matchId={matchId}
                 />

@@ -1456,6 +1456,8 @@
       "awayTeamScore": "Away team score",
       "selectScorer": "Select scorer",
       "overtimePrediction": "Overtime prediction",
+      "overtime": "OT",
+      "overtimeSuffix": "(OT)",
       "none": "None",
       "yes": "Yes",
       "no": "No",

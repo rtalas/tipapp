@@ -1456,6 +1456,8 @@
       "awayTeamScore": "Skóre hostujícího týmu",
       "selectScorer": "Vyberte střelce",
       "overtimePrediction": "Tip na prodloužení",
+      "overtime": "P",
+      "overtimeSuffix": "(P)",
       "none": "Žádný",
       "yes": "Ano",
       "no": "Ne",

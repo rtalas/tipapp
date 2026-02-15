@@ -1,4 +1,4 @@
-import { type MatchBetContext, hasRegularScores } from "./types";
+import { type MatchBetContext, hasRegularScores, getPredictedRegulationScores } from "./types";
 
 /**
  * EXACT_SCORE: Awards points if predicted score matches actual score exactly after regulation time
@@ -11,10 +11,11 @@ export function evaluateExactScore(context: MatchBetContext): boolean {
     return false;
   }
 
-  // Scores must match
+  // Compare predicted regulation scores (adjusts for OT goal if user entered final score)
+  const predictedReg = getPredictedRegulationScores(prediction);
   const scoresMatch =
-    prediction.homeScore === actual.homeRegularScore &&
-    prediction.awayScore === actual.awayRegularScore;
+    predictedReg.homeScore === actual.homeRegularScore &&
+    predictedReg.awayScore === actual.awayRegularScore;
 
   if (!scoresMatch) {
     return false;
