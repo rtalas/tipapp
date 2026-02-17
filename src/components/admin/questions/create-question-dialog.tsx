@@ -14,6 +14,7 @@ import {
 interface CreateFormData {
   text: string
   dateTime: string
+  isDoubled: boolean
 }
 
 interface CreateQuestionDialogProps {

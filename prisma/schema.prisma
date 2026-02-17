@@ -183,6 +183,7 @@ model LeagueSpecialBetQuestion {
   dateTime               DateTime                 @db.Timestamptz(6)
   result                 Boolean?
   isEvaluated            Boolean                  @default(false)
+  isDoubled              Boolean                  @default(false)
   createdAt              DateTime                 @db.Timestamptz(6)
   updatedAt              DateTime                 @db.Timestamptz(6)
   deletedAt              DateTime?                @db.Timestamptz(6)

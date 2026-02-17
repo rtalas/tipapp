@@ -65,6 +65,27 @@ describe('Questions Actions', () => {
 
       expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/questions')
     })
+
+    it('should create question with isDoubled flag', async () => {
+      mockPrisma.league.findFirst.mockResolvedValue({ id: 1, name: 'League' } as any)
+      mockPrisma.leagueSpecialBetQuestion.create.mockResolvedValue({ id: 10 } as any)
+
+      const result = await createQuestion({
+        leagueId: 1,
+        text: 'Will team X win the championship?',
+        dateTime: new Date('2026-06-01'),
+        isDoubled: true,
+      })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.leagueSpecialBetQuestion.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            isDoubled: true,
+          }),
+        })
+      )
+    })
   })
 
   describe('updateQuestion', () => {
@@ -85,6 +106,22 @@ describe('Questions Actions', () => {
 
       expect(result.success).toBe(false)
       expect((result as any).error).toContain('Question not found')
+    })
+
+    it('should update question with isDoubled flag', async () => {
+      mockPrisma.leagueSpecialBetQuestion.findUnique.mockResolvedValue({ id: 1 } as any)
+      mockPrisma.leagueSpecialBetQuestion.update.mockResolvedValue({ id: 1 } as any)
+
+      const result = await updateQuestion({ id: 1, isDoubled: true })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.leagueSpecialBetQuestion.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            isDoubled: true,
+          }),
+        })
+      )
     })
   })
 

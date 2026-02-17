@@ -45,6 +45,7 @@ interface QuestionsContentProps {
 interface CreateFormData {
   text: string
   dateTime: string
+  isDoubled: boolean
 }
 
 function getQuestionStatus(question: Question): 'scheduled' | 'finished' | 'evaluated' {
@@ -68,6 +69,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
   const createDialog = useCreateDialog<CreateFormData>({
     text: '',
     dateTime: '',
+    isDoubled: false,
   })
 
   // Filter questions with optimized string search
@@ -119,6 +121,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
         leagueId: league.id,
         text: createDialog.form.text,
         dateTime: new Date(createDialog.form.dateTime),
+        isDoubled: createDialog.form.isDoubled,
       })
       toast.success(t('questionCreated'))
       createDialog.finishCreating()
@@ -278,6 +281,9 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                       {q.result !== null ? (q.result ? t('yes') : t('no')) : '-'}
                     </MobileCardField>
                     <div className="flex items-center gap-2">
+                      {q.isDoubled && (
+                        <Badge variant="default" className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 border-0 text-[10px] font-bold">2x</Badge>
+                      )}
                       <Badge variant={status === 'evaluated' ? 'evaluated' : status === 'finished' ? 'finished' : 'scheduled'}>
                         {status === 'evaluated' ? tSeries('evaluated') : status === 'finished' ? tSeries('finished') : tSeries('scheduled')}
                       </Badge>

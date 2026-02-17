@@ -3,10 +3,12 @@ import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface QuestionFormData {
   text: string
   dateTime: string
+  isDoubled: boolean
 }
 
 interface QuestionFormProps {
@@ -58,6 +60,18 @@ export function QuestionForm({ formData, onChange, disabled = false, mode }: Que
             {t('deadlineHelp')}
           </p>
         )}
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="isDoubled"
+          checked={formData.isDoubled}
+          onCheckedChange={(checked) => onChange({ isDoubled: checked === true })}
+          disabled={disabled}
+        />
+        <Label htmlFor="isDoubled" className="text-sm font-normal">
+          {t('doublePoints')}
+        </Label>
       </div>
     </div>
   )

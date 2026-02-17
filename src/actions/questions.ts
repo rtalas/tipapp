@@ -43,6 +43,7 @@ export async function createQuestion(input: CreateQuestionInput) {
           leagueId: validated.leagueId,
           text: validated.text,
           dateTime: validated.dateTime,
+          isDoubled: validated.isDoubled,
           createdAt: now,
           updatedAt: now,
         },
@@ -88,6 +89,7 @@ export async function updateQuestion(input: UpdateQuestionInput) {
         data: {
           ...(validated.text !== undefined && { text: validated.text }),
           ...(validated.dateTime !== undefined && { dateTime: validated.dateTime }),
+          ...(validated.isDoubled !== undefined && { isDoubled: validated.isDoubled }),
           updatedAt: now,
         },
       })

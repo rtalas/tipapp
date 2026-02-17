@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
-import { HelpCircle, Clock, Check, Users, CheckCircle, XCircle } from 'lucide-react'
+import { HelpCircle, Clock, Check, Users, CheckCircle, XCircle, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/common/user-avatar'
@@ -91,6 +91,12 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
                 {question.text}
               </h3>
               <div className="flex items-center gap-1 shrink-0">
+                {question.isDoubled && (
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 text-[10px] font-bold">
+                    <Zap className="w-3 h-3" />
+                    2x
+                  </span>
+                )}
                 {/* Status badge: Scheduled or Awaiting evaluation */}
                 <StatusBadge dateTime={question.dateTime} isEvaluated={isEvaluated} />
                 {/* Countdown and time badges - only show for non-evaluated events */}

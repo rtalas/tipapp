@@ -381,6 +381,128 @@ describe('Question Evaluator', () => {
     })
   })
 
+  describe('Doubled Points', () => {
+    it('should double points for correct answer when isDoubled is true', async () => {
+      const mockQuestion = {
+        id: 1,
+        result: true,
+        isDoubled: true,
+        League: {
+          Evaluator: [
+            {
+              points: 10,
+              EvaluatorType: { name: 'question' },
+            },
+          ],
+        },
+        UserSpecialBetQuestion: [
+          {
+            id: 1,
+            userBet: true, // Correct
+            LeagueUser: { userId: 1 },
+          },
+        ],
+      }
+
+      mockTx.leagueSpecialBetQuestion.findUniqueOrThrow.mockResolvedValue(mockQuestion)
+      mockTx.userSpecialBetQuestion.update.mockResolvedValue({})
+
+      const result = await evaluateQuestionAtomic({ questionId: 1 })
+
+      expect(result.results[0].pointsAwarded).toBe(20) // 10 * 2
+    })
+
+    it('should double negative points for wrong answer when isDoubled is true', async () => {
+      const mockQuestion = {
+        id: 1,
+        result: true,
+        isDoubled: true,
+        League: {
+          Evaluator: [
+            {
+              points: 10,
+              EvaluatorType: { name: 'question' },
+            },
+          ],
+        },
+        UserSpecialBetQuestion: [
+          {
+            id: 1,
+            userBet: false, // Wrong
+            LeagueUser: { userId: 1 },
+          },
+        ],
+      }
+
+      mockTx.leagueSpecialBetQuestion.findUniqueOrThrow.mockResolvedValue(mockQuestion)
+      mockTx.userSpecialBetQuestion.update.mockResolvedValue({})
+
+      const result = await evaluateQuestionAtomic({ questionId: 1 })
+
+      expect(result.results[0].pointsAwarded).toBe(-10) // -5 * 2
+    })
+
+    it('should not double points when isDoubled is false', async () => {
+      const mockQuestion = {
+        id: 1,
+        result: true,
+        isDoubled: false,
+        League: {
+          Evaluator: [
+            {
+              points: 10,
+              EvaluatorType: { name: 'question' },
+            },
+          ],
+        },
+        UserSpecialBetQuestion: [
+          {
+            id: 1,
+            userBet: true, // Correct
+            LeagueUser: { userId: 1 },
+          },
+        ],
+      }
+
+      mockTx.leagueSpecialBetQuestion.findUniqueOrThrow.mockResolvedValue(mockQuestion)
+      mockTx.userSpecialBetQuestion.update.mockResolvedValue({})
+
+      const result = await evaluateQuestionAtomic({ questionId: 1 })
+
+      expect(result.results[0].pointsAwarded).toBe(10) // Not doubled
+    })
+
+    it('should award zero points for no bet even when isDoubled', async () => {
+      const mockQuestion = {
+        id: 1,
+        result: true,
+        isDoubled: true,
+        League: {
+          Evaluator: [
+            {
+              points: 10,
+              EvaluatorType: { name: 'question' },
+            },
+          ],
+        },
+        UserSpecialBetQuestion: [
+          {
+            id: 1,
+            userBet: null, // No bet
+            LeagueUser: { userId: 1 },
+          },
+        ],
+      }
+
+      mockTx.leagueSpecialBetQuestion.findUniqueOrThrow.mockResolvedValue(mockQuestion)
+      mockTx.userSpecialBetQuestion.update.mockResolvedValue({})
+
+      const result = await evaluateQuestionAtomic({ questionId: 1 })
+
+      expect(result.results[0].pointsAwarded).toBe(0) // 0 * 2 = 0
+    })
+  })
+
   describe('Result Variants', () => {
     it('should correctly evaluate when correct answer is "No" (false)', async () => {
       const mockQuestion = {

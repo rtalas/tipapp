@@ -871,7 +871,8 @@
       "evaluate": "Evaluate",
       "addMissingBet": "Add Missing Bet",
       "hideBets": "Hide bets",
-      "showBets": "Show bets"
+      "showBets": "Show bets",
+      "doublePoints": "Double Points (2x)"
     },
     "users": {
       "title": "User Management",

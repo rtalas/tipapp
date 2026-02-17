@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -30,6 +31,7 @@ type Question = {
   dateTime: Date
   result: boolean | null
   isEvaluated: boolean
+  isDoubled: boolean
   League: { name: string }
   UserSpecialBetQuestion: unknown[]
 }
@@ -50,12 +52,14 @@ export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestio
   const [result, setResult] = useState<string>(
     question.result !== null ? question.result.toString() : ''
   )
+  const [isDoubled, setIsDoubled] = useState(question.isDoubled)
 
   // Reset form when question changes
   useEffect(() => {
     setText(question.text)
     setDateTime(format(new Date(question.dateTime), "yyyy-MM-dd'T'HH:mm"))
     setResult(question.result !== null ? question.result.toString() : '')
+    setIsDoubled(question.isDoubled)
   }, [question])
 
   const handleSaveQuestion = async () => {
@@ -79,6 +83,7 @@ export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestio
       id: question.id,
       text,
       dateTime: new Date(dateTime),
+      isDoubled,
     }
 
     const validation = validate.questionEdit(validationData)
@@ -213,6 +218,18 @@ export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestio
               <p className="text-xs text-muted-foreground">
                 Users cannot answer after this deadline.
               </p>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isDoubled"
+                checked={isDoubled}
+                onCheckedChange={(checked) => setIsDoubled(checked === true)}
+                disabled={question.isEvaluated}
+              />
+              <Label htmlFor="isDoubled" className="text-sm font-normal">
+                Double points (2x)
+              </Label>
             </div>
 
             {!question.isEvaluated && (

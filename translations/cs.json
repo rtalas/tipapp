@@ -871,7 +871,8 @@
       "evaluate": "Vyhodnotit",
       "addMissingBet": "Přidat chybějící tip",
       "hideBets": "Skrýt tipy",
-      "showBets": "Zobrazit tipy"
+      "showBets": "Zobrazit tipy",
+      "doublePoints": "Dvojité body (2x)"
     },
     "users": {
       "title": "Správa uživatelů",

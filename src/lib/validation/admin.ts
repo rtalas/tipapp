@@ -472,6 +472,7 @@ export const createQuestionSchema = z.object({
     .refine((date) => date > new Date(), {
       message: 'Question date must be in the future',
     }),
+  isDoubled: z.boolean().default(false),
 })
 
 export type CreateQuestionInput = z.infer<typeof createQuestionSchema>
@@ -480,6 +481,7 @@ export const updateQuestionSchema = z.object({
   id: z.number().int().positive('Question ID is required'),
   text: z.string().min(10, 'Question must be at least 10 characters').max(500, 'Question must not exceed 500 characters').optional(),
   dateTime: z.date().optional(),
+  isDoubled: z.boolean().optional(),
 })
 
 export type UpdateQuestionInput = z.infer<typeof updateQuestionSchema>

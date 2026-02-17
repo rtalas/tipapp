@@ -84,7 +84,9 @@ async function evaluateQuestion(
       actual: { correctAnswer: question.result as unknown as 'yes' | 'no' },
     }
     const multiplier = evaluateQuestionBet(context)
-    const pointsAwarded = Math.trunc(basePoints * multiplier)
+    const pointsAwarded = question.isDoubled
+      ? Math.trunc(basePoints * multiplier) * 2
+      : Math.trunc(basePoints * multiplier)
     const isCorrect = bet.userBet === null ? null : multiplier > 0
 
     // Update bet points
