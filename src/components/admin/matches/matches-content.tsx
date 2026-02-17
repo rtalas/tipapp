@@ -253,6 +253,9 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                       </MobileCardField>
                     </div>
                     <div className="flex items-center gap-2">
+                      {lm.isDoubled && (
+                        <Badge variant="default" className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 border-0 text-[10px] font-bold">2x</Badge>
+                      )}
                       <Badge variant={status === 'evaluated' ? 'evaluated' : status === 'finished' ? 'finished' : status === 'live' ? 'live' : 'scheduled'}>
                         {status === 'evaluated' ? t('evaluated') : status === 'finished' ? t('finished') : status === 'live' ? t('inProgress') : t('scheduled')}
                       </Badge>

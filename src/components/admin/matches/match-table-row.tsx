@@ -86,6 +86,9 @@ export function MatchTableRow({
                   {t('playoff')}
                 </Badge>
               )}
+              {match.isDoubled && (
+                <Badge variant="default" className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 border-0 text-[10px] font-bold">2x</Badge>
+              )}
             </div>
           </TableCell>
         )}
@@ -110,6 +113,9 @@ export function MatchTableRow({
               <Badge variant="warning" className="text-xs">
                 {t('playoff')}
               </Badge>
+            )}
+            {match.isDoubled && (
+              <Badge variant="default" className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 border-0 text-[10px] font-bold">2x</Badge>
             )}
           </div>
         </TableCell>
