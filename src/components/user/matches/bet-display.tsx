@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl'
-import { Check } from 'lucide-react'
+import { Check, CheckCircle } from 'lucide-react'
 import { SPORT_IDS } from '@/lib/constants'
 import type { UserMatch } from '@/actions/user/matches'
 
@@ -18,6 +18,13 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
   const isPlayoff = match.Match.isPlayoffGame
 
   if (!match.userBet) return null
+
+  const actualScorerIds = match.Match.MatchScorer?.map((s) => s.LeaguePlayer?.id) ?? []
+  const isScorerCorrect =
+    isEvaluated &&
+    !!match.userBet.scorerId &&
+    !!match.userBet.LeaguePlayer &&
+    actualScorerIds.includes(match.userBet.LeaguePlayer.id)
 
   return (
     <div className="mt-3 pt-3 border-t border-border/30 space-y-2">
@@ -70,6 +77,9 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
               {match.userBet.LeaguePlayer.Player.firstName}{' '}
               {match.userBet.LeaguePlayer.Player.lastName}
             </span>
+            {isScorerCorrect && (
+              <CheckCircle className="w-3 h-3 text-primary" />
+            )}
           </div>
         )
       )}
