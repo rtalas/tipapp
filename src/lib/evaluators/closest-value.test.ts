@@ -3,14 +3,14 @@ import { evaluateClosestValue } from "./closest-value";
 import type { ClosestValueContext } from "./types";
 
 describe("evaluateClosestValue", () => {
-  it("should return 0.33 (1/3 points) when user has the closest prediction (not exact)", () => {
+  it("should return 0.4 (2/5 points) when user has the closest prediction (not exact)", () => {
     const context: ClosestValueContext = {
       prediction: { value: 10 },
       actual: { value: 12 },
       allPredictions: [5, 10, 20, 25], // 10 is closest (diff: 2)
     };
 
-    expect(evaluateClosestValue(context)).toBeCloseTo(1 / 3, 5);
+    expect(evaluateClosestValue(context)).toBe(0.4);
   });
 
   it("should return 1.0 (full points) when user guessed exact value", () => {
@@ -34,14 +34,14 @@ describe("evaluateClosestValue", () => {
     expect(evaluateClosestValue(context)).toBe(0);
   });
 
-  it("should return 0.33 when tied for closest (multiple winners)", () => {
+  it("should return 0.4 when tied for closest (multiple winners)", () => {
     const context: ClosestValueContext = {
       prediction: { value: 10 },
       actual: { value: 12 },
       allPredictions: [8, 10, 14, 20], // Both 10 and 14 are closest (diff: 2)
     };
 
-    expect(evaluateClosestValue(context)).toBeCloseTo(1 / 3, 5);
+    expect(evaluateClosestValue(context)).toBe(0.4);
   });
 
   it("should handle negative differences correctly", () => {

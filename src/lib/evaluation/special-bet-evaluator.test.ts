@@ -174,7 +174,7 @@ describe('Special Bet Evaluator', () => {
       expect(result.results[0].totalPoints).toBe(30)
     })
 
-    it('should award 1/3 points for closest (not exact) prediction', async () => {
+    it('should award 2/5 points for closest (not exact) prediction', async () => {
       mockTx.leagueSpecialBetSingle.findUniqueOrThrow.mockResolvedValue(
         makeClosestValueBet({
           UserSpecialBetSingle: [
@@ -198,8 +198,8 @@ describe('Special Bet Evaluator', () => {
 
       const result = await evaluateSpecialBetAtomic({ specialBetId: 1 })
 
-      // User 1: closest (diff=2), not exact → 0.33 * 30 = 9.9 → Math.round = 10
-      expect(result.results[0].totalPoints).toBe(10)
+      // User 1: closest (diff=2), not exact → 0.4 * 30 = 12
+      expect(result.results[0].totalPoints).toBe(12)
       // User 2: not closest (diff=10) → 0 * 30 = 0
       expect(result.results[1].totalPoints).toBe(0)
     })
@@ -230,8 +230,8 @@ describe('Special Bet Evaluator', () => {
 
       // User 1: not closest → 0
       expect(result.results[0].totalPoints).toBe(0)
-      // User 2: closest → 0.33 * 30 ≈ 10
-      expect(result.results[1].totalPoints).toBe(10)
+      // User 2: closest → 0.4 * 30 = 12
+      expect(result.results[1].totalPoints).toBe(12)
     })
   })
 
