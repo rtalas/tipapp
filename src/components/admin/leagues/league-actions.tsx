@@ -34,6 +34,7 @@ interface LeagueActionsProps {
   isPublic: boolean
   isChatEnabled: boolean
   chatSuspendedAt: Date | null
+  isFinished: boolean
   infoText: string | null
 }
 
@@ -46,6 +47,7 @@ export function LeagueActions({
   isPublic,
   isChatEnabled,
   chatSuspendedAt,
+  isFinished,
   infoText,
 }: LeagueActionsProps) {
   const t = useTranslations('admin.leagueActions')
@@ -58,6 +60,7 @@ export function LeagueActions({
     seasonTo,
     isActive,
     isPublic,
+    isFinished,
     isChatEnabled,
     infoText: infoText || '',
   })
@@ -128,6 +131,7 @@ export function LeagueActions({
         seasonTo: editForm.seasonTo,
         isActive: editForm.isActive,
         isPublic: editForm.isPublic,
+        isFinished: editForm.isFinished,
         infoText: editForm.infoText || null,
       })
       if (!leagueResult.success) {
@@ -313,6 +317,24 @@ export function LeagueActions({
                 checked={editForm.isPublic}
                 onCheckedChange={(checked) =>
                   setEditForm({ ...editForm, isPublic: checked })
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="isFinished">{t('finished')}</Label>
+                <p className="text-xs text-muted-foreground">{t('finishedHelper')}</p>
+              </div>
+              <Switch
+                id="isFinished"
+                checked={editForm.isFinished}
+                onCheckedChange={(checked) =>
+                  setEditForm({
+                    ...editForm,
+                    isFinished: checked,
+                    ...(checked ? { isActive: false } : {}),
+                  })
                 }
               />
             </div>

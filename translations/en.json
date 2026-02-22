@@ -230,6 +230,7 @@
       "no": "No",
       "picksLoadError": "Failed to load predictions",
       "lastUpdate": "Last update: {time}",
+      "finalStandings": "Final standings",
       "tip": "Tip:",
       "overtimeSuffix": "(OT)"
     },
@@ -1104,6 +1105,8 @@
       "seasonTo": "Season To",
       "active": "Active",
       "public": "Public",
+      "finished": "League Finished",
+      "finishedHelper": "Mark as completed. This will also deactivate the league.",
       "chatSettings": "Chat Settings",
       "enableChat": "Enable Chat",
       "enableChatHelper": "Allow users to chat in this league",

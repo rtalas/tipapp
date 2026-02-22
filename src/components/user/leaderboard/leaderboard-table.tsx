@@ -19,9 +19,10 @@ interface LeaderboardTableProps {
   prizes: LeaguePrize[]
   fines: LeaguePrize[]
   lastEvaluatedAt?: Date | null
+  isFinished?: boolean
 }
 
-export function LeaderboardTable({ entries, prizes, fines, lastEvaluatedAt }: LeaderboardTableProps) {
+export function LeaderboardTable({ entries, prizes, fines, lastEvaluatedAt, isFinished }: LeaderboardTableProps) {
   const t = useTranslations('user.leaderboard')
   const locale = useLocale()
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
@@ -133,17 +134,22 @@ export function LeaderboardTable({ entries, prizes, fines, lastEvaluatedAt }: Le
               </div>
             )}
 
-            {/* Last evaluated timestamp */}
-            {lastEvaluatedAt && (
-              <p className="text-center text-xs text-muted-foreground pb-2">
-                {t('lastUpdate', {
-                  time: new Intl.DateTimeFormat(locale, {
-                    dateStyle: 'short',
-                    timeStyle: 'short',
-                  }).format(lastEvaluatedAt),
-                })}
-              </p>
-            )}
+            {/* League status and last evaluated timestamp */}
+            <div className="text-center text-xs text-muted-foreground pb-2 space-y-0.5">
+              {isFinished && (
+                <p className="font-medium">{t('finalStandings')}</p>
+              )}
+              {lastEvaluatedAt && (
+                <p>
+                  {t('lastUpdate', {
+                    time: new Intl.DateTimeFormat(locale, {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                    }).format(lastEvaluatedAt),
+                  })}
+                </p>
+              )}
+            </div>
           </div>
         </PullToRefresh>
       </div>

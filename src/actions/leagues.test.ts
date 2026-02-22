@@ -138,6 +138,24 @@ describe('Leagues Actions', () => {
       )
       expect(mockUpdateTag).toHaveBeenCalledWith('league-selector')
     })
+
+    it('auto-deactivates league when isFinished is true', async () => {
+      mockPrisma.league.update.mockResolvedValue({ id: 1, isFinished: true, isActive: false } as never)
+
+      const result = await updateLeague({
+        id: 1,
+        isFinished: true,
+        isActive: true,
+      })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.league.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          data: expect.objectContaining({ isFinished: true, isActive: false }),
+        })
+      )
+    })
   })
 
   describe('deleteLeague', () => {

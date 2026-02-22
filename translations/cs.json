@@ -230,6 +230,7 @@
       "no": "Ne",
       "picksLoadError": "Nepodařilo se načíst tipy",
       "lastUpdate": "Poslední aktualizace: {time}",
+      "finalStandings": "Konečné pořadí",
       "tip": "Tip:",
       "overtimeSuffix": "(P)"
     },
@@ -1104,6 +1105,8 @@
       "seasonTo": "Sezóna do",
       "active": "Aktivní",
       "public": "Veřejná",
+      "finished": "Liga ukončena",
+      "finishedHelper": "Označit jako dokončenou. Liga bude také deaktivována.",
       "chatSettings": "Nastavení chatu",
       "enableChat": "Povolit chat",
       "enableChatHelper": "Umožnit uživatelům chatovat v této ligě",

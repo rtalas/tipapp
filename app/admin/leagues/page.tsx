@@ -77,6 +77,7 @@ async function LeaguesTable() {
                   isPublic={league.isPublic}
                   isChatEnabled={league.isChatEnabled}
                   chatSuspendedAt={league.chatSuspendedAt}
+                  isFinished={league.isFinished}
                   infoText={league.infoText}
                 />
               </TableCell>

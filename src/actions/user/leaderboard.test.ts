@@ -26,6 +26,8 @@ describe('User Leaderboard Actions', () => {
     mockPrisma.leagueSpecialBetSerie.aggregate.mockResolvedValue({ _max: { updatedAt: null } } as any)
     mockPrisma.leagueSpecialBetSingle.aggregate.mockResolvedValue({ _max: { updatedAt: null } } as any)
     mockPrisma.leagueSpecialBetQuestion.aggregate.mockResolvedValue({ _max: { updatedAt: null } } as any)
+    // Default league mock for isFinished
+    mockPrisma.league.findUniqueOrThrow.mockResolvedValue({ isFinished: false } as any)
   })
 
   describe('getLeaderboard', () => {
@@ -247,6 +249,20 @@ describe('User Leaderboard Actions', () => {
       expect(result.entries).toHaveLength(0)
       expect(result.prizes).toHaveLength(0)
       expect(result.fines).toHaveLength(0)
+    })
+
+    it('should return isFinished from league', async () => {
+      mockPrisma.leagueUser.findMany.mockResolvedValue([] as any)
+      mockPrisma.userBet.groupBy.mockResolvedValue([] as any)
+      mockPrisma.userSpecialBetSerie.groupBy.mockResolvedValue([] as any)
+      mockPrisma.userSpecialBetSingle.groupBy.mockResolvedValue([] as any)
+      mockPrisma.userSpecialBetQuestion.groupBy.mockResolvedValue([] as any)
+      mockPrisma.leaguePrize.findMany.mockResolvedValue([] as any)
+      mockPrisma.league.findUniqueOrThrow.mockResolvedValue({ isFinished: true } as any)
+
+      const result = await getLeaderboard(1)
+
+      expect(result.isFinished).toBe(true)
     })
   })
 

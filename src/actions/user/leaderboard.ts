@@ -16,6 +16,7 @@ export interface LeaderboardData {
   prizes: LeaguePrize[]
   fines: LeaguePrize[]
   lastEvaluatedAt: Date | null
+  isFinished: boolean
 }
 
 export interface UserMatchPick {
@@ -340,7 +341,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
   const leagueUserIds = leagueUsers.map((lu) => lu.id)
 
   // Aggregate points in database instead of loading all bet rows
-  const [matchTotals, seriesTotals, specialBetTotals, questionTotals, prizeRecords, lastEvalTimestamps] = await Promise.all([
+  const [matchTotals, seriesTotals, specialBetTotals, questionTotals, prizeRecords, lastEvalTimestamps, league] = await Promise.all([
     prisma.userBet.groupBy({
       by: ['leagueUserId'],
       where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
@@ -385,6 +386,10 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
         _max: { updatedAt: true },
       }),
     ]),
+    prisma.league.findUniqueOrThrow({
+      where: { id: leagueId },
+      select: { isFinished: true },
+    }),
   ])
 
   // Build lookup maps for O(1) access
@@ -439,7 +444,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
     .filter((d): d is Date => d !== null)
     .reduce<Date | null>((max, d) => (max === null || d > max ? d : max), null)
 
-  return { entries: rankedEntries, prizes, fines, lastEvaluatedAt }
+  return { entries: rankedEntries, prizes, fines, lastEvaluatedAt, isFinished: league.isFinished }
 }
 
 

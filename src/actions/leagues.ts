@@ -161,6 +161,11 @@ export async function updateLeague(input: UpdateLeagueInput) {
     handler: async (validated, session) => {
       const { id, ...data } = validated
 
+      // Auto-deactivate league when marking as finished
+      if (data.isFinished) {
+        data.isActive = false
+      }
+
       await prisma.league.update({
         where: { id },
         data: {

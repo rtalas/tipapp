@@ -49,6 +49,7 @@ export function LeagueForm({ sports }: LeagueFormProps) {
         seasonTo: Number(formData.get('seasonTo')),
         isActive: formData.get('isActive') === 'on',
         isPublic: formData.get('isPublic') === 'on',
+        isFinished: false,
       })
 
       if (result.success && 'leagueId' in result) {
