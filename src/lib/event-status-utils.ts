@@ -6,6 +6,28 @@
 import { EVENT_DURATION_MS } from '@/lib/constants'
 
 /**
+ * Determines if an event should appear in the "current" tab based on evaluation status.
+ *
+ * An event is current if:
+ * - It has NOT been evaluated yet (waiting for results), OR
+ * - It was evaluated within the last `postEvalWindowMs` milliseconds
+ *   (so users can see their scores before the event moves to "past")
+ *
+ * Uses `updatedAt` as a proxy for when evaluation occurred.
+ * Note: Accepts strings because dates from unstable_cache are serialized to strings.
+ */
+export function isCurrentTabEvent(
+  isEvaluated: boolean,
+  updatedAt: Date | string,
+  postEvalWindowMs: number
+): boolean {
+  if (!isEvaluated) return true
+  const now = new Date()
+  const updatedAtDate = updatedAt instanceof Date ? updatedAt : new Date(updatedAt)
+  return updatedAtDate > new Date(now.getTime() - postEvalWindowMs)
+}
+
+/**
  * Determines if an event should appear in the "Current" tab.
  * An event is current if:
  * - It's scheduled (dateTime > now), OR
@@ -18,14 +40,6 @@ export function isCurrentEvent(dateTime: Date | string): boolean {
   const threeHoursAgo = new Date(now.getTime() - EVENT_DURATION_MS)
   const eventDate = dateTime instanceof Date ? dateTime : new Date(dateTime)
   return eventDate > threeHoursAgo
-}
-
-/**
- * Determines if an event should appear in the "Past" tab.
- * An event is past if it started more than 3 hours ago.
- */
-export function isPastEvent(dateTime: Date): boolean {
-  return !isCurrentEvent(dateTime)
 }
 
 /**

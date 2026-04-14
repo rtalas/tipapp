@@ -10,7 +10,8 @@ import { SeriesCard } from './series-card'
 import { useRefresh } from '@/hooks/useRefresh'
 import { useDateLocale } from '@/hooks/useDateLocale'
 import { groupByDate, getDateLabel as getBasicDateLabel } from '@/lib/date-grouping-utils'
-import { isCurrentEvent, isPastEvent } from '@/lib/event-status-utils'
+import { isCurrentTabEvent } from '@/lib/event-status-utils'
+import { EVENT_POST_EVAL_VISIBLE_MS } from '@/lib/constants'
 import type { UserSeries } from '@/actions/user/series'
 
 interface SeriesListProps {
@@ -23,7 +24,11 @@ export function SeriesList({ series }: SeriesListProps) {
   const t = useTranslations('user.series')
   const tMatches = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
-  const [filter, setFilter] = useState<FilterType>('current')
+  const [filter, setFilter] = useState<FilterType>(() =>
+    series.some((s) => isCurrentTabEvent(s.isEvaluated, s.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
+      ? 'current'
+      : 'past'
+  )
   const dateLocale = useDateLocale()
 
   const getDateLabel = useCallback(
@@ -35,9 +40,9 @@ export function SeriesList({ series }: SeriesListProps) {
     [dateLocale, tMatches]
   )
 
-  // Filter series - current: scheduled or within 3 hours after start
-  const currentSeries = series.filter((s) => isCurrentEvent(s.dateTime))
-  const pastSeries = series.filter((s) => isPastEvent(s.dateTime))
+  // Filter series: current = not yet evaluated OR evaluated within last 12h
+  const currentSeries = series.filter((s) => isCurrentTabEvent(s.isEvaluated, s.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
+  const pastSeries = series.filter((s) => !isCurrentTabEvent(s.isEvaluated, s.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
   const displayedSeries = filter === 'current' ? currentSeries : pastSeries
 
   // Group by date

@@ -26,6 +26,16 @@ export function getSportEmoji(sportId?: number): string {
 export const EVENT_DURATION_MS = 3 * 60 * 60 * 1000
 
 /**
+ * How long a match stays in the "current" tab after evaluation (8 hours)
+ */
+export const MATCH_POST_EVAL_VISIBLE_MS = 8 * 60 * 60 * 1000
+
+/**
+ * How long series/special-bets/questions stay in the "current" tab after evaluation (12 hours)
+ */
+export const EVENT_POST_EVAL_VISIBLE_MS = 12 * 60 * 60 * 1000
+
+/**
  * Maximum number of prize/fine tiers per league
  */
 export const MAX_PRIZE_TIERS = 10

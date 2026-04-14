@@ -9,7 +9,8 @@ import {
 import { Calendar } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { groupByDate, getDateLabel as getBasicDateLabel } from '@/lib/date-grouping-utils'
-import { isCurrentEvent, isPastEvent } from '@/lib/event-status-utils'
+import { isCurrentTabEvent } from '@/lib/event-status-utils'
+import { MATCH_POST_EVAL_VISIBLE_MS } from '@/lib/constants'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MatchCard } from './match-card'
 import { RefreshButton } from '@/components/user/common/refresh-button'
@@ -27,7 +28,11 @@ type FilterType = 'upcoming' | 'past'
 export function MatchList({ matches }: MatchListProps) {
   const t = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
-  const [filter, setFilter] = useState<FilterType>('upcoming')
+  const [filter, setFilter] = useState<FilterType>(() =>
+    matches.some((m) => isCurrentTabEvent(m.Match.isEvaluated, m.Match.updatedAt, MATCH_POST_EVAL_VISIBLE_MS))
+      ? 'upcoming'
+      : 'past'
+  )
   const dateLocale = useDateLocale()
 
   // Extended date label for match list (includes "this week" check)
@@ -48,14 +53,12 @@ export function MatchList({ matches }: MatchListProps) {
     return basicLabel
   }, [t, dateLocale])
 
-  // Filter matches based on selected tab
-  // Current: scheduled or within 3 hours after start
-  // Past: more than 3 hours after start
+  // Filter matches: current = not yet evaluated OR evaluated within last 8h
   const filteredMatches = useMemo(() => {
     if (filter === 'upcoming') {
-      return matches.filter((m) => isCurrentEvent(m.Match.dateTime))
+      return matches.filter((m) => isCurrentTabEvent(m.Match.isEvaluated, m.Match.updatedAt, MATCH_POST_EVAL_VISIBLE_MS))
     }
-    return matches.filter((m) => isPastEvent(m.Match.dateTime))
+    return matches.filter((m) => !isCurrentTabEvent(m.Match.isEvaluated, m.Match.updatedAt, MATCH_POST_EVAL_VISIBLE_MS))
   }, [matches, filter])
 
   // Sort matches: upcoming ones ascending, past ones descending

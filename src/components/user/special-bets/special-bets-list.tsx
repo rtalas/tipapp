@@ -11,7 +11,8 @@ import { QuestionCard } from '@/components/user/questions/question-card'
 import { useRefresh } from '@/hooks/useRefresh'
 import { useDateLocale } from '@/hooks/useDateLocale'
 import { groupByDate, getDateLabel as getBasicDateLabel } from '@/lib/date-grouping-utils'
-import { isCurrentEvent, isPastEvent } from '@/lib/event-status-utils'
+import { isCurrentTabEvent } from '@/lib/event-status-utils'
+import { EVENT_POST_EVAL_VISIBLE_MS } from '@/lib/constants'
 import type { UserSpecialBet } from '@/actions/user/special-bets'
 import type { UserQuestion } from '@/actions/user/questions'
 
@@ -30,8 +31,8 @@ type FilterType = 'current' | 'past'
 
 // Unified item type for both special bets and questions
 type UnifiedItem =
-  | { type: 'specialBet'; data: UserSpecialBet; dateTime: Date; isEvaluated: boolean }
-  | { type: 'question'; data: UserQuestion; dateTime: Date; isEvaluated: boolean }
+  | { type: 'specialBet'; data: UserSpecialBet; dateTime: Date; isEvaluated: boolean; updatedAt: Date }
+  | { type: 'question'; data: UserQuestion; dateTime: Date; isEvaluated: boolean; updatedAt: Date }
 
 export function SpecialBetsList({
   specialBets,
@@ -42,7 +43,12 @@ export function SpecialBetsList({
   const t = useTranslations('user.specialBets')
   const tMatches = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
-  const [filter, setFilter] = useState<FilterType>('current')
+  const [filter, setFilter] = useState<FilterType>(() => {
+    const hasCurrent =
+      specialBets.some((b) => isCurrentTabEvent(b.isEvaluated, b.updatedAt, EVENT_POST_EVAL_VISIBLE_MS)) ||
+      questions.some((q) => isCurrentTabEvent(q.isEvaluated, q.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
+    return hasCurrent ? 'current' : 'past'
+  })
   const dateLocale = useDateLocale()
 
   const getDateLabel = useCallback(
@@ -61,6 +67,7 @@ export function SpecialBetsList({
       data: bet,
       dateTime: new Date(bet.dateTime),
       isEvaluated: bet.isEvaluated,
+      updatedAt: new Date(bet.updatedAt),
     }))
 
     const questionItems: UnifiedItem[] = questions.map((q) => ({
@@ -68,14 +75,15 @@ export function SpecialBetsList({
       data: q,
       dateTime: new Date(q.dateTime),
       isEvaluated: q.isEvaluated,
+      updatedAt: new Date(q.updatedAt),
     }))
 
     return [...betItems, ...questionItems]
   }, [specialBets, questions])
 
-  // Filter items - current: scheduled or within 3 hours after start
-  const currentItems = allItems.filter((item) => isCurrentEvent(item.dateTime))
-  const pastItems = allItems.filter((item) => isPastEvent(item.dateTime))
+  // Filter items: current = not yet evaluated OR evaluated within last 12h
+  const currentItems = allItems.filter((item) => isCurrentTabEvent(item.isEvaluated, item.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
+  const pastItems = allItems.filter((item) => !isCurrentTabEvent(item.isEvaluated, item.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
   const displayedItems = filter === 'current' ? currentItems : pastItems
 
   // Group by date

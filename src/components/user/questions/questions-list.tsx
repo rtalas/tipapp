@@ -21,7 +21,8 @@ import { useRefresh } from '@/hooks/useRefresh'
 import { useDateLocale } from '@/hooks/useDateLocale'
 import { cn } from '@/lib/utils'
 import { groupByDate, getDateLabel as getBasicDateLabel } from '@/lib/date-grouping-utils'
-import { isCurrentEvent, isPastEvent } from '@/lib/event-status-utils'
+import { isCurrentTabEvent } from '@/lib/event-status-utils'
+import { EVENT_POST_EVAL_VISIBLE_MS } from '@/lib/constants'
 import { saveQuestionBet } from '@/actions/user/questions'
 import type { UserQuestion } from '@/actions/user/questions'
 
@@ -33,7 +34,11 @@ type FilterType = 'current' | 'past'
 
 export function QuestionsList({ questions }: QuestionsListProps) {
   const { isRefreshing, refresh } = useRefresh()
-  const [filter, setFilter] = useState<FilterType>('current')
+  const [filter, setFilter] = useState<FilterType>(() =>
+    questions.some((q) => isCurrentTabEvent(q.isEvaluated, q.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
+      ? 'current'
+      : 'past'
+  )
   const dateLocale = useDateLocale()
   const t = useTranslations('user.questions')
   const tMatches = useTranslations('user.matches')
@@ -47,9 +52,9 @@ export function QuestionsList({ questions }: QuestionsListProps) {
     [dateLocale, tMatches]
   )
 
-  // Filter questions - current: scheduled or within 3 hours after start
-  const currentQuestions = questions.filter((q) => isCurrentEvent(q.dateTime))
-  const pastQuestions = questions.filter((q) => isPastEvent(q.dateTime))
+  // Filter questions: current = not yet evaluated OR evaluated within last 12h
+  const currentQuestions = questions.filter((q) => isCurrentTabEvent(q.isEvaluated, q.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
+  const pastQuestions = questions.filter((q) => !isCurrentTabEvent(q.isEvaluated, q.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
   const displayedQuestions = filter === 'current' ? currentQuestions : pastQuestions
 
   // Group by date

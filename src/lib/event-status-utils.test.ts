@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   isCurrentEvent,
-  isPastEvent,
   isScheduledEvent,
   getEventStatus,
+  isCurrentTabEvent,
 } from './event-status-utils'
 
 describe('event-status-utils', () => {
@@ -47,33 +47,6 @@ describe('event-status-utils', () => {
     })
   })
 
-  describe('isPastEvent', () => {
-    it('returns true for event more than 3 hours ago', () => {
-      const old = new Date('2026-02-07T11:00:00Z')
-      expect(isPastEvent(old)).toBe(true)
-    })
-
-    it('returns false for future event', () => {
-      const future = new Date('2026-02-07T18:00:00Z')
-      expect(isPastEvent(future)).toBe(false)
-    })
-
-    it('returns false for event within 3-hour window', () => {
-      const recent = new Date('2026-02-07T13:00:00Z')
-      expect(isPastEvent(recent)).toBe(false)
-    })
-
-    it('is the inverse of isCurrentEvent', () => {
-      const dates = [
-        new Date('2026-02-07T18:00:00Z'),
-        new Date('2026-02-07T14:00:00Z'),
-        new Date('2026-02-07T11:00:00Z'),
-      ]
-      for (const d of dates) {
-        expect(isPastEvent(d)).toBe(!isCurrentEvent(d))
-      }
-    })
-  })
 
   describe('isScheduledEvent', () => {
     it('returns true for future event', () => {
@@ -94,6 +67,44 @@ describe('event-status-utils', () => {
     it('accepts string dates (from unstable_cache serialization)', () => {
       expect(isScheduledEvent('2026-02-07T16:00:00Z')).toBe(true)
       expect(isScheduledEvent('2026-02-07T14:00:00Z')).toBe(false)
+    })
+  })
+
+  describe('isCurrentTabEvent', () => {
+    const WINDOW_8H = 8 * 60 * 60 * 1000
+    const WINDOW_12H = 12 * 60 * 60 * 1000
+
+    it('returns true when not evaluated, regardless of updatedAt', () => {
+      const oldDate = new Date('2026-02-07T00:00:00Z') // long ago
+      expect(isCurrentTabEvent(false, oldDate, WINDOW_8H)).toBe(true)
+    })
+
+    it('returns true when evaluated within the window', () => {
+      const sixHoursAgo = new Date('2026-02-07T09:00:00Z') // 6h ago, within 8h window
+      expect(isCurrentTabEvent(true, sixHoursAgo, WINDOW_8H)).toBe(true)
+    })
+
+    it('returns false when evaluated outside the window', () => {
+      const nineHoursAgo = new Date('2026-02-07T06:00:00Z') // 9h ago, outside 8h window
+      expect(isCurrentTabEvent(true, nineHoursAgo, WINDOW_8H)).toBe(false)
+    })
+
+    it('respects different window sizes (12h)', () => {
+      const tenHoursAgo = new Date('2026-02-07T05:00:00Z') // 10h ago
+      expect(isCurrentTabEvent(true, tenHoursAgo, WINDOW_8H)).toBe(false)
+      expect(isCurrentTabEvent(true, tenHoursAgo, WINDOW_12H)).toBe(true)
+    })
+
+    it('returns false when evaluated exactly at the window boundary', () => {
+      // exactly 8h ago = boundary is exclusive (updatedAt > now - window)
+      const exactlyAtBoundary = new Date('2026-02-07T07:00:00Z') // exactly 8h ago
+      expect(isCurrentTabEvent(true, exactlyAtBoundary, WINDOW_8H)).toBe(false)
+    })
+
+    it('accepts string dates', () => {
+      expect(isCurrentTabEvent(false, '2026-02-07T00:00:00Z', WINDOW_8H)).toBe(true)
+      expect(isCurrentTabEvent(true, '2026-02-07T09:00:00Z', WINDOW_8H)).toBe(true)
+      expect(isCurrentTabEvent(true, '2026-02-07T06:00:00Z', WINDOW_8H)).toBe(false)
     })
   })
 
