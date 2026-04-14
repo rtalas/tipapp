@@ -226,6 +226,26 @@ export type UpdateMatchResultInput = z.infer<typeof updateMatchResultSchema>
 
 
 
+// Tournament validation schemas
+export const createTournamentSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(255),
+})
+
+export type CreateTournamentInput = z.infer<typeof createTournamentSchema>
+
+export const updateTournamentSchema = createTournamentSchema.partial().extend({
+  id: z.number().int().positive(),
+})
+
+export type UpdateTournamentInput = z.infer<typeof updateTournamentSchema>
+
+export const updateLeagueTeamTournamentSchema = z.object({
+  leagueTeamId: z.number().int().positive(),
+  tournamentId: z.number().int().positive().nullable(),
+})
+
+export type UpdateLeagueTeamTournamentInput = z.infer<typeof updateLeagueTeamTournamentSchema>
+
 // Team validation schemas
 export const createTeamSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
@@ -365,6 +385,7 @@ export const createSpecialBetSchema = z.object({
       message: 'Special bet date must be in the future',
     }),
   group: z.string().max(255).optional(),
+  tournamentId: z.number().int().positive().nullable().optional(),
 })
 
 export type CreateSpecialBetInput = z.infer<typeof createSpecialBetSchema>

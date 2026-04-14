@@ -6,6 +6,7 @@ import {
   assignTeamToLeague,
   removeTeamFromLeague,
   updateLeagueTeamGroup,
+  updateLeagueTeamTournament,
   assignPlayerToLeagueTeam,
   removePlayerFromLeagueTeam,
   updateTopScorerRanking,
@@ -264,6 +265,36 @@ describe('Leagues Actions', () => {
       expect(mockPrisma.leagueTeam.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ group: null }),
+        })
+      )
+    })
+  })
+
+  describe('updateLeagueTeamTournament', () => {
+    it('assigns tournament to team', async () => {
+      mockPrisma.leagueTeam.update.mockResolvedValue({ id: 1 } as never)
+
+      const result = await updateLeagueTeamTournament({ leagueTeamId: 1, tournamentId: 2 })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.leagueTeam.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          data: expect.objectContaining({ tournamentId: 2 }),
+        })
+      )
+      expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-teams')
+    })
+
+    it('clears tournament with null', async () => {
+      mockPrisma.leagueTeam.update.mockResolvedValue({ id: 1 } as never)
+
+      const result = await updateLeagueTeamTournament({ leagueTeamId: 1, tournamentId: null })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.leagueTeam.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ tournamentId: null }),
         })
       )
     })

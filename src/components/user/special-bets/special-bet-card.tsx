@@ -35,6 +35,7 @@ interface SpecialBetCardProps {
   teams: Array<{
     id: number
     group: string | null
+    tournamentId: number | null
     Team: {
       id: number
       name: string
@@ -46,7 +47,7 @@ interface SpecialBetCardProps {
   players: Array<{
     id: number
     Player: { id: number; firstName: string | null; lastName: string | null; position: string | null }
-    LeagueTeam: { Team: { shortcut: string } }
+    LeagueTeam: { tournamentId: number | null; Team: { shortcut: string } }
   }>
   onSaved: () => void
 }
@@ -88,23 +89,29 @@ export function SpecialBetCard({
   const isTeamBet = evaluatorTypeName === 'exact_team' || evaluatorTypeName === 'group_stage_team' || betTypeId === 2
   const isPlayerBet = evaluatorTypeName === 'exact_player' || betTypeId === 1
 
-  // Filter teams by group if special bet has group restriction
-  const availableTeams = specialBet.group
-    ? teams.filter((t) => t.group === specialBet.group)
-    : teams
+  // Filter teams by tournament and/or group if special bet has restrictions
+  const availableTeams = teams.filter((t) => {
+    if (specialBet.tournamentId != null && t.tournamentId !== specialBet.tournamentId) return false
+    if (specialBet.group && t.group !== specialBet.group) return false
+    return true
+  })
 
-  // Filter players by position if evaluator config has position restriction
+  // Filter players by tournament and/or position
   const availablePlayers = useMemo(() => {
-    // Check if evaluator has position filter config
+    let filtered = players
+    // Tournament filter
+    if (specialBet.tournamentId != null) {
+      filtered = filtered.filter((p) => p.LeagueTeam.tournamentId === specialBet.tournamentId)
+    }
+    // Position filter from evaluator config
     const config = specialBet.Evaluator?.config
     if (isExactPlayerConfig(config) && config.positions && config.positions.length > 0) {
-      return players.filter(
+      filtered = filtered.filter(
         (p) => p.Player.position && config.positions!.includes(p.Player.position)
       )
     }
-    // No filter - return all players
-    return players
-  }, [players, specialBet.Evaluator?.config])
+    return filtered
+  }, [players, specialBet.tournamentId, specialBet.Evaluator?.config])
 
   const handleSave = async () => {
     if (isLocked) return

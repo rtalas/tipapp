@@ -235,11 +235,13 @@ model LeagueSpecialBetSingle {
   deletedAt                          DateTime?                            @db.Timestamptz(6)
   evaluatorId                        Int
   group                              String?                              @db.VarChar(255)
+  tournamentId                       Int?
   Evaluator                          Evaluator                            @relation(fields: [evaluatorId], references: [id], onDelete: NoAction)
   League                             League                               @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   LeaguePlayer                       LeaguePlayer?                        @relation(fields: [specialBetPlayerResultId], references: [id])
   SpecialBetSingle                   SpecialBetSingle?                    @relation(fields: [specialBetSingleId], references: [id], onDelete: NoAction)
   LeagueTeam                         LeagueTeam?                          @relation(fields: [specialBetTeamResultId], references: [id])
+  Tournament                         Tournament?                          @relation(fields: [tournamentId], references: [id], onDelete: NoAction)
   LeagueSpecialBetSingleTeamAdvanced LeagueSpecialBetSingleTeamAdvanced[]
   UserSpecialBetSingle               UserSpecialBetSingle[]
 
@@ -271,6 +273,7 @@ model LeagueTeam {
   teamId                                                             Int
   group                                                              String?                              @db.VarChar(255)
   leaguePhaseAchievedId                                              Int?
+  tournamentId                                                       Int?
   createdAt                                                          DateTime                             @db.Timestamptz(6)
   updatedAt                                                          DateTime                             @db.Timestamptz(6)
   deletedAt                                                          DateTime?                            @db.Timestamptz(6)
@@ -282,6 +285,7 @@ model LeagueTeam {
   League                                                             League                               @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   LeaguePhase                                                        LeaguePhase?                         @relation(fields: [leaguePhaseAchievedId], references: [id], onDelete: NoAction)
   Team                                                               Team                                 @relation(fields: [teamId], references: [id], onDelete: NoAction)
+  Tournament                                                         Tournament?                          @relation(fields: [tournamentId], references: [id], onDelete: NoAction)
   Match_Match_awayTeamIdToLeagueTeam                                 Match[]                              @relation("Match_awayTeamIdToLeagueTeam")
   Match_Match_homeTeamIdToLeagueTeam                                 Match[]                              @relation("Match_homeTeamIdToLeagueTeam")
   UserSpecialBetSingle                                               UserSpecialBetSingle[]
@@ -533,6 +537,19 @@ model Team {
   flagType   String?      @db.VarChar(50)
   LeagueTeam LeagueTeam[]
   Sport      Sport        @relation(fields: [sportId], references: [id], onDelete: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Tournament {
+  id                     Int                      @id @default(autoincrement())
+  name                   String                   @db.VarChar(255)
+  createdAt              DateTime                 @db.Timestamptz(6)
+  updatedAt              DateTime                 @db.Timestamptz(6)
+  deletedAt              DateTime?                @db.Timestamptz(6)
+  LeagueTeam             LeagueTeam[]
+  LeagueSpecialBetSingle LeagueSpecialBetSingle[]
+
+  @@index([deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

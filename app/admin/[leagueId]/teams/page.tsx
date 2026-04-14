@@ -2,12 +2,16 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { getLeagueById } from '@/actions/leagues'
+import { getAllTournaments } from '@/actions/tournaments'
 import { getTeamsBySport } from '@/actions/shared-queries'
 import { LeagueTeamsSetup } from '@/components/admin/leagues/league-teams-setup'
 import { CardListSkeleton } from '@/components/admin/common/table-skeleton'
 
 async function LeagueTeamsData({ leagueId }: { leagueId: number }) {
-  const league = await getLeagueById(leagueId)
+  const [league, tournaments] = await Promise.all([
+    getLeagueById(leagueId),
+    getAllTournaments(),
+  ])
 
   if (!league) {
     notFound()
@@ -17,7 +21,7 @@ async function LeagueTeamsData({ leagueId }: { leagueId: number }) {
   const assignedTeamIds = new Set(league.LeagueTeam.map((lt) => lt.teamId))
   const unassignedTeams = availableTeams.filter((t) => !assignedTeamIds.has(t.id))
 
-  return <LeagueTeamsSetup league={league} availableTeams={unassignedTeams} />
+  return <LeagueTeamsSetup league={league} availableTeams={unassignedTeams} tournaments={tournaments} />
 }
 
 export default async function LeagueTeamsPage({

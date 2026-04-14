@@ -45,6 +45,7 @@ type SpecialBet = SpecialBetWithUserBets
 type League = LeagueWithTeams
 type Evaluator = { id: number; name: string }
 type User = UserBasic
+type Tournament = { id: number; name: string }
 
 interface SpecialBetsContentProps {
   specialBets: SpecialBet[]
@@ -52,6 +53,7 @@ interface SpecialBetsContentProps {
   evaluators: Evaluator[]
   users: User[]
   league?: { id: number; name: string }
+  tournaments?: Tournament[]
 }
 
 function getResultTypeAndDisplay(specialBet: SpecialBet): { type: string; display: string } {
@@ -77,7 +79,7 @@ function getResultTypeAndDisplay(specialBet: SpecialBet): { type: string; displa
   return { type: 'none', display: '-' }
 }
 
-export function SpecialBetsContent({ specialBets, leagues, evaluators, users, league }: SpecialBetsContentProps) {
+export function SpecialBetsContent({ specialBets, leagues, evaluators, users, league, tournaments = [] }: SpecialBetsContentProps) {
   const t = useTranslations('admin.specialBets')
   const tCommon = useTranslations('admin.common')
   const tSeries = useTranslations('admin.series')
@@ -383,6 +385,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
         leagues={leagues}
         evaluators={evaluators}
         league={league}
+        tournaments={tournaments}
       />
 
       {/* Edit Special Bet Details Dialog */}

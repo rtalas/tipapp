@@ -96,7 +96,7 @@ export type SpecialBetFriendPrediction = Awaited<
 
 /**
  * Cached teams data (12 hour TTL)
- * Fetches all teams for a league - group filtering happens at runtime
+ * Fetches all teams for a league - tournament/group filtering happens at runtime
  */
 const getCachedTeams = (leagueId: number) =>
   unstable_cache(
@@ -117,12 +117,16 @@ const getCachedTeams = (leagueId: number) =>
   )()
 
 /**
- * Gets teams available for a special bet
+ * Gets teams available for a special bet, filtered by tournament and/or group
  */
-export async function getSpecialBetTeams(leagueId: number, group?: string) {
+export async function getSpecialBetTeams(leagueId: number, tournamentId?: number | null, group?: string) {
   await requireLeagueMember(leagueId)
   const teams = await getCachedTeams(leagueId)
-  return group ? teams.filter((t) => t.group === group) : teams
+  return teams.filter((t) => {
+    if (tournamentId != null && t.tournamentId !== tournamentId) return false
+    if (group && t.group !== group) return false
+    return true
+  })
 }
 
 /**
@@ -153,11 +157,13 @@ const getCachedPlayers = (leagueId: number) =>
   )()
 
 /**
- * Gets players available for a special bet
+ * Gets players available for a special bet, filtered by tournament
  */
-export async function getSpecialBetPlayers(leagueId: number) {
+export async function getSpecialBetPlayers(leagueId: number, tournamentId?: number | null) {
   await requireLeagueMember(leagueId)
-  return getCachedPlayers(leagueId)
+  const players = await getCachedPlayers(leagueId)
+  if (tournamentId == null) return players
+  return players.filter((p) => p.LeagueTeam.tournamentId === tournamentId)
 }
 
 /**

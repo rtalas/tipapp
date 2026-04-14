@@ -63,6 +63,7 @@ export async function createSpecialBet(input: CreateSpecialBetInput) {
           points: evaluator.points,
           dateTime: validated.dateTime,
           group: validated.group,
+          tournamentId: validated.tournamentId ?? null,
           createdAt: now,
           updatedAt: now,
         },

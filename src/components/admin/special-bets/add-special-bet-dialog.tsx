@@ -29,6 +29,7 @@ type League = {
   LeagueTeam?: Array<{ id: number; group: string | null; Team: { name: string } }>
 }
 type Evaluator = { id: number; name: string; EvaluatorType?: { name: string } }
+type Tournament = { id: number; name: string }
 
 interface AddSpecialBetDialogProps {
   open: boolean
@@ -36,14 +37,16 @@ interface AddSpecialBetDialogProps {
   leagues: League[]
   evaluators: Evaluator[]
   league?: League
+  tournaments?: Tournament[]
 }
 
-export function AddSpecialBetDialog({ open, onOpenChange, leagues, evaluators, league }: AddSpecialBetDialogProps) {
+export function AddSpecialBetDialog({ open, onOpenChange, leagues, evaluators, league, tournaments = [] }: AddSpecialBetDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>(league?.id.toString() || '')
   const [name, setName] = useState<string>('')
   const [selectedEvaluatorId, setSelectedEvaluatorId] = useState<string>('')
   const [selectedGroup, setSelectedGroup] = useState<string>('')
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string>('')
   const [dateTime, setDateTime] = useState<string>('')
 
   const effectiveLeagueId = league?.id.toString() || selectedLeagueId
@@ -89,6 +92,7 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, evaluators, l
         evaluatorId: parseInt(selectedEvaluatorId, 10),
         dateTime: new Date(dateTime),
         group: selectedGroup || undefined,
+        tournamentId: selectedTournamentId ? parseInt(selectedTournamentId, 10) : null,
       })
 
       toast.success('Special bet created successfully')
@@ -113,6 +117,7 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, evaluators, l
     setName('')
     setSelectedEvaluatorId('')
     setSelectedGroup('')
+    setSelectedTournamentId('')
     setDateTime('')
   }
 
@@ -177,6 +182,28 @@ export function AddSpecialBetDialog({ open, onOpenChange, leagues, evaluators, l
               Determines which evaluator type (team/player/value) and points are awarded.
             </p>
           </div>
+
+          {tournaments.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="tournament">Tournament (Optional)</Label>
+              <Select value={selectedTournamentId || 'none'} onValueChange={(v) => setSelectedTournamentId(v === 'none' ? '' : v)}>
+                <SelectTrigger id="tournament">
+                  <SelectValue placeholder="No tournament filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No tournament filter</SelectItem>
+                  {tournaments.map((tournament) => (
+                    <SelectItem key={tournament.id} value={tournament.id.toString()}>
+                      {tournament.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                When set, users will only see teams and players from this tournament when making predictions.
+              </p>
+            </div>
+          )}
 
           {isGroupStageEvaluator && (
             <div className="space-y-2">

@@ -106,6 +106,7 @@ vi.mock('@/lib/prisma', () => {
       sentNotification: createModelMock(),
       sequelizeMeta: createModelMock(),
       userSetting: createModelMock(),
+      tournament: createModelMock(),
       $transaction: vi.fn(),
       $connect: vi.fn(),
       $disconnect: vi.fn(),

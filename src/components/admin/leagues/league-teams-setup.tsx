@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Trash2, Edit, Check, X } from 'lucide-react'
-import { assignTeamToLeague, removeTeamFromLeague, updateLeagueTeamGroup } from '@/actions/leagues'
+import { assignTeamToLeague, removeTeamFromLeague, updateLeagueTeamGroup, updateLeagueTeamTournament } from '@/actions/leagues'
 import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -38,10 +38,17 @@ interface LeaguePlayer {
   playerId: number
 }
 
+interface Tournament {
+  id: number
+  name: string
+}
+
 interface LeagueTeam {
   id: number
   teamId: number
   group: string | null
+  tournamentId: number | null
+  Tournament: Tournament | null
   Team: Team
   LeaguePlayer: LeaguePlayer[]
 }
@@ -56,15 +63,17 @@ interface League {
 interface LeagueTeamsSetupProps {
   league: League
   availableTeams: Team[]
+  tournaments: Tournament[]
 }
 
-export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupProps) {
+export function LeagueTeamsSetup({ league, availableTeams, tournaments }: LeagueTeamsSetupProps) {
   const t = useTranslations('admin.leagueTeams')
   const [selectedTeamId, setSelectedTeamId] = useState<string>('')
   const [isAddingTeam, setIsAddingTeam] = useState(false)
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null)
   const [editGroupValue, setEditGroupValue] = useState<string>('')
   const [isSavingGroup, setIsSavingGroup] = useState(false)
+  const [savingTournamentId, setSavingTournamentId] = useState<number | null>(null)
 
   const handleAddTeam = async () => {
     if (!selectedTeamId) return
@@ -121,17 +130,35 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
         group: editGroupValue.trim() || null,
       })
       if (!result.success) {
-        toast.error('error' in result ? result.error : 'Failed to update group')
+        toast.error('error' in result ? result.error : t('groupUpdateError'))
         return
       }
-      toast.success('Group updated successfully')
+      toast.success(t('groupUpdated'))
       setEditingGroupId(null)
       setEditGroupValue('')
     } catch (error) {
-      toast.error('Failed to update group')
+      toast.error(t('groupUpdateError'))
       logger.error('Failed to update league team group', { error, leagueTeamId })
     } finally {
       setIsSavingGroup(false)
+    }
+  }
+
+  const handleTournamentChange = async (leagueTeamId: number, value: string) => {
+    setSavingTournamentId(leagueTeamId)
+    try {
+      const tournamentId = value === 'none' ? null : parseInt(value, 10)
+      const result = await updateLeagueTeamTournament({ leagueTeamId, tournamentId })
+      if (!result.success) {
+        toast.error('error' in result ? result.error : t('tournamentUpdateError'))
+        return
+      }
+      toast.success(t('tournamentUpdated'))
+    } catch (error) {
+      toast.error(t('tournamentUpdateError'))
+      logger.error('Failed to update league team tournament', { error, leagueTeamId })
+    } finally {
+      setSavingTournamentId(null)
     }
   }
 
@@ -175,6 +202,7 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('teamColumn')}</TableHead>
+                  <TableHead>{t('tournamentColumn')}</TableHead>
                   <TableHead>{t('groupColumn')}</TableHead>
                   <TableHead>{t('playersColumn')}</TableHead>
                   <TableHead className="w-[80px]">{t('actions')}</TableHead>
@@ -188,6 +216,25 @@ export function LeagueTeamsSetup({ league, availableTeams }: LeagueTeamsSetupPro
                       {lt.Team.shortcut && (
                         <span className="ml-2 text-muted-foreground">({lt.Team.shortcut})</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={lt.tournamentId?.toString() ?? 'none'}
+                        onValueChange={(val) => handleTournamentChange(lt.id, val)}
+                        disabled={savingTournamentId === lt.id}
+                      >
+                        <SelectTrigger className="h-8 w-40">
+                          <SelectValue placeholder={t('tournamentNone')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{t('tournamentNone')}</SelectItem>
+                          {tournaments.map((tournament) => (
+                            <SelectItem key={tournament.id} value={tournament.id.toString()}>
+                              {tournament.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       {editingGroupId === lt.id ? (

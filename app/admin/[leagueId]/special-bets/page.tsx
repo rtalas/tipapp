@@ -3,12 +3,13 @@ import { getTranslations } from 'next-intl/server'
 import { validateLeagueAccess } from '@/lib/league-utils'
 import { getSpecialBetsWithUserBets } from '@/actions/special-bet-bets'
 import { getUsers } from '@/actions/users'
+import { getAllTournaments } from '@/actions/tournaments'
 import { prisma } from '@/lib/prisma'
 import { SpecialBetsContent } from '@/components/admin/special-bets/special-bets-content'
 import { TableSkeleton } from '@/components/admin/common/table-skeleton'
 
 async function SpecialBetsData({ league }: { league: { id: number; name: string; seasonFrom: number; seasonTo: number } }) {
-  const [specialBets, leagues, evaluators, users] = await Promise.all([
+  const [specialBets, leagues, evaluators, users, tournaments] = await Promise.all([
     getSpecialBetsWithUserBets({ leagueId: league.id }),
     prisma.league.findMany({
       where: { id: league.id, deletedAt: null },
@@ -38,6 +39,7 @@ async function SpecialBetsData({ league }: { league: { id: number; name: string;
       orderBy: { name: 'asc' },
     }),
     getUsers(),
+    getAllTournaments(),
   ])
 
   return (
@@ -47,6 +49,7 @@ async function SpecialBetsData({ league }: { league: { id: number; name: string;
       evaluators={evaluators.map(e => ({ id: e.id, name: e.name, EvaluatorType: e.EvaluatorType }))}
       users={users}
       league={league}
+      tournaments={tournaments}
     />
   )
 }

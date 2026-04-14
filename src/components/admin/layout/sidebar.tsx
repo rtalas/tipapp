@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Layers,
   FileText,
+  Flag,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -65,6 +66,7 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
     { key: 'auditLogs', href: '/admin/audit-logs', icon: FileText },
     { key: 'teamsGlobal', href: '/admin/teams', icon: Shield },
     { key: 'playersGlobal', href: '/admin/players', icon: User },
+    { key: 'tournamentsGlobal', href: '/admin/tournaments', icon: Flag },
     { key: 'usersGlobal', href: '/admin/users', icon: Users },
     { key: 'seriesTypes', href: '/admin/series-types', icon: ListChecks },
     { key: 'matchPhases', href: '/admin/match-phases', icon: Layers },

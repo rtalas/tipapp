@@ -16,6 +16,7 @@ import {
   updateTopScorerRankingSchema,
   updateLeagueChatSettingsSchema,
   updateLeagueTeamGroupSchema,
+  updateLeagueTeamTournamentSchema,
   deleteByIdSchema,
   type CreateLeagueInput,
   type UpdateLeagueInput,
@@ -24,6 +25,7 @@ import {
   type UpdateTopScorerRankingInput,
   type UpdateLeagueChatSettingsInput,
   type UpdateLeagueTeamGroupInput,
+  type UpdateLeagueTeamTournamentInput,
   type DeleteByIdInput,
 } from '@/lib/validation/admin'
 
@@ -304,6 +306,32 @@ export async function updateLeagueTeamGroup(input: UpdateLeagueTeamGroupInput) {
   })
 }
 
+export async function updateLeagueTeamTournament(input: UpdateLeagueTeamTournamentInput) {
+  return executeServerAction(input, {
+    validator: updateLeagueTeamTournamentSchema,
+    handler: async (validated, session) => {
+      await prisma.leagueTeam.update({
+        where: { id: validated.leagueTeamId },
+        data: {
+          tournamentId: validated.tournamentId,
+          updatedAt: new Date(),
+        },
+      })
+
+      updateTag('special-bet-teams')
+
+      AuditLogger.adminUpdated(
+        parseSessionUserId(session!.user!.id!), 'LeagueTeam', validated.leagueTeamId,
+        { tournamentId: validated.tournamentId }
+      ).catch(() => {})
+
+      return {}
+    },
+    revalidatePath: '/admin/leagues',
+    requiresAdmin: true,
+  })
+}
+
 export async function assignPlayerToLeagueTeam(input: AssignPlayerInput) {
   return executeServerAction(input, {
     validator: assignPlayerSchema,
@@ -471,6 +499,7 @@ export async function getLeagueById(id: number) {
         where: { deletedAt: null },
         include: {
           Team: true,
+          Tournament: true,
           LeaguePlayer: {
             where: { deletedAt: null },
             include: { Player: true },

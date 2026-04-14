@@ -18,11 +18,11 @@ import type { UserQuestion } from '@/actions/user/questions'
 
 interface SpecialBetsListProps {
   specialBets: UserSpecialBet[]
-  teams: Array<{ id: number; group: string | null; Team: { id: number; name: string; shortcut: string } }>
+  teams: Array<{ id: number; group: string | null; tournamentId: number | null; Team: { id: number; name: string; shortcut: string } }>
   players: Array<{
     id: number
     Player: { id: number; firstName: string | null; lastName: string | null; position: string | null }
-    LeagueTeam: { Team: { shortcut: string } }
+    LeagueTeam: { tournamentId: number | null; Team: { shortcut: string } }
   }>
   questions: UserQuestion[]
 }
