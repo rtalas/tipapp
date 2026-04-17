@@ -208,10 +208,10 @@ export function SeriesCard({ series, onSaved }: SeriesCardProps) {
                   <button
                     type="button"
                     onClick={() => adjustScore('home', 1)}
-                    disabled={homeScore >= winsNeeded || awayScore >= winsNeeded}
+                    disabled={homeScore >= winsNeeded || (awayScore >= winsNeeded && homeScore >= winsNeeded - 1)}
                     className={cn(
                       'score-button',
-                      (homeScore >= winsNeeded || awayScore >= winsNeeded) &&
+                      (homeScore >= winsNeeded || (awayScore >= winsNeeded && homeScore >= winsNeeded - 1)) &&
                         'opacity-50 cursor-not-allowed'
                     )}
                   >
@@ -235,10 +235,10 @@ export function SeriesCard({ series, onSaved }: SeriesCardProps) {
                   <button
                     type="button"
                     onClick={() => adjustScore('away', 1)}
-                    disabled={awayScore >= winsNeeded || homeScore >= winsNeeded}
+                    disabled={awayScore >= winsNeeded || (homeScore >= winsNeeded && awayScore >= winsNeeded - 1)}
                     className={cn(
                       'score-button',
-                      (awayScore >= winsNeeded || homeScore >= winsNeeded) &&
+                      (awayScore >= winsNeeded || (homeScore >= winsNeeded && awayScore >= winsNeeded - 1)) &&
                         'opacity-50 cursor-not-allowed'
                     )}
                   >
