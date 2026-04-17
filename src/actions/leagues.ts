@@ -2,7 +2,6 @@
 
 import { updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
 import { AuditLogger } from '@/lib/logging/audit-logger'
@@ -218,30 +217,31 @@ export async function assignTeamToLeague(input: AssignTeamInput) {
     validator: assignTeamSchema,
     handler: async (validated, session) => {
       const now = new Date()
-      const result = await prisma.leagueTeam.upsert({
-        where: {
-          leagueId_teamId_deletedAt: nullableUniqueConstraint({
+      const result = await prisma.$transaction(async (tx) => {
+        // Check if team is already assigned to this league
+        const existing = await tx.leagueTeam.findFirst({
+          where: {
             leagueId: validated.leagueId,
             teamId: validated.teamId,
             deletedAt: null,
-          }),
-        },
-        update: {
-          // Already exists — no-op, will throw below
-          updatedAt: now,
-        },
-        create: {
-          leagueId: validated.leagueId,
-          teamId: validated.teamId,
-          group: validated.group,
-          createdAt: now,
-          updatedAt: now,
-        },
-      })
+          },
+        })
 
-      if (result.createdAt.getTime() !== now.getTime()) {
-        throw new AppError('Team is already assigned to this league', 'CONFLICT', 409)
-      }
+        if (existing) {
+          throw new AppError('Team is already assigned to this league', 'CONFLICT', 409)
+        }
+
+        // Create new assignment
+        return tx.leagueTeam.create({
+          data: {
+            leagueId: validated.leagueId,
+            teamId: validated.teamId,
+            group: validated.group,
+            createdAt: now,
+            updatedAt: now,
+          },
+        })
+      })
 
       updateTag('special-bet-teams')
 
@@ -337,32 +337,33 @@ export async function assignPlayerToLeagueTeam(input: AssignPlayerInput) {
     validator: assignPlayerSchema,
     handler: async (validated, session) => {
       const now = new Date()
-      const result = await prisma.leaguePlayer.upsert({
-        where: {
-          leagueTeamId_playerId_deletedAt: nullableUniqueConstraint({
+      const result = await prisma.$transaction(async (tx) => {
+        // Check if player is already assigned to this team
+        const existing = await tx.leaguePlayer.findFirst({
+          where: {
             leagueTeamId: validated.leagueTeamId,
             playerId: validated.playerId,
             deletedAt: null,
-          }),
-        },
-        update: {
-          // Already exists — no-op, will throw below
-          updatedAt: now,
-        },
-        create: {
-          leagueTeamId: validated.leagueTeamId,
-          playerId: validated.playerId,
-          seasonGames: validated.seasonGames,
-          seasonGoals: validated.seasonGoals,
-          clubName: validated.clubName,
-          createdAt: now,
-          updatedAt: now,
-        },
-      })
+          },
+        })
 
-      if (result.createdAt.getTime() !== now.getTime()) {
-        throw new AppError('Player is already assigned to this team in this league', 'CONFLICT', 409)
-      }
+        if (existing) {
+          throw new AppError('Player is already assigned to this team in this league', 'CONFLICT', 409)
+        }
+
+        // Create new assignment
+        return tx.leaguePlayer.create({
+          data: {
+            leagueTeamId: validated.leagueTeamId,
+            playerId: validated.playerId,
+            seasonGames: validated.seasonGames,
+            seasonGoals: validated.seasonGoals,
+            clubName: validated.clubName,
+            createdAt: now,
+            updatedAt: now,
+          },
+        })
+      })
 
       updateTag('special-bet-players')
 

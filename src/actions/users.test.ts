@@ -271,7 +271,15 @@ describe('Users Actions', () => {
       const now = new Date()
       mockPrisma.user.findUnique.mockResolvedValue({ id: 5 } as any)
       mockPrisma.league.findUnique.mockResolvedValue({ id: 1 } as any)
-      mockPrisma.leagueUser.upsert.mockResolvedValue({ id: 10, createdAt: now } as any)
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          leagueUser: {
+            findFirst: vi.fn().mockResolvedValue(null), // No existing user
+            create: vi.fn().mockResolvedValue({ id: 10, createdAt: now }),
+          },
+        }
+        return fn(tx)
+      })
 
       const result = await addUserToLeague({ userId: 5, leagueId: 1 })
 
@@ -301,7 +309,14 @@ describe('Users Actions', () => {
     it('should return error when user already member', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({ id: 5 } as any)
       mockPrisma.league.findUnique.mockResolvedValue({ id: 1 } as any)
-      mockPrisma.leagueUser.upsert.mockResolvedValue({ id: 10, createdAt: new Date('2020-01-01') } as any)
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          leagueUser: {
+            findFirst: vi.fn().mockResolvedValue({ id: 10, leagueId: 1, userId: 5 }), // Already exists
+          },
+        }
+        return fn(tx)
+      })
 
       const result = await addUserToLeague({ userId: 5, leagueId: 1 })
 

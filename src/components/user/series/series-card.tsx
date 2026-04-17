@@ -118,7 +118,7 @@ export function SeriesCard({ series, onSaved }: SeriesCardProps) {
             </div>
             <div>
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                {t('bestOf', { count: bestOf })}
+                {t('bestOf', { count: winsNeeded })}
               </span>
             </div>
           </div>

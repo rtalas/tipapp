@@ -2,7 +2,6 @@
 
 import { revalidatePath, updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { nullableUniqueConstraint } from '@/lib/prisma-utils'
 import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { AuditLogger } from '@/lib/logging/audit-logger'
@@ -328,33 +327,34 @@ export async function addUserToLeague(input: AddUserToLeagueInput) {
         throw new AppError('League not found', 'NOT_FOUND', 404)
       }
 
-      // Atomic upsert to prevent race condition duplicates
-      const result = await prisma.leagueUser.upsert({
-        where: {
-          leagueId_userId_deletedAt: nullableUniqueConstraint({
+      // Use transaction to prevent race condition duplicates
+      const result = await prisma.$transaction(async (tx) => {
+        // Check if user is already a non-deleted member
+        const existing = await tx.leagueUser.findFirst({
+          where: {
             leagueId: validated.leagueId,
             userId: validated.userId,
             deletedAt: null,
-          }),
-        },
-        update: {
-          // Already exists — no-op, will throw below
-          updatedAt: now,
-        },
-        create: {
-          userId: validated.userId,
-          leagueId: validated.leagueId,
-          paid: false,
-          active: true,
-          admin: false,
-          createdAt: now,
-          updatedAt: now,
-        },
-      })
+          },
+        })
 
-      if (result.createdAt.getTime() !== now.getTime()) {
-        throw new AppError('User is already a member of this league', 'CONFLICT', 409)
-      }
+        if (existing) {
+          throw new AppError('User is already a member of this league', 'CONFLICT', 409)
+        }
+
+        // Create new membership
+        return tx.leagueUser.create({
+          data: {
+            userId: validated.userId,
+            leagueId: validated.leagueId,
+            paid: false,
+            active: true,
+            admin: false,
+            createdAt: now,
+            updatedAt: now,
+          },
+        })
+      })
 
       updateTag('league-selector')
       revalidatePath(`/admin/${validated.leagueId}/users`)
