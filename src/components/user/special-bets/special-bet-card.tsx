@@ -86,8 +86,18 @@ export function SpecialBetCard({
   })
 
   // Determine bet type from evaluator type (primary) or SpecialBetSingleType (legacy fallback)
-  const isTeamBet = evaluatorTypeName === 'exact_team' || evaluatorTypeName === 'group_stage_team' || betTypeId === 2
-  const isPlayerBet = evaluatorTypeName === 'exact_player' || betTypeId === 1
+  let isTeamBet = false
+  let isPlayerBet = false
+
+  if (evaluatorTypeName === 'exact_team' || evaluatorTypeName === 'group_stage_team') {
+    isTeamBet = true
+  } else if (evaluatorTypeName === 'exact_player') {
+    isPlayerBet = true
+  } else {
+    // Legacy fallback to SpecialBetSingleType
+    isTeamBet = betTypeId === 2
+    isPlayerBet = betTypeId === 1
+  }
 
   // Filter teams by tournament and/or group if special bet has restrictions
   const availableTeams = teams.filter((t) => {
