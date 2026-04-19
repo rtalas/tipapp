@@ -36,34 +36,81 @@ export const getUserMatches = createCachedEntityFetcher({
         Match: {
           include: {
             LeagueTeam_Match_homeTeamIdToLeagueTeam: {
-              include: {
-                Team: true,
+              select: {
+                id: true,
+                group: true,
+                Team: {
+                  select: {
+                    id: true,
+                    name: true,
+                    shortcut: true,
+                    flagIcon: true,
+                    flagType: true,
+                  },
+                },
                 LeaguePlayer: {
                   where: { deletedAt: null },
-                  include: { Player: true },
                   orderBy: { Player: { lastName: 'asc' } },
+                  select: {
+                    id: true,
+                    topScorerRanking: true,
+                    Player: {
+                      select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        position: true,
+                      },
+                    },
+                  },
                 },
               },
             },
             LeagueTeam_Match_awayTeamIdToLeagueTeam: {
-              include: {
-                Team: true,
+              select: {
+                id: true,
+                group: true,
+                Team: {
+                  select: {
+                    id: true,
+                    name: true,
+                    shortcut: true,
+                    flagIcon: true,
+                    flagType: true,
+                  },
+                },
                 LeaguePlayer: {
                   where: { deletedAt: null },
-                  include: { Player: true },
                   orderBy: { Player: { lastName: 'asc' } },
+                  select: {
+                    id: true,
+                    topScorerRanking: true,
+                    Player: {
+                      select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        position: true,
+                      },
+                    },
+                  },
                 },
               },
             },
             MatchScorer: {
               where: { deletedAt: null },
-              include: {
+              select: {
                 LeaguePlayer: {
-                  include: { Player: true },
+                  select: { id: true },
                 },
               },
             },
-            MatchPhase: true,
+            MatchPhase: {
+              select: {
+                name: true,
+                bestOf: true,
+              },
+            },
           },
         },
       },
