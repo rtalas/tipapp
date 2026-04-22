@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { UserAvatar } from '@/components/common/user-avatar'
+import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
 import type { LeaderboardEntry } from '@/types/user'
 import type { UserPicksData } from '@/actions/user/leaderboard'
@@ -100,8 +101,10 @@ export function UserPicksModal({ selectedUser, leagueId, onClose }: UserPicksMod
                     <PickCard key={match.id} points={match.totalPoints}>
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <div className="flex-1">
-                          <span className="text-xs font-medium text-foreground">
-                            {match.homeTeamFlag} {match.homeTeamName} vs {match.awayTeamName} {match.awayTeamFlag}
+                          <span className="text-xs font-medium text-foreground flex items-center gap-1 flex-wrap">
+                            <TeamFlag flagIcon={match.homeTeamFlag} flagType={match.homeTeamFlagType} teamName={match.homeTeamName} size="xs" />
+                            {match.homeTeamName} vs {match.awayTeamName}
+                            <TeamFlag flagIcon={match.awayTeamFlag} flagType={match.awayTeamFlagType} teamName={match.awayTeamName} size="xs" />
                           </span>
                           {match.isEvaluated && match.actualHomeScore !== null && match.actualAwayScore !== null && (
                             <span className="text-xs font-semibold text-foreground ml-2">

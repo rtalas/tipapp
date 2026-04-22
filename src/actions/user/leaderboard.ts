@@ -25,7 +25,9 @@ export interface UserMatchPick {
   homeTeamName: string
   awayTeamName: string
   homeTeamFlag: string | null
+  homeTeamFlagType: string | null
   awayTeamFlag: string | null
+  awayTeamFlagType: string | null
   homeScore: number
   awayScore: number
   scorerName: string | null
@@ -249,7 +251,9 @@ export async function getUserPicks(
       homeTeamName: homeTeam.name,
       awayTeamName: awayTeam.name,
       homeTeamFlag: homeTeam.flagIcon,
+      homeTeamFlagType: homeTeam.flagType,
       awayTeamFlag: awayTeam.flagIcon,
+      awayTeamFlagType: awayTeam.flagType,
       homeScore: bet.homeScore,
       awayScore: bet.awayScore,
       scorerName,
