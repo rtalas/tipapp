@@ -18,6 +18,7 @@ import { logger } from '@/lib/logging/client-logger'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 import { TeamFlag } from '@/components/common/team-flag'
+import { ScorerRankingBadge } from '@/components/common/scorer-ranking-badge'
 import { CheckCircle } from 'lucide-react'
 type Team = { id: number; name: string; shortcut: string; flagIcon: string | null; flagType: string | null }
 type LeaguePlayer = { id: number; Player: { id: number; firstName: string | null; lastName: string | null } }
@@ -226,6 +227,7 @@ export function UserBetRow({
           ) : (
             <span className={`flex items-center gap-1${bet.noScorer ? ' italic text-muted-foreground' : ''}`}>
               {scorerDisplay}
+              {isScorerCorrect && <ScorerRankingBadge ranking={bet.LeaguePlayer?.topScorerRanking} />}
               {isScorerCorrect && <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />}
             </span>
           )}

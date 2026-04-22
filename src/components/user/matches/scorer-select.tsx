@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
 import { SPORT_IDS } from '@/lib/constants'
+import { ScorerRankingBadge } from '@/components/common/scorer-ranking-badge'
 
 interface Player {
   id: number
@@ -68,15 +69,6 @@ function getSearchableText(player: Player): string {
   return [firstName, lastName, position].filter(Boolean).join(' ').toLowerCase()
 }
 
-function ScorerBadge({ ranking }: { ranking: number }) {
-  if (ranking < 1 || ranking > 4) return null
-
-  return (
-    <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold">
-      {ranking}
-    </span>
-  )
-}
 
 export function ScorerSelect({
   value,
@@ -151,7 +143,7 @@ export function ScorerSelect({
               <span className="flex items-center">
                 {getPlayerName(selectedPlayer)}
                 {selectedPlayer.topScorerRanking && (
-                  <ScorerBadge ranking={selectedPlayer.topScorerRanking} />
+                  <ScorerRankingBadge ranking={selectedPlayer.topScorerRanking} />
                 )}
               </span>
             ) : (
@@ -224,7 +216,7 @@ export function ScorerSelect({
                     <span className="flex items-center">
                       {getPlayerName(player)}
                       {player.topScorerRanking && (
-                        <ScorerBadge ranking={player.topScorerRanking} />
+                        <ScorerRankingBadge ranking={player.topScorerRanking} />
                       )}
                     </span>
                   </button>
@@ -263,7 +255,7 @@ export function ScorerSelect({
                     <span className="flex items-center">
                       {getPlayerName(player)}
                       {player.topScorerRanking && (
-                        <ScorerBadge ranking={player.topScorerRanking} />
+                        <ScorerRankingBadge ranking={player.topScorerRanking} />
                       )}
                     </span>
                   </button>

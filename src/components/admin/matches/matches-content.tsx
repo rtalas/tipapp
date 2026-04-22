@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus } from 'lucide-react'
+import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus, CheckCircle } from 'lucide-react'
+import { ScorerRankingBadge } from '@/components/common/scorer-ranking-badge'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { deleteMatch } from '@/actions/matches'
@@ -221,6 +222,7 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                 const homeTeam = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team
                 const awayTeam = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team
                 const expanded = isExpanded(lm.id)
+                const actualScorerIds = lm.Match.MatchScorer?.map((ms) => ms.scorerId) ?? []
 
                 return (
                   <MobileCard key={lm.id}>
@@ -247,7 +249,9 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                       <MobileCardField label={t('score')}>
                         {lm.Match.homeRegularScore !== null ? (
                           <span className="font-mono font-bold">
-                            {lm.Match.homeRegularScore}:{lm.Match.awayRegularScore}
+                            {lm.Match.homeFinalScore ?? lm.Match.homeRegularScore}:{lm.Match.awayFinalScore ?? lm.Match.awayRegularScore}
+                            {lm.Match.isShootout && t('shootout')}
+                            {lm.Match.isOvertime && !lm.Match.isShootout && t('overtimeSuffix')}
                           </span>
                         ) : '-'}
                       </MobileCardField>
@@ -279,20 +283,25 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                                 <div className="flex items-center justify-between">
                                   <span className="font-medium">{bet.LeagueUser.User.firstName} {bet.LeagueUser.User.lastName}</span>
                                   <div className="flex items-center gap-2">
-                                    <span className="font-mono">{bet.homeScore}:{bet.awayScore}</span>
-                                    {bet.overtime && <span className="text-xs text-muted-foreground">{t('overtime')}</span>}
-                                    {bet.totalPoints !== 0 && (
+                                    <span className="font-mono">{bet.homeScore}:{bet.awayScore}{bet.overtime && t('overtimeSuffix')}</span>
+                                    {lm.Match.isEvaluated && (
                                       <Badge variant="outline" className="text-xs">{bet.totalPoints}pts</Badge>
                                     )}
                                   </div>
                                 </div>
                                 {(bet.LeaguePlayer || bet.noScorer) && (
-                                  <div className="text-xs text-muted-foreground">
+                                  <div className="text-xs text-muted-foreground flex items-center gap-1">
                                     {t('scorer')}: {bet.noScorer
                                       ? <span className="italic">{t('noScorer')}</span>
                                       : bet.LeaguePlayer
                                         ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
                                         : '-'}
+                                    {lm.Match.isEvaluated && bet.scorerId !== null && bet.scorerId !== undefined && actualScorerIds.includes(bet.scorerId) && (
+                                      <>
+                                        <ScorerRankingBadge ranking={bet.LeaguePlayer?.topScorerRanking} />
+                                        <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                                      </>
+                                    )}
                                   </div>
                                 )}
                                 {bet.homeAdvanced !== null && (
