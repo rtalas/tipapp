@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { UserAvatar } from '@/components/common/user-avatar'
 import { TeamFlag } from '@/components/common/team-flag'
+import { ScorerRankingBadge } from '@/components/common/scorer-ranking-badge'
 import { cn } from '@/lib/utils'
 import type { LeaderboardEntry } from '@/types/user'
 import type { UserPicksData } from '@/actions/user/leaderboard'
@@ -126,6 +127,7 @@ export function UserPicksModal({ selectedUser, leagueId, onClose }: UserPicksMod
                             <span className="text-muted-foreground">•</span>
                             <span className="flex items-center gap-1">
                               {match.scorerName}
+                              <ScorerRankingBadge ranking={match.scorerRanking} />
                               {match.scorerCorrect && (
                                 <CheckCircle2 className="w-3.5 h-3.5 text-green-500 inline-block" />
                               )}

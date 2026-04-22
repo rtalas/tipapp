@@ -31,6 +31,7 @@ export interface UserMatchPick {
   homeScore: number
   awayScore: number
   scorerName: string | null
+  scorerRanking: number | null
   scorerCorrect: boolean
   overtime: boolean
   totalPoints: number
@@ -257,6 +258,7 @@ export async function getUserPicks(
       homeScore: bet.homeScore,
       awayScore: bet.awayScore,
       scorerName,
+      scorerRanking: bet.LeaguePlayer?.topScorerRanking ?? null,
       scorerCorrect,
       overtime: bet.overtime,
       totalPoints: bet.totalPoints,
