@@ -38,7 +38,7 @@ export function ActionMenu({ items }: ActionMenuProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {normalItems.map((item) => (
-          <DropdownMenuItem key={item.label} onClick={item.onClick}>
+          <DropdownMenuItem key={item.label} onSelect={() => setTimeout(item.onClick, 0)}>
             {item.icon && <span className="mr-2">{item.icon}</span>}
             {item.label}
           </DropdownMenuItem>
@@ -49,7 +49,7 @@ export function ActionMenu({ items }: ActionMenuProps) {
         {destructiveItems.map((item) => (
           <DropdownMenuItem
             key={item.label}
-            onClick={item.onClick}
+            onSelect={() => setTimeout(item.onClick, 0)}
             className={cn('text-destructive focus:text-destructive')}
           >
             {item.icon && <span className="mr-2">{item.icon}</span>}
