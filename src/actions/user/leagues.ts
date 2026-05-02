@@ -41,6 +41,7 @@ const getCachedLeaguesForSelector = unstable_cache(
         deletedAt: null,
         League: {
           isActive: true,
+          isFinished: false,
           deletedAt: null,
         },
       },
