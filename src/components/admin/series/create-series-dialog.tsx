@@ -22,6 +22,7 @@ interface CreateFormData {
   dateTime: string
   homeTeamScore: string
   awayTeamScore: string
+  isDoubled: boolean
 }
 
 interface CreateSeriesDialogProps {

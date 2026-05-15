@@ -314,4 +314,48 @@ describe('Series Evaluator', () => {
       expect(mockTx.userSpecialBetSerie.update).not.toHaveBeenCalled()
     })
   })
+
+  describe('isDoubled Multiplier', () => {
+    it('should double points when series.isDoubled is true', async () => {
+      mockTx.leagueSpecialBetSerie.findUniqueOrThrow.mockResolvedValue(
+        makeSeries({ isDoubled: true })
+      )
+
+      const result = await evaluateSeriesAtomic({ seriesId: 1 })
+
+      expect(result.results[0].totalPoints).toBe(20)
+      expect(result.results[0].evaluatorResults[0].points).toBe(20)
+    })
+
+    it('should not double points when series.isDoubled is false', async () => {
+      mockTx.leagueSpecialBetSerie.findUniqueOrThrow.mockResolvedValue(
+        makeSeries({ isDoubled: false })
+      )
+
+      const result = await evaluateSeriesAtomic({ seriesId: 1 })
+
+      expect(result.results[0].totalPoints).toBe(10)
+    })
+
+    it('should keep zero points zero when isDoubled is true and bet is wrong', async () => {
+      mockTx.leagueSpecialBetSerie.findUniqueOrThrow.mockResolvedValue(
+        makeSeries({
+          isDoubled: true,
+          UserSpecialBetSerie: [
+            {
+              id: 1,
+              homeTeamScore: 1,
+              awayTeamScore: 4,
+              LeagueUser: { userId: 1, User: { id: 1 } },
+            },
+          ],
+        })
+      )
+
+      const result = await evaluateSeriesAtomic({ seriesId: 1 })
+
+      expect(result.results[0].totalPoints).toBe(0)
+      expect(result.results[0].evaluatorResults[0].awarded).toBe(false)
+    })
+  })
 })

@@ -800,7 +800,8 @@
       "editResult": "Upravit výsledek",
       "evaluate": "Vyhodnotit",
       "hideBets": "Skrýt tipy",
-      "showBets": "Zobrazit tipy"
+      "showBets": "Zobrazit tipy",
+      "doublePoints": "Dvojité body"
     },
     "specialBets": {
       "title": "Speciální sázky",

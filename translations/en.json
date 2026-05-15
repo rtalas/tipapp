@@ -800,7 +800,8 @@
       "editResult": "Edit Result",
       "evaluate": "Evaluate",
       "hideBets": "Hide bets",
-      "showBets": "Show bets"
+      "showBets": "Show bets",
+      "doublePoints": "Double Points"
     },
     "specialBets": {
       "title": "Special Bets",

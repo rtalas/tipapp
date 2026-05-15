@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { updateSeries } from '@/actions/series'
 import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -22,6 +23,7 @@ interface EditSeriesDialogProps {
   series: {
     id: number
     dateTime: Date
+    isDoubled: boolean
     LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam: { Team: { name: string } }
     LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam: { Team: { name: string } }
   }
@@ -43,6 +45,7 @@ export function EditSeriesDialog({
     const date = new Date(series.dateTime)
     return format(date, "yyyy-MM-dd'T'HH:mm")
   })
+  const [isDoubled, setIsDoubled] = useState(series.isDoubled)
 
   const homeTeam = series.LeagueTeam_LeagueSpecialBetSerie_homeTeamIdToLeagueTeam.Team.name
   const awayTeam = series.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team.name
@@ -62,6 +65,7 @@ export function EditSeriesDialog({
       const result = await updateSeries({
         seriesId: series.id,
         dateTime: new Date(dateTime),
+        isDoubled,
       })
 
       if (!result.success) {
@@ -105,6 +109,18 @@ export function EditSeriesDialog({
             <p className="text-xs text-muted-foreground">
               {tMatches('form.dateTimeHint')}
             </p>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="edit-series-isDoubled"
+              checked={isDoubled}
+              onCheckedChange={(checked) => setIsDoubled(checked === true)}
+              disabled={isSubmitting}
+            />
+            <Label htmlFor="edit-series-isDoubled" className="text-sm font-normal">
+              {t('doublePoints')}
+            </Label>
           </div>
 
           <DialogFooter>

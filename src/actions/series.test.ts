@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createSeries, updateSeriesResult, deleteSeries } from './series'
+import { createSeries, updateSeries, updateSeriesResult, deleteSeries } from './series'
 import { prisma } from '@/lib/prisma'
 import { updateTag } from 'next/cache'
 import { requireAdmin } from '@/lib/auth/auth-utils'
@@ -89,6 +89,90 @@ describe('Series Actions', () => {
       })
 
       expect(mockUpdateTag).toHaveBeenCalledWith('series-data')
+    })
+
+    it('should persist isDoubled when provided', async () => {
+      mockPrisma.leagueTeam.findFirst
+        .mockResolvedValueOnce({ id: 1 } as any)
+        .mockResolvedValueOnce({ id: 2 } as any)
+      mockPrisma.specialBetSerie.findFirst.mockResolvedValue({ id: 1 } as any)
+      mockPrisma.leagueSpecialBetSerie.create.mockResolvedValue({ id: 1 } as any)
+
+      await createSeries({
+        leagueId: 1,
+        specialBetSerieId: 1,
+        homeTeamId: 1,
+        awayTeamId: 2,
+        dateTime: new Date('2026-06-01'),
+        isDoubled: true,
+      })
+
+      expect(mockPrisma.leagueSpecialBetSerie.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ isDoubled: true }),
+        })
+      )
+    })
+
+    it('should default isDoubled to false', async () => {
+      mockPrisma.leagueTeam.findFirst
+        .mockResolvedValueOnce({ id: 1 } as any)
+        .mockResolvedValueOnce({ id: 2 } as any)
+      mockPrisma.specialBetSerie.findFirst.mockResolvedValue({ id: 1 } as any)
+      mockPrisma.leagueSpecialBetSerie.create.mockResolvedValue({ id: 1 } as any)
+
+      await createSeries({
+        leagueId: 1,
+        specialBetSerieId: 1,
+        homeTeamId: 1,
+        awayTeamId: 2,
+        dateTime: new Date('2026-06-01'),
+      })
+
+      expect(mockPrisma.leagueSpecialBetSerie.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ isDoubled: false }),
+        })
+      )
+    })
+  })
+
+  describe('updateSeries', () => {
+    it('should update isDoubled', async () => {
+      mockPrisma.leagueSpecialBetSerie.update.mockResolvedValue({ id: 1 } as any)
+
+      const result = await updateSeries({ seriesId: 1, isDoubled: true })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.leagueSpecialBetSerie.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          data: expect.objectContaining({ isDoubled: true }),
+        })
+      )
+    })
+
+    it('should update dateTime', async () => {
+      mockPrisma.leagueSpecialBetSerie.update.mockResolvedValue({ id: 1 } as any)
+
+      const newDate = new Date('2026-06-15')
+      await updateSeries({ seriesId: 1, dateTime: newDate })
+
+      expect(mockPrisma.leagueSpecialBetSerie.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          data: expect.objectContaining({ dateTime: newDate }),
+        })
+      )
+    })
+
+    it('should not include unprovided fields in update', async () => {
+      mockPrisma.leagueSpecialBetSerie.update.mockResolvedValue({ id: 1 } as any)
+
+      await updateSeries({ seriesId: 1, isDoubled: true })
+
+      const call = mockPrisma.leagueSpecialBetSerie.update.mock.calls[0][0] as any
+      expect(call.data.dateTime).toBeUndefined()
     })
   })
 

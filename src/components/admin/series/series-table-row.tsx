@@ -106,6 +106,9 @@ export function SeriesTableRow({
               size="xs"
             />
             <span className="font-medium">{awayTeam.name}</span>
+            {series.isDoubled && (
+              <Badge variant="default" className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 border-0 text-[10px] font-bold">2x</Badge>
+            )}
           </div>
         </TableCell>
         <TableCell className="text-center">

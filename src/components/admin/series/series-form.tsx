@@ -1,6 +1,8 @@
 import React from 'react'
 import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -21,6 +23,7 @@ interface SeriesFormData {
   dateTime: string
   homeTeamScore: string
   awayTeamScore: string
+  isDoubled: boolean
 }
 
 interface SeriesFormProps {
@@ -180,6 +183,18 @@ export function SeriesForm({ formData, onChange, leagues, specialBetSeries, disa
               disabled={disabled}
               aria-label={t('awayScore')}
             />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="series-isDoubled"
+              checked={formData.isDoubled}
+              onCheckedChange={(checked) => onChange({ isDoubled: checked === true })}
+              disabled={disabled}
+            />
+            <Label htmlFor="series-isDoubled" className="text-sm font-normal">
+              {t('doublePoints')}
+            </Label>
           </div>
         </>
       )}

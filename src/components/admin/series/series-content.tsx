@@ -56,6 +56,7 @@ interface CreateFormData {
   dateTime: string
   homeTeamScore: string
   awayTeamScore: string
+  isDoubled: boolean
 }
 
 function getSeriesStatus(series: Series): 'scheduled' | 'finished' | 'evaluated' {
@@ -90,6 +91,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
     dateTime: '',
     homeTeamScore: '',
     awayTeamScore: '',
+    isDoubled: false,
   })
 
   // Filter series with optimized string search
@@ -136,6 +138,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
         homeTeamId: parseInt(createDialog.form.homeTeamId, 10),
         awayTeamId: parseInt(createDialog.form.awayTeamId, 10),
         dateTime: new Date(createDialog.form.dateTime),
+        isDoubled: createDialog.form.isDoubled,
       })
       if (!result.success) {
         toast.error('error' in result ? result.error : t('seriesCreateFailed'))
@@ -349,6 +352,9 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                         {status === 'evaluated' ? t('evaluated') : status === 'finished' ? t('finished') : t('scheduled')}
                       </Badge>
                       <Badge variant="outline">{s.UserSpecialBetSerie.length} {t('bets').toLowerCase()}</Badge>
+                      {s.isDoubled && (
+                        <Badge variant="default" className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 border-0 text-[10px] font-bold">2x</Badge>
+                      )}
                     </div>
 
                     {s.UserSpecialBetSerie.length > 0 && (

@@ -60,6 +60,7 @@ export async function createSeries(input: CreateSeriesInput) {
           homeTeamId: validated.homeTeamId,
           awayTeamId: validated.awayTeamId,
           dateTime: validated.dateTime,
+          isDoubled: validated.isDoubled,
           createdAt: now,
           updatedAt: now,
         },
@@ -119,7 +120,8 @@ export async function updateSeries(input: UpdateSeriesInput) {
       await prisma.leagueSpecialBetSerie.update({
         where: { id: validated.seriesId },
         data: {
-          dateTime: validated.dateTime,
+          ...(validated.dateTime !== undefined && { dateTime: validated.dateTime }),
+          ...(validated.isDoubled !== undefined && { isDoubled: validated.isDoubled }),
           updatedAt: new Date(),
         },
       })
@@ -128,7 +130,10 @@ export async function updateSeries(input: UpdateSeriesInput) {
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSerie', validated.seriesId,
-        { dateTime: validated.dateTime }
+        {
+          ...(validated.dateTime !== undefined && { dateTime: validated.dateTime }),
+          ...(validated.isDoubled !== undefined && { isDoubled: validated.isDoubled }),
+        }
       ).catch(() => {})
 
       return {}

@@ -330,6 +330,7 @@ export const createSeriesSchema = z.object({
     .refine((date) => date > new Date(), {
       message: 'Series date must be in the future',
     }),
+  isDoubled: z.boolean().default(false),
 }).refine((data) => data.homeTeamId !== data.awayTeamId, {
   message: 'Home and away teams must be different',
   path: ['awayTeamId'],
@@ -350,7 +351,8 @@ export type UpdateSeriesResultInput = z.infer<typeof updateSeriesResultSchema>
 
 export const updateSeriesSchema = z.object({
   seriesId: z.number().int().positive('Series ID is required'),
-  dateTime: z.date(),
+  dateTime: z.date().optional(),
+  isDoubled: z.boolean().optional(),
 })
 
 export type UpdateSeriesInput = z.infer<typeof updateSeriesSchema>

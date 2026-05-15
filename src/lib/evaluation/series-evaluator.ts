@@ -105,7 +105,8 @@ async function evaluateSeries(
       }
 
       const awarded = evaluatorFn(context)
-      const points = awarded ? evaluator.points : 0
+      const rawPoints = awarded ? evaluator.points : 0
+      const points = series.isDoubled ? rawPoints * 2 : rawPoints
 
       evaluatorResults.push({
         evaluatorName: evaluator.EvaluatorType.name,
