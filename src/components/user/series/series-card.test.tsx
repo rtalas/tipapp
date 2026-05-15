@@ -91,8 +91,8 @@ describe('SeriesCard', () => {
 
     it('renders bestOf badge', () => {
       render(<SeriesCard series={createSeries()} onSaved={mockOnSaved} />)
-      // useTranslations returns key(params)
-      expect(screen.getByText('bestOf({"count":7})')).toBeInTheDocument()
+      // Badge displays winsNeeded (ceil(bestOf/2) = 4 for bestOf=7), not bestOf itself
+      expect(screen.getByText('bestOf({"count":4})')).toBeInTheDocument()
     })
 
     it('renders score controls with initial scores at 0', () => {
@@ -159,8 +159,13 @@ describe('SeriesCard', () => {
         await user.click(homeIncrement)
       }
 
-      // Away increment should be disabled
+      // Once home reaches winsNeeded, away caps at winsNeeded-1 (=3 for bestOf 7)
       const awayIncrement = scoreButtons[3]
+      for (let i = 0; i < 5; i++) {
+        await user.click(awayIncrement)
+      }
+
+      // At this point away should be at 3 and the away+ button disabled
       expect(awayIncrement).toBeDisabled()
     })
 
