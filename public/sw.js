@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tipapp-v6'
+const CACHE_NAME = 'tipapp-v7'
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -94,6 +94,30 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  // Immutable, content-hashed build assets: cache-first for instant loads.
+  // Safe because every deploy changes the hash in /_next/static/ URLs, so a
+  // cached entry can never serve stale code — it just disappears from use.
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse
+        }
+        return fetch(event.request).then((response) => {
+          if (response.status === 200) {
+            const responseToCache = response.clone()
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache)
+            })
+          }
+          return response
+        })
+      })
+    )
+    return
+  }
+
+  // Everything else (HTML navigation, icons, etc.): network-first, cache fallback
   event.respondWith(
     fetch(event.request)
       .then((response) => {

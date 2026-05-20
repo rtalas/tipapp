@@ -28,62 +28,66 @@ export default async function LeagueLayout({
   }
   const userId = parseInt(session.user.id, 10)
 
-  // Verify the league exists and is active, and fetch all data needed for Header
-  const league = await prisma.league.findUnique({
-    where: { id: leagueId, deletedAt: null, isActive: true },
-    select: {
-      id: true,
-      name: true,
-      seasonFrom: true,
-      seasonTo: true,
-      infoText: true,
-      isChatEnabled: true,
-      Sport: {
-        select: {
-          id: true,
-          name: true,
+  // Fetch league, membership and user in parallel — each depends only on
+  // userId/leagueId, so there's no reason to serialize the DB round-trips.
+  const [league, currentLeagueUser, user] = await Promise.all([
+    // Verify the league exists and is active, and fetch all data needed for Header
+    prisma.league.findUnique({
+      where: { id: leagueId, deletedAt: null, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        seasonFrom: true,
+        seasonTo: true,
+        infoText: true,
+        isChatEnabled: true,
+        Sport: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
-    },
-  })
+    }),
+    // Check user is a member of this league
+    prisma.leagueUser.findFirst({
+      where: {
+        userId,
+        leagueId,
+        active: true,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        admin: true,
+        paid: true,
+        lastChatReadAt: true,
+      },
+    }),
+    // Fetch user details
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
+        isSuperadmin: true,
+      },
+    }),
+  ])
 
+  // Checks kept in the original order so the redirect/notFound precedence
+  // is identical to the previous sequential version.
   if (!league) {
     notFound()
   }
-
-  // Check user is a member of this league
-  const currentLeagueUser = await prisma.leagueUser.findFirst({
-    where: {
-      userId,
-      leagueId,
-      active: true,
-      deletedAt: null,
-    },
-    select: {
-      id: true,
-      admin: true,
-      paid: true,
-      lastChatReadAt: true,
-    },
-  })
 
   if (!currentLeagueUser) {
     // User is not a member of this league
     redirect('/')
   }
-
-  // Fetch user details
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      username: true,
-      firstName: true,
-      lastName: true,
-      avatarUrl: true,
-      isSuperadmin: true,
-    },
-  })
 
   if (!user) {
     redirect('/login')

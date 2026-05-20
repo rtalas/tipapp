@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { Trophy } from 'lucide-react'
+import { Trophy, HelpCircle } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { RefreshButton } from '@/components/user/common/refresh-button'
 import { PullToRefresh } from '@/components/user/common/pull-to-refresh'
@@ -29,11 +29,6 @@ interface SpecialBetsListProps {
 
 type FilterType = 'current' | 'past'
 
-// Unified item type for both special bets and questions
-type UnifiedItem =
-  | { type: 'specialBet'; data: UserSpecialBet; dateTime: Date; isEvaluated: boolean; updatedAt: Date }
-  | { type: 'question'; data: UserQuestion; dateTime: Date; isEvaluated: boolean; updatedAt: Date }
-
 export function SpecialBetsList({
   specialBets,
   teams,
@@ -41,6 +36,7 @@ export function SpecialBetsList({
   questions,
 }: SpecialBetsListProps) {
   const t = useTranslations('user.specialBets')
+  const tQuestions = useTranslations('user.questions')
   const tMatches = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
   const [filter, setFilter] = useState<FilterType>(() => {
@@ -60,46 +56,40 @@ export function SpecialBetsList({
     [dateLocale, tMatches]
   )
 
-  // Combine special bets and questions into unified items
-  const allItems: UnifiedItem[] = useMemo(() => {
-    const betItems: UnifiedItem[] = specialBets.map((bet) => ({
-      type: 'specialBet' as const,
-      data: bet,
-      dateTime: new Date(bet.dateTime),
-      isEvaluated: bet.isEvaluated,
-      updatedAt: new Date(bet.updatedAt),
-    }))
-
-    const questionItems: UnifiedItem[] = questions.map((q) => ({
-      type: 'question' as const,
-      data: q,
-      dateTime: new Date(q.dateTime),
-      isEvaluated: q.isEvaluated,
-      updatedAt: new Date(q.updatedAt),
-    }))
-
-    return [...betItems, ...questionItems]
-  }, [specialBets, questions])
-
-  // Filter items: current = not yet evaluated OR evaluated within last 12h
-  const currentItems = allItems.filter((item) => isCurrentTabEvent(item.isEvaluated, item.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
-  const pastItems = allItems.filter((item) => !isCurrentTabEvent(item.isEvaluated, item.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
-  const displayedItems = filter === 'current' ? currentItems : pastItems
-
-  // Group by date
-  const groupedItems = useMemo(() => {
-    const sorted = [...displayedItems].sort((a, b) => {
+  // Filter + group questions by date (independent of special bets)
+  const groupedQuestions = useMemo(() => {
+    const filtered = questions.filter((q) => {
+      const isCurrent = isCurrentTabEvent(q.isEvaluated, new Date(q.updatedAt), EVENT_POST_EVAL_VISIBLE_MS)
+      return filter === 'current' ? isCurrent : !isCurrent
+    })
+    const sorted = [...filtered].sort((a, b) => {
       const aTime = new Date(a.dateTime).getTime()
       const bTime = new Date(b.dateTime).getTime()
-      if (filter === 'past') {
-        return bTime - aTime
-      }
-      return aTime - bTime
+      return filter === 'past' ? bTime - aTime : aTime - bTime
     })
-    return groupByDate(sorted)
-  }, [displayedItems, filter])
+    return groupByDate(sorted.map((q) => ({ ...q, dateTime: new Date(q.dateTime) })))
+  }, [questions, filter])
 
-  if (allItems.length === 0) {
+  // Filter + group special bets by date (independent of questions)
+  const groupedSpecialBets = useMemo(() => {
+    const filtered = specialBets.filter((b) => {
+      const isCurrent = isCurrentTabEvent(b.isEvaluated, new Date(b.updatedAt), EVENT_POST_EVAL_VISIBLE_MS)
+      return filter === 'current' ? isCurrent : !isCurrent
+    })
+    const sorted = [...filtered].sort((a, b) => {
+      const aTime = new Date(a.dateTime).getTime()
+      const bTime = new Date(b.dateTime).getTime()
+      return filter === 'past' ? bTime - aTime : aTime - bTime
+    })
+    return groupByDate(sorted.map((b) => ({ ...b, dateTime: new Date(b.dateTime) })))
+  }, [specialBets, filter])
+
+  const hasAnyData = specialBets.length > 0 || questions.length > 0
+  const hasQuestionsInFilter = groupedQuestions.size > 0
+  const hasSpecialBetsInFilter = groupedSpecialBets.size > 0
+  const hasAnythingInFilter = hasQuestionsInFilter || hasSpecialBetsInFilter
+
+  if (!hasAnyData) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Trophy className="mb-4 h-12 w-12 text-muted-foreground opacity-30" />
@@ -120,7 +110,7 @@ export function SpecialBetsList({
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-bold text-foreground">
-              {t('longTermPredictions')}
+              {t('title')}
             </h2>
           </div>
 
@@ -148,56 +138,84 @@ export function SpecialBetsList({
 
       {/* Content with padding for fixed header */}
       <PullToRefresh onRefresh={refreshAsync}>
-        <div className="pt-32 space-y-4">
+        <div className="pt-32 space-y-8">
+          {!hasAnythingInFilter ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Trophy className="w-12 h-12 mx-auto mb-4 opacity-30" />
+              <p className="font-medium">
+                {filter === 'current' ? t('noUpcomingBets') : t('noPastBets')}
+              </p>
+              <p className="text-sm">
+                {filter === 'current'
+                  ? t('specialBetsWillAppear')
+                  : t('noCompletedBets')}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Questions section */}
+              {hasQuestionsInFilter && (
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 px-1">
+                    <HelpCircle className="w-5 h-5 text-primary" />
+                    <h3 className="text-base font-semibold text-foreground">
+                      {tQuestions('title')}
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {Array.from(groupedQuestions.entries()).map(([dateKey, items]) => (
+                      <div key={`q-${dateKey}`} className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-px flex-1 bg-border" />
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-2">
+                            {getDateLabel(new Date(dateKey))}
+                          </span>
+                          <div className="h-px flex-1 bg-border" />
+                        </div>
+                        {items.map((q) => (
+                          <QuestionCard key={`q-${q.id}`} question={q} onSaved={refresh} />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
-        {/* Items grouped by date */}
-        {displayedItems.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Trophy className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p className="font-medium">
-              {filter === 'current' ? t('noUpcomingBets') : t('noPastBets')}
-            </p>
-            <p className="text-sm">
-              {filter === 'current'
-                ? t('specialBetsWillAppear')
-                : t('noCompletedBets')}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {Array.from(groupedItems.entries()).map(([dateKey, dateItems]) => (
-              <div key={dateKey} className="space-y-3">
-                {/* Date Divider */}
-                <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-border" />
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-2">
-                    {getDateLabel(new Date(dateKey))}
-                  </span>
-                  <div className="h-px flex-1 bg-border" />
-                </div>
-
-                {/* Items for this date */}
-                {dateItems.map((item) =>
-                  item.type === 'specialBet' ? (
-                    <SpecialBetCard
-                      key={`bet-${item.data.id}`}
-                      specialBet={item.data}
-                      teams={teams}
-                      players={players}
-                      onSaved={refresh}
-                    />
-                  ) : (
-                    <QuestionCard
-                      key={`q-${item.data.id}`}
-                      question={item.data}
-                      onSaved={refresh}
-                    />
-                  )
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+              {/* Long-term predictions section */}
+              {hasSpecialBetsInFilter && (
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 px-1">
+                    <Trophy className="w-5 h-5 text-primary" />
+                    <h3 className="text-base font-semibold text-foreground">
+                      {t('longTermPredictions')}
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {Array.from(groupedSpecialBets.entries()).map(([dateKey, items]) => (
+                      <div key={`b-${dateKey}`} className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-px flex-1 bg-border" />
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-2">
+                            {getDateLabel(new Date(dateKey))}
+                          </span>
+                          <div className="h-px flex-1 bg-border" />
+                        </div>
+                        {items.map((bet) => (
+                          <SpecialBetCard
+                            key={`bet-${bet.id}`}
+                            specialBet={bet}
+                            teams={teams}
+                            players={players}
+                            onSaved={refresh}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
         </div>
       </PullToRefresh>
     </div>
