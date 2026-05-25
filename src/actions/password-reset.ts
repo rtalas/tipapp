@@ -40,8 +40,8 @@ export async function requestPasswordReset(
 
     try {
       // Find user by email (case-insensitive)
-      const user = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
+      const user = await prisma.user.findFirst({
+        where: { email: email.toLowerCase(), deletedAt: null },
       });
 
       if (!user) {

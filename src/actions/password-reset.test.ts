@@ -30,7 +30,7 @@ describe('Password Reset Actions', () => {
 
   describe('requestPasswordReset', () => {
     it('should return success message for valid email', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockPrisma.user.findFirst.mockResolvedValue({
         id: 1,
         email: 'user@example.com',
         firstName: 'John',
@@ -48,7 +48,7 @@ describe('Password Reset Actions', () => {
     });
 
     it('should return generic success for non-existent email', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockPrisma.user.findFirst.mockResolvedValue(null);
 
       const result = await requestPasswordReset({ email: 'nonexistent@example.com' });
 
@@ -57,7 +57,7 @@ describe('Password Reset Actions', () => {
     });
 
     it('should return generic success when rate limited', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockPrisma.user.findFirst.mockResolvedValue({
         id: 1,
         email: 'user@example.com',
         firstName: 'John',
@@ -87,7 +87,7 @@ describe('Password Reset Actions', () => {
     });
 
     it('should create password reset token with correct hash', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockPrisma.user.findFirst.mockResolvedValue({
         id: 42,
         email: 'user@example.com',
         firstName: 'John',
@@ -112,7 +112,7 @@ describe('Password Reset Actions', () => {
     });
 
     it('should send email with reset link', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockPrisma.user.findFirst.mockResolvedValue({
         id: 1,
         email: 'user@example.com',
         firstName: 'John',

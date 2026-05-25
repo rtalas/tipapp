@@ -20,6 +20,7 @@ export const { handlers, auth } = NextAuth({
           // Find user by username or email (email is case-insensitive)
           const user = await prisma.user.findFirst({
             where: {
+              deletedAt: null,
               OR: [
                 { username: validatedCredentials.username },
                 { email: validatedCredentials.username.toLowerCase() },
