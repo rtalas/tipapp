@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Edit, Trash2, Calculator, ChevronDown, Plus } from 'lucide-react'
+import { Edit, Trash2, Calculator, ChevronDown, Plus, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,7 @@ interface QuestionTableRowProps {
   onToggleExpand: () => void
   onEdit: () => void
   onEvaluate: () => void
+  isEvaluating?: boolean
   onDelete: () => void
   onAddBet: () => void
   status: 'scheduled' | 'finished' | 'evaluated'
@@ -35,6 +36,7 @@ export function QuestionTableRow({
   onToggleExpand,
   onEdit,
   onEvaluate,
+  isEvaluating = false,
   onDelete,
   onAddBet,
   status,
@@ -127,9 +129,14 @@ export function QuestionTableRow({
                 e.stopPropagation()
                 onEvaluate()
               }}
+              disabled={isEvaluating}
               aria-label={t('evaluateQuestion', { text: question.text.substring(0, 50) })}
             >
-              <Calculator className="h-4 w-4 text-blue-600" />
+              {isEvaluating ? (
+                <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+              ) : (
+                <Calculator className="h-4 w-4 text-blue-600" />
+              )}
             </Button>
             <Button
               variant="ghost"

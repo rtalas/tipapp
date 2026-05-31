@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2, Calculator, ChevronDown, ChevronUp, UserPlus } from 'lucide-react'
+import { Plus, Edit, Trash2, Calculator, ChevronDown, ChevronUp, UserPlus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { deleteQuestion, createQuestion } from '@/actions/questions'
@@ -64,6 +64,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
   const [questionToEdit, setQuestionToEdit] = useState<Question | null>(null)
   const deleteDialog = useDeleteDialog<Question>()
   const [createBetQuestionId, setCreateBetQuestionId] = useState<number | null>(null)
+  const [evaluatingQuestionId, setEvaluatingQuestionId] = useState<number | null>(null)
 
   const { isExpanded, toggleRow } = useExpandableRow()
   const createDialog = useCreateDialog<CreateFormData>({
@@ -149,6 +150,8 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
   }
 
   const handleEvaluate = async (questionId: number) => {
+    if (evaluatingQuestionId !== null) return
+    setEvaluatingQuestionId(questionId)
     try {
       const result = await evaluateQuestionBets({
         questionId,
@@ -162,6 +165,8 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
     } catch (error) {
       toast.error(getErrorMessage(error, t('questionEvaluateFailed')))
       logger.error('Failed to evaluate question', { error, questionId })
+    } finally {
+      setEvaluatingQuestionId(null)
     }
   }
 
@@ -248,6 +253,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                       onToggleExpand={() => toggleRow(q.id)}
                       onEdit={() => setQuestionToEdit(q)}
                       onEvaluate={() => handleEvaluate(q.id)}
+                      isEvaluating={evaluatingQuestionId === q.id}
                       onDelete={() => deleteDialog.openDialog(q)}
                       onAddBet={() => setCreateBetQuestionId(q.id)}
                       status={getQuestionStatus(q)}
@@ -269,7 +275,7 @@ export function QuestionsContent({ questions, users, league }: QuestionsContentP
                       <div className="font-medium text-sm flex-1">{q.text}</div>
                       <ActionMenu items={[
                         { label: tCommon('edit'), icon: <Edit className="h-4 w-4" />, onClick: () => setQuestionToEdit(q) },
-                        { label: t('evaluate'), icon: <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(q.id) },
+                        { label: evaluatingQuestionId === q.id ? `${t('evaluate')}...` : t('evaluate'), icon: evaluatingQuestionId === q.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(q.id) },
                         { label: t('addMissingBet'), icon: <UserPlus className="h-4 w-4" />, onClick: () => setCreateBetQuestionId(q.id) },
                         { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(q), variant: 'destructive' },
                       ]} />

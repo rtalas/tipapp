@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Edit, Trash2, ChevronDown, Calculator, Plus, Calendar } from 'lucide-react'
+import { Edit, Trash2, ChevronDown, Calculator, Plus, Calendar, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -29,6 +29,7 @@ interface SpecialBetTableRowProps {
   onEditDetails: () => void
   onEdit: () => void
   onEvaluate: () => void
+  isEvaluating?: boolean
   onDelete: () => void
   onAddMissingBet: () => void
   showLeagueColumn: boolean
@@ -79,6 +80,7 @@ export function SpecialBetTableRow({
   onEditDetails,
   onEdit,
   onEvaluate,
+  isEvaluating = false,
   onDelete,
   onAddMissingBet,
   showLeagueColumn,
@@ -201,9 +203,14 @@ export function SpecialBetTableRow({
                 e.stopPropagation()
                 onEvaluate()
               }}
+              disabled={isEvaluating}
               aria-label={t('evaluateSpecialBet', { name: specialBet.name })}
             >
-              <Calculator className="h-4 w-4 text-blue-600" />
+              {isEvaluating ? (
+                <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+              ) : (
+                <Calculator className="h-4 w-4 text-blue-600" />
+              )}
             </Button>
             <Button
               variant="ghost"

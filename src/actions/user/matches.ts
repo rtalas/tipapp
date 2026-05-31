@@ -154,6 +154,7 @@ export async function getMatchFriendPredictions(leagueMatchId: number) {
           leagueMatchId: entityId,
           deletedAt: null,
           leagueUserId: { not: excludeLeagueUserId },
+          LeagueUser: { active: true },
         },
         include: {
           LeagueUser: {

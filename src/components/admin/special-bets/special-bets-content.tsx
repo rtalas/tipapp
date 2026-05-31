@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus } from 'lucide-react'
+import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { deleteSpecialBet } from '@/actions/special-bets'
@@ -93,6 +93,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
   const [editDetailsSpecialBet, setEditDetailsSpecialBet] = useState<SpecialBet | null>(null)
   const deleteDialog = useDeleteDialog<SpecialBet>()
   const [createBetSpecialBetId, setCreateBetSpecialBetId] = useState<number | null>(null)
+  const [evaluatingSpecialBetId, setEvaluatingSpecialBetId] = useState<number | null>(null)
 
   // Expandable rows
   const { isExpanded, toggleRow } = useExpandableRow()
@@ -167,6 +168,8 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
   }
 
   const handleEvaluate = async (specialBetId: number) => {
+    if (evaluatingSpecialBetId !== null) return
+    setEvaluatingSpecialBetId(specialBetId)
     try {
       const result = await evaluateSpecialBetBets({ specialBetId })
 
@@ -178,6 +181,8 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
     } catch (error) {
       toast.error(getErrorMessage(error, t('specialBetEvaluateFailed')))
       logger.error('Failed to evaluate special bet', { error, specialBetId })
+    } finally {
+      setEvaluatingSpecialBetId(null)
     }
   }
 
@@ -299,6 +304,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
                         onEditDetails={() => setEditDetailsSpecialBet(sb)}
                         onEdit={() => setSelectedSpecialBet(sb)}
                         onEvaluate={() => handleEvaluate(sb.id)}
+                        isEvaluating={evaluatingSpecialBetId === sb.id}
                         onDelete={() => deleteDialog.openDialog(sb)}
                         onAddMissingBet={() => setCreateBetSpecialBetId(sb.id)}
                         showLeagueColumn={!league}
@@ -323,7 +329,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
                       <ActionMenu items={[
                         { label: t('editDetails'), icon: <Calendar className="h-4 w-4" />, onClick: () => setEditDetailsSpecialBet(sb) },
                         { label: t('editResult'), icon: <Edit className="h-4 w-4" />, onClick: () => setSelectedSpecialBet(sb) },
-                        { label: t('evaluate'), icon: <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(sb.id) },
+                        { label: evaluatingSpecialBetId === sb.id ? `${t('evaluate')}...` : t('evaluate'), icon: evaluatingSpecialBetId === sb.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(sb.id) },
                         { label: t('addMissingBet'), icon: <UserPlus className="h-4 w-4" />, onClick: () => setCreateBetSpecialBetId(sb.id) },
                         { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(sb), variant: 'destructive' },
                       ]} />
@@ -355,16 +361,26 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
                         </button>
                         {expanded && (
                           <div className="border-t pt-3 space-y-2">
-                            {sb.UserSpecialBetSingle.map((bet) => (
-                              <div key={bet.id} className="text-sm flex items-center justify-between bg-muted/30 rounded px-2 py-1.5">
-                                <span className="font-medium">{bet.LeagueUser.User.firstName} {bet.LeagueUser.User.lastName}</span>
-                                <div className="flex items-center gap-2">
-                                  {bet.totalPoints !== 0 && (
-                                    <Badge variant="outline" className="text-xs">{bet.totalPoints}pts</Badge>
-                                  )}
+                            {sb.UserSpecialBetSingle.map((bet) => {
+                              const prediction = bet.teamResultId && bet.LeagueTeam
+                                ? bet.LeagueTeam.Team.name
+                                : bet.playerResultId && bet.LeaguePlayer
+                                ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
+                                : bet.value !== null
+                                ? bet.value.toString()
+                                : '-'
+                              return (
+                                <div key={bet.id} className="text-sm flex items-center justify-between bg-muted/30 rounded px-2 py-1.5">
+                                  <span className="font-medium">{bet.LeagueUser.User.firstName} {bet.LeagueUser.User.lastName}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">{prediction}</span>
+                                    {bet.totalPoints !== 0 && (
+                                      <Badge variant="outline" className="text-xs">{bet.totalPoints}pts</Badge>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              )
+                            })}
                           </div>
                         )}
                       </>

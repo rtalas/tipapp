@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateQuestion, updateQuestionResult } from '@/actions/questions'
-import { evaluateQuestionBets } from '@/actions/evaluate-questions'
 import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
@@ -44,7 +43,6 @@ interface EditQuestionDialogProps {
 
 export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestionDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isEvaluating, setIsEvaluating] = useState(false)
   const [text, setText] = useState(question.text)
   const [dateTime, setDateTime] = useState(
     format(new Date(question.dateTime), "yyyy-MM-dd'T'HH:mm")
@@ -134,36 +132,6 @@ export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestio
       logger.error('Failed to save question result', { error, questionId: question.id })
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  const handleEvaluate = async () => {
-    if (result === '') {
-      toast.error('Please save question result before evaluating')
-      return
-    }
-
-    setIsEvaluating(true)
-
-    try {
-      const evaluationResult = await evaluateQuestionBets({ questionId: question.id })
-
-      if (evaluationResult.success && 'results' in evaluationResult) {
-        const betsCount = evaluationResult.results?.length ?? 0
-        toast.success(`Question evaluated! ${betsCount} bets scored.`)
-        onOpenChange(false)
-      } else if (!evaluationResult.success) {
-        toast.error('error' in evaluationResult ? evaluationResult.error : 'Failed to evaluate question')
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error('Failed to evaluate question')
-      }
-      logger.error('Failed to evaluate question', { error, questionId: question.id })
-    } finally {
-      setIsEvaluating(false)
     }
   }
 
@@ -290,28 +258,18 @@ export function EditQuestionDialog({ question, open, onOpenChange }: EditQuestio
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isSubmitting || isEvaluating}
+            disabled={isSubmitting}
           >
             Close
           </Button>
 
           {!question.isEvaluated && (
-            <>
-              <Button
-                onClick={handleSaveResult}
-                disabled={isSubmitting || isEvaluating || result === ''}
-              >
-                {isSubmitting ? 'Saving...' : 'Save Result'}
-              </Button>
-
-              <Button
-                onClick={handleEvaluate}
-                disabled={isSubmitting || isEvaluating || (question.result === null && result === '')}
-                variant="default"
-              >
-                {isEvaluating ? 'Evaluating...' : 'Save & Evaluate'}
-              </Button>
-            </>
+            <Button
+              onClick={handleSaveResult}
+              disabled={isSubmitting || result === ''}
+            >
+              {isSubmitting ? 'Saving...' : 'Save Result'}
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

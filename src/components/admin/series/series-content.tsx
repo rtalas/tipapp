@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus } from 'lucide-react'
+import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus, Loader2 } from 'lucide-react'
 import { deleteSeries, createSeries } from '@/actions/series'
 import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { getErrorMessage } from '@/lib/error-handler'
@@ -75,6 +75,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null)
   const [editDetailsSeries, setEditDetailsSeries] = useState<Series | null>(null)
   const [createBetSeriesId, setCreateBetSeriesId] = useState<number | null>(null)
+  const [evaluatingSeriesId, setEvaluatingSeriesId] = useState<number | null>(null)
 
   // Expandable rows
   const { isExpanded, toggleRow } = useExpandableRow()
@@ -177,6 +178,8 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
   }
 
   const handleEvaluate = async (seriesId: number) => {
+    if (evaluatingSeriesId !== null) return
+    setEvaluatingSeriesId(seriesId)
     try {
       const result = await evaluateSeriesBets({
         seriesId,
@@ -192,6 +195,8 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
     } catch (error) {
       toast.error(getErrorMessage(error, t('seriesEvaluateFailed')))
       logger.error('Failed to evaluate series', { error, seriesId })
+    } finally {
+      setEvaluatingSeriesId(null)
     }
   }
 
@@ -301,6 +306,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                       onEditDetails={() => setEditDetailsSeries(s)}
                       onEdit={() => setSelectedSeries(s)}
                       onEvaluate={() => handleEvaluate(s.id)}
+                      isEvaluating={evaluatingSeriesId === s.id}
                       onDelete={() => deleteDialog.openDialog(s)}
                       onAddBet={() => setCreateBetSeriesId(s.id)}
                       showLeagueColumn={!league}
@@ -331,7 +337,7 @@ export function SeriesContent({ series, leagues, specialBetSeries, users, league
                       <ActionMenu items={[
                         { label: t('editDetails'), icon: <Calendar className="h-4 w-4" />, onClick: () => setEditDetailsSeries(s) },
                         { label: t('editResult'), icon: <Edit className="h-4 w-4" />, onClick: () => setSelectedSeries(s) },
-                        { label: t('evaluate'), icon: <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(s.id) },
+                        { label: evaluatingSeriesId === s.id ? `${t('evaluate')}...` : t('evaluate'), icon: evaluatingSeriesId === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(s.id) },
                         { label: t('addMissingBet'), icon: <UserPlus className="h-4 w-4" />, onClick: () => setCreateBetSeriesId(s.id) },
                         { label: tCommon('delete'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(s), variant: 'destructive' },
                       ]} />

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus, CheckCircle } from 'lucide-react'
+import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus, CheckCircle, Loader2 } from 'lucide-react'
 import { ScorerRankingBadge } from '@/components/common/scorer-ranking-badge'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
@@ -67,6 +67,7 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
   const [editMatch, setEditMatch] = useState<LeagueMatch | null>(null)
   const deleteDialog = useDeleteDialog<LeagueMatch>()
   const [createBetMatchId, setCreateBetMatchId] = useState<number | null>(null)
+  const [evaluatingMatchId, setEvaluatingMatchId] = useState<number | null>(null)
 
   // Expandable rows
   const { isExpanded, toggleRow } = useExpandableRow()
@@ -122,6 +123,8 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
   }
 
   const handleEvaluate = async (leagueMatchId: number, matchId: number) => {
+    if (evaluatingMatchId !== null) return
+    setEvaluatingMatchId(leagueMatchId)
     try {
       const result = await evaluateMatchBets({
         leagueMatchId,
@@ -138,6 +141,8 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to evaluate match'))
       logger.error('Failed to evaluate match', { error, leagueMatchId, matchId })
+    } finally {
+      setEvaluatingMatchId(null)
     }
   }
 
@@ -206,6 +211,7 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                       onEditMatch={() => setEditMatch(lm)}
                       onEditResult={() => setSelectedMatch(lm)}
                       onEvaluate={() => handleEvaluate(lm.id, lm.Match.id)}
+                      isEvaluating={evaluatingMatchId === lm.id}
                       onDelete={() => deleteDialog.openDialog(lm)}
                       onAddMissingBet={() => setCreateBetMatchId(lm.id)}
                       showLeagueColumn={!league}
@@ -237,7 +243,7 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                       <ActionMenu items={[
                         { label: t('editMatch'), icon: <Calendar className="h-4 w-4" />, onClick: () => setEditMatch(lm) },
                         { label: t('enterResult'), icon: <Edit className="h-4 w-4" />, onClick: () => setSelectedMatch(lm) },
-                        { label: t('evaluateLabel'), icon: <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(lm.id, lm.Match.id) },
+                        { label: evaluatingMatchId === lm.id ? `${t('evaluateLabel')}...` : t('evaluateLabel'), icon: evaluatingMatchId === lm.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(lm.id, lm.Match.id) },
                         { label: t('addMissingBet'), icon: <UserPlus className="h-4 w-4" />, onClick: () => setCreateBetMatchId(lm.id) },
                         { label: t('deleteTitle'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(lm), variant: 'destructive' },
                       ]} />

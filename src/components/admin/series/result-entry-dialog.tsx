@@ -4,7 +4,6 @@ import React, { useState } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateSeriesResult } from '@/actions/series'
-import { evaluateSeriesBets } from '@/actions/evaluate-series'
 import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -60,7 +59,6 @@ interface ResultEntryDialogProps {
 
 export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isEvaluating, setIsEvaluating] = useState(false)
   const [homeTeamScore, setHomeTeamScore] = useState(
     series.homeTeamScore?.toString() ?? ''
   )
@@ -117,36 +115,6 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
       logger.error('Failed to save series result', { error, seriesId: series.id })
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  const handleEvaluate = async () => {
-    if (!homeTeamScore || !awayTeamScore) {
-      toast.error('Please save series result before evaluating')
-      return
-    }
-
-    setIsEvaluating(true)
-
-    try {
-      const result = await evaluateSeriesBets({ seriesId: series.id })
-
-      if (result.success && 'results' in result) {
-        const betsCount = result.results?.length ?? 0
-        toast.success(`Series evaluated! ${betsCount} bets scored.`)
-        onOpenChange(false)
-      } else if (!result.success) {
-        toast.error('error' in result ? result.error : 'Failed to evaluate series')
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error('Failed to evaluate series')
-      }
-      logger.error('Failed to evaluate series', { error, seriesId: series.id })
-    } finally {
-      setIsEvaluating(false)
     }
   }
 
@@ -223,24 +191,16 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isSubmitting || isEvaluating}
+            disabled={isSubmitting}
           >
             Close
           </Button>
 
           <Button
             onClick={handleSaveResult}
-            disabled={isSubmitting || isEvaluating}
+            disabled={isSubmitting}
           >
             {isSubmitting ? 'Saving...' : 'Save Result'}
-          </Button>
-
-          <Button
-            onClick={handleEvaluate}
-            disabled={isSubmitting || isEvaluating || (!series.homeTeamScore && !homeTeamScore)}
-            variant="default"
-          >
-            {isEvaluating ? 'Evaluating...' : series.isEvaluated ? 'Re-Evaluate' : 'Save & Evaluate'}
           </Button>
         </DialogFooter>
       </DialogContent>

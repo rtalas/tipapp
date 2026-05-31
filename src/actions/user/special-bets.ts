@@ -67,6 +67,7 @@ export async function getSpecialBetFriendPredictions(leagueSpecialBetSingleId: n
           leagueSpecialBetSingleId: entityId,
           deletedAt: null,
           leagueUserId: { not: excludeLeagueUserId },
+          LeagueUser: { active: true },
         },
         include: {
           LeagueUser: {

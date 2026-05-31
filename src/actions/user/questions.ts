@@ -54,6 +54,7 @@ export async function getQuestionFriendPredictions(leagueSpecialBetQuestionId: n
           leagueSpecialBetQuestionId: entityId,
           deletedAt: null,
           leagueUserId: { not: excludeLeagueUserId },
+          LeagueUser: { active: true },
         },
         include: {
           LeagueUser: {

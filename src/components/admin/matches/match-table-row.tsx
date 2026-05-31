@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import { format } from 'date-fns'
-import { Edit, Trash2, ChevronDown, Calculator, Calendar } from 'lucide-react'
+import { Edit, Trash2, ChevronDown, Calculator, Calendar, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { getMatchStatus } from '@/lib/match-utils'
@@ -23,6 +23,7 @@ interface MatchTableRowProps {
   onEditMatch: () => void
   onEditResult: () => void
   onEvaluate: () => void
+  isEvaluating?: boolean
   onDelete: () => void
   onAddMissingBet: () => void
   showLeagueColumn: boolean
@@ -35,6 +36,7 @@ export function MatchTableRow({
   onEditMatch,
   onEditResult,
   onEvaluate,
+  isEvaluating = false,
   onDelete,
   onAddMissingBet,
   showLeagueColumn,
@@ -182,9 +184,14 @@ export function MatchTableRow({
                 e.stopPropagation()
                 onEvaluate()
               }}
+              disabled={isEvaluating}
               aria-label={t('evaluateMatch', { teams })}
             >
-              <Calculator className="h-4 w-4 text-blue-600" />
+              {isEvaluating ? (
+                <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+              ) : (
+                <Calculator className="h-4 w-4 text-blue-600" />
+              )}
             </Button>
             <Button
               variant="ghost"

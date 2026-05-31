@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateSpecialBetResult, type SpecialBetWithDetails } from '@/actions/special-bets'
-import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
 import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,7 +40,6 @@ interface ResultEntryDialogProps {
 
 export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: ResultEntryDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isEvaluating, setIsEvaluating] = useState(false)
 
   // Determine type from evaluator type
   const evaluatorTypeName = specialBet.Evaluator?.EvaluatorType?.name || ''
@@ -123,42 +121,6 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
       logger.error('Failed to save special bet result', { error, specialBetId: specialBet.id })
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  const handleEvaluate = async () => {
-    // Check if result is saved based on type
-    const hasResult =
-      (resultType === 'team' && specialBet.specialBetTeamResultId) ||
-      (resultType === 'player' && specialBet.specialBetPlayerResultId) ||
-      (resultType === 'value' && specialBet.specialBetValue !== null)
-
-    if (!hasResult) {
-      toast.error('Please save special bet result before evaluating')
-      return
-    }
-
-    setIsEvaluating(true)
-
-    try {
-      const result = await evaluateSpecialBetBets({ specialBetId: specialBet.id })
-
-      if (result.success && 'results' in result) {
-        const betsCount = result.results?.length ?? 0
-        toast.success(`Special bet evaluated! ${betsCount} bets scored.`)
-        onOpenChange(false)
-      } else if (!result.success) {
-        toast.error('error' in result ? result.error : 'Failed to evaluate special bet')
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error('Failed to evaluate special bet')
-      }
-      logger.error('Failed to evaluate special bet', { error, specialBetId: specialBet.id })
-    } finally {
-      setIsEvaluating(false)
     }
   }
 
@@ -310,24 +272,16 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isSubmitting || isEvaluating}
+            disabled={isSubmitting}
           >
             Close
           </Button>
 
           <Button
             onClick={handleSaveResult}
-            disabled={isSubmitting || isEvaluating}
+            disabled={isSubmitting}
           >
             {isSubmitting ? 'Saving...' : 'Save Result'}
-          </Button>
-
-          <Button
-            onClick={handleEvaluate}
-            disabled={isSubmitting || isEvaluating}
-            variant="default"
-          >
-            {isEvaluating ? 'Evaluating...' : specialBet.isEvaluated ? 'Re-Evaluate' : 'Save & Evaluate'}
           </Button>
         </DialogFooter>
       </DialogContent>
