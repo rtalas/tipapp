@@ -72,7 +72,7 @@ describe('Matches Actions', () => {
       })
 
       expect(result.success).toBe(false)
-      expect((result as any).error).toContain('Teams must belong')
+      expect((result as any).error).toContain('Home team must belong')
     })
 
     it('should validate match phase exists', async () => {
@@ -144,6 +144,39 @@ describe('Matches Actions', () => {
       expect((result as any).error).toContain('Home and away teams must be different')
     })
 
+    it('should create a placeholder match with one team and one placeholder text', async () => {
+      mockPrisma.leagueTeam.findFirst.mockResolvedValueOnce({ id: 1, leagueId: 1 } as any)
+      mockPrisma.$transaction.mockImplementation(async (fn: any) =>
+        fn({
+          match: { create: vi.fn().mockResolvedValue({ id: 11 }) },
+          leagueMatch: { create: vi.fn().mockResolvedValue({ id: 11 }) },
+        })
+      )
+
+      const result = await createMatch({
+        leagueId: 1,
+        homeTeamId: 1,
+        awayPlaceholder: 'Winner of Group B',
+        dateTime: futureDate(),
+        isPlayoffGame: true,
+        isDoubled: false,
+      })
+
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject creating a match without team or placeholder on a side', async () => {
+      const result = await createMatch({
+        leagueId: 1,
+        homeTeamId: 1,
+        dateTime: futureDate(),
+        isPlayoffGame: false,
+        isDoubled: false,
+      } as any)
+
+      expect(result.success).toBe(false)
+    })
+
     it('should invalidate match-data cache', async () => {
       mockPrisma.leagueTeam.findFirst
         .mockResolvedValueOnce({ id: 1 } as any)
@@ -170,6 +203,14 @@ describe('Matches Actions', () => {
 
   describe('updateMatch', () => {
     it('should update match', async () => {
+      mockPrisma.match.findFirst.mockResolvedValue({
+        id: 1,
+        homeTeamId: 10,
+        awayTeamId: 20,
+        homePlaceholder: null,
+        awayPlaceholder: null,
+        LeagueMatch: [{ leagueId: 1 }],
+      } as any)
       mockPrisma.match.update.mockResolvedValue({ id: 1 } as any)
 
       const result = await updateMatch({
@@ -182,6 +223,10 @@ describe('Matches Actions', () => {
     })
 
     it('should validate match phase if provided', async () => {
+      mockPrisma.match.findFirst.mockResolvedValue({
+        id: 1, homeTeamId: 10, awayTeamId: 20, homePlaceholder: null, awayPlaceholder: null,
+        LeagueMatch: [{ leagueId: 1 }],
+      } as any)
       mockPrisma.matchPhase.findFirst.mockResolvedValue(null)
 
       const result = await updateMatch({ matchId: 1, matchPhaseId: 999 })
@@ -191,6 +236,10 @@ describe('Matches Actions', () => {
     })
 
     it('should reject game number exceeding bestOf', async () => {
+      mockPrisma.match.findFirst.mockResolvedValue({
+        id: 1, homeTeamId: 10, awayTeamId: 20, homePlaceholder: null, awayPlaceholder: null,
+        LeagueMatch: [{ leagueId: 1 }],
+      } as any)
       mockPrisma.matchPhase.findFirst.mockResolvedValue({ id: 1, bestOf: 5 } as any)
 
       const result = await updateMatch({ matchId: 1, matchPhaseId: 1, gameNumber: 6 })
@@ -200,11 +249,80 @@ describe('Matches Actions', () => {
     })
 
     it('should handle database error', async () => {
+      mockPrisma.match.findFirst.mockResolvedValue({
+        id: 1, homeTeamId: 10, awayTeamId: 20, homePlaceholder: null, awayPlaceholder: null,
+        LeagueMatch: [{ leagueId: 1 }],
+      } as any)
       mockPrisma.match.update.mockRejectedValue(new Error('DB error'))
 
       const result = await updateMatch({ matchId: 1, dateTime: futureDate() })
 
       expect(result.success).toBe(false)
+    })
+
+    it('should reject overwriting a team once both teams are set (match no longer a placeholder)', async () => {
+      mockPrisma.match.findFirst.mockResolvedValue({
+        id: 1, homeTeamId: 10, awayTeamId: 20, homePlaceholder: null, awayPlaceholder: null,
+        LeagueMatch: [{ leagueId: 1 }],
+      } as any)
+
+      const result = await updateMatch({ matchId: 1, homeTeamId: 99 })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('match is already fully set')
+    })
+
+    it('should allow swapping an already-set team while the match is still a placeholder', async () => {
+      mockPrisma.match.findFirst.mockResolvedValue({
+        id: 1, homeTeamId: 10, awayTeamId: null, homePlaceholder: null, awayPlaceholder: 'Winner of QF2',
+        LeagueMatch: [{ leagueId: 1 }],
+      } as any)
+      mockPrisma.leagueTeam.findFirst.mockResolvedValue({ id: 11, leagueId: 1 } as any)
+      mockPrisma.match.update.mockResolvedValue({ id: 1 } as any)
+
+      const result = await updateMatch({ matchId: 1, homeTeamId: 11 })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.match.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ homeTeamId: 11 }),
+        })
+      )
+    })
+
+    it('should promote placeholder to a team and clear placeholder text', async () => {
+      mockPrisma.match.findFirst.mockResolvedValue({
+        id: 1, homeTeamId: null, awayTeamId: 20, homePlaceholder: 'Winner of QF1', awayPlaceholder: null,
+        LeagueMatch: [{ leagueId: 1 }],
+      } as any)
+      mockPrisma.leagueTeam.findFirst.mockResolvedValue({ id: 42, leagueId: 1 } as any)
+      mockPrisma.match.update.mockResolvedValue({ id: 1 } as any)
+
+      const result = await updateMatch({ matchId: 1, homeTeamId: 42 })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.match.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ homeTeamId: 42, homePlaceholder: null }),
+        })
+      )
+    })
+
+    it('should allow swapping a team back to a placeholder while the match is still a placeholder', async () => {
+      mockPrisma.match.findFirst.mockResolvedValue({
+        id: 1, homeTeamId: 10, awayTeamId: null, homePlaceholder: null, awayPlaceholder: 'Winner of QF2',
+        LeagueMatch: [{ leagueId: 1 }],
+      } as any)
+      mockPrisma.match.update.mockResolvedValue({ id: 1 } as any)
+
+      const result = await updateMatch({ matchId: 1, homePlaceholder: 'Winner of QF1' })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.match.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ homeTeamId: null, homePlaceholder: 'Winner of QF1' }),
+        })
+      )
     })
   })
 

@@ -206,7 +206,9 @@
       "saving": "Saving...",
       "savePrediction": "Save Prediction",
       "playoff": "Playoff",
-      "game": "Game {number}"
+      "game": "Game {number}",
+      "tbd": "TBD",
+      "waitingForOpponents": "Waiting for opponents — betting opens once teams are set"
     },
     "leaderboard": {
       "title": "Leaderboard",
@@ -638,6 +640,7 @@
       "evaluateLabel": "Evaluate",
       "hideBets": "Hide bets",
       "showBets": "Show bets",
+      "tbd": "TBD",
       "resultDialog": {
         "title": "Enter Match Result",
         "regularScoresRequired": "Please enter regular time scores",
@@ -704,7 +707,10 @@
         "phasePlaceholder": "None",
         "bestOf": "(Best of {count})",
         "single": "(Single)",
-        "gameNumber": "Game Number"
+        "gameNumber": "Game Number",
+        "usePlaceholder": "Use placeholder",
+        "useTeam": "Pick team",
+        "placeholderHint": "e.g. Winner of Group A"
       }
     },
     "players": {

@@ -114,6 +114,10 @@ export async function createUserBet(input: CreateUserBetInput) {
             throw new AppError('Match not found', 'NOT_FOUND', 404)
           }
 
+          if (leagueMatch.Match.homeTeamId === null || leagueMatch.Match.awayTeamId === null) {
+            throw new AppError('Cannot create bet for a placeholder match', 'BAD_REQUEST', 400)
+          }
+
           // Verify leagueUser exists
           const leagueUser = await tx.leagueUser.findUnique({
             where: { id: validated.leagueUserId, deletedAt: null },
@@ -197,6 +201,10 @@ export async function updateUserBet(input: UpdateUserBetInput) {
 
       if (!bet || bet.LeagueMatch.Match.deletedAt !== null) {
         throw new AppError('Bet not found', 'NOT_FOUND', 404)
+      }
+
+      if (bet.LeagueMatch.Match.homeTeamId === null || bet.LeagueMatch.Match.awayTeamId === null) {
+        throw new AppError('Cannot update bet for a placeholder match', 'BAD_REQUEST', 400)
       }
 
       // Warning if match already evaluated

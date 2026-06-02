@@ -95,12 +95,14 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
       }
     }
 
-    // Search filter - optimized: combine team names
+    // Search filter - optimized: combine team names + placeholder text
     if (search) {
       const searchLower = search.toLowerCase()
-      const homeTeam = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name.toLowerCase()
-      const awayTeam = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name.toLowerCase()
-      const searchableText = `${homeTeam} ${awayTeam}`.toLowerCase()
+      const homeTeam = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam?.Team.name.toLowerCase()
+        ?? lm.Match.homePlaceholder?.toLowerCase() ?? ''
+      const awayTeam = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam?.Team.name.toLowerCase()
+        ?? lm.Match.awayPlaceholder?.toLowerCase() ?? ''
+      const searchableText = `${homeTeam} ${awayTeam}`
       return searchableText.includes(searchLower)
     }
 
@@ -225,28 +227,46 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
             <div className="md:hidden space-y-3">
               {filteredMatches.map((lm) => {
                 const status = getMatchStatus(lm.Match)
-                const homeTeam = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team
-                const awayTeam = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team
+                const homeTeam = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam?.Team ?? null
+                const awayTeam = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam?.Team ?? null
+                const homeLabel = homeTeam?.shortcut ?? lm.Match.homePlaceholder ?? t('tbd')
+                const awayLabel = awayTeam?.shortcut ?? lm.Match.awayPlaceholder ?? t('tbd')
+                const isPlaceholder = !homeTeam || !awayTeam
                 const expanded = isExpanded(lm.id)
                 const actualScorerIds = lm.Match.MatchScorer?.map((ms) => ms.scorerId) ?? []
+                const actionItems = [
+                  { label: t('editMatch'), icon: <Calendar className="h-4 w-4" />, onClick: () => setEditMatch(lm) },
+                  ...(isPlaceholder ? [] : [
+                    { label: t('enterResult'), icon: <Edit className="h-4 w-4" />, onClick: () => setSelectedMatch(lm) },
+                    { label: evaluatingMatchId === lm.id ? `${t('evaluateLabel')}...` : t('evaluateLabel'), icon: evaluatingMatchId === lm.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(lm.id, lm.Match.id) },
+                    { label: t('addMissingBet'), icon: <UserPlus className="h-4 w-4" />, onClick: () => setCreateBetMatchId(lm.id) },
+                  ]),
+                  { label: t('deleteTitle'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(lm), variant: 'destructive' as const },
+                ]
 
                 return (
                   <MobileCard key={lm.id}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <TeamFlag flagIcon={homeTeam.flagIcon} flagType={homeTeam.flagType} teamName={homeTeam.name} size="xs" />
-                        <span className="font-medium text-sm">{homeTeam.shortcut}</span>
+                        {homeTeam ? (
+                          <>
+                            <TeamFlag flagIcon={homeTeam.flagIcon} flagType={homeTeam.flagType} teamName={homeTeam.name} size="xs" />
+                            <span className="font-medium text-sm">{homeLabel}</span>
+                          </>
+                        ) : (
+                          <span className="font-medium text-sm italic text-muted-foreground">{homeLabel}</span>
+                        )}
                         <span className="text-muted-foreground text-xs">{t('vs')}</span>
-                        <TeamFlag flagIcon={awayTeam.flagIcon} flagType={awayTeam.flagType} teamName={awayTeam.name} size="xs" />
-                        <span className="font-medium text-sm">{awayTeam.shortcut}</span>
+                        {awayTeam ? (
+                          <>
+                            <TeamFlag flagIcon={awayTeam.flagIcon} flagType={awayTeam.flagType} teamName={awayTeam.name} size="xs" />
+                            <span className="font-medium text-sm">{awayLabel}</span>
+                          </>
+                        ) : (
+                          <span className="font-medium text-sm italic text-muted-foreground">{awayLabel}</span>
+                        )}
                       </div>
-                      <ActionMenu items={[
-                        { label: t('editMatch'), icon: <Calendar className="h-4 w-4" />, onClick: () => setEditMatch(lm) },
-                        { label: t('enterResult'), icon: <Edit className="h-4 w-4" />, onClick: () => setSelectedMatch(lm) },
-                        { label: evaluatingMatchId === lm.id ? `${t('evaluateLabel')}...` : t('evaluateLabel'), icon: evaluatingMatchId === lm.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />, onClick: () => handleEvaluate(lm.id, lm.Match.id) },
-                        { label: t('addMissingBet'), icon: <UserPlus className="h-4 w-4" />, onClick: () => setCreateBetMatchId(lm.id) },
-                        { label: t('deleteTitle'), icon: <Trash2 className="h-4 w-4" />, onClick: () => deleteDialog.openDialog(lm), variant: 'destructive' },
-                      ]} />
+                      <ActionMenu items={actionItems} />
                     </div>
                     <MobileCardField label={t('dateTime')}>
                       {format(new Date(lm.Match.dateTime), 'd.M.yyyy HH:mm')}
@@ -310,7 +330,7 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                                     )}
                                   </div>
                                 )}
-                                {bet.homeAdvanced !== null && (
+                                {bet.homeAdvanced !== null && homeTeam && awayTeam && (
                                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                                     {t('advanced')}: <TeamFlag
                                       flagIcon={bet.homeAdvanced ? homeTeam.flagIcon : awayTeam.flagIcon}
@@ -352,32 +372,48 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
           open={!!editMatch}
           onOpenChange={(open) => !open && setEditMatch(null)}
           phases={phases}
+          leagueTeams={leagues.find((l) => l.id === editMatch.leagueId)?.LeagueTeam ?? []}
         />
       )}
 
       {/* Result Entry Dialog */}
-      {selectedMatch && (
+      {selectedMatch && selectedMatch.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam && selectedMatch.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam && (
         <ResultEntryDialog
-          match={selectedMatch}
+          match={{
+            ...selectedMatch,
+            Match: {
+              ...selectedMatch.Match,
+              LeagueTeam_Match_homeTeamIdToLeagueTeam: selectedMatch.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam,
+              LeagueTeam_Match_awayTeamIdToLeagueTeam: selectedMatch.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam,
+            },
+          }}
           open={!!selectedMatch}
           onOpenChange={(open) => !open && setSelectedMatch(null)}
         />
       )}
 
-      {/* Create Bet Dialog */}
-      {createBetMatch && (
-        <CreateBetDialog
-          open={createBetMatchId !== null}
-          onOpenChange={(open) => !open && setCreateBetMatchId(null)}
-          match={createBetMatch}
-          availablePlayers={
-            [
-              ...createBetMatch.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.LeaguePlayer,
-              ...createBetMatch.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.LeaguePlayer,
-            ]
-          }
-        />
-      )}
+      {/* Create Bet Dialog (placeholders excluded — both teams required) */}
+      {(() => {
+        if (!createBetMatch) return null
+        const home = createBetMatch.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
+        const away = createBetMatch.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
+        if (!home || !away) return null
+        return (
+          <CreateBetDialog
+            open={createBetMatchId !== null}
+            onOpenChange={(open) => !open && setCreateBetMatchId(null)}
+            match={{
+              ...createBetMatch,
+              Match: {
+                ...createBetMatch.Match,
+                LeagueTeam_Match_homeTeamIdToLeagueTeam: home,
+                LeagueTeam_Match_awayTeamIdToLeagueTeam: away,
+              },
+            }}
+            availablePlayers={[...home.LeaguePlayer, ...away.LeaguePlayer]}
+          />
+        )
+      })()}
 
       {/* Delete Confirmation Dialog */}
       <DetailedEntityDeleteDialog
@@ -401,8 +437,12 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('matchup')}:</span>
               <span className="font-medium">
-                {deleteDialog.itemToDelete.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name} {t('vs')}{' '}
-                {deleteDialog.itemToDelete.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name}
+                {deleteDialog.itemToDelete.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam?.Team.name
+                  ?? deleteDialog.itemToDelete.Match.homePlaceholder
+                  ?? t('tbd')} {t('vs')}{' '}
+                {deleteDialog.itemToDelete.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam?.Team.name
+                  ?? deleteDialog.itemToDelete.Match.awayPlaceholder
+                  ?? t('tbd')}
               </span>
             </div>
             <div className="flex items-center justify-between">

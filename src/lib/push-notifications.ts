@@ -338,6 +338,9 @@ async function findMatchNotifications(
       Match: {
         deletedAt: null,
         dateTime: { gt: now, lte: maxDateTime },
+        // Skip placeholder matches — no one can bet on them, so no reminder needed.
+        homeTeamId: { not: null },
+        awayTeamId: { not: null },
       },
       League: { deletedAt: null, isActive: true },
     },
@@ -361,8 +364,9 @@ async function findMatchNotifications(
 
   const results: EventNotification[] = []
   for (const lm of upcomingMatches) {
-    const home = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team.name
-    const away = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team.name
+    // Placeholders filtered out at the query level — teams are guaranteed non-null here.
+    const home = lm.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam!.Team.name
+    const away = lm.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam!.Team.name
 
     results.push(...filterUsersForEvent({
       now,

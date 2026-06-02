@@ -327,8 +327,10 @@ model Match {
   id                                      Int           @id @default(autoincrement())
   gameNumber                              Int?
   dateTime                                DateTime      @db.Timestamptz(6)
-  homeTeamId                              Int
-  awayTeamId                              Int
+  homeTeamId                              Int?
+  awayTeamId                              Int?
+  homePlaceholder                         String?       @db.VarChar(100)
+  awayPlaceholder                         String?       @db.VarChar(100)
   homeRegularScore                        Int?
   awayRegularScore                        Int?
   homeFinalScore                          Int?
@@ -344,8 +346,8 @@ model Match {
   deletedAt                               DateTime?     @db.Timestamptz(6)
   matchPhaseId                            Int?
   LeagueMatch                             LeagueMatch[]
-  LeagueTeam_Match_awayTeamIdToLeagueTeam LeagueTeam    @relation("Match_awayTeamIdToLeagueTeam", fields: [awayTeamId], references: [id], onDelete: NoAction)
-  LeagueTeam_Match_homeTeamIdToLeagueTeam LeagueTeam    @relation("Match_homeTeamIdToLeagueTeam", fields: [homeTeamId], references: [id], onDelete: NoAction)
+  LeagueTeam_Match_awayTeamIdToLeagueTeam LeagueTeam?   @relation("Match_awayTeamIdToLeagueTeam", fields: [awayTeamId], references: [id], onDelete: NoAction)
+  LeagueTeam_Match_homeTeamIdToLeagueTeam LeagueTeam?   @relation("Match_homeTeamIdToLeagueTeam", fields: [homeTeamId], references: [id], onDelete: NoAction)
   MatchPhase                              MatchPhase?   @relation(fields: [matchPhaseId], references: [id])
   MatchScorer                             MatchScorer[]
 

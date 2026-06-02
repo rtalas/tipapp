@@ -44,11 +44,14 @@ export function MatchTableRow({
   const t = useTranslations('admin.matches')
 
   const status = getMatchStatus(match.Match)
-  const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team
-  const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team
-  const teams = `${homeTeam.name} ${t('vs')} ${awayTeam.name}`
-  const homePlayers = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.LeaguePlayer
-  const awayPlayers = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.LeaguePlayer
+  const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam?.Team ?? null
+  const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam?.Team ?? null
+  const homeLabel = homeTeam?.name ?? match.Match.homePlaceholder ?? t('tbd')
+  const awayLabel = awayTeam?.name ?? match.Match.awayPlaceholder ?? t('tbd')
+  const teams = `${homeLabel} ${t('vs')} ${awayLabel}`
+  const isPlaceholder = !homeTeam || !awayTeam
+  const homePlayers = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam?.LeaguePlayer ?? []
+  const awayPlayers = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam?.LeaguePlayer ?? []
   const allPlayers = [...homePlayers, ...awayPlayers]
 
   return (
@@ -96,21 +99,23 @@ export function MatchTableRow({
         )}
         <TableCell>
           <div className="flex items-center gap-2">
-            <TeamFlag
-              flagIcon={homeTeam.flagIcon}
-              flagType={homeTeam.flagType}
-              teamName={homeTeam.name}
-              size="xs"
-            />
-            <span className="font-medium">{homeTeam.name}</span>
+            {homeTeam ? (
+              <>
+                <TeamFlag flagIcon={homeTeam.flagIcon} flagType={homeTeam.flagType} teamName={homeTeam.name} size="xs" />
+                <span className="font-medium">{homeLabel}</span>
+              </>
+            ) : (
+              <span className="font-medium italic text-muted-foreground">{homeLabel}</span>
+            )}
             <span className="text-muted-foreground">{t('vs')}</span>
-            <TeamFlag
-              flagIcon={awayTeam.flagIcon}
-              flagType={awayTeam.flagType}
-              teamName={awayTeam.name}
-              size="xs"
-            />
-            <span className="font-medium">{awayTeam.name}</span>
+            {awayTeam ? (
+              <>
+                <TeamFlag flagIcon={awayTeam.flagIcon} flagType={awayTeam.flagType} teamName={awayTeam.name} size="xs" />
+                <span className="font-medium">{awayLabel}</span>
+              </>
+            ) : (
+              <span className="font-medium italic text-muted-foreground">{awayLabel}</span>
+            )}
             {!showLeagueColumn && match.Match.isPlayoffGame && (
               <Badge variant="warning" className="text-xs">
                 {t('playoff')}
@@ -173,6 +178,7 @@ export function MatchTableRow({
                 e.stopPropagation()
                 onEditResult()
               }}
+              disabled={isPlaceholder}
               aria-label={t('editMatchResult', { teams })}
             >
               <Edit className="h-4 w-4" />
@@ -184,7 +190,7 @@ export function MatchTableRow({
                 e.stopPropagation()
                 onEvaluate()
               }}
-              disabled={isEvaluating}
+              disabled={isEvaluating || isPlaceholder}
               aria-label={t('evaluateMatch', { teams })}
             >
               {isEvaluating ? (
@@ -208,8 +214,8 @@ export function MatchTableRow({
         </TableCell>
       </TableRow>
 
-      {/* Expanded row - user bets */}
-      {isExpanded && (
+      {/* Expanded row - user bets (placeholders have no bets) */}
+      {isExpanded && homeTeam && awayTeam && (
         <TableRow>
           <TableCell colSpan={9} className="bg-muted/20 p-0">
             <ExpandedBetsTable

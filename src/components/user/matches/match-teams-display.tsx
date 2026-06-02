@@ -25,8 +25,9 @@ export function MatchTeamsDisplay({
   const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
-  const homeTeamName = homeTeam.Team.shortcut || homeTeam.Team.name
-  const awayTeamName = awayTeam.Team.shortcut || awayTeam.Team.name
+  const homeTeamName = homeTeam?.Team.shortcut || homeTeam?.Team.name || match.Match.homePlaceholder || t('tbd')
+  const awayTeamName = awayTeam?.Team.shortcut || awayTeam?.Team.name || match.Match.awayPlaceholder || t('tbd')
+  const isPlaceholder = !homeTeam || !awayTeam
 
   const hasResult =
     match.Match.homeRegularScore !== null && match.Match.awayRegularScore !== null
@@ -36,14 +37,16 @@ export function MatchTeamsDisplay({
       {/* Home Team */}
       <div className="flex flex-col items-center gap-1 min-w-0 flex-1 p-2">
         <div className="flex items-center gap-2">
-          <TeamFlag
-            flagIcon={homeTeam.Team.flagIcon}
-            flagType={homeTeam.Team.flagType}
-            teamName={homeTeam.Team.name}
-            size="sm"
-            className="sm:w-6 sm:h-6"
-          />
-          <p className="font-semibold text-xs sm:text-sm text-foreground text-center leading-tight line-clamp-2">
+          {homeTeam ? (
+            <TeamFlag
+              flagIcon={homeTeam.Team.flagIcon}
+              flagType={homeTeam.Team.flagType}
+              teamName={homeTeam.Team.name}
+              size="sm"
+              className="sm:w-6 sm:h-6"
+            />
+          ) : null}
+          <p className={`font-semibold text-xs sm:text-sm text-center leading-tight line-clamp-2 ${homeTeam ? 'text-foreground' : 'italic text-muted-foreground'}`}>
             {homeTeamName}
           </p>
         </div>
@@ -51,7 +54,7 @@ export function MatchTeamsDisplay({
 
       {/* Score Selection */}
       <div className="flex items-center gap-2 shrink-0">
-        {isLocked ? (
+        {isPlaceholder ? null : isLocked ? (
           <div className="flex flex-col items-center gap-1">
             {isEvaluated && hasResult && (
               <>
@@ -90,14 +93,16 @@ export function MatchTeamsDisplay({
       {/* Away Team */}
       <div className="flex flex-col items-center gap-1 min-w-0 flex-1 p-2">
         <div className="flex items-center gap-2">
-          <TeamFlag
-            flagIcon={awayTeam.Team.flagIcon}
-            flagType={awayTeam.Team.flagType}
-            teamName={awayTeam.Team.name}
-            size="sm"
-            className="sm:w-6 sm:h-6"
-          />
-          <p className="font-semibold text-xs sm:text-sm text-foreground text-center leading-tight line-clamp-2">
+          {awayTeam ? (
+            <TeamFlag
+              flagIcon={awayTeam.Team.flagIcon}
+              flagType={awayTeam.Team.flagType}
+              teamName={awayTeam.Team.name}
+              size="sm"
+              className="sm:w-6 sm:h-6"
+            />
+          ) : null}
+          <p className={`font-semibold text-xs sm:text-sm text-center leading-tight line-clamp-2 ${awayTeam ? 'text-foreground' : 'italic text-muted-foreground'}`}>
             {awayTeamName}
           </p>
         </div>

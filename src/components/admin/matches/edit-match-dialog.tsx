@@ -9,6 +9,7 @@ import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { TeamFlag } from '@/components/common/team-flag'
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,8 @@ interface Team {
   id: number
   name: string
   shortcut: string
+  flagIcon?: string | null
+  flagType?: string | null
 }
 
 interface LeagueTeam {
@@ -49,14 +52,17 @@ interface Match {
   matchPhaseId: number | null
   gameNumber: number | null
   isPlayoffGame: boolean
-  LeagueTeam_Match_homeTeamIdToLeagueTeam: LeagueTeam
-  LeagueTeam_Match_awayTeamIdToLeagueTeam: LeagueTeam
+  homePlaceholder?: string | null
+  awayPlaceholder?: string | null
+  LeagueTeam_Match_homeTeamIdToLeagueTeam: LeagueTeam | null
+  LeagueTeam_Match_awayTeamIdToLeagueTeam: LeagueTeam | null
   MatchPhase?: MatchPhase | null
 }
 
 interface LeagueMatch {
   id: number
   isDoubled: boolean
+  leagueId: number
   Match: Match
 }
 
@@ -65,6 +71,7 @@ interface EditMatchDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   phases: MatchPhase[]
+  leagueTeams: LeagueTeam[]
 }
 
 export function EditMatchDialog({
@@ -72,30 +79,51 @@ export function EditMatchDialog({
   open,
   onOpenChange,
   phases,
+  leagueTeams,
 }: EditMatchDialogProps) {
   const t = useTranslations('admin.matches')
   const tCommon = useTranslations('admin.common')
 
+  const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
+  const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
+  const initialHomePh = match.Match.homePlaceholder ?? ''
+  const initialAwayPh = match.Match.awayPlaceholder ?? ''
+  // While at least one side is missing a team, the match is still a placeholder and
+  // BOTH sides remain editable (team can be swapped, or even swapped back to a placeholder).
+  const isPlaceholder = !homeTeam || !awayTeam
+
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [dateTime, setDateTime] = useState<string>(() => {
-    // Convert UTC date to local datetime-local format
-    const date = new Date(match.Match.dateTime)
-    return format(date, "yyyy-MM-dd'T'HH:mm")
-  })
+  const [dateTime, setDateTime] = useState<string>(() =>
+    format(new Date(match.Match.dateTime), "yyyy-MM-dd'T'HH:mm")
+  )
   const [selectedPhaseId, setSelectedPhaseId] = useState<string>(
     match.Match.matchPhaseId?.toString() || ''
   )
   const [gameNumber, setGameNumber] = useState<string>(
     match.Match.gameNumber?.toString() || ''
   )
+  // Per side: 'team' mode (pick from select) or 'placeholder' mode (text input)
+  const [homeMode, setHomeMode] = useState<'team' | 'placeholder'>(homeTeam ? 'team' : 'placeholder')
+  const [awayMode, setAwayMode] = useState<'team' | 'placeholder'>(awayTeam ? 'team' : 'placeholder')
+  const [homeTeamPick, setHomeTeamPick] = useState<string>(homeTeam?.id.toString() ?? '')
+  const [awayTeamPick, setAwayTeamPick] = useState<string>(awayTeam?.id.toString() ?? '')
+  const [homePh, setHomePh] = useState<string>(initialHomePh)
+  const [awayPh, setAwayPh] = useState<string>(initialAwayPh)
 
   const selectedPhase = phases.find((p) => p.id.toString() === selectedPhaseId)
-  const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
-  const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
+  const homeLabel = homeTeam ? homeTeam.Team.name : initialHomePh || t('tbd')
+  const awayLabel = awayTeam ? awayTeam.Team.name : initialAwayPh || t('tbd')
+
+  // Exclude the opposite side's selection from each select
+  const homeAvailable = leagueTeams.filter((lt) =>
+    awayMode === 'team' && lt.id.toString() === awayTeamPick ? false : true
+  )
+  const awayAvailable = leagueTeams.filter((lt) =>
+    homeMode === 'team' && lt.id.toString() === homeTeamPick ? false : true
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!dateTime) {
       toast.error(t('form.requiredFields'))
       return
@@ -104,13 +132,28 @@ export function EditMatchDialog({
     setIsSubmitting(true)
 
     try {
-      await updateMatch({
+      const payload: Parameters<typeof updateMatch>[0] = {
         matchId: match.Match.id,
         dateTime: new Date(dateTime),
         matchPhaseId: selectedPhaseId ? parseInt(selectedPhaseId, 10) : null,
         gameNumber: gameNumber ? parseInt(gameNumber, 10) : null,
-      })
+      }
 
+      // Send team/placeholder changes only while the match is still a placeholder.
+      if (isPlaceholder) {
+        if (homeMode === 'team' && homeTeamPick && parseInt(homeTeamPick, 10) !== homeTeam?.id) {
+          payload.homeTeamId = parseInt(homeTeamPick, 10)
+        } else if (homeMode === 'placeholder' && homePh.trim() && (homePh.trim() !== initialHomePh || homeTeam)) {
+          payload.homePlaceholder = homePh.trim()
+        }
+        if (awayMode === 'team' && awayTeamPick && parseInt(awayTeamPick, 10) !== awayTeam?.id) {
+          payload.awayTeamId = parseInt(awayTeamPick, 10)
+        } else if (awayMode === 'placeholder' && awayPh.trim() && (awayPh.trim() !== initialAwayPh || awayTeam)) {
+          payload.awayPlaceholder = awayPh.trim()
+        }
+      }
+
+      await updateMatch(payload)
       toast.success(t('editDialog.success'))
       onOpenChange(false)
     } catch (error) {
@@ -131,11 +174,105 @@ export function EditMatchDialog({
         <DialogHeader>
           <DialogTitle>{t('editDialog.title')}</DialogTitle>
           <DialogDescription>
-            {t('editDialog.description', { teams: `${homeTeam.Team.name} vs ${awayTeam.Team.name}` })}
+            {t('editDialog.description', { teams: `${homeLabel} vs ${awayLabel}` })}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>{t('form.homeTeam')}</Label>
+                {isPlaceholder && (
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground underline"
+                    onClick={() => setHomeMode(homeMode === 'team' ? 'placeholder' : 'team')}
+                  >
+                    {homeMode === 'team' ? t('form.usePlaceholder') : t('form.useTeam')}
+                  </button>
+                )}
+              </div>
+              {!isPlaceholder && homeTeam ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground border rounded px-3 py-2">
+                  <TeamFlag
+                    flagIcon={homeTeam.Team.flagIcon ?? null}
+                    flagType={homeTeam.Team.flagType ?? null}
+                    teamName={homeTeam.Team.name}
+                    size="sm"
+                  />
+                  <span>{homeTeam.Team.name}</span>
+                </div>
+              ) : homeMode === 'team' ? (
+                <Select value={homeTeamPick} onValueChange={setHomeTeamPick}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('form.selectTeam')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {homeAvailable.map((lt) => (
+                      <SelectItem key={lt.id} value={lt.id.toString()}>
+                        {lt.Team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  value={homePh}
+                  onChange={(e) => setHomePh(e.target.value)}
+                  maxLength={100}
+                  placeholder={t('form.placeholderHint')}
+                />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>{t('form.awayTeam')}</Label>
+                {isPlaceholder && (
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground underline"
+                    onClick={() => setAwayMode(awayMode === 'team' ? 'placeholder' : 'team')}
+                  >
+                    {awayMode === 'team' ? t('form.usePlaceholder') : t('form.useTeam')}
+                  </button>
+                )}
+              </div>
+              {!isPlaceholder && awayTeam ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground border rounded px-3 py-2">
+                  <TeamFlag
+                    flagIcon={awayTeam.Team.flagIcon ?? null}
+                    flagType={awayTeam.Team.flagType ?? null}
+                    teamName={awayTeam.Team.name}
+                    size="sm"
+                  />
+                  <span>{awayTeam.Team.name}</span>
+                </div>
+              ) : awayMode === 'team' ? (
+                <Select value={awayTeamPick} onValueChange={setAwayTeamPick}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('form.selectTeam')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {awayAvailable.map((lt) => (
+                      <SelectItem key={lt.id} value={lt.id.toString()}>
+                        {lt.Team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  value={awayPh}
+                  onChange={(e) => setAwayPh(e.target.value)}
+                  maxLength={100}
+                  placeholder={t('form.placeholderHint')}
+                />
+              )}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="dateTime">{t('form.dateTimeUtc')}</Label>
             <Input

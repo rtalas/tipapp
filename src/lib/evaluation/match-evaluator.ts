@@ -109,8 +109,11 @@ async function evaluateMatch(
     },
   })
 
-  // 2. Validate match has results entered
+  // 2. Validate match has results entered (and is not a placeholder)
   const match = leagueMatch.Match
+  if (match.homeTeamId === null || match.awayTeamId === null) {
+    throw new AppError('Cannot evaluate placeholder match', 'BAD_REQUEST', 400)
+  }
   if (match.homeRegularScore === null || match.awayRegularScore === null) {
     throw new AppError('Cannot evaluate match without results', 'BAD_REQUEST', 400)
   }

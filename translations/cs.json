@@ -206,7 +206,9 @@
       "saving": "Ukládání...",
       "savePrediction": "Uložit tip",
       "playoff": "Playoff",
-      "game": "Zápas {number}"
+      "game": "Zápas {number}",
+      "tbd": "Bude určeno",
+      "waitingForOpponents": "Čeká se na soupeře — tipovat bude možné po doplnění týmů"
     },
     "leaderboard": {
       "title": "Žebříček",
@@ -638,6 +640,7 @@
       "evaluateLabel": "Vyhodnotit",
       "hideBets": "Skrýt tipy",
       "showBets": "Zobrazit tipy",
+      "tbd": "Bude určeno",
       "resultDialog": {
         "title": "Zadat výsledek zápasu",
         "regularScoresRequired": "Zadejte skóre v řádném čase",
@@ -704,7 +707,10 @@
         "phasePlaceholder": "Žádná",
         "bestOf": "(Best of {count})",
         "single": "(Jednorázový)",
-        "gameNumber": "Číslo zápasu"
+        "gameNumber": "Číslo zápasu",
+        "usePlaceholder": "Použít popisek",
+        "useTeam": "Vybrat tým",
+        "placeholderHint": "např. Vítěz skupiny A"
       }
     },
     "players": {

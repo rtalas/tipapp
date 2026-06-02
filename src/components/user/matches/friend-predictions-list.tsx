@@ -22,8 +22,8 @@ export function FriendPredictionsList({
   const isPlayoff = match.Match.isPlayoffGame
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
-  const homeTeamName = homeTeam.Team.shortcut || homeTeam.Team.name
-  const awayTeamName = awayTeam.Team.shortcut || awayTeam.Team.name
+  const homeTeamName = homeTeam?.Team.shortcut || homeTeam?.Team.name || ''
+  const awayTeamName = awayTeam?.Team.shortcut || awayTeam?.Team.name || ''
   const hasResult =
     match.Match.homeRegularScore !== null && match.Match.awayRegularScore !== null
 

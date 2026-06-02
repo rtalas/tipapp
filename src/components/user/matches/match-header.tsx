@@ -37,7 +37,7 @@ export function MatchHeader({
         {/* Fallback badges for backward compatibility (only if no phase) */}
         {!match.Match.MatchPhase && (
           <>
-            {homeTeam.group && (
+            {homeTeam?.group && (
               <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
                 {homeTeam.group}
               </span>

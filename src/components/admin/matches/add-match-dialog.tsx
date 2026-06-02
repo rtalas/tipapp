@@ -68,6 +68,10 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>(league?.id.toString() || '')
   const [selectedHomeTeamId, setSelectedHomeTeamId] = useState<string>('')
   const [selectedAwayTeamId, setSelectedAwayTeamId] = useState<string>('')
+  const [homeMode, setHomeMode] = useState<'team' | 'placeholder'>('team')
+  const [awayMode, setAwayMode] = useState<'team' | 'placeholder'>('team')
+  const [homePlaceholder, setHomePlaceholder] = useState<string>('')
+  const [awayPlaceholder, setAwayPlaceholder] = useState<string>('')
   const [dateTime, setDateTime] = useState<string>('')
   const [isPlayoffGame, setIsPlayoffGame] = useState(false)
   const [isDoubled, setIsDoubled] = useState(false)
@@ -93,7 +97,9 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!effectiveLeagueId || !selectedHomeTeamId || !selectedAwayTeamId || !dateTime) {
+    const homeReady = homeMode === 'team' ? !!selectedHomeTeamId : !!homePlaceholder.trim()
+    const awayReady = awayMode === 'team' ? !!selectedAwayTeamId : !!awayPlaceholder.trim()
+    if (!effectiveLeagueId || !homeReady || !awayReady || !dateTime) {
       toast.error(t('form.requiredFields'))
       return
     }
@@ -103,8 +109,10 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
     try {
       await createMatch({
         leagueId: parseInt(effectiveLeagueId, 10),
-        homeTeamId: parseInt(selectedHomeTeamId, 10),
-        awayTeamId: parseInt(selectedAwayTeamId, 10),
+        homeTeamId: homeMode === 'team' ? parseInt(selectedHomeTeamId, 10) : null,
+        awayTeamId: awayMode === 'team' ? parseInt(selectedAwayTeamId, 10) : null,
+        homePlaceholder: homeMode === 'placeholder' ? homePlaceholder.trim() : null,
+        awayPlaceholder: awayMode === 'placeholder' ? awayPlaceholder.trim() : null,
         dateTime: new Date(dateTime),
         isPlayoffGame,
         isDoubled,
@@ -133,6 +141,10 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
     }
     setSelectedHomeTeamId('')
     setSelectedAwayTeamId('')
+    setHomeMode('team')
+    setAwayMode('team')
+    setHomePlaceholder('')
+    setAwayPlaceholder('')
     setDateTime('')
     setIsPlayoffGame(false)
     setIsDoubled(false)
@@ -179,59 +191,97 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="homeTeam">{t('form.homeTeam')}</Label>
-              <Select
-                value={selectedHomeTeamId}
-                onValueChange={setSelectedHomeTeamId}
-                disabled={!effectiveLeagueId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('form.selectTeam')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {homeTeamOptions.map((lt) => (
-                    <SelectItem key={lt.id} value={lt.id.toString()}>
-                      <div className="flex items-center gap-2">
-                        <TeamFlag
-                          flagIcon={lt.Team.flagIcon}
-                          flagType={lt.Team.flagType}
-                          teamName={lt.Team.name}
-                          size="sm"
-                        />
-                        <span>{lt.Team.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="homeTeam">{t('form.homeTeam')}</Label>
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground underline"
+                  onClick={() => setHomeMode(homeMode === 'team' ? 'placeholder' : 'team')}
+                >
+                  {homeMode === 'team' ? t('form.usePlaceholder') : t('form.useTeam')}
+                </button>
+              </div>
+              {homeMode === 'team' ? (
+                <Select
+                  value={selectedHomeTeamId}
+                  onValueChange={setSelectedHomeTeamId}
+                  disabled={!effectiveLeagueId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('form.selectTeam')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {homeTeamOptions.map((lt) => (
+                      <SelectItem key={lt.id} value={lt.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <TeamFlag
+                            flagIcon={lt.Team.flagIcon}
+                            flagType={lt.Team.flagType}
+                            teamName={lt.Team.name}
+                            size="sm"
+                          />
+                          <span>{lt.Team.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="homePlaceholder"
+                  value={homePlaceholder}
+                  onChange={(e) => setHomePlaceholder(e.target.value)}
+                  maxLength={100}
+                  placeholder={t('form.placeholderHint')}
+                />
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="awayTeam">{t('form.awayTeam')}</Label>
-              <Select
-                value={selectedAwayTeamId}
-                onValueChange={setSelectedAwayTeamId}
-                disabled={!effectiveLeagueId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('form.selectTeam')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {awayTeamOptions.map((lt) => (
-                    <SelectItem key={lt.id} value={lt.id.toString()}>
-                      <div className="flex items-center gap-2">
-                        <TeamFlag
-                          flagIcon={lt.Team.flagIcon}
-                          flagType={lt.Team.flagType}
-                          teamName={lt.Team.name}
-                          size="sm"
-                        />
-                        <span>{lt.Team.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="awayTeam">{t('form.awayTeam')}</Label>
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground underline"
+                  onClick={() => setAwayMode(awayMode === 'team' ? 'placeholder' : 'team')}
+                >
+                  {awayMode === 'team' ? t('form.usePlaceholder') : t('form.useTeam')}
+                </button>
+              </div>
+              {awayMode === 'team' ? (
+                <Select
+                  value={selectedAwayTeamId}
+                  onValueChange={setSelectedAwayTeamId}
+                  disabled={!effectiveLeagueId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('form.selectTeam')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {awayTeamOptions.map((lt) => (
+                      <SelectItem key={lt.id} value={lt.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <TeamFlag
+                            flagIcon={lt.Team.flagIcon}
+                            flagType={lt.Team.flagType}
+                            teamName={lt.Team.name}
+                            size="sm"
+                          />
+                          <span>{lt.Team.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="awayPlaceholder"
+                  value={awayPlaceholder}
+                  onChange={(e) => setAwayPlaceholder(e.target.value)}
+                  maxLength={100}
+                  placeholder={t('form.placeholderHint')}
+                />
+              )}
             </div>
           </div>
 

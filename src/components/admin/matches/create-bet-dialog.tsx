@@ -57,8 +57,9 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
   const tc = useTranslations('common')
   const createDialog = useCreateDialog<CreateBetFormData>(initialFormData)
 
-  const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team
-  const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team
+  // Bets cannot be created on placeholder matches; caller already guards this.
+  const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam!.Team
+  const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam!.Team
 
   // Get IDs of users who already have bets
   const existingBetUserIds = match.UserBet.map((bet) => bet.LeagueUser.id)

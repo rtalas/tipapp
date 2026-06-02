@@ -120,8 +120,8 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
       if (fullMatch) {
         // Get players from both teams (T3: Context-Aware Scorer Selection)
         setPlayers({
-          home: fullMatch.LeagueTeam_Match_homeTeamIdToLeagueTeam.LeaguePlayer || [],
-          away: fullMatch.LeagueTeam_Match_awayTeamIdToLeagueTeam.LeaguePlayer || [],
+          home: fullMatch.LeagueTeam_Match_homeTeamIdToLeagueTeam?.LeaguePlayer || [],
+          away: fullMatch.LeagueTeam_Match_awayTeamIdToLeagueTeam?.LeaguePlayer || [],
         })
 
         // Load existing scorers (if any)

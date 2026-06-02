@@ -15,3 +15,12 @@ export function getMatchStatus(match: {
   return 'finished'
 }
 
+// A match is a "placeholder" until both teams are assigned.
+// Placeholders show in the schedule but cannot be bet on.
+export function isMatchPlaceholder(match: {
+  homeTeamId: number | null
+  awayTeamId: number | null
+}): boolean {
+  return match.homeTeamId === null || match.awayTeamId === null
+}
+

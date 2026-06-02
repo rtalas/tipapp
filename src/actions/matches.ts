@@ -24,25 +24,23 @@ export async function createMatch(input: CreateMatchInput) {
     handler: async (validated, session) => {
       const now = new Date()
 
-      // Verify teams belong to the league
-      const homeTeam = await prisma.leagueTeam.findFirst({
-        where: {
-          id: validated.homeTeamId,
-          leagueId: validated.leagueId,
-          deletedAt: null,
-        },
-      })
+      // Verify any provided teams belong to the league (placeholder sides skip this)
+      if (validated.homeTeamId) {
+        const homeTeam = await prisma.leagueTeam.findFirst({
+          where: { id: validated.homeTeamId, leagueId: validated.leagueId, deletedAt: null },
+        })
+        if (!homeTeam) {
+          throw new AppError('Home team must belong to the selected league', 'BAD_REQUEST', 400)
+        }
+      }
 
-      const awayTeam = await prisma.leagueTeam.findFirst({
-        where: {
-          id: validated.awayTeamId,
-          leagueId: validated.leagueId,
-          deletedAt: null,
-        },
-      })
-
-      if (!homeTeam || !awayTeam) {
-        throw new AppError('Teams must belong to the selected league', 'BAD_REQUEST', 400)
+      if (validated.awayTeamId) {
+        const awayTeam = await prisma.leagueTeam.findFirst({
+          where: { id: validated.awayTeamId, leagueId: validated.leagueId, deletedAt: null },
+        })
+        if (!awayTeam) {
+          throw new AppError('Away team must belong to the selected league', 'BAD_REQUEST', 400)
+        }
       }
 
       // Verify match phase exists if provided
@@ -70,8 +68,10 @@ export async function createMatch(input: CreateMatchInput) {
         const match = await tx.match.create({
           data: {
             dateTime: validated.dateTime,
-            homeTeamId: validated.homeTeamId,
-            awayTeamId: validated.awayTeamId,
+            homeTeamId: validated.homeTeamId ?? null,
+            awayTeamId: validated.awayTeamId ?? null,
+            homePlaceholder: validated.homePlaceholder ?? null,
+            awayPlaceholder: validated.awayPlaceholder ?? null,
             isPlayoffGame: validated.isPlayoffGame,
             matchPhaseId: validated.matchPhaseId ?? null,
             gameNumber: validated.gameNumber ?? null,
@@ -99,7 +99,13 @@ export async function createMatch(input: CreateMatchInput) {
 
       AuditLogger.adminCreated(
         parseSessionUserId(session!.user!.id!), 'Match', result.id,
-        { leagueId: validated.leagueId, homeTeamId: validated.homeTeamId, awayTeamId: validated.awayTeamId },
+        {
+          leagueId: validated.leagueId,
+          homeTeamId: validated.homeTeamId ?? null,
+          awayTeamId: validated.awayTeamId ?? null,
+          homePlaceholder: validated.homePlaceholder ?? null,
+          awayPlaceholder: validated.awayPlaceholder ?? null,
+        },
         validated.leagueId
       ).catch(() => {})
 
@@ -133,10 +139,22 @@ export async function updateMatch(input: UpdateMatchInput) {
         }
       }
 
+      const existing = await prisma.match.findFirst({
+        where: { id: validated.matchId, deletedAt: null },
+        include: { LeagueMatch: { select: { leagueId: true } } },
+      })
+      if (!existing) {
+        throw new AppError('Match not found', 'NOT_FOUND', 404)
+      }
+
       const updateData: {
         dateTime?: Date
         matchPhaseId?: number | null
         gameNumber?: number | null
+        homeTeamId?: number | null
+        awayTeamId?: number | null
+        homePlaceholder?: string | null
+        awayPlaceholder?: string | null
         updatedAt: Date
       } = {
         updatedAt: new Date(),
@@ -152,6 +170,52 @@ export async function updateMatch(input: UpdateMatchInput) {
         updateData.gameNumber = validated.gameNumber
       }
 
+      // Team / placeholder updates.
+      // While the match is still a placeholder (at least one side missing a team), BOTH sides
+      // remain editable — admin can swap the already-assigned team or change a placeholder text.
+      // Once both teams are set, the match is no longer a placeholder and team edits are locked.
+      const wasPlaceholder = existing.homeTeamId === null || existing.awayTeamId === null
+      const leagueId = existing.LeagueMatch[0]?.leagueId
+      for (const side of ['home', 'away'] as const) {
+        const idKey = `${side}TeamId` as const
+        const phKey = `${side}Placeholder` as const
+        const newId = validated[idKey]
+        const newPh = validated[phKey]
+        const currentId = existing[idKey]
+
+        if (newId !== undefined && newId !== null) {
+          if (currentId !== null && currentId !== newId && !wasPlaceholder) {
+            throw new AppError(`Cannot change ${side} team — match is already fully set`, 'BAD_REQUEST', 400)
+          }
+          if (leagueId) {
+            const team = await prisma.leagueTeam.findFirst({
+              where: { id: newId, leagueId, deletedAt: null },
+            })
+            if (!team) {
+              throw new AppError(`${side === 'home' ? 'Home' : 'Away'} team must belong to the selected league`, 'BAD_REQUEST', 400)
+            }
+          }
+          updateData[idKey] = newId
+          updateData[phKey] = null
+        } else if (newPh !== undefined) {
+          if (!wasPlaceholder) {
+            throw new AppError(`Cannot set placeholder for ${side} side — match is already fully set`, 'BAD_REQUEST', 400)
+          }
+          // Allow swapping a team back to a placeholder while the match is still a placeholder.
+          updateData[idKey] = null
+          updateData[phKey] = newPh
+        }
+      }
+
+      // Refuse to leave a side with neither team nor placeholder
+      const finalHomeId = updateData.homeTeamId !== undefined ? updateData.homeTeamId : existing.homeTeamId
+      const finalAwayId = updateData.awayTeamId !== undefined ? updateData.awayTeamId : existing.awayTeamId
+      const finalHomePh = updateData.homePlaceholder !== undefined ? updateData.homePlaceholder : existing.homePlaceholder
+      const finalAwayPh = updateData.awayPlaceholder !== undefined ? updateData.awayPlaceholder : existing.awayPlaceholder
+      if ((!finalHomeId && !finalHomePh) || (!finalAwayId && !finalAwayPh)) {
+        throw new AppError('Each side must have a team or a placeholder', 'BAD_REQUEST', 400)
+      }
+
       await prisma.match.update({
         where: { id: validated.matchId },
         data: updateData,
@@ -162,7 +226,15 @@ export async function updateMatch(input: UpdateMatchInput) {
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'Match', validated.matchId,
-        { dateTime: validated.dateTime, matchPhaseId: validated.matchPhaseId, gameNumber: validated.gameNumber }
+        {
+          dateTime: validated.dateTime,
+          matchPhaseId: validated.matchPhaseId,
+          gameNumber: validated.gameNumber,
+          homeTeamId: validated.homeTeamId,
+          awayTeamId: validated.awayTeamId,
+          homePlaceholder: validated.homePlaceholder,
+          awayPlaceholder: validated.awayPlaceholder,
+        }
       ).catch(() => {})
 
       return {}

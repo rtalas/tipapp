@@ -12,12 +12,14 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
   const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
-  const homeTeamName = homeTeam.Team.shortcut || homeTeam.Team.name
-  const awayTeamName = awayTeam.Team.shortcut || awayTeam.Team.name
   const sportId = match.League.sportId
   const isPlayoff = match.Match.isPlayoffGame
 
   if (!match.userBet) return null
+  // Bets only exist when both teams are set; defensive guard for type narrowing.
+  if (!homeTeam || !awayTeam) return null
+  const homeTeamName = homeTeam.Team.shortcut || homeTeam.Team.name
+  const awayTeamName = awayTeam.Team.shortcut || awayTeam.Team.name
 
   const actualScorerIds = match.Match.MatchScorer?.map((s) => s.LeaguePlayer?.id) ?? []
   const isScorerCorrect =

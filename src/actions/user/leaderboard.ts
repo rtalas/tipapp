@@ -243,8 +243,9 @@ export async function getUserPicks(
     }
 
     const match = bet.LeagueMatch.Match
-    const homeTeam = match.LeagueTeam_Match_homeTeamIdToLeagueTeam.Team
-    const awayTeam = match.LeagueTeam_Match_awayTeamIdToLeagueTeam.Team
+    // Bets cannot be created on placeholder matches, so teams are always present here.
+    const homeTeam = match.LeagueTeam_Match_homeTeamIdToLeagueTeam!.Team
+    const awayTeam = match.LeagueTeam_Match_awayTeamIdToLeagueTeam!.Team
 
     return {
       id: bet.id,

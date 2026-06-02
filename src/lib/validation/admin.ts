@@ -146,10 +146,20 @@ export const updateTopScorerRankingSchema = z.object({
 export type UpdateTopScorerRankingInput = z.infer<typeof updateTopScorerRankingSchema>
 
 // Match validation schemas
+const placeholderTextSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(100)
+  .nullable()
+  .optional()
+
 export const createMatchSchema = z.object({
   leagueId: z.number().int().positive(),
-  homeTeamId: z.number().int().positive(),
-  awayTeamId: z.number().int().positive(),
+  homeTeamId: z.number().int().positive().nullable().optional(),
+  awayTeamId: z.number().int().positive().nullable().optional(),
+  homePlaceholder: placeholderTextSchema,
+  awayPlaceholder: placeholderTextSchema,
   dateTime: z
     .date()
     .refine((date) => date > new Date(), {
@@ -159,8 +169,14 @@ export const createMatchSchema = z.object({
   isDoubled: z.boolean().default(false),
   matchPhaseId: z.number().int().positive().nullable().optional(),
   gameNumber: z.number().int().min(1).max(7).nullable().optional(),
-}).refine((data) => data.homeTeamId !== data.awayTeamId, {
+}).refine((data) => !data.homeTeamId || !data.awayTeamId || data.homeTeamId !== data.awayTeamId, {
   message: 'Home and away teams must be different',
+  path: ['awayTeamId'],
+}).refine((data) => Boolean(data.homeTeamId) !== Boolean(data.homePlaceholder), {
+  message: 'Provide either a home team or a placeholder label',
+  path: ['homeTeamId'],
+}).refine((data) => Boolean(data.awayTeamId) !== Boolean(data.awayPlaceholder), {
+  message: 'Provide either an away team or a placeholder label',
   path: ['awayTeamId'],
 }).refine((data) => {
   // If gameNumber provided, matchPhaseId must also be provided
@@ -180,6 +196,13 @@ export const updateMatchSchema = z.object({
   dateTime: z.date().optional(),
   matchPhaseId: z.number().int().positive().nullable().optional(),
   gameNumber: z.number().int().min(1).max(7).nullable().optional(),
+  homeTeamId: z.number().int().positive().nullable().optional(),
+  awayTeamId: z.number().int().positive().nullable().optional(),
+  homePlaceholder: placeholderTextSchema,
+  awayPlaceholder: placeholderTextSchema,
+}).refine((data) => !data.homeTeamId || !data.awayTeamId || data.homeTeamId !== data.awayTeamId, {
+  message: 'Home and away teams must be different',
+  path: ['awayTeamId'],
 }).refine((data) => {
   // If gameNumber provided, matchPhaseId must also be provided
   if (data.gameNumber && !data.matchPhaseId) {

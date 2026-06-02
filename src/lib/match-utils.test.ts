@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { getMatchStatus } from './match-utils'
+import { getMatchStatus, isMatchPlaceholder } from './match-utils'
 
 describe('match-utils', () => {
   describe('getMatchStatus', () => {
@@ -103,6 +103,24 @@ describe('match-utils', () => {
       }
 
       expect(getMatchStatus(match)).toBe('finished')
+    })
+  })
+
+  describe('isMatchPlaceholder', () => {
+    it('returns true when both teams are null', () => {
+      expect(isMatchPlaceholder({ homeTeamId: null, awayTeamId: null })).toBe(true)
+    })
+
+    it('returns true when only home is null', () => {
+      expect(isMatchPlaceholder({ homeTeamId: null, awayTeamId: 2 })).toBe(true)
+    })
+
+    it('returns true when only away is null', () => {
+      expect(isMatchPlaceholder({ homeTeamId: 1, awayTeamId: null })).toBe(true)
+    })
+
+    it('returns false when both teams are set', () => {
+      expect(isMatchPlaceholder({ homeTeamId: 1, awayTeamId: 2 })).toBe(false)
     })
   })
 })

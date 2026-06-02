@@ -218,6 +218,10 @@ export async function saveMatchBet(input: UserMatchBetInput) {
         throw new AppError('Match not found', 'NOT_FOUND', 404)
       }
 
+      if (leagueMatch.Match.homeTeamId === null || leagueMatch.Match.awayTeamId === null) {
+        throw new AppError('Match is not open for betting yet', 'BETTING_CLOSED', 400)
+      }
+
       if (!isBettingOpen(leagueMatch.Match.dateTime)) {
         throw new AppError('Betting is closed for this match', 'BETTING_CLOSED', 400)
       }

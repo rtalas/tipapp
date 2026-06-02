@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import { SPORT_IDS } from '@/lib/constants'
 import { useFriendPredictions } from '@/hooks/useFriendPredictions'
 import { saveMatchBet, getMatchFriendPredictions } from '@/actions/user/matches'
+import { isMatchPlaceholder } from '@/lib/match-utils'
 import type { UserMatch, FriendPrediction } from '@/actions/user/matches'
 
 interface MatchCardProps {
@@ -26,7 +27,8 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
   const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
-  const isLocked = !match.isBettingOpen
+  const isPlaceholder = isMatchPlaceholder(match.Match)
+  const isLocked = isPlaceholder || !match.isBettingOpen
   const isEvaluated = match.Match.isEvaluated
   const isDoubled = match.isDoubled ?? false
   const sportId = match.League.sportId
@@ -154,7 +156,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
   // Soccer playoff: when prediction is non-draw, advancement is implied by score.
   // Keep state in sync so saved value matches what the user sees.
   const isSoccerPlayoff =
-    sportId === SPORT_IDS.FOOTBALL && match.Match.isPlayoffGame
+    !isPlaceholder && sportId === SPORT_IDS.FOOTBALL && match.Match.isPlayoffGame
   useEffect(() => {
     if (!isSoccerPlayoff || homeScore === awayScore) return
     const implied = homeScore > awayScore
@@ -168,8 +170,8 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
     match.Match.homeRegularScore !== null &&
     match.Match.awayRegularScore !== null
 
-  const homeTeamName = homeTeam.Team.shortcut || homeTeam.Team.name
-  const awayTeamName = awayTeam.Team.shortcut || awayTeam.Team.name
+  const homeTeamName = homeTeam?.Team.shortcut || homeTeam?.Team.name || match.Match.homePlaceholder || t('tbd')
+  const awayTeamName = awayTeam?.Team.shortcut || awayTeam?.Team.name || match.Match.awayPlaceholder || t('tbd')
 
   return (
     <>
@@ -212,8 +214,15 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
           />
         )}
 
-        {/* Bet Display - Read-only when locked or evaluated */}
-        {isLocked && <BetDisplay match={match} isEvaluated={isEvaluated} />}
+        {/* Placeholder: show notice instead of bet display */}
+        {isPlaceholder && (
+          <div className="mt-3 pt-3 border-t border-border/30 text-center text-xs text-muted-foreground">
+            {t('waitingForOpponents')}
+          </div>
+        )}
+
+        {/* Bet Display - Read-only when locked or evaluated (not for placeholders) */}
+        {!isPlaceholder && isLocked && <BetDisplay match={match} isEvaluated={isEvaluated} />}
 
         {/* Save Button */}
         {!isLocked && (
@@ -225,8 +234,8 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
           />
         )}
 
-        {/* Friends' Picks Button - Only when betting is closed */}
-        {isLocked && (
+        {/* Friends' Picks Button - Only when betting is closed (not for placeholders) */}
+        {!isPlaceholder && isLocked && (
           <div className="mt-3 pt-3 border-t border-border/30 flex justify-center">
             <button
               onClick={friends.open}

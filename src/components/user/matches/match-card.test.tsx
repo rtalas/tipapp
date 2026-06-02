@@ -166,6 +166,50 @@ describe('MatchCard', () => {
     })
   })
 
+  describe('Placeholder match (missing team)', () => {
+    const placeholderMatch = () =>
+      createMatch({
+        Match: {
+          dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          isEvaluated: false,
+          isPlayoffGame: true,
+          homeRegularScore: null,
+          awayRegularScore: null,
+          isOvertime: false,
+          isShootout: false,
+          MatchPhase: null,
+          gameNumber: null,
+          MatchScorer: [],
+          homeTeamId: null,
+          awayTeamId: 2,
+          homePlaceholder: 'Winner of QF1',
+          awayPlaceholder: null,
+          LeagueTeam_Match_homeTeamIdToLeagueTeam: null,
+          LeagueTeam_Match_awayTeamIdToLeagueTeam: createTeamData('Oilers', 'EDM'),
+        },
+      })
+
+    it('does not render bet controls for placeholder', () => {
+      render(<MatchCard match={placeholderMatch()} />)
+      expect(screen.queryByTestId('bet-controls')).not.toBeInTheDocument()
+    })
+
+    it('does not render save button for placeholder', () => {
+      render(<MatchCard match={placeholderMatch()} />)
+      expect(screen.queryByTestId('save-button')).not.toBeInTheDocument()
+    })
+
+    it('does not render bet display for placeholder', () => {
+      render(<MatchCard match={placeholderMatch()} />)
+      expect(screen.queryByTestId('bet-display')).not.toBeInTheDocument()
+    })
+
+    it('shows waiting-for-opponents notice', () => {
+      render(<MatchCard match={placeholderMatch()} />)
+      expect(screen.getByText('waitingForOpponents')).toBeInTheDocument()
+    })
+  })
+
   describe('Score changes', () => {
     it('updates home score when changed', async () => {
       render(<MatchCard match={createMatch()} />)

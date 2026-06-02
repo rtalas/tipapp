@@ -58,6 +58,22 @@ function renderControls(overrides: {
 }
 
 describe('BetControls', () => {
+  describe('placeholder match (missing team)', () => {
+    it('renders nothing when home team is null', () => {
+      const match = createMatch()
+      match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam = null
+      const { container } = renderControls({ match })
+      expect(container.firstChild).toBeNull()
+    })
+
+    it('renders nothing when away team is null', () => {
+      const match = createMatch()
+      match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam = null
+      const { container } = renderControls({ match })
+      expect(container.firstChild).toBeNull()
+    })
+  })
+
   describe('hockey (non-soccer-playoff)', () => {
     it('shows overtime checkbox', () => {
       renderControls()

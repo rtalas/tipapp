@@ -36,6 +36,8 @@ export function BetControls({
   const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
+  // Placeholder matches lock betting at the parent — defensive null guard.
+  if (!homeTeam || !awayTeam) return null
   const homeTeamName = homeTeam.Team.shortcut || homeTeam.Team.name
   const awayTeamName = awayTeam.Team.shortcut || awayTeam.Team.name
   const sportId = match.League.sportId
