@@ -14,6 +14,8 @@ const mockUpdateTag = vi.mocked(updateTag)
 const mockRevalidatePath = vi.mocked(revalidatePath)
 const mockRequireAdmin = vi.mocked(requireAdmin)
 
+const futureDate = () => new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+
 describe('Questions Actions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -27,7 +29,7 @@ describe('Questions Actions', () => {
       const result = await createQuestion({
         leagueId: 1,
         text: 'Will team X win?',
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
       })
 
       expect(mockRequireAdmin).toHaveBeenCalled()
@@ -41,7 +43,7 @@ describe('Questions Actions', () => {
       const result = await createQuestion({
         leagueId: 999,
         text: 'Will team X win the tournament?',
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
       })
 
       expect(result.success).toBe(false)
@@ -52,7 +54,7 @@ describe('Questions Actions', () => {
       mockPrisma.league.findFirst.mockResolvedValue({ id: 1 } as any)
       mockPrisma.leagueSpecialBetQuestion.create.mockResolvedValue({ id: 1 } as any)
 
-      await createQuestion({ leagueId: 1, text: 'Will there be overtime in game 1?', dateTime: new Date('2026-06-01') })
+      await createQuestion({ leagueId: 1, text: 'Will there be overtime in game 1?', dateTime: futureDate() })
 
       expect(mockUpdateTag).toHaveBeenCalledWith('question-data')
     })
@@ -61,7 +63,7 @@ describe('Questions Actions', () => {
       mockPrisma.league.findFirst.mockResolvedValue({ id: 1 } as any)
       mockPrisma.leagueSpecialBetQuestion.create.mockResolvedValue({ id: 1 } as any)
 
-      await createQuestion({ leagueId: 1, text: 'Will there be overtime in game 1?', dateTime: new Date('2026-06-01') })
+      await createQuestion({ leagueId: 1, text: 'Will there be overtime in game 1?', dateTime: futureDate() })
 
       expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/questions')
     })
@@ -73,7 +75,7 @@ describe('Questions Actions', () => {
       const result = await createQuestion({
         leagueId: 1,
         text: 'Will team X win the championship?',
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
         isDoubled: true,
       })
 

@@ -13,6 +13,8 @@ const mockPrisma = vi.mocked(prisma, true)
 const mockUpdateTag = vi.mocked(updateTag)
 const mockRequireAdmin = vi.mocked(requireAdmin)
 
+const futureDate = () => new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+
 describe('Series Actions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -31,7 +33,7 @@ describe('Series Actions', () => {
         specialBetSerieId: 1,
         homeTeamId: 1,
         awayTeamId: 2,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
       })
 
       expect(mockRequireAdmin).toHaveBeenCalled()
@@ -49,7 +51,7 @@ describe('Series Actions', () => {
         specialBetSerieId: 1,
         homeTeamId: 99,
         awayTeamId: 2,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
       })
 
       expect(result.success).toBe(false)
@@ -66,7 +68,7 @@ describe('Series Actions', () => {
         specialBetSerieId: 1,
         homeTeamId: 1,
         awayTeamId: 99,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
       })
 
       expect(result.success).toBe(false)
@@ -85,7 +87,7 @@ describe('Series Actions', () => {
         specialBetSerieId: 1,
         homeTeamId: 1,
         awayTeamId: 2,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
       })
 
       expect(mockUpdateTag).toHaveBeenCalledWith('series-data')
@@ -103,7 +105,7 @@ describe('Series Actions', () => {
         specialBetSerieId: 1,
         homeTeamId: 1,
         awayTeamId: 2,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
         isDoubled: true,
       })
 
@@ -126,7 +128,7 @@ describe('Series Actions', () => {
         specialBetSerieId: 1,
         homeTeamId: 1,
         awayTeamId: 2,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
       })
 
       expect(mockPrisma.leagueSpecialBetSerie.create).toHaveBeenCalledWith(
@@ -155,7 +157,7 @@ describe('Series Actions', () => {
     it('should update dateTime', async () => {
       mockPrisma.leagueSpecialBetSerie.update.mockResolvedValue({ id: 1 } as any)
 
-      const newDate = new Date('2026-06-15')
+      const newDate = futureDate()
       await updateSeries({ seriesId: 1, dateTime: newDate })
 
       expect(mockPrisma.leagueSpecialBetSerie.update).toHaveBeenCalledWith(

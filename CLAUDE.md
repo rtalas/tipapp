@@ -25,7 +25,7 @@ Next.js 16 (App Router) • React 19 • Auth.js v5 (CredentialsProvider + JWT) 
 - **Date/Time Formatting:** Uses Intl API via next-intl (automatic locale-aware formatting)
 
 ### Translation Structure
-Nested JSON organized by namespaces (~1490 lines each):
+Nested JSON organized by namespaces (~1582 lines each):
 ```json
 {
   "common": { "save": "Save", "cancel": "Cancel" },
@@ -77,7 +77,7 @@ Nested JSON organized by namespaces (~1490 lines each):
 - Before finishing significant changes: Run `npm run build` + `npm test`, verify in browser.
 
 ## Database Rules (CRITICAL)
-- **36 models** in Prisma schema. Tables use PascalCase (`User`, `Match`, `UserBet`), mapped to `prisma.user`, `prisma.match`.
+- **38 models** in Prisma schema. Tables use PascalCase (`User`, `Match`, `UserBet`), mapped to `prisma.user`, `prisma.match`.
 - **DO NOT** rename fields to camelCase. Use introspected schema exactly as-is.
 - **Evaluator.points:** Uses `Int` type (not String) - stored as integers for performance and type safety.
 - **Evaluator.config:** Optional `Json` field storing `ScorerRankedConfig` for rank-based scorer evaluation. When config exists, points field is set to 0.
@@ -99,17 +99,17 @@ Nested JSON organized by namespaces (~1490 lines each):
 
 ## Project Structure
 ```
-app/                              # 39 pages
+app/                              # 40 pages
 ├── [leagueId]/                   # User pages (matches, series, special-bets, questions, leaderboard, chat, profile)
 ├── admin/
 │   ├── [leagueId]/               # League-scoped (matches, series, special-bets, questions, teams, players, evaluators, users)
 │   └── */                        # Global (leagues, teams, players, users, matches, series, special-bets,
-│                                 #         series-types, evaluators, match-phases, audit-logs, profile)
+│                                 #         series-types, evaluators, match-phases, audit-logs, tournaments, profile)
 ├── login/, register/             # Auth pages
 ├── forgot-password/              # Password reset request
 └── reset-password/[token]/       # Password reset form
 src/
-├── actions/                      # Server actions (32 action files + 31 test files)
+├── actions/                      # Server actions (33 action files + 32 test files)
 │   ├── evaluators.ts             # updateEvaluator() supports config for scorer rank-based points
 │   ├── league-prizes.ts          # getLeaguePrizes(), updateLeaguePrizes() - handles prizes & fines
 │   ├── evaluate-matches.ts       # Match evaluation engine
@@ -128,7 +128,7 @@ src/
 │       ├── profile.ts            # User profile operations
 │       └── locale.ts             # Language preference management
 ├── components/                   # React components
-│   ├── admin/                    # 16 subdirectories (layout, common, leagues, matches, series, etc.)
+│   ├── admin/                    # 17 subdirectories (layout, common, leagues, matches, series, tournaments, etc.)
 │   │   └── leagues/
 │   │       ├── league-prizes-section.tsx  # Prize management UI
 │   │       ├── league-fines-section.tsx   # Fine management UI
@@ -178,20 +178,20 @@ src/
 │   └── validation-client.ts      # Client-side validation helpers
 └── types/                        # next-auth.d.ts, user.ts
 prisma/
-├── schema.prisma                 # 36 models
+├── schema.prisma                 # 38 models
 └── seed-demo.ts                  # Demo data generator
 translations/
-├── en.json                       # English (~1490 lines)
-└── cs.json                       # Czech (~1490 lines)
+├── en.json                       # English (~1582 lines)
+└── cs.json                       # Czech (~1582 lines)
 ```
 
-## Database Models (36 total)
-**Core:** User, League, LeagueUser, Sport, Team, Player, Match, LeagueMatch
+## Database Models (38 total)
+**Core:** User, League, LeagueUser, Sport, Team, Player, Match, LeagueMatch, Tournament
 **Betting:** UserBet, UserSpecialBetSerie, UserSpecialBetSingle, UserSpecialBetQuestion
 **League Config:** Evaluator, EvaluatorType, LeaguePrize, LeaguePhase, LeagueTeam, LeaguePlayer
 **Special Bets:** SpecialBetSerie, SpecialBetSingle, SpecialBetSingleType, LeagueSpecialBetSerie, LeagueSpecialBetSingle, LeagueSpecialBetSingleTeamAdvanced, LeagueSpecialBetQuestion
 **Match:** MatchPhase, MatchScorer, TopScorerRankingVersion
-**Features:** Message (chat), UserRequest (join requests), UserSetting (preferences), PushSubscription, SentNotification
+**Features:** Message (chat), MessageReaction, UserRequest (join requests), UserSetting (preferences), PushSubscription, SentNotification
 **System:** AuditLog, PasswordResetToken, SequelizeMeta
 
 ## Auth
@@ -280,8 +280,8 @@ translations/
 ## Code Quality & Security
 
 ### Testing
-- **1197 tests** across **91 test files**, runs in ~8 seconds
-- Global mocks in `vitest.setup.ts`: Prisma (36 models + groupBy/aggregate), audit-logger, next/cache, next/navigation, next-auth/react, @/auth
+- **1251 tests** across **93 test files**, runs in ~5 seconds
+- Global mocks in `vitest.setup.ts`: Prisma (38 models + groupBy/aggregate), audit-logger, next/cache, next/navigation, next-auth/react, @/auth
 - Test pattern: Don't add per-file `vi.mock('@/lib/prisma')` — use the global mock, just `vi.mocked(prisma)` for typed refs
 - `executeServerAction` returns `{ success: true, ...result }` (spread), not nested `data`
 - Hook tests use `renderHook`/`act` from `@testing-library/react`
@@ -314,7 +314,7 @@ translations/
 - CORS, token blacklist, email retry queue
 
 ### Build Status
-✅ Production build clean (0 errors/warnings) • ✅ 1197 tests • ✅ 39 routes • ✅ PWA ready
+✅ Production build clean (0 errors/warnings) • ✅ 1251 tests • ✅ 40 routes • ✅ PWA ready
 
 ### Race Condition Prevention
 User betting actions use **atomic upserts** to prevent duplicate bets during concurrent submissions:
@@ -357,6 +357,7 @@ Uses Next.js `unstable_cache` for server-side data caching with tag-based invali
 - `src/lib/cache/badge-counts.ts` - `getCachedBadgeCounts()`
 
 **Invalidation:**
-- Use `revalidateTag('tag-name', 'max')` in admin actions and evaluation functions
+- Use `updateTag('tag-name')` from `next/cache` in admin actions and evaluation functions for immediate cache invalidation
 - All admin CRUD operations invalidate relevant caches
 - Bet evaluation invalidates both data cache and leaderboard
+- **NEVER use `revalidateTag('tag', 'max')`** — it sets `expired = now+30days` so the cache never clears (`areTagsExpired` checks `expiredAt <= now`)

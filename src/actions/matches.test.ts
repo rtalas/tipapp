@@ -21,6 +21,8 @@ const mockPrisma = vi.mocked(prisma, true)
 const mockUpdateTag = vi.mocked(updateTag)
 const mockRequireAdmin = vi.mocked(requireAdmin)
 
+const futureDate = () => new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+
 describe('Matches Actions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -45,7 +47,7 @@ describe('Matches Actions', () => {
         leagueId: 1,
         homeTeamId: 1,
         awayTeamId: 2,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
       })
@@ -64,7 +66,7 @@ describe('Matches Actions', () => {
         leagueId: 1,
         homeTeamId: 99,
         awayTeamId: 2,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
       })
@@ -83,7 +85,7 @@ describe('Matches Actions', () => {
         leagueId: 1,
         homeTeamId: 1,
         awayTeamId: 2,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
         matchPhaseId: 999,
@@ -103,7 +105,7 @@ describe('Matches Actions', () => {
         leagueId: 1,
         homeTeamId: 1,
         awayTeamId: 2,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
         matchPhaseId: 1,
@@ -133,7 +135,7 @@ describe('Matches Actions', () => {
         leagueId: 1,
         homeTeamId: 1,
         awayTeamId: 1,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
       })
@@ -157,7 +159,7 @@ describe('Matches Actions', () => {
         leagueId: 1,
         homeTeamId: 1,
         awayTeamId: 2,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
       })
@@ -172,7 +174,7 @@ describe('Matches Actions', () => {
 
       const result = await updateMatch({
         matchId: 1,
-        dateTime: new Date('2026-07-01'),
+        dateTime: futureDate(),
       })
 
       expect(result.success).toBe(true)
@@ -200,7 +202,7 @@ describe('Matches Actions', () => {
     it('should handle database error', async () => {
       mockPrisma.match.update.mockRejectedValue(new Error('DB error'))
 
-      const result = await updateMatch({ matchId: 1, dateTime: new Date('2026-07-01') })
+      const result = await updateMatch({ matchId: 1, dateTime: futureDate() })
 
       expect(result.success).toBe(false)
     })

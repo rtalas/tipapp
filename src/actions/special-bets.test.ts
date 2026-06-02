@@ -17,6 +17,8 @@ const mockPrisma = vi.mocked(prisma, true)
 const mockUpdateTag = vi.mocked(updateTag)
 const mockRequireAdmin = vi.mocked(requireAdmin)
 
+const futureDate = () => new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+
 describe('Special Bets Actions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -32,7 +34,7 @@ describe('Special Bets Actions', () => {
         leagueId: 1,
         name: 'Top Scorer',
         evaluatorId: 5,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
       })
 
       expect(mockRequireAdmin).toHaveBeenCalled()
@@ -47,7 +49,7 @@ describe('Special Bets Actions', () => {
         leagueId: 999,
         name: 'Test',
         evaluatorId: 1,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
       })
 
       expect(result.success).toBe(false)
@@ -62,7 +64,7 @@ describe('Special Bets Actions', () => {
         leagueId: 1,
         name: 'Test',
         evaluatorId: 999,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
       })
 
       expect(result.success).toBe(false)
@@ -78,7 +80,7 @@ describe('Special Bets Actions', () => {
         leagueId: 1,
         name: 'T',
         evaluatorId: 1,
-        dateTime: new Date('2026-06-01'),
+        dateTime: futureDate(),
       })
 
       expect(mockUpdateTag).toHaveBeenCalledWith('special-bet-data')
