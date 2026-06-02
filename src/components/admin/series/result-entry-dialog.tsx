@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateSeriesResult } from '@/actions/series'
@@ -58,6 +59,9 @@ interface ResultEntryDialogProps {
 }
 
 export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDialogProps) {
+  const t = useTranslations('admin.series.resultDialog')
+  const tCommon = useTranslations('admin.common')
+  const tSeries = useTranslations('admin.series')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [homeTeamScore, setHomeTeamScore] = useState(
     series.homeTeamScore?.toString() ?? ''
@@ -70,10 +74,11 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
   const awayTeam = series.LeagueTeam_LeagueSpecialBetSerie_awayTeamIdToLeagueTeam.Team
   const bestOf = series.SpecialBetSerie.bestOf
   const gamesRequired = Math.ceil(bestOf / 2)
+  const userPredictionCount = series._count.UserSpecialBetSerie
 
   const handleSaveResult = async () => {
     if (!homeTeamScore || !awayTeamScore) {
-      toast.error('Please enter scores for both teams')
+      toast.error(t('scoresRequired'))
       return
     }
 
@@ -81,17 +86,17 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
     const awayScore = parseInt(awayTeamScore, 10)
 
     if (isNaN(homeScore) || isNaN(awayScore)) {
-      toast.error('Scores must be valid numbers')
+      toast.error(t('scoresMustBeNumbers'))
       return
     }
 
-    if (homeScore < 0 || homeScore > 7 || awayScore < 0 || awayScore > 7) {
-      toast.error('Scores must be between 0 and 7')
+    if (homeScore < 0 || awayScore < 0 || homeScore > bestOf || awayScore > bestOf) {
+      toast.error(t('scoresOutOfRange', { max: bestOf }))
       return
     }
 
     if (homeScore < gamesRequired && awayScore < gamesRequired) {
-      toast.error(`At least one team must have ${gamesRequired} wins (Best of ${bestOf})`)
+      toast.error(t('winsRequired', { winsNeeded: gamesRequired, bestOf }))
       return
     }
 
@@ -104,13 +109,13 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
         awayTeamScore: awayScore,
       })
 
-      toast.success('Series result saved successfully')
+      toast.success(t('saveSuccess'))
       // Keep dialog open so user can evaluate if needed
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error('Failed to save series result')
+        toast.error(t('saveFailed'))
       }
       logger.error('Failed to save series result', { error, seriesId: series.id })
     } finally {
@@ -122,7 +127,7 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>Series Result Entry</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
             {series.League.name} - {series.SpecialBetSerie.name}
           </DialogDescription>
@@ -133,19 +138,19 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
           <div className="rounded-lg bg-muted p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-muted-foreground">
-                {format(new Date(series.dateTime), 'MMM d, yyyy')}
+                {format(new Date(series.dateTime), 'PPP')}
               </span>
               {series.isEvaluated && (
-                <Badge variant="evaluated">Evaluated</Badge>
+                <Badge variant="evaluated">{tSeries('evaluated')}</Badge>
               )}
             </div>
             <div className="flex items-center justify-between text-lg font-semibold">
               <span>{homeTeam.name}</span>
-              <span className="text-muted-foreground">vs</span>
+              <span className="text-muted-foreground">{tSeries('vs')}</span>
               <span>{awayTeam.name}</span>
             </div>
             <div className="mt-2 text-sm text-muted-foreground">
-              {series._count.UserSpecialBetSerie} user prediction{series._count.UserSpecialBetSerie !== 1 ? 's' : ''}
+              {t('userPredictions', { count: userPredictionCount })}
             </div>
           </div>
 
@@ -154,33 +159,33 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
           {/* Series Scores */}
           <div className="space-y-4">
             <div className="text-sm text-muted-foreground">
-              Best of {bestOf} (first to {gamesRequired} wins)
+              {t('bestOfSummary', { bestOf, winsNeeded: gamesRequired })}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="homeScore">{homeTeam.shortcut} Wins</Label>
+                <Label htmlFor="homeScore">{t('teamWins', { team: homeTeam.shortcut })}</Label>
                 <Input
                   id="homeScore"
                   type="number"
                   min="0"
-                  max="7"
+                  max={bestOf}
                   value={homeTeamScore}
                   onChange={(e) => setHomeTeamScore(e.target.value)}
-                  aria-label={`${homeTeam.name} score`}
+                  aria-label={t('teamScoreAria', { team: homeTeam.name })}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="awayScore">{awayTeam.shortcut} Wins</Label>
+                <Label htmlFor="awayScore">{t('teamWins', { team: awayTeam.shortcut })}</Label>
                 <Input
                   id="awayScore"
                   type="number"
                   min="0"
-                  max="7"
+                  max={bestOf}
                   value={awayTeamScore}
                   onChange={(e) => setAwayTeamScore(e.target.value)}
-                  aria-label={`${awayTeam.name} score`}
+                  aria-label={t('teamScoreAria', { team: awayTeam.name })}
                 />
               </div>
             </div>
@@ -193,14 +198,14 @@ export function ResultEntryDialog({ series, open, onOpenChange }: ResultEntryDia
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Close
+            {tCommon('close')}
           </Button>
 
           <Button
             onClick={handleSaveResult}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Saving...' : 'Save Result'}
+            {isSubmitting ? tCommon('saving') : t('saveResult')}
           </Button>
         </DialogFooter>
       </DialogContent>

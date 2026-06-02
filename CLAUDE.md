@@ -25,7 +25,7 @@ Next.js 16 (App Router) • React 19 • Auth.js v5 (CredentialsProvider + JWT) 
 - **Date/Time Formatting:** Uses Intl API via next-intl (automatic locale-aware formatting)
 
 ### Translation Structure
-Nested JSON organized by namespaces (~1582 lines each):
+Nested JSON organized by namespaces (~1596 lines each):
 ```json
 {
   "common": { "save": "Save", "cancel": "Cancel" },
@@ -81,6 +81,7 @@ Nested JSON organized by namespaces (~1582 lines each):
 - **DO NOT** rename fields to camelCase. Use introspected schema exactly as-is.
 - **Evaluator.points:** Uses `Int` type (not String) - stored as integers for performance and type safety.
 - **Evaluator.config:** Optional `Json` field storing `ScorerRankedConfig` for rank-based scorer evaluation. When config exists, points field is set to 0.
+- **Match.homeAdvanced:** Nullable Boolean. Records which team advanced in a soccer playoff that was decided in extra time / penalty shootout. `true` = home, `false` = away, `null` = N/A (hockey or non-playoff). Migration: `prisma/migrations/20260602_add_home_advanced_to_match.sql`.
 - **LeaguePrize.type:** Enum field ('prize' or 'fine') to distinguish between rewards for top performers and penalties for worst performers. Prizes rank from top (1 = 1st place), fines rank from bottom (1 = last place).
 - **Unique constraints:** All bet tables have unique constraints on `[foreignKey, leagueUserId, deletedAt]` to prevent duplicates. LeaguePrize has unique constraint on `[leagueId, rank, type, deletedAt]`.
 - **Performance indexes:** Critical query paths have composite indexes for fast lookups.
@@ -181,8 +182,8 @@ prisma/
 ├── schema.prisma                 # 38 models
 └── seed-demo.ts                  # Demo data generator
 translations/
-├── en.json                       # English (~1582 lines)
-└── cs.json                       # Czech (~1582 lines)
+├── en.json                       # English (~1596 lines)
+└── cs.json                       # Czech (~1596 lines)
 ```
 
 ## Database Models (38 total)
@@ -202,10 +203,10 @@ translations/
 
 ## Evaluators (src/lib/evaluators/)
 15 modular evaluators with full test coverage:
-1. **exact-score** - Exact match (regulation time score + overtime prediction must match)
-2. **score-difference** - Goal diff (excl. exact)
-3. **one-team-score** - One team's score correct (excl. exact & score diff)
-4. **winner** - Winner (final time, incl. OT/SO)
+1. **exact-score** - Exact match (regulation time score + overtime prediction must match for hockey)
+2. **score-difference** - Same signed goal difference (predictedDiff === actualDiff)
+3. **one-team-score** - One team's score correct (hockey only — not in football defaults)
+4. **winner** - **Strict non-draw winner match.** Returns false if either prediction or actual is a draw — the `draw` evaluator handles ties. Hockey unaffected (actual never resolves to draw thanks to OT/SO). Football uses regulation-time scores via context-builder normalisation.
 5. **scorer** - Predicted scorer in actual scorers
    - **Supports two modes:**
      - Simple mode: Boolean (correct/incorrect)
@@ -218,16 +219,52 @@ translations/
      }
      ```
    - Points awarded based on scorer's ranking at match time. Flexible rank count per league.
-6. **draw** - Draw prediction (soccer, excl. exact)
-7. **soccer-playoff-advance** - Advancing team
-8. **series-exact** - Exact series result
-9. **series-winner** - Series winner (excl. exact)
+6. **draw** - **Strict draw match.** Fires only when both prediction and actual are draws. Mutually exclusive with `winner` by construction. Used in football defaults (3 pts); not in hockey defaults.
+7. **soccer-playoff-advance** - Compares user's `homeAdvanced` against `Match.homeAdvanced`. Only fires on playoff games.
+8. **series-exact** - Exact series result (hockey only)
+9. **series-winner** - Series winner (hockey only, excl. exact)
 10. **exact-player** - Player match (e.g., top scorer)
 11. **exact-team** - Team match (e.g., tournament winner)
 12. **exact-value** - Numeric value exact
 13. **closest-value** - Tiered scoring: exact = full points (1.0x), closest = 1/3 points (0.33x), not closest = 0 points
 14. **question** - Yes/no question (correct = +pts, wrong = -pts/2)
 15. **group-stage-team** - Group stage team prediction (full pts for group winner, partial for advance)
+
+## Sport-Specific Behavior (June 2026)
+
+### Default Evaluators (src/actions/leagues.ts → `getDefaultsForSport`)
+| Evaluator | Hockey (sportId=1) | Football (sportId=2) |
+|---|---|---|
+| exact_score | 10 | 3 |
+| score_difference | 3 | 1 |
+| one_team_score | 1 | — |
+| winner (strict non-draw) | 5 | 3 |
+| draw (strict draw) | — | 3 |
+| soccer_playoff_advance | — | 3 |
+| scorer (ranked) | R1:2 R2:3 R3:4 R4:6 U:8 | R1:2 R2:3 R3:4 U:7 |
+| question | 6 | 6 |
+| series_exact | 14 | — |
+| series_winner | 8 | — |
+
+### Evaluator Exclusions (src/lib/evaluation/match-evaluator.ts → `getMatchExclusions`)
+- **Hockey** uses tier-based suppression: `score_difference` ⊕ `exact_score`, `one_team_score` ⊕ `exact_score|score_difference`, `draw` ⊕ `exact_score`. A perfect hockey tip (e.g. 2:1 → 2:1) yields exact(10) + winner(5) = 15.
+- **Football** has NO exclusions — every evaluator stacks. `winner` and `draw` are naturally mutually exclusive (strict semantics: each fires only for its own outcome category). A perfect non-draw tip yields exact(3) + score_difference(1) + winner(3) = 7. A correct non-exact draw (e.g. 0:0 → 1:1) yields draw(3) + score_difference(1) = 4. An exact draw yields exact(3) + draw(3) + score_difference(1) = 7.
+
+### Football Regulation Normalisation (src/lib/evaluators/context-builders.ts → `buildMatchBetContext`)
+Football bets always target the **regulation-time score**; OT goals and penalty shootouts only decide who advanced (captured by `homeAdvanced`). For football matches the context-builder collapses `actual.homeFinalScore = homeRegularScore`, `awayFinalScore = awayRegularScore`, `isOvertime = false`, `isShootout = false` so evaluators stay sport-agnostic. Net effect: a football playoff with OT/SO scores the same as one decided in 90 min, provided the user nailed the regulation score.
+
+### UI Conditional Rendering (sport + phase)
+| Surface | Hockey | Football group | Football playoff |
+|---|---|---|---|
+| User bet-controls (`bet-controls.tsx`) | OT/SO checkbox | (nothing) | Advancement radio shown **only when prediction is a draw**; auto-derived from score otherwise |
+| Admin score-entry-form (`score-entry-form.tsx`) | Overtime + Shootout checkboxes | (nothing — match always ends in 90 min) | "Po prodloužení" + "Po penaltách" checkboxes; "Final Score (After Extra Time)" block |
+| Admin result-entry-dialog | Score inputs only | Score inputs only | + "Who advanced?" radio (auto-derived for non-draw final, manual for draws) |
+
+### Football Playoff Advancement Flow
+- **User:** tips regulation score + advancement (radio only visible when score is a draw)
+- **Auto-derive:** in `match-card.tsx`, non-draw soccer playoff predictions auto-set `homeAdvanced = homeScore > awayScore`
+- **Admin:** records regulation/final scores + OT/SO checkboxes + advancement radio (auto-populated when score is decisive)
+- **Evaluator:** `soccer_playoff_advance` compares `userBet.homeAdvanced` vs `Match.homeAdvanced`
 
 ## Development Status
 - ✅ **Phase 1:** Infrastructure (Next.js, Prisma, Auth.js v5)
@@ -262,7 +299,7 @@ translations/
 
 ### User
 - **Mobile-first:** Bottom nav (5 tabs), fixed headers, pull-to-refresh, PWA
-- **Sport controls:** Soccer playoff = team advance selector, Others = OT/SO checkbox
+- **Sport controls:** Hockey = OT/SO checkbox; Football group = no extra controls; Football playoff = advancement radio (only when prediction is draw); see "Sport-Specific Behavior" section above
 - **SPORT_IDS:** Numeric constants (HOCKEY = 1, FOOTBALL = 2) for type-safe comparisons
 - **Betting lock:** Server validates `currentTime < dateTime` before save
 - **Friend predictions:** Visible only after deadline
@@ -280,11 +317,12 @@ translations/
 ## Code Quality & Security
 
 ### Testing
-- **1251 tests** across **93 test files**, runs in ~5 seconds
+- **1293 tests** across **95 test files**, runs in ~5 seconds
 - Global mocks in `vitest.setup.ts`: Prisma (38 models + groupBy/aggregate), audit-logger, next/cache, next/navigation, next-auth/react, @/auth
 - Test pattern: Don't add per-file `vi.mock('@/lib/prisma')` — use the global mock, just `vi.mocked(prisma)` for typed refs
 - `executeServerAction` returns `{ success: true, ...result }` (spread), not nested `data`
 - Hook tests use `renderHook`/`act` from `@testing-library/react`
+- **Sport-aware evaluator tests:** when mocking `leagueMatch.findUniqueOrThrow`, the `League` mock must include `sportId` (1 = hockey, 2 = football). See `match-evaluator.test.ts` for football scoring scenarios.
 
 ### Refactoring
 - **Centralized:** auth (`requireAdmin()`), errors (`AppError`, `handleActionError()`), validation (`validation-client.ts`)
@@ -314,7 +352,7 @@ translations/
 - CORS, token blacklist, email retry queue
 
 ### Build Status
-✅ Production build clean (0 errors/warnings) • ✅ 1251 tests • ✅ 40 routes • ✅ PWA ready
+✅ Production build clean (0 errors/warnings) • ✅ 1293 tests • ✅ 40 routes • ✅ PWA ready
 
 ### Race Condition Prevention
 User betting actions use **atomic upserts** to prevent duplicate bets during concurrent submissions:

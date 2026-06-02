@@ -216,6 +216,7 @@ export const updateMatchResultSchema = z.object({
   awayFinalScore: z.number().int().min(0).optional(),
   isOvertime: z.boolean().default(false),
   isShootout: z.boolean().default(false),
+  homeAdvanced: z.boolean().nullable().optional(),
   scorers: z.array(z.object({
     playerId: z.number().int().positive(),
     numberOfGoals: z.number().int().min(1).default(1),

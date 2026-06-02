@@ -7,6 +7,7 @@ import { requireAdmin, parseSessionUserId } from '@/lib/auth/auth-utils'
 import { AuditLogger } from '@/lib/logging/audit-logger'
 import { AppError } from '@/lib/error-handler'
 import { getEvaluatorEntity } from '@/lib/evaluators'
+import { SPORT_IDS } from '@/lib/constants'
 import {
   createLeagueSchema,
   updateLeagueSchema,
@@ -28,8 +29,20 @@ import {
   type DeleteByIdInput,
 } from '@/lib/validation/admin'
 
-// Default scoring rules (T2: Automatic Evaluator Initialization)
-const DEFAULT_EVALUATOR_POINTS: Record<string, number> = {
+// Default scoring rules per sport.
+//
+// Hockey: tier-based — higher tiers suppress lower (see MATCH_EXCLUSIONS_HOCKEY
+// in match-evaluator.ts). exact_score (10) "contains" score_difference (3) and
+// one_team_score (1); winner (5) always stacks. series_* used in playoff series.
+//
+// Football: fully additive — every match evaluator stacks. `winner` is strict
+// non-draw and `draw` is strict draw, so they are mutually exclusive by
+// construction (no exclusion table needed). A perfect non-draw tip yields
+// exact(3) + score_diff(1) + winner(3) = 7. A correct non-exact draw yields
+// draw(3) + score_diff(1) = 4. An exact draw yields exact(3) + draw(3) +
+// score_diff(1) = 7. No one_team_score, no series_*. Playoff advancement uses
+// soccer_playoff_advance.
+const DEFAULTS_HOCKEY: Record<string, number> = {
   'exact_score': 10,
   'one_team_score': 1,
   'question': 6,
@@ -40,15 +53,31 @@ const DEFAULT_EVALUATOR_POINTS: Record<string, number> = {
   'winner': 5,
 }
 
-// Default scorer rank-based config
-const DEFAULT_SCORER_CONFIG = {
-  rankedPoints: {
-    '1': 2,
-    '2': 3,
-    '3': 4,
-    '4': 6,
-  },
+const DEFAULTS_FOOTBALL: Record<string, number> = {
+  'exact_score': 3,
+  'score_difference': 1,
+  'winner': 3, // strict non-draw — draw evaluator handles ties separately
+  'draw': 3,   // strict draw — together with winner they cover all outcomes
+  'scorer': 0, // Scorer uses config instead of points
+  'soccer_playoff_advance': 3,
+  'question': 6,
+}
+
+const SCORER_CONFIG_HOCKEY = {
+  rankedPoints: { '1': 2, '2': 3, '3': 4, '4': 6 },
   unrankedPoints: 8,
+}
+
+const SCORER_CONFIG_FOOTBALL = {
+  rankedPoints: { '1': 2, '2': 3, '3': 4 },
+  unrankedPoints: 7,
+}
+
+function getDefaultsForSport(sportId: number) {
+  if (sportId === SPORT_IDS.FOOTBALL) {
+    return { points: DEFAULTS_FOOTBALL, scorerConfig: SCORER_CONFIG_FOOTBALL }
+  }
+  return { points: DEFAULTS_HOCKEY, scorerConfig: SCORER_CONFIG_HOCKEY }
 }
 
 export async function createLeague(input: CreateLeagueInput) {
@@ -95,11 +124,14 @@ export async function createLeague(input: CreateLeagueInput) {
             }),
           })
         } else {
-          // Fall back to defaults if no rules selected
+          // Fall back to sport-specific defaults if no rules selected
           if (evaluatorTypes.length > 0) {
-            // Filter to only include types that have default points defined
+            const { points: defaultPoints, scorerConfig } = getDefaultsForSport(
+              validated.sportId
+            )
+
             const defaultTypes = evaluatorTypes.filter(type =>
-              DEFAULT_EVALUATOR_POINTS.hasOwnProperty(type.name)
+              Object.prototype.hasOwnProperty.call(defaultPoints, type.name)
             )
 
             const scorerType = defaultTypes.find(t => t.name === 'scorer')
@@ -112,7 +144,7 @@ export async function createLeague(input: CreateLeagueInput) {
                   name: type.name,
                   evaluatorTypeId: type.id,
                   leagueId: league.id,
-                  points: DEFAULT_EVALUATOR_POINTS[type.name] ?? 1,
+                  points: defaultPoints[type.name] ?? 1,
                   entity: getEvaluatorEntity(type.name),
                   createdAt: now,
                   updatedAt: now,
@@ -127,9 +159,9 @@ export async function createLeague(input: CreateLeagueInput) {
                   name: scorerType.name,
                   evaluatorTypeId: scorerType.id,
                   leagueId: league.id,
-                  points: DEFAULT_EVALUATOR_POINTS[scorerType.name] ?? 1,
+                  points: defaultPoints[scorerType.name] ?? 1,
                   entity: getEvaluatorEntity(scorerType.name),
-                  config: DEFAULT_SCORER_CONFIG,
+                  config: scorerConfig,
                   createdAt: now,
                   updatedAt: now,
                 },

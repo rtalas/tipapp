@@ -26,17 +26,15 @@ export const userMatchBetSchema = z
 
 export type UserMatchBetInput = z.infer<typeof userMatchBetSchema>
 
-// Series bet schema (user-facing)
-export const userSeriesBetSchema = z
-  .object({
-    leagueSpecialBetSerieId: z.number().int().positive('Series ID is required'),
-    homeTeamScore: z.number().int().min(0).max(7, 'Score must be between 0 and 7'),
-    awayTeamScore: z.number().int().min(0).max(7, 'Score must be between 0 and 7'),
-  })
-  .refine((data) => data.homeTeamScore >= 4 || data.awayTeamScore >= 4, {
-    message: 'At least one team must have 4 wins to complete the series',
-    path: ['homeTeamScore'],
-  })
+// Series bet schema (user-facing).
+// bestOf-aware constraints (>= winsNeeded, <= bestOf) are validated in the
+// action where the series row is loaded — the schema only sanity-checks the
+// raw range so static bounds stay loose enough for any bestOf size.
+export const userSeriesBetSchema = z.object({
+  leagueSpecialBetSerieId: z.number().int().positive('Series ID is required'),
+  homeTeamScore: z.number().int().min(0).max(7, 'Score must be between 0 and 7'),
+  awayTeamScore: z.number().int().min(0).max(7, 'Score must be between 0 and 7'),
+})
 
 export type UserSeriesBetInput = z.infer<typeof userSeriesBetSchema>
 

@@ -8,6 +8,8 @@ import type { UserMatch } from '@/actions/user/matches'
 
 interface BetControlsProps {
   match: UserMatch
+  homeScore: number
+  awayScore: number
   overtime: boolean
   onOvertimeChange: (checked: boolean) => void
   homeAdvanced: boolean | null
@@ -20,6 +22,8 @@ interface BetControlsProps {
 
 export function BetControls({
   match,
+  homeScore,
+  awayScore,
   overtime,
   onOvertimeChange,
   homeAdvanced,
@@ -36,11 +40,14 @@ export function BetControls({
   const awayTeamName = awayTeam.Team.shortcut || awayTeam.Team.name
   const sportId = match.League.sportId
   const isPlayoff = match.Match.isPlayoffGame
+  const isSoccerPlayoff = sportId === SPORT_IDS.FOOTBALL && isPlayoff
+  // Advancement pick only needed in soccer playoff when user predicts a draw.
+  // For non-draw predictions the winner is implied by the score.
+  const showAdvancePicker = isSoccerPlayoff && homeScore === awayScore
 
   return (
     <div className="mt-3 pt-3 border-t border-border/30 space-y-3">
-      {/* Soccer Playoff: Team Advancement Radio Buttons */}
-      {sportId === SPORT_IDS.FOOTBALL && isPlayoff ? (
+      {showAdvancePicker ? (
         <div className="space-y-2">
           <p className="text-xs text-center text-muted-foreground">{t('whoWillAdvance')}</p>
           <RadioGroup
@@ -72,8 +79,10 @@ export function BetControls({
             </div>
           </RadioGroup>
         </div>
-      ) : (
-        /* Overtime/Shootout Checkbox for all non-soccer-playoff games */
+      ) : sportId !== SPORT_IDS.FOOTBALL && (
+        /* Overtime/Shootout checkbox — hockey only.
+         * Football has no OT in group stage; in playoff the winner is captured
+         * via the advancement radio (or implied by a non-draw score). */
         <div className="flex items-center justify-center space-x-2">
           <Checkbox
             id={`overtime-${match.id}`}

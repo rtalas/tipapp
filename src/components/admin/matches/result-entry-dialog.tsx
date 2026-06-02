@@ -6,10 +6,13 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { updateMatchResult, getMatchById } from '@/actions/matches'
 import { logger } from '@/lib/logging/client-logger'
+import { SPORT_IDS } from '@/lib/constants'
 import { ScoreEntryForm } from './score-entry-form'
 import { ScorersList } from './scorers-list'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
   Dialog,
   DialogContent,
@@ -55,6 +58,7 @@ interface Match {
   isShootout: boolean
   isEvaluated: boolean
   isPlayoffGame: boolean
+  homeAdvanced: boolean | null
   LeagueTeam_Match_homeTeamIdToLeagueTeam: LeagueTeam
   LeagueTeam_Match_awayTeamIdToLeagueTeam: LeagueTeam
 }
@@ -95,6 +99,9 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
   )
   const [isOvertime, setIsOvertime] = useState(match.Match.isOvertime ?? false)
   const [isShootout, setIsShootout] = useState(match.Match.isShootout ?? false)
+  const [homeAdvanced, setHomeAdvanced] = useState<boolean | null>(
+    match.Match.homeAdvanced ?? null
+  )
   const [scorers, setScorers] = useState<Scorer[]>([])
   const [hasScorers, setHasScorers] = useState(true)
   const [players, setPlayers] = useState<{
@@ -105,6 +112,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
   const sportId = match.League.sportId
+  const showAdvanced = sportId === SPORT_IDS.FOOTBALL && match.Match.isPlayoffGame
 
   const loadMatchData = useCallback(async () => {
     try {
@@ -153,6 +161,16 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
     }
   }, [isOvertime, isShootout, homeRegularScore, awayRegularScore, homeFinalScore, awayFinalScore])
 
+  // Soccer playoff: derive homeAdvanced from final score when it's not a draw.
+  // For draws (penalty shootout), admin must pick manually.
+  useEffect(() => {
+    if (!showAdvanced) return
+    const home = parseInt(homeFinalScore || homeRegularScore, 10)
+    const away = parseInt(awayFinalScore || awayRegularScore, 10)
+    if (Number.isNaN(home) || Number.isNaN(away) || home === away) return
+    setHomeAdvanced(home > away)
+  }, [showAdvanced, homeRegularScore, awayRegularScore, homeFinalScore, awayFinalScore])
+
   const handleOvertimeChange = (checked: boolean) => {
     setIsOvertime(checked)
     if (checked) setIsShootout(false)
@@ -199,6 +217,12 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
       return
     }
 
+    // Soccer playoff: must pick who advanced
+    if (showAdvanced && homeAdvanced === null) {
+      toast.error(t('advancedRequired'))
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -210,6 +234,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
         awayFinalScore: (isOvertime || isShootout) ? parseInt(awayFinalScore, 10) : undefined,
         isOvertime,
         isShootout,
+        homeAdvanced: showAdvanced ? homeAdvanced : null,
         scorers: hasScorers
           ? scorers
               .filter((s) => s.playerId)
@@ -249,6 +274,8 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
             <ScoreEntryForm
               homeTeam={homeTeam}
               awayTeam={awayTeam}
+              sportId={sportId}
+              isPlayoffGame={match.Match.isPlayoffGame}
               homeRegularScore={homeRegularScore}
               awayRegularScore={awayRegularScore}
               homeFinalScore={homeFinalScore}
@@ -262,6 +289,29 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
               onOvertimeChange={handleOvertimeChange}
               onShootoutChange={handleShootoutChange}
             />
+
+            {showAdvanced && (
+              <div className="space-y-2">
+                <Label>{t('whoAdvanced')}</Label>
+                <RadioGroup
+                  value={homeAdvanced === true ? 'home' : homeAdvanced === false ? 'away' : ''}
+                  onValueChange={(value) => setHomeAdvanced(value === 'home')}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="home" id="advanced-home" />
+                    <Label htmlFor="advanced-home" className="font-normal cursor-pointer">
+                      {homeTeam.Team.name}
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="away" id="advanced-away" />
+                    <Label htmlFor="advanced-away" className="font-normal cursor-pointer">
+                      {awayTeam.Team.name}
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
 
             <ScorersList
               scorers={scorers}

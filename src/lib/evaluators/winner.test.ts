@@ -39,7 +39,7 @@ describe("evaluateWinner", () => {
     expect(evaluateWinner(context)).toBe(true);
   });
 
-  it("should return true when predicted draw is correct", () => {
+  it("should return false when both prediction and actual are a draw (handled by draw evaluator)", () => {
     const context: MatchBetContext = {
       prediction: { homeScore: 2, awayScore: 2 },
       actual: {
@@ -54,7 +54,25 @@ describe("evaluateWinner", () => {
       },
     };
 
-    expect(evaluateWinner(context)).toBe(true);
+    expect(evaluateWinner(context)).toBe(false);
+  });
+
+  it("should return false when prediction is a draw but actual is a win", () => {
+    const context: MatchBetContext = {
+      prediction: { homeScore: 1, awayScore: 1 },
+      actual: {
+        homeRegularScore: 2,
+        awayRegularScore: 1,
+        homeFinalScore: 2,
+        awayFinalScore: 1,
+        scorerIds: [],
+        isOvertime: false,
+        isShootout: false,
+        isPlayoffGame: false,
+      },
+    };
+
+    expect(evaluateWinner(context)).toBe(false);
   });
 
   it("should use final scores for winner determination", () => {

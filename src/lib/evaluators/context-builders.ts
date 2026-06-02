@@ -12,6 +12,7 @@ import type {
   GroupStageConfig,
 } from './types'
 import { AppError } from '@/lib/error-handler'
+import { SPORT_IDS } from '@/lib/constants'
 
 // Type imports for Prisma entities
 type Match = {
@@ -62,11 +63,20 @@ type UserSpecialBetSingle = {
  * @param userBet - User's bet prediction
  * @param match - Match with results
  * @param leagueRankings - Pre-fetched rankings map (leaguePlayerId -> ranking) from getLeagueRankingsAtTime()
+ * @param sportId - League's sport (drives football regulation-time normalisation)
+ *
+ * Football normalisation: a football bet always targets the regulation-time
+ * score; OT goals and penalty shootouts only decide who advances (captured by
+ * homeAdvanced). To keep evaluators sport-agnostic we collapse the "final"
+ * scores onto the regulation ones and clear isOvertime/isShootout. As a result
+ * `winner` and `exact_score` evaluate against regulation, matching what the
+ * user actually predicted.
  */
 export function buildMatchBetContext(
   userBet: UserBet,
   match: Match,
-  leagueRankings: Map<number, number>
+  leagueRankings: Map<number, number>,
+  sportId: number
 ): MatchBetContext {
   // Extract scorer IDs from MatchScorer (can have multiple scorers)
   const scorerIds = match.MatchScorer.map((ms) => ms.scorerId)
@@ -76,6 +86,12 @@ export function buildMatchBetContext(
   for (const scorerId of scorerIds) {
     scorerRankings.set(scorerId, leagueRankings.get(scorerId) ?? null)
   }
+
+  const isFootball = sportId === SPORT_IDS.FOOTBALL
+  const homeFinalScore = isFootball ? match.homeRegularScore : match.homeFinalScore
+  const awayFinalScore = isFootball ? match.awayRegularScore : match.awayFinalScore
+  const isOvertime = isFootball ? false : match.isOvertime
+  const isShootout = isFootball ? false : match.isShootout
 
   return {
     prediction: {
@@ -89,12 +105,12 @@ export function buildMatchBetContext(
     actual: {
       homeRegularScore: match.homeRegularScore,
       awayRegularScore: match.awayRegularScore,
-      homeFinalScore: match.homeFinalScore,
-      awayFinalScore: match.awayFinalScore,
+      homeFinalScore,
+      awayFinalScore,
       scorerIds,
       scorerRankings, // Include scorer rankings
-      isOvertime: match.isOvertime,
-      isShootout: match.isShootout,
+      isOvertime,
+      isShootout,
       isPlayoffGame: match.isPlayoffGame,
       homeAdvanced: match.homeAdvanced,
     },

@@ -337,6 +337,7 @@ model Match {
   isShootout                              Boolean       @default(false)
   isEvaluated                             Boolean       @default(false)
   isPlayoffGame                           Boolean       @default(false)
+  homeAdvanced                            Boolean?
   externalId                              Int?
   createdAt                               DateTime      @db.Timestamptz(6)
   updatedAt                               DateTime      @db.Timestamptz(6)

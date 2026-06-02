@@ -55,6 +55,7 @@ describe('Match Evaluator', () => {
       },
       League: {
         id: 1,
+        sportId: 1, // Hockey by default
         Evaluator: [
           {
             id: 1,
@@ -628,6 +629,332 @@ describe('Match Evaluator', () => {
       expect(result.results).toHaveLength(0)
       expect(result.totalUsersEvaluated).toBe(0)
       expect(mockTx.userBet.update).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Football scoring (sportId=2, no exclusions)', () => {
+    const footballEvaluators = [
+      { id: 1, points: 3, config: null, EvaluatorType: { name: 'exact_score' } },
+      { id: 2, points: 1, config: null, EvaluatorType: { name: 'score_difference' } },
+      { id: 3, points: 3, config: null, EvaluatorType: { name: 'winner' } },
+      { id: 4, points: 3, config: null, EvaluatorType: { name: 'draw' } },
+    ]
+
+    function footballMatch(
+      home: number,
+      away: number,
+      bet: { homeScore: number; awayScore: number }
+    ) {
+      return makeLeagueMatch({
+        Match: {
+          homeRegularScore: home,
+          awayRegularScore: away,
+          homeFinalScore: home,
+          awayFinalScore: away,
+          MatchScorer: [],
+        },
+        League: { sportId: 2, Evaluator: footballEvaluators },
+        UserBet: [
+          {
+            id: 1,
+            homeScore: bet.homeScore,
+            awayScore: bet.awayScore,
+            scorerId: null,
+            noScorer: null,
+            overtime: false,
+            homeAdvanced: null,
+            LeagueUser: { userId: 1, User: { id: 1 } },
+          },
+        ],
+      })
+    }
+
+    it('awards 3 points for just winner (tip 2:1 → actual 4:1)', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        footballMatch(4, 1, { homeScore: 2, awayScore: 1 })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      expect(result.results[0].totalPoints).toBe(3) // winner only
+    })
+
+    it('awards 3 points (no one_team bonus) for tip 5:0 → actual 5:1', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        footballMatch(5, 1, { homeScore: 5, awayScore: 0 })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      // Football has no one_team_score evaluator and no exclusions:
+      // winner(3) + score_diff(0, diff 5 vs 4) + exact(0) = 3
+      expect(result.results[0].totalPoints).toBe(3)
+    })
+
+    it('awards 4 points for winner + same goal difference (tip 3:1 → actual 4:2)', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        footballMatch(4, 2, { homeScore: 3, awayScore: 1 })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      expect(result.results[0].totalPoints).toBe(4) // winner(3) + score_diff(1)
+    })
+
+    it('awards 7 points for exact non-draw (tip 3:1 → actual 3:1)', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        footballMatch(3, 1, { homeScore: 3, awayScore: 1 })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      // Critical: football has NO exclusion, so all three stack.
+      expect(result.results[0].totalPoints).toBe(7) // winner(3) + score_diff(1) + exact(3)
+    })
+
+    it('awards 4 points for correct draw (tip 0:0 → actual 1:1)', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        footballMatch(1, 1, { homeScore: 0, awayScore: 0 })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      // winner is strict non-draw → ✗; draw fires; score_diff matches (0==0); not exact.
+      expect(result.results[0].totalPoints).toBe(4) // draw(3) + score_diff(1)
+    })
+
+    it('awards 7 points for exact draw (tip 1:1 → actual 1:1)', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        footballMatch(1, 1, { homeScore: 1, awayScore: 1 })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      // Strict winner ✗ (draw), draw ✓, score_diff ✓, exact ✓
+      expect(result.results[0].totalPoints).toBe(7) // draw(3) + score_diff(1) + exact(3)
+    })
+
+    it('awards 0 points for wrong winner (tip 3:1 → actual 2:4)', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        footballMatch(2, 4, { homeScore: 3, awayScore: 1 })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      expect(result.results[0].totalPoints).toBe(0)
+    })
+  })
+
+  describe('Football playoff (regulation-based scoring, ignores OT/SO)', () => {
+    const footballPlayoffEvaluators = [
+      { id: 1, points: 3, config: null, EvaluatorType: { name: 'exact_score' } },
+      { id: 2, points: 1, config: null, EvaluatorType: { name: 'score_difference' } },
+      { id: 3, points: 3, config: null, EvaluatorType: { name: 'winner' } },
+      { id: 4, points: 3, config: null, EvaluatorType: { name: 'draw' } },
+      { id: 5, points: 3, config: null, EvaluatorType: { name: 'soccer_playoff_advance' } },
+    ]
+
+    function playoffMatch(args: {
+      reg: [number, number]
+      final: [number, number]
+      isOvertime: boolean
+      isShootout: boolean
+      homeAdvanced: boolean
+      bet: { homeScore: number; awayScore: number; homeAdvanced: boolean }
+    }) {
+      return makeLeagueMatch({
+        Match: {
+          homeRegularScore: args.reg[0],
+          awayRegularScore: args.reg[1],
+          homeFinalScore: args.final[0],
+          awayFinalScore: args.final[1],
+          isOvertime: args.isOvertime,
+          isShootout: args.isShootout,
+          isPlayoffGame: true,
+          homeAdvanced: args.homeAdvanced,
+          MatchScorer: [],
+        },
+        League: { sportId: 2, Evaluator: footballPlayoffEvaluators },
+        UserBet: [
+          {
+            id: 1,
+            homeScore: args.bet.homeScore,
+            awayScore: args.bet.awayScore,
+            scorerId: null,
+            noScorer: null,
+            overtime: false,
+            homeAdvanced: args.bet.homeAdvanced,
+            LeagueUser: { userId: 1, User: { id: 1 } },
+          },
+        ],
+      })
+    }
+
+    it('F10: decided in regulation — tip 3:1 + home advance, actual 3:1 → 10 b', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        playoffMatch({
+          reg: [3, 1],
+          final: [3, 1],
+          isOvertime: false,
+          isShootout: false,
+          homeAdvanced: true,
+          bet: { homeScore: 3, awayScore: 1, homeAdvanced: true },
+        })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      expect(result.results[0].totalPoints).toBe(10) // exact(3)+score_diff(1)+winner(3)+advance(3)
+    })
+
+    it('F13: decided in extra time — tip 1:1 + home, actual reg 1:1 → final 2:1 OT → 10 b', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        playoffMatch({
+          reg: [1, 1],
+          final: [2, 1],
+          isOvertime: true,
+          isShootout: false,
+          homeAdvanced: true,
+          bet: { homeScore: 1, awayScore: 1, homeAdvanced: true },
+        })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      // Football: regulation 1:1 vs predicted 1:1 → exact ✓, score_diff ✓.
+      // Strict winner ✗ (draw); draw ✓; advance ✓.
+      // exact(3) + score_diff(1) + draw(3) + advance(3)
+      expect(result.results[0].totalPoints).toBe(10)
+    })
+
+    it('F14: decided on penalties — tip 0:0 + home, actual reg 0:0, final 0:0 SO → 10 b', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        playoffMatch({
+          reg: [0, 0],
+          final: [0, 0],
+          isOvertime: true,
+          isShootout: true,
+          homeAdvanced: true,
+          bet: { homeScore: 0, awayScore: 0, homeAdvanced: true },
+        })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      expect(result.results[0].totalPoints).toBe(10)
+    })
+
+    it('F15: tip exact reg 2:2 + home, actual reg 2:2 → final 3:2 OT → 10 b', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        playoffMatch({
+          reg: [2, 2],
+          final: [3, 2],
+          isOvertime: true,
+          isShootout: false,
+          homeAdvanced: true,
+          bet: { homeScore: 2, awayScore: 2, homeAdvanced: true },
+        })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      expect(result.results[0].totalPoints).toBe(10)
+    })
+
+    it('tip 1:1 + home but actual reg was 0:0 → draw + diff + advance → 7 b', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        playoffMatch({
+          reg: [0, 0],
+          final: [1, 0],
+          isOvertime: true,
+          isShootout: false,
+          homeAdvanced: true,
+          bet: { homeScore: 1, awayScore: 1, homeAdvanced: true },
+        })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      // tip 1:1 (draw) vs reg 0:0 (also draw, different scores):
+      // exact ✗, score_diff ✓ (0=0), winner ✗ (strict draw), draw ✓, advance ✓
+      expect(result.results[0].totalPoints).toBe(7) // score_diff(1)+draw(3)+advance(3)
+    })
+
+    it('wrong advance prediction still scores regulation correctly', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        playoffMatch({
+          reg: [0, 0],
+          final: [1, 0],
+          isOvertime: true,
+          isShootout: false,
+          homeAdvanced: true,
+          bet: { homeScore: 0, awayScore: 0, homeAdvanced: false }, // user said "away advances"
+        })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      // exact(3) + score_diff(1) + draw(3) = 7; winner ✗ (strict draw); advance ✗
+      expect(result.results[0].totalPoints).toBe(7)
+    })
+  })
+
+  describe('Hockey OT (sportId=1, keeps existing OT semantics)', () => {
+    it('hockey tip 3:2 OT vs reg 2:2 → final 3:2 OT yields full points', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        makeLeagueMatch({
+          Match: {
+            homeRegularScore: 2,
+            awayRegularScore: 2,
+            homeFinalScore: 3,
+            awayFinalScore: 2,
+            isOvertime: true,
+            isShootout: false,
+            MatchScorer: [],
+          },
+          League: {
+            sportId: 1, // Hockey
+            Evaluator: [
+              { id: 1, points: 10, config: null, EvaluatorType: { name: 'exact_score' } },
+              { id: 2, points: 5, config: null, EvaluatorType: { name: 'winner' } },
+            ],
+          },
+          UserBet: [
+            {
+              id: 1,
+              homeScore: 3,
+              awayScore: 2,
+              scorerId: null,
+              noScorer: null,
+              overtime: true, // hockey-specific OT prediction
+              homeAdvanced: null,
+              LeagueUser: { userId: 1, User: { id: 1 } },
+            },
+          ],
+        })
+      )
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      // exact_score for hockey still checks predicted OT == actual OT (both true) → +10
+      // winner uses final 3:2 = "home" matches predicted 3:2 = "home" → +5
+      expect(result.results[0].totalPoints).toBe(15)
+    })
+  })
+
+  describe('Hockey scoring (sportId=1, exclusions still active)', () => {
+    it('keeps suppressing score_difference under exact_score for hockey', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        makeLeagueMatch({
+          Match: {
+            homeRegularScore: 2,
+            awayRegularScore: 1,
+            homeFinalScore: 2,
+            awayFinalScore: 1,
+            MatchScorer: [],
+          },
+          League: {
+            sportId: 1, // Hockey
+            Evaluator: [
+              { id: 1, points: 10, config: null, EvaluatorType: { name: 'exact_score' } },
+              { id: 2, points: 3, config: null, EvaluatorType: { name: 'score_difference' } },
+              { id: 3, points: 5, config: null, EvaluatorType: { name: 'winner' } },
+            ],
+          },
+          UserBet: [
+            {
+              id: 1,
+              homeScore: 2,
+              awayScore: 1,
+              scorerId: null,
+              noScorer: null,
+              overtime: false,
+              homeAdvanced: null,
+              LeagueUser: { userId: 1, User: { id: 1 } },
+            },
+          ],
+        })
+      )
+
+      const result = await evaluateMatchAtomic({ matchId: 1, leagueMatchId: 100 })
+      // exact_score(10) + winner(5) = 15; score_difference(3) suppressed by exact_score
+      expect(result.results[0].totalPoints).toBe(15)
+      const scoreDiff = result.results[0].evaluatorResults.find(
+        (r) => r.evaluatorName === 'score_difference'
+      )
+      expect(scoreDiff?.awarded).toBe(false)
     })
   })
 })

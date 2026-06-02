@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -12,6 +12,7 @@ import { BetDisplay } from './bet-display'
 import { SaveButton } from './save-button'
 import { FriendPredictionsList } from './friend-predictions-list'
 import { cn } from '@/lib/utils'
+import { SPORT_IDS } from '@/lib/constants'
 import { useFriendPredictions } from '@/hooks/useFriendPredictions'
 import { saveMatchBet, getMatchFriendPredictions } from '@/actions/user/matches'
 import type { UserMatch, FriendPrediction } from '@/actions/user/matches'
@@ -150,6 +151,18 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
     }
   }
 
+  // Soccer playoff: when prediction is non-draw, advancement is implied by score.
+  // Keep state in sync so saved value matches what the user sees.
+  const isSoccerPlayoff =
+    sportId === SPORT_IDS.FOOTBALL && match.Match.isPlayoffGame
+  useEffect(() => {
+    if (!isSoccerPlayoff || homeScore === awayScore) return
+    const implied = homeScore > awayScore
+    if (homeAdvanced !== implied) {
+      setHomeAdvanced(implied)
+    }
+  }, [isSoccerPlayoff, homeScore, awayScore, homeAdvanced])
+
   // Determine actual result display
   const hasResult =
     match.Match.homeRegularScore !== null &&
@@ -186,6 +199,8 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
         {!isLocked && (
           <BetControls
             match={match}
+            homeScore={homeScore}
+            awayScore={awayScore}
             overtime={overtime}
             onOvertimeChange={handleOvertimeChange}
             homeAdvanced={homeAdvanced}

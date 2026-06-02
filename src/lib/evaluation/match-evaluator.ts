@@ -9,17 +9,29 @@ import { getMatchEvaluator, buildMatchBetContext } from '@/lib/evaluators'
 import { evaluateScorer } from '@/lib/evaluators/scorer'
 import { getLeagueRankingsAtTime } from '@/lib/scorer-ranking-utils'
 import { AppError } from '@/lib/error-handler'
+import { SPORT_IDS } from '@/lib/constants'
 import { scorerRankedConfigSchema } from '@/lib/validation/admin'
 import type { ScorerRankedConfig } from '@/lib/evaluators/types'
 
 /**
- * Exclusion rules: if any listed evaluator awarded points, this evaluator is skipped.
- * e.g. score_difference is excluded when exact_score already awarded.
+ * Hockey exclusion rules: higher tiers suppress lower ones (e.g. score_difference
+ * is skipped when exact_score already awarded — the hockey defaults are sized so
+ * the higher tier already "contains" the lower one's value).
+ *
+ * Football has no exclusions: every match evaluator stacks. `winner` is strict
+ * non-draw and `draw` is strict draw (see winner.ts / draw.ts), so they are
+ * mutually exclusive by construction and need no exclusion entry.
  */
-const MATCH_EXCLUSIONS: Record<string, string[]> = {
+const MATCH_EXCLUSIONS_HOCKEY: Record<string, string[]> = {
   score_difference: ['exact_score'],
   one_team_score: ['exact_score', 'score_difference'],
   draw: ['exact_score'],
+}
+
+const NO_EXCLUSIONS: Record<string, string[]> = {}
+
+function getMatchExclusions(sportId: number): Record<string, string[]> {
+  return sportId === SPORT_IDS.FOOTBALL ? NO_EXCLUSIONS : MATCH_EXCLUSIONS_HOCKEY
 }
 
 interface EvaluateMatchOptions {
@@ -120,7 +132,12 @@ async function evaluateMatch(
   const results: EvaluationResult[] = []
 
   for (const userBet of leagueMatch.UserBet) {
-    const context = buildMatchBetContext(userBet, match, leagueRankings)
+    const context = buildMatchBetContext(
+      userBet,
+      match,
+      leagueRankings,
+      leagueMatch.League.sportId
+    )
 
     let totalPoints = 0
     const evaluatorResults = []
@@ -159,9 +176,10 @@ async function evaluateMatch(
 
     // Second pass: apply exclusion rules and compute final points
     const awardedNames = new Set(rawResults.filter((r) => r.points > 0).map((r) => r.name))
+    const exclusions = getMatchExclusions(leagueMatch.League.sportId)
 
     for (const raw of rawResults) {
-      const excludedBy = MATCH_EXCLUSIONS[raw.name]
+      const excludedBy = exclusions[raw.name]
       const excluded = excludedBy?.some((e) => awardedNames.has(e)) ?? false
       const points = excluded ? 0 : raw.points
       const finalPoints = leagueMatch.isDoubled ? points * 2 : points

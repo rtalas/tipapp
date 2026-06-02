@@ -34,6 +34,7 @@ const mockSeries = {
   leagueId: 1,
   dateTime: new Date('2099-01-01'),
   deletedAt: null,
+  SpecialBetSerie: { bestOf: 7 },
 }
 
 describe('saveSeriesBet', () => {
@@ -149,7 +150,15 @@ describe('saveSeriesBet', () => {
     expect((result as any).error).toContain('Betting is closed')
   })
 
-  it('should reject when neither team has 4 wins', async () => {
+  it('should reject when neither team reaches winsNeeded (best of 7)', async () => {
+    mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+      const tx = {
+        leagueSpecialBetSerie: { findUnique: vi.fn().mockResolvedValue(mockSeries) },
+        userSpecialBetSerie: { findFirst: vi.fn(), create: vi.fn() },
+      }
+      return fn(tx)
+    })
+
     const result = await saveSeriesBet({
       leagueSpecialBetSerieId: 100,
       homeTeamScore: 3,
@@ -158,6 +167,67 @@ describe('saveSeriesBet', () => {
 
     expect(result.success).toBe(false)
     expect((result as any).error).toContain('4 wins')
+  })
+
+  it('should accept 2:1 for a best-of-3 series', async () => {
+    const bestOf3Series = { ...mockSeries, SpecialBetSerie: { bestOf: 3 } }
+    const createMock = vi.fn()
+    mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+      const tx = {
+        leagueSpecialBetSerie: { findUnique: vi.fn().mockResolvedValue(bestOf3Series) },
+        userSpecialBetSerie: { findFirst: vi.fn().mockResolvedValue(null), create: createMock },
+      }
+      return fn(tx)
+    })
+
+    const result = await saveSeriesBet({
+      leagueSpecialBetSerieId: 100,
+      homeTeamScore: 2,
+      awayTeamScore: 1,
+    })
+
+    expect(result.success).toBe(true)
+    expect(createMock).toHaveBeenCalled()
+  })
+
+  it('should reject 1:1 for a best-of-3 series (needs 2 wins)', async () => {
+    const bestOf3Series = { ...mockSeries, SpecialBetSerie: { bestOf: 3 } }
+    mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+      const tx = {
+        leagueSpecialBetSerie: { findUnique: vi.fn().mockResolvedValue(bestOf3Series) },
+        userSpecialBetSerie: { findFirst: vi.fn(), create: vi.fn() },
+      }
+      return fn(tx)
+    })
+
+    const result = await saveSeriesBet({
+      leagueSpecialBetSerieId: 100,
+      homeTeamScore: 1,
+      awayTeamScore: 1,
+    })
+
+    expect(result.success).toBe(false)
+    expect((result as any).error).toContain('2 wins')
+  })
+
+  it('should reject when a team has more wins than bestOf (e.g. 5:0 for best-of-3)', async () => {
+    const bestOf3Series = { ...mockSeries, SpecialBetSerie: { bestOf: 3 } }
+    mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+      const tx = {
+        leagueSpecialBetSerie: { findUnique: vi.fn().mockResolvedValue(bestOf3Series) },
+        userSpecialBetSerie: { findFirst: vi.fn(), create: vi.fn() },
+      }
+      return fn(tx)
+    })
+
+    const result = await saveSeriesBet({
+      leagueSpecialBetSerieId: 100,
+      homeTeamScore: 5,
+      awayTeamScore: 0,
+    })
+
+    expect(result.success).toBe(false)
+    expect((result as any).error).toContain('at most 3')
   })
 
   it('should reject negative scores', async () => {

@@ -11,6 +11,7 @@ import { CountdownBadge } from '@/components/user/common/countdown-badge'
 import { StatusBadge } from '@/components/user/common/status-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
 import { cn } from '@/lib/utils'
+import { SPORT_IDS } from '@/lib/constants'
 import { getUserDisplayName } from '@/lib/user-display-utils'
 import { useFriendPredictions } from '@/hooks/useFriendPredictions'
 import { saveQuestionBet, getQuestionFriendPredictions } from '@/actions/user/questions'
@@ -26,6 +27,10 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
   const isLocked = !question.isBettingOpen
   const isEvaluated = question.isEvaluated
   const currentAnswer = question.userBet?.userBet
+  const sportGradient =
+    question.League?.sportId === SPORT_IDS.FOOTBALL
+      ? 'gradient-football'
+      : 'gradient-hockey'
 
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(
     currentAnswer ?? null
@@ -82,7 +87,10 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
         )}
       >
         <div className="flex items-start gap-2 sm:gap-3 mb-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 gradient-hockey">
+          <div className={cn(
+            'w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0',
+            sportGradient
+          )}>
             <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -179,7 +187,7 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
                 size="sm"
                 className={cn(
                   'flex-1',
-                  selectedAnswer === true && 'gradient-hockey text-white border-0'
+                  selectedAnswer === true && `${sportGradient} text-white border-0`
                 )}
                 onClick={() => handleAnswer(true)}
               >
@@ -190,7 +198,7 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
                 size="sm"
                 className={cn(
                   'flex-1',
-                  selectedAnswer === false && 'gradient-hockey text-white border-0'
+                  selectedAnswer === false && `${sportGradient} text-white border-0`
                 )}
                 onClick={() => handleAnswer(false)}
               >
@@ -213,7 +221,7 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
                 'w-full',
                 isSaved
                   ? 'bg-primary/20 text-primary hover:bg-primary/30'
-                  : 'gradient-hockey'
+                  : sportGradient
               )}
               size="sm"
               disabled={isSaving || isSaved}

@@ -412,4 +412,112 @@ describe('MatchCard', () => {
       })
     })
   })
+
+  describe('Soccer playoff homeAdvanced derivation', () => {
+    function soccerPlayoff(overrides: Record<string, unknown> = {}) {
+      const base = createMatch()
+      return {
+        ...base,
+        League: { ...base.League, sportId: 2 },
+        Match: { ...base.Match, isPlayoffGame: true },
+        ...overrides,
+      }
+    }
+
+    it('saves null homeAdvanced when prediction is a draw (default 0:0) without user selection', async () => {
+      render(<MatchCard match={soccerPlayoff()} />)
+
+      await user.click(screen.getByTestId('save-button'))
+
+      await waitFor(() => {
+        expect(mockSaveMatchBet).toHaveBeenCalledWith(
+          expect.objectContaining({ homeScore: 0, awayScore: 0, homeAdvanced: null })
+        )
+      })
+    })
+
+    it('auto-derives homeAdvanced=true when home prediction is winning', async () => {
+      render(<MatchCard match={soccerPlayoff()} />)
+
+      await user.click(screen.getByTestId('home-inc')) // 1:0
+
+      await user.click(screen.getByTestId('save-button'))
+
+      await waitFor(() => {
+        expect(mockSaveMatchBet).toHaveBeenCalledWith(
+          expect.objectContaining({ homeScore: 1, awayScore: 0, homeAdvanced: true })
+        )
+      })
+    })
+
+    it('auto-derives homeAdvanced=false when away prediction is winning', async () => {
+      render(<MatchCard match={soccerPlayoff()} />)
+
+      await user.click(screen.getByTestId('away-inc')) // 0:1
+
+      await user.click(screen.getByTestId('save-button'))
+
+      await waitFor(() => {
+        expect(mockSaveMatchBet).toHaveBeenCalledWith(
+          expect.objectContaining({ homeScore: 0, awayScore: 1, homeAdvanced: false })
+        )
+      })
+    })
+
+    it('keeps last derived value when returning to a draw', async () => {
+      render(<MatchCard match={soccerPlayoff()} />)
+
+      await user.click(screen.getByTestId('home-inc')) // 1:0 → auto-derives true
+      await user.click(screen.getByTestId('away-inc')) // 1:1 (draw, preserves prior)
+
+      await user.click(screen.getByTestId('save-button'))
+
+      await waitFor(() => {
+        expect(mockSaveMatchBet).toHaveBeenCalledWith(
+          expect.objectContaining({ homeScore: 1, awayScore: 1, homeAdvanced: true })
+        )
+      })
+    })
+
+    it('does not derive homeAdvanced for hockey playoff', async () => {
+      const base = createMatch()
+      const hockeyPlayoff = {
+        ...base,
+        Match: { ...base.Match, isPlayoffGame: true },
+      }
+
+      render(<MatchCard match={hockeyPlayoff} />)
+
+      await user.click(screen.getByTestId('home-inc')) // 1:0
+
+      await user.click(screen.getByTestId('save-button'))
+
+      await waitFor(() => {
+        expect(mockSaveMatchBet).toHaveBeenCalledWith(
+          expect.objectContaining({ homeScore: 1, awayScore: 0, homeAdvanced: null })
+        )
+      })
+    })
+
+    it('does not derive homeAdvanced for soccer group stage', async () => {
+      const base = createMatch()
+      const soccerGroup = {
+        ...base,
+        League: { ...base.League, sportId: 2 },
+        Match: { ...base.Match, isPlayoffGame: false },
+      }
+
+      render(<MatchCard match={soccerGroup} />)
+
+      await user.click(screen.getByTestId('home-inc')) // 1:0
+
+      await user.click(screen.getByTestId('save-button'))
+
+      await waitFor(() => {
+        expect(mockSaveMatchBet).toHaveBeenCalledWith(
+          expect.objectContaining({ homeScore: 1, awayScore: 0, homeAdvanced: null })
+        )
+      })
+    })
+  })
 })

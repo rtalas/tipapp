@@ -76,6 +76,112 @@ describe('Leagues Actions', () => {
       expect(mockUpdateTag).toHaveBeenCalledWith('league-selector')
     })
 
+    it('uses hockey defaults for sportId=1 (exact=10, winner=5, score_diff=3, one_team=1, scorer ranked 1-4)', async () => {
+      const evaluatorTypes = [
+        { id: 1, name: 'exact_score', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 2, name: 'winner', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 3, name: 'scorer', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 4, name: 'score_difference', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 5, name: 'one_team_score', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 6, name: 'draw', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 7, name: 'soccer_playoff_advance', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 8, name: 'series_exact', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 9, name: 'series_winner', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 10, name: 'question', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+      ]
+
+      mockPrisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(mockPrisma))
+      mockPrisma.league.create.mockResolvedValue({ id: 20, name: 'NHL' } as never)
+      mockPrisma.evaluatorType.findMany.mockResolvedValue(evaluatorTypes as never)
+      mockPrisma.evaluator.createMany.mockResolvedValue({ count: 7 } as never)
+      mockPrisma.evaluator.create.mockResolvedValue({} as never)
+
+      await createLeague({
+        name: 'NHL 2026',
+        sportId: 1, // Hockey
+        seasonFrom: 2025,
+        seasonTo: 2026,
+        isActive: true,
+        isPublic: false,
+      })
+
+      const batchedTypes = mockPrisma.evaluator.createMany.mock.calls[0][0].data
+      const byName: Record<string, number> = {}
+      for (const ev of batchedTypes) byName[ev.name] = ev.points
+
+      expect(byName).toEqual({
+        exact_score: 10,
+        winner: 5,
+        score_difference: 3,
+        one_team_score: 1,
+        series_exact: 14,
+        series_winner: 8,
+        question: 6,
+      })
+      // soccer_playoff_advance and draw are NOT in hockey defaults
+      expect(byName).not.toHaveProperty('soccer_playoff_advance')
+      expect(byName).not.toHaveProperty('draw')
+
+      const scorerCall = mockPrisma.evaluator.create.mock.calls[0][0]
+      expect(scorerCall.data.config).toEqual({
+        rankedPoints: { '1': 2, '2': 3, '3': 4, '4': 6 },
+        unrankedPoints: 8,
+      })
+    })
+
+    it('uses football defaults for sportId=2 (exact=3, winner=3, score_diff=1, draw=3, no one_team/series, soccer_playoff_advance=3)', async () => {
+      const evaluatorTypes = [
+        { id: 1, name: 'exact_score', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 2, name: 'winner', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 3, name: 'scorer', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 4, name: 'score_difference', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 5, name: 'one_team_score', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 6, name: 'draw', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 7, name: 'soccer_playoff_advance', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 8, name: 'series_exact', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 9, name: 'series_winner', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 10, name: 'question', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },
+      ]
+
+      mockPrisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(mockPrisma))
+      mockPrisma.league.create.mockResolvedValue({ id: 30, name: 'World Cup' } as never)
+      mockPrisma.evaluatorType.findMany.mockResolvedValue(evaluatorTypes as never)
+      mockPrisma.evaluator.createMany.mockResolvedValue({ count: 5 } as never)
+      mockPrisma.evaluator.create.mockResolvedValue({} as never)
+
+      await createLeague({
+        name: 'World Cup 2026',
+        sportId: 2, // Football
+        seasonFrom: 2026,
+        seasonTo: 2026,
+        isActive: true,
+        isPublic: false,
+      })
+
+      const batchedTypes = mockPrisma.evaluator.createMany.mock.calls[0][0].data
+      const byName: Record<string, number> = {}
+      for (const ev of batchedTypes) byName[ev.name] = ev.points
+
+      expect(byName).toEqual({
+        exact_score: 3,
+        score_difference: 1,
+        winner: 3,
+        draw: 3,
+        soccer_playoff_advance: 3,
+        question: 6,
+      })
+      // one_team_score and series_* must NOT be in football defaults
+      expect(byName).not.toHaveProperty('one_team_score')
+      expect(byName).not.toHaveProperty('series_exact')
+      expect(byName).not.toHaveProperty('series_winner')
+
+      const scorerCall = mockPrisma.evaluator.create.mock.calls[0][0]
+      expect(scorerCall.data.config).toEqual({
+        rankedPoints: { '1': 2, '2': 3, '3': 4 },
+        unrankedPoints: 7,
+      })
+    })
+
     it('creates league with custom evaluator rules', async () => {
       const evaluatorTypes = [
         { id: 1, name: 'exact_score', description: null, deletedAt: null, createdAt: new Date(), updatedAt: new Date() },

@@ -109,6 +109,7 @@ export async function saveSeriesBet(input: UserSeriesBetInput) {
     runTransaction: async (tx: TransactionClient, validated, leagueUserId) => {
       const series = await tx.leagueSpecialBetSerie.findUnique({
         where: { id: validated.leagueSpecialBetSerieId, deletedAt: null },
+        include: { SpecialBetSerie: { select: { bestOf: true } } },
       })
 
       if (!series) {
@@ -117,6 +118,24 @@ export async function saveSeriesBet(input: UserSeriesBetInput) {
 
       if (!isBettingOpen(series.dateTime)) {
         throw new AppError('Betting is closed for this series', 'BETTING_CLOSED', 400)
+      }
+
+      const bestOf = series.SpecialBetSerie.bestOf
+      const winsNeeded = Math.ceil(bestOf / 2)
+      const { homeTeamScore, awayTeamScore } = validated
+      if (homeTeamScore > bestOf || awayTeamScore > bestOf) {
+        throw new AppError(
+          `Each team can win at most ${bestOf} games (best of ${bestOf})`,
+          'VALIDATION_ERROR',
+          400
+        )
+      }
+      if (homeTeamScore < winsNeeded && awayTeamScore < winsNeeded) {
+        throw new AppError(
+          `At least one team must reach ${winsNeeded} wins (best of ${bestOf})`,
+          'VALIDATION_ERROR',
+          400
+        )
       }
 
       const existingBet = await tx.userSpecialBetSerie.findFirst({

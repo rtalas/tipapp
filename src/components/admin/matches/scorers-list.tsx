@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, Trash2, Search, Check, ChevronsUpDown } from 'lucide-react'
 import { SPORT_IDS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
@@ -50,10 +51,10 @@ interface ScorersListProps {
   onHasScorersChange: (hasScorers: boolean) => void
 }
 
-function getPlayerName(lp: LeaguePlayer): string {
+function getPlayerName(lp: LeaguePlayer, unknownLabel: string): string {
   const { firstName, lastName } = lp.Player
   if (firstName && lastName) return `${firstName} ${lastName}`
-  return firstName || lastName || 'Unknown'
+  return firstName || lastName || unknownLabel
 }
 
 function sortPlayers(players: LeaguePlayer[]): LeaguePlayer[] {
@@ -86,6 +87,8 @@ function ScorerSelect({
   awayPlayers,
   onChange,
 }: ScorerSelectProps) {
+  const t = useTranslations('admin.matches.resultDialog.scorers')
+  const unknownLabel = t('unknownPlayer')
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
 
@@ -94,12 +97,12 @@ function ScorerSelect({
   const searchLower = search.toLowerCase()
   const filteredHome = search
     ? homePlayers.filter((lp) =>
-        getPlayerName(lp).toLowerCase().includes(searchLower)
+        getPlayerName(lp, unknownLabel).toLowerCase().includes(searchLower)
       )
     : homePlayers
   const filteredAway = search
     ? awayPlayers.filter((lp) =>
-        getPlayerName(lp).toLowerCase().includes(searchLower)
+        getPlayerName(lp, unknownLabel).toLowerCase().includes(searchLower)
       )
     : awayPlayers
 
@@ -120,7 +123,7 @@ function ScorerSelect({
           className="flex-1 justify-between font-normal"
         >
           <span className="truncate">
-            {selectedPlayer ? getPlayerName(selectedPlayer) : 'Select player'}
+            {selectedPlayer ? getPlayerName(selectedPlayer, unknownLabel) : t('selectPlayer')}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -129,7 +132,7 @@ function ScorerSelect({
         <div className="flex items-center border-b px-3 py-2">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <Input
-            placeholder="Search player..."
+            placeholder={t('searchPlayer')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -164,7 +167,7 @@ function ScorerSelect({
                         value === lp.id.toString() ? 'opacity-100' : 'opacity-0'
                       )}
                     />
-                    {getPlayerName(lp)}
+                    {getPlayerName(lp, unknownLabel)}
                   </button>
                 ))}
               </>
@@ -191,7 +194,7 @@ function ScorerSelect({
                         value === lp.id.toString() ? 'opacity-100' : 'opacity-0'
                       )}
                     />
-                    {getPlayerName(lp)}
+                    {getPlayerName(lp, unknownLabel)}
                   </button>
                 ))}
               </>
@@ -199,7 +202,7 @@ function ScorerSelect({
 
             {filteredHome.length === 0 && filteredAway.length === 0 && search && (
               <div className="py-6 text-center text-sm text-muted-foreground">
-                No players found.
+                {t('noPlayersFound')}
               </div>
             )}
           </div>
@@ -221,6 +224,7 @@ export function ScorersList({
   onScorerChange,
   onHasScorersChange,
 }: ScorersListProps) {
+  const t = useTranslations('admin.matches.resultDialog.scorers')
   const sortedHome = sortPlayers(players.home)
   const sortedAway = sortPlayers(players.away)
   const allPlayers = [...sortedHome, ...sortedAway]
@@ -232,7 +236,7 @@ export function ScorersList({
       {/* Scorers section (T3: Context-Aware Scorer Selection) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="font-medium">Goal Scorers</h4>
+          <h4 className="font-medium">{t('title')}</h4>
           <div className="flex items-center gap-4">
             {/* No scorers checkbox - Soccer only (hockey always has at least one goal) */}
             {sportId === SPORT_IDS.FOOTBALL && (
@@ -243,7 +247,7 @@ export function ScorersList({
                   onCheckedChange={(checked) => onHasScorersChange(!checked)}
                 />
                 <Label htmlFor="noScorers" className="text-sm font-normal cursor-pointer">
-                  No scorers (0:0 game)
+                  {t('noScorersCheckbox')}
                 </Label>
               </div>
             )}
@@ -255,18 +259,18 @@ export function ScorersList({
               disabled={!hasScorers}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Scorer
+              {t('addScorer')}
             </Button>
           </div>
         </div>
 
         {!hasScorers ? (
           <p className="text-sm text-muted-foreground text-center py-4 italic">
-            No scorers recorded for this match (0:0 game).
+            {t('noScorersRecorded')}
           </p>
         ) : scorers.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
-            No scorers added yet. Click &quot;Add Scorer&quot; to record goal scorers.
+            {t('noScorersAddedYet')}
           </p>
         ) : (
           <div className="space-y-3">

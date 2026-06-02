@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { createLeague } from '@/actions/leagues'
 import { logger } from '@/lib/logging/client-logger'
+import { SPORT_IDS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,6 +19,32 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+
+interface RuleLine {
+  key: string
+  value: string
+}
+
+const HOCKEY_RULES: RuleLine[] = [
+  { key: 'exactScore', value: '10 pts' },
+  { key: 'oneTeamScore', value: '1 pt' },
+  { key: 'question', value: '6 pts' },
+  { key: 'scoreDifference', value: '3 pts' },
+  { key: 'scorer', value: 'R1:2 R2:3 R3:4 R4:6 U:8' },
+  { key: 'seriesExact', value: '14 pts' },
+  { key: 'seriesWinner', value: '8 pts' },
+  { key: 'winner', value: '5 pts' },
+]
+
+const FOOTBALL_RULES: RuleLine[] = [
+  { key: 'exactScore', value: '3 pts' },
+  { key: 'scoreDifference', value: '1 pt' },
+  { key: 'winner', value: '3 pts' },
+  { key: 'draw', value: '3 pts' },
+  { key: 'scorer', value: 'R1:2 R2:3 R3:4 U:7' },
+  { key: 'soccerPlayoffAdvance', value: '3 pts' },
+  { key: 'question', value: '6 pts' },
+]
 
 interface Sport {
   id: number
@@ -32,6 +59,14 @@ export function LeagueForm({ sports }: LeagueFormProps) {
   const t = useTranslations('admin.leagueNew')
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedSportId, setSelectedSportId] = useState<string>('')
+
+  const isFootball = Number(selectedSportId) === SPORT_IDS.FOOTBALL
+  const rules: RuleLine[] = selectedSportId
+    ? isFootball
+      ? FOOTBALL_RULES
+      : HOCKEY_RULES
+    : HOCKEY_RULES
 
   const currentYear = new Date().getFullYear()
 
@@ -91,7 +126,12 @@ export function LeagueForm({ sports }: LeagueFormProps) {
 
           <div className="space-y-2">
             <Label htmlFor="sportId">{t('sport')}</Label>
-            <Select name="sportId" required>
+            <Select
+              name="sportId"
+              required
+              value={selectedSportId}
+              onValueChange={setSelectedSportId}
+            >
               <SelectTrigger>
                 <SelectValue placeholder={t('selectSport')} />
               </SelectTrigger>
@@ -173,38 +213,15 @@ export function LeagueForm({ sports }: LeagueFormProps) {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">{t('exactScore')}</span>
-              <span className="font-mono text-sm font-medium">10 pts</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">{t('oneTeamScore')}</span>
-              <span className="font-mono text-sm font-medium">1 pt</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">{t('question')}</span>
-              <span className="font-mono text-sm font-medium">6 pts</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">{t('scoreDifference')}</span>
-              <span className="font-mono text-sm font-medium">3 pts</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">{t('scorer')}</span>
-              <span className="font-mono text-sm font-medium">R1:2 R2:3 R3:4 R4:6 U:8</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">{t('seriesExact')}</span>
-              <span className="font-mono text-sm font-medium">14 pts</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">{t('seriesWinner')}</span>
-              <span className="font-mono text-sm font-medium">8 pts</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">{t('winner')}</span>
-              <span className="font-mono text-sm font-medium">5 pts</span>
-            </div>
+            {rules.map((rule) => (
+              <div
+                key={rule.key}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
+                <span className="text-sm">{t(rule.key)}</span>
+                <span className="font-mono text-sm font-medium">{rule.value}</span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

@@ -286,6 +286,51 @@ describe('Matches Actions', () => {
         })
       )
     })
+
+    it('should persist homeAdvanced for soccer playoff games', async () => {
+      const txMocks = {
+        match: { update: vi.fn() },
+        matchScorer: { updateMany: vi.fn(), createMany: vi.fn() },
+      }
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
+
+      await updateMatchResult({
+        matchId: 1,
+        homeRegularScore: 1,
+        awayRegularScore: 1,
+        isOvertime: false,
+        isShootout: true,
+        homeAdvanced: true,
+      })
+
+      expect(txMocks.match.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ homeAdvanced: true }),
+        })
+      )
+    })
+
+    it('should default homeAdvanced to null when not provided', async () => {
+      const txMocks = {
+        match: { update: vi.fn() },
+        matchScorer: { updateMany: vi.fn(), createMany: vi.fn() },
+      }
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
+
+      await updateMatchResult({
+        matchId: 1,
+        homeRegularScore: 3,
+        awayRegularScore: 0,
+        isOvertime: false,
+        isShootout: false,
+      })
+
+      expect(txMocks.match.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ homeAdvanced: null }),
+        })
+      )
+    })
   })
 
   describe('deleteMatch', () => {

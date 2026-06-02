@@ -20,6 +20,7 @@ export const getUserSpecialBets = createCachedEntityFetcher({
     prisma.leagueSpecialBetSingle.findMany({
       where: { leagueId, deletedAt: null },
       include: {
+        League: { select: { sportId: true } },
         Evaluator: { include: { EvaluatorType: true } },
         SpecialBetSingle: {
           include: { SpecialBetSingleType: true, Sport: true },

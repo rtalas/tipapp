@@ -18,6 +18,7 @@ export const getUserQuestions = createCachedEntityFetcher({
   fetchEntities: (leagueId) =>
     prisma.leagueSpecialBetQuestion.findMany({
       where: { leagueId, deletedAt: null },
+      include: { League: { select: { sportId: true } } },
       orderBy: { dateTime: 'asc' },
     }),
   fetchUserBets: (leagueUserId, leagueId) =>

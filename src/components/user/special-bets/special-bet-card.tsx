@@ -15,6 +15,7 @@ import { FriendPredictionsModal } from '@/components/user/common/friend-predicti
 import { SearchableSelect } from '@/components/user/special-bets/searchable-select'
 import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
+import { SPORT_IDS } from '@/lib/constants'
 import { getUserDisplayName } from '@/lib/user-display-utils'
 import { useFriendPredictions } from '@/hooks/useFriendPredictions'
 import { saveSpecialBet, getSpecialBetFriendPredictions } from '@/actions/user/special-bets'
@@ -61,6 +62,10 @@ export function SpecialBetCard({
   const t = useTranslations('user.specialBets')
   const isLocked = !specialBet.isBettingOpen
   const isEvaluated = specialBet.isEvaluated
+  const sportGradient =
+    specialBet.League?.sportId === SPORT_IDS.FOOTBALL
+      ? 'gradient-football'
+      : '${sportGradient}'
 
   // Determine bet type from evaluator type (primary) or fallback to SpecialBetSingleType (legacy)
   const evaluatorTypeName = specialBet.Evaluator?.EvaluatorType?.name || ''
@@ -204,7 +209,10 @@ export function SpecialBetCard({
         )}
       >
         <div className="flex items-start gap-2 sm:gap-3 mb-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 gradient-hockey">
+          <div className={cn(
+            'w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0',
+            sportGradient
+          )}>
             {isPlayerBet ? (
               <Target className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             ) : (
@@ -352,7 +360,7 @@ export function SpecialBetCard({
                 'w-full',
                 isSaved
                   ? 'bg-primary/20 text-primary hover:bg-primary/30'
-                  : 'gradient-hockey'
+                  : sportGradient
               )}
               size="sm"
               disabled={isSaving || (!teamId && !playerId && value === null)}

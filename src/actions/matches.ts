@@ -189,6 +189,7 @@ export async function updateMatchResult(input: UpdateMatchResultInput) {
             awayFinalScore: validated.awayFinalScore ?? validated.awayRegularScore,
             isOvertime: validated.isOvertime,
             isShootout: validated.isShootout,
+            homeAdvanced: validated.homeAdvanced ?? null,
             updatedAt: now,
           },
         })
@@ -221,7 +222,7 @@ export async function updateMatchResult(input: UpdateMatchResultInput) {
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'Match', validated.matchId,
-        { homeRegularScore: validated.homeRegularScore, awayRegularScore: validated.awayRegularScore, scorerCount: validated.scorers?.length ?? 0 }
+        { homeRegularScore: validated.homeRegularScore, awayRegularScore: validated.awayRegularScore, homeAdvanced: validated.homeAdvanced ?? null, scorerCount: validated.scorers?.length ?? 0 }
       ).catch(() => {})
 
       return {}
