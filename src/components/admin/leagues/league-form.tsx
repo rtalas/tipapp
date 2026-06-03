@@ -85,6 +85,7 @@ export function LeagueForm({ sports }: LeagueFormProps) {
         isActive: formData.get('isActive') === 'on',
         isPublic: formData.get('isPublic') === 'on',
         isFinished: false,
+        jokerCount: 0,
       })
 
       if (result.success && 'leagueId' in result) {

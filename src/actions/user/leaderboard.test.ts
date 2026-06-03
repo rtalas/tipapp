@@ -27,7 +27,7 @@ describe('User Leaderboard Actions', () => {
     mockPrisma.leagueSpecialBetSingle.aggregate.mockResolvedValue({ _max: { updatedAt: null } } as any)
     mockPrisma.leagueSpecialBetQuestion.aggregate.mockResolvedValue({ _max: { updatedAt: null } } as any)
     // Default league mock for isFinished
-    mockPrisma.league.findUniqueOrThrow.mockResolvedValue({ isFinished: false } as any)
+    mockPrisma.league.findUniqueOrThrow.mockResolvedValue({ isFinished: false, jokerCount: 0 } as any)
   })
 
   describe('getLeaderboard', () => {

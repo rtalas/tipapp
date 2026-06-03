@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -106,13 +106,13 @@ export function UserPicksModal({ selectedUser, leagueId, onClose }: UserPicksMod
                             <TeamFlag flagIcon={match.homeTeamFlag} flagType={match.homeTeamFlagType} teamName={match.homeTeamName} size="xs" />
                             {match.homeTeamName} vs {match.awayTeamName}
                             <TeamFlag flagIcon={match.awayTeamFlag} flagType={match.awayTeamFlagType} teamName={match.awayTeamName} size="xs" />
+                            {match.isEvaluated && match.actualHomeScore !== null && match.actualAwayScore !== null && (
+                              <span className="font-semibold">
+                                {match.actualHomeScore}:{match.actualAwayScore}
+                                {match.actualOvertime && t('overtimeSuffix')}
+                              </span>
+                            )}
                           </span>
-                          {match.isEvaluated && match.actualHomeScore !== null && match.actualAwayScore !== null && (
-                            <span className="text-xs font-semibold text-foreground ml-2">
-                              ({match.actualHomeScore}:{match.actualAwayScore}
-                              {match.actualOvertime && `${t('overtimeSuffix')}`})
-                            </span>
-                          )}
                         </div>
                         <PointsBadge points={match.totalPoints} />
                       </div>
@@ -122,6 +122,12 @@ export function UserPicksModal({ selectedUser, leagueId, onClose }: UserPicksMod
                           {match.homeScore}:{match.awayScore}
                           {match.overtime && `${t('overtimeSuffix')}`}
                         </span>
+                        {match.usedJoker && (
+                          <Star
+                            className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0"
+                            aria-label={t('jokerUsed')}
+                          />
+                        )}
                         {match.scorerName && (
                           <>
                             <span className="text-muted-foreground">•</span>

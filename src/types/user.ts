@@ -16,5 +16,6 @@ export interface LeaderboardEntry {
   specialBetPoints: number
   questionPoints: number
   totalPoints: number
+  jokersUsed: number
   isCurrentUser: boolean
 }

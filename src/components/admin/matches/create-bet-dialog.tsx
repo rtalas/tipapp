@@ -32,6 +32,7 @@ interface CreateBetFormData {
   scorerId: string
   noScorer: boolean
   overtime: boolean
+  usedJoker: boolean
   homeAdvanced: string // 'home' | 'away' | 'none'
 }
 
@@ -49,6 +50,7 @@ const initialFormData: CreateBetFormData = {
   scorerId: 'none',
   noScorer: false,
   overtime: false,
+  usedJoker: false,
   homeAdvanced: 'none',
 }
 
@@ -74,6 +76,7 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
       scorerId: createDialog.form.scorerId !== 'none' ? parseInt(createDialog.form.scorerId) : undefined,
       noScorer: createDialog.form.noScorer || undefined,
       overtime: createDialog.form.overtime,
+      usedJoker: createDialog.form.usedJoker || undefined,
       homeAdvanced:
         createDialog.form.homeAdvanced === 'none'
           ? undefined
@@ -205,6 +208,20 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
             />
             <Label htmlFor="overtime" className="text-sm font-normal">
               {t('overtimePrediction')}
+            </Label>
+          </div>
+
+          {/* Joker checkbox */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="create-usedJoker"
+              checked={createDialog.form.usedJoker}
+              onCheckedChange={(checked) =>
+                createDialog.updateForm({ usedJoker: checked === true })
+              }
+            />
+            <Label htmlFor="create-usedJoker" className="text-sm font-normal">
+              {t('joker')}
             </Label>
           </div>
 

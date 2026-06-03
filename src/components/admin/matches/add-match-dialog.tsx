@@ -75,6 +75,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
   const [dateTime, setDateTime] = useState<string>('')
   const [isPlayoffGame, setIsPlayoffGame] = useState(false)
   const [isDoubled, setIsDoubled] = useState(false)
+  const [jokerBlocked, setJokerBlocked] = useState(false)
   const [selectedPhaseId, setSelectedPhaseId] = useState<string>('')
   const [gameNumber, setGameNumber] = useState<string>('')
 
@@ -116,6 +117,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
         dateTime: new Date(dateTime),
         isPlayoffGame,
         isDoubled,
+        jokerBlocked,
         matchPhaseId: selectedPhaseId ? parseInt(selectedPhaseId, 10) : null,
         gameNumber: gameNumber ? parseInt(gameNumber, 10) : null,
       })
@@ -148,6 +150,7 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
     setDateTime('')
     setIsPlayoffGame(false)
     setIsDoubled(false)
+    setJokerBlocked(false)
     setSelectedPhaseId('')
     setGameNumber('')
   }
@@ -315,10 +318,26 @@ export function AddMatchDialog({ open, onOpenChange, leagues, league, phases }: 
               <Checkbox
                 id="isDoubled"
                 checked={isDoubled}
-                onCheckedChange={(checked) => setIsDoubled(checked === true)}
+                onCheckedChange={(checked) => {
+                  const next = checked === true
+                  setIsDoubled(next)
+                  if (next) setJokerBlocked(false)
+                }}
               />
               <Label htmlFor="isDoubled" className="text-sm font-normal">
                 {t('form.doublePoints')}
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="jokerBlocked"
+                checked={jokerBlocked}
+                disabled={isDoubled}
+                onCheckedChange={(checked) => setJokerBlocked(checked === true)}
+              />
+              <Label htmlFor="jokerBlocked" className="text-sm font-normal">
+                {t('form.jokerBlocked')}
               </Label>
             </div>
           </div>

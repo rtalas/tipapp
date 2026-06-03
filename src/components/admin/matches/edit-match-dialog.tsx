@@ -9,6 +9,7 @@ import { logger } from '@/lib/logging/client-logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { TeamFlag } from '@/components/common/team-flag'
 import {
   Dialog,
@@ -62,6 +63,7 @@ interface Match {
 interface LeagueMatch {
   id: number
   isDoubled: boolean
+  jokerBlocked: boolean
   leagueId: number
   Match: Match
 }
@@ -109,6 +111,8 @@ export function EditMatchDialog({
   const [awayTeamPick, setAwayTeamPick] = useState<string>(awayTeam?.id.toString() ?? '')
   const [homePh, setHomePh] = useState<string>(initialHomePh)
   const [awayPh, setAwayPh] = useState<string>(initialAwayPh)
+  const [isDoubled, setIsDoubled] = useState<boolean>(match.isDoubled)
+  const [jokerBlocked, setJokerBlocked] = useState<boolean>(match.jokerBlocked)
 
   const selectedPhase = phases.find((p) => p.id.toString() === selectedPhaseId)
   const homeLabel = homeTeam ? homeTeam.Team.name : initialHomePh || t('tbd')
@@ -137,6 +141,8 @@ export function EditMatchDialog({
         dateTime: new Date(dateTime),
         matchPhaseId: selectedPhaseId ? parseInt(selectedPhaseId, 10) : null,
         gameNumber: gameNumber ? parseInt(gameNumber, 10) : null,
+        ...(isDoubled !== match.isDoubled && { isDoubled }),
+        ...(jokerBlocked !== match.jokerBlocked && { jokerBlocked }),
       }
 
       // Send team/placeholder changes only while the match is still a placeholder.
@@ -320,6 +326,34 @@ export function EditMatchDialog({
               />
             </div>
           )}
+
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit-isDoubled"
+                checked={isDoubled}
+                onCheckedChange={(checked) => {
+                  const next = checked === true
+                  setIsDoubled(next)
+                  if (next) setJokerBlocked(false)
+                }}
+              />
+              <Label htmlFor="edit-isDoubled" className="text-sm font-normal">
+                {t('form.doublePoints')}
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit-jokerBlocked"
+                checked={jokerBlocked}
+                disabled={isDoubled}
+                onCheckedChange={(checked) => setJokerBlocked(checked === true)}
+              />
+              <Label htmlFor="edit-jokerBlocked" className="text-sm font-normal">
+                {t('form.jokerBlocked')}
+              </Label>
+            </div>
+          </div>
 
           <DialogFooter>
             <Button

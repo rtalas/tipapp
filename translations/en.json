@@ -208,7 +208,15 @@
       "playoff": "Playoff",
       "game": "Game {number}",
       "tbd": "TBD",
-      "waitingForOpponents": "Waiting for opponents — betting opens once teams are set"
+      "waitingForOpponents": "Waiting for opponents — betting opens once teams are set",
+      "useJoker": "Use joker",
+      "jokerUsedLabel": "Joker used",
+      "jokerBlockedBadge": "No joker",
+      "jokerRemainingShort": "{count, plural, one {# remaining} other {# remaining}}",
+      "jokerDisabled": {
+        "noJokersLeft": "No jokers remaining"
+      },
+      "pointsShort": "pts"
     },
     "leaderboard": {
       "title": "Leaderboard",
@@ -234,7 +242,9 @@
       "lastUpdate": "Last update: {time}",
       "finalStandings": "Final standings",
       "tip": "Tip:",
-      "overtimeSuffix": "(OT)"
+      "overtimeSuffix": "(OT)",
+      "jokersRemaining": "{used}/{total} jokers used",
+      "jokerUsed": "Joker used"
     },
     "series": {
       "title": "Series",
@@ -703,6 +713,7 @@
         "dateTimeHint": "Enter the match time in UTC. It will be displayed in local timezone.",
         "playoffGame": "Playoff Game",
         "doublePoints": "Double Points",
+        "jokerBlocked": "Block joker",
         "matchPhase": "Match Phase (Optional)",
         "phasePlaceholder": "None",
         "bestOf": "(Best of {count})",
@@ -1174,6 +1185,8 @@
       "public": "Public",
       "finished": "League Finished",
       "finishedHelper": "Mark as completed. This will also deactivate the league.",
+      "jokerCount": "Personal jokers per user",
+      "jokerCountHelper": "0 = jokers disabled for this league",
       "chatSettings": "Chat Settings",
       "enableChat": "Enable Chat",
       "enableChatHelper": "Allow users to chat in this league",
@@ -1538,6 +1551,7 @@
       "overtimePrediction": "Overtime prediction",
       "overtime": "OT",
       "overtimeSuffix": "(OT)",
+      "joker": "Joker",
       "none": "None",
       "yes": "Yes",
       "no": "No",

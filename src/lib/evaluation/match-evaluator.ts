@@ -181,11 +181,13 @@ async function evaluateMatch(
     const awardedNames = new Set(rawResults.filter((r) => r.points > 0).map((r) => r.name))
     const exclusions = getMatchExclusions(leagueMatch.League.sportId)
 
+    const isDoubled = leagueMatch.isDoubled || userBet.usedJoker
+
     for (const raw of rawResults) {
       const excludedBy = exclusions[raw.name]
       const excluded = excludedBy?.some((e) => awardedNames.has(e)) ?? false
       const points = excluded ? 0 : raw.points
-      const finalPoints = leagueMatch.isDoubled ? points * 2 : points
+      const finalPoints = isDoubled ? points * 2 : points
 
       evaluatorResults.push({
         evaluatorName: raw.name,

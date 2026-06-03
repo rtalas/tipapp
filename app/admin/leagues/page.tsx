@@ -79,6 +79,7 @@ async function LeaguesTable() {
                   chatSuspendedAt={league.chatSuspendedAt}
                   isFinished={league.isFinished}
                   infoText={league.infoText}
+                  jokerCount={league.jokerCount}
                 />
               </TableCell>
             </TableRow>

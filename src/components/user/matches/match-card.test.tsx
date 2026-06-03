@@ -269,6 +269,7 @@ describe('MatchCard', () => {
           noScorer: null,
           overtime: false,
           homeAdvanced: null,
+          useJoker: false,
         })
       })
     })

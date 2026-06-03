@@ -86,6 +86,7 @@ export async function createMatch(input: CreateMatchInput) {
             leagueId: validated.leagueId,
             matchId: match.id,
             isDoubled: validated.isDoubled,
+            jokerBlocked: validated.jokerBlocked,
             createdAt: now,
             updatedAt: now,
           },
@@ -221,8 +222,37 @@ export async function updateMatch(input: UpdateMatchInput) {
         data: updateData,
       })
 
-      // Invalidate user-facing match cache
+      // Update LeagueMatch flags (isDoubled, jokerBlocked) if provided.
+      if (validated.isDoubled !== undefined || validated.jokerBlocked !== undefined) {
+        await prisma.leagueMatch.updateMany({
+          where: { matchId: validated.matchId, deletedAt: null },
+          data: {
+            ...(validated.isDoubled !== undefined && { isDoubled: validated.isDoubled }),
+            ...(validated.jokerBlocked !== undefined && { jokerBlocked: validated.jokerBlocked }),
+            updatedAt: new Date(),
+          },
+        })
+      }
+
+      // Refund jokers when match becomes 2x or joker-blocked — those bets can no longer keep usedJoker.
+      let refundedJokers = 0
+      if (validated.isDoubled === true || validated.jokerBlocked === true) {
+        const result = await prisma.userBet.updateMany({
+          where: {
+            usedJoker: true,
+            deletedAt: null,
+            LeagueMatch: { matchId: validated.matchId, deletedAt: null },
+          },
+          data: { usedJoker: false, updatedAt: new Date() },
+        })
+        refundedJokers = result.count
+      }
+
+      // Invalidate caches — match data + leaderboard (joker stats may have changed)
       updateTag('match-data')
+      if (refundedJokers > 0) {
+        updateTag('leaderboard')
+      }
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'Match', validated.matchId,
@@ -234,6 +264,9 @@ export async function updateMatch(input: UpdateMatchInput) {
           awayTeamId: validated.awayTeamId,
           homePlaceholder: validated.homePlaceholder,
           awayPlaceholder: validated.awayPlaceholder,
+          isDoubled: validated.isDoubled,
+          jokerBlocked: validated.jokerBlocked,
+          ...(refundedJokers > 0 && { refundedJokers }),
         }
       ).catch(() => {})
 

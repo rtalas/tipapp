@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { getUserMatches } from '@/actions/user/matches'
+import { getUserMatches, getUserJokerStats } from '@/actions/user/matches'
 import { MatchList } from '@/components/user/matches/match-list'
 import { MatchListSkeleton } from '@/components/user/matches/match-list-skeleton'
 
@@ -11,8 +11,11 @@ interface MatchesPageProps {
 }
 
 async function MatchListContent({ leagueId }: { leagueId: number }) {
-  const matches = await getUserMatches(leagueId)
-  return <MatchList matches={matches} />
+  const [matches, jokerStats] = await Promise.all([
+    getUserMatches(leagueId),
+    getUserJokerStats(leagueId),
+  ])
+  return <MatchList matches={matches} jokerStats={jokerStats} />
 }
 
 export default async function MatchesPage({ params }: MatchesPageProps) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { Swords } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -24,11 +24,14 @@ export function SeriesList({ series }: SeriesListProps) {
   const t = useTranslations('user.series')
   const tMatches = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
-  const [filter, setFilter] = useState<FilterType>(() =>
-    series.some((s) => isCurrentTabEvent(s.isEvaluated, s.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
-      ? 'current'
-      : 'past'
-  )
+  // SSR-safe default — see match-list.tsx.
+  const [filter, setFilter] = useState<FilterType>('current')
+  useEffect(() => {
+    const hasCurrent = series.some((s) =>
+      isCurrentTabEvent(s.isEvaluated, s.updatedAt, EVENT_POST_EVAL_VISIBLE_MS)
+    )
+    if (!hasCurrent) setFilter('past')
+  }, [series])
   const dateLocale = useDateLocale()
 
   const getDateLabel = useCallback(

@@ -1,9 +1,11 @@
 import { useTranslations } from 'next-intl'
+import { Star } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ScorerSelect } from './scorer-select'
 import { SPORT_IDS } from '@/lib/constants'
+import { cn } from '@/lib/utils'
 import type { UserMatch } from '@/actions/user/matches'
 
 interface BetControlsProps {
@@ -18,6 +20,9 @@ interface BetControlsProps {
   onScorerChange: (value: number | null) => void
   noScorer: boolean | null
   onNoScorerChange: (value: boolean | null) => void
+  useJoker: boolean
+  onJokerChange: (value: boolean) => void
+  jokersRemaining: number
 }
 
 export function BetControls({
@@ -32,6 +37,9 @@ export function BetControls({
   onScorerChange,
   noScorer,
   onNoScorerChange,
+  useJoker,
+  onJokerChange,
+  jokersRemaining,
 }: BetControlsProps) {
   const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
@@ -46,6 +54,14 @@ export function BetControls({
   // Advancement pick only needed in soccer playoff when user predicts a draw.
   // For non-draw predictions the winner is implied by the score.
   const showAdvancePicker = isSoccerPlayoff && homeScore === awayScore
+
+  const jokerAllowed =
+    match.League.jokerCount > 0 && !match.isDoubled && !match.jokerBlocked
+  // Joker is saved alongside the bet, so we don't require a pre-existing saved bet.
+  const jokerDisabledReason =
+    jokerAllowed && !useJoker && jokersRemaining === 0
+      ? t('jokerDisabled.noJokersLeft')
+      : null
 
   return (
     <div className="mt-3 pt-3 border-t border-border/30 space-y-3">
@@ -81,23 +97,69 @@ export function BetControls({
             </div>
           </RadioGroup>
         </div>
-      ) : sportId !== SPORT_IDS.FOOTBALL && (
-        /* Overtime/Shootout checkbox — hockey only.
-         * Football has no OT in group stage; in playoff the winner is captured
-         * via the advancement radio (or implied by a non-draw score). */
-        <div className="flex items-center justify-center space-x-2">
-          <Checkbox
-            id={`overtime-${match.id}`}
-            checked={overtime}
-            onCheckedChange={onOvertimeChange}
-            className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-          />
-          <Label
-            htmlFor={`overtime-${match.id}`}
-            className="text-xs text-muted-foreground cursor-pointer select-none"
-          >
-            {t('overtimeShootout')}
-          </Label>
+      ) : null}
+
+      {/* Inline checkboxes: overtime (hockey) + joker — side by side to save space */}
+      {(sportId !== SPORT_IDS.FOOTBALL || jokerAllowed) && !showAdvancePicker && (
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          {/* Overtime/Shootout — hockey only.
+           * Football has no OT in group stage; in playoff the winner is captured
+           * via the advancement radio (or implied by a non-draw score). */}
+          {sportId !== SPORT_IDS.FOOTBALL && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={`overtime-${match.id}`}
+                checked={overtime}
+                onCheckedChange={onOvertimeChange}
+                className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+              <Label
+                htmlFor={`overtime-${match.id}`}
+                className="text-xs text-muted-foreground cursor-pointer select-none"
+              >
+                {t('overtimeShootout')}
+              </Label>
+            </div>
+          )}
+
+          {/* Joker checkbox — only when feature enabled, match not doubled or blocked */}
+          {jokerAllowed && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={`joker-${match.id}`}
+                checked={useJoker}
+                disabled={jokerDisabledReason !== null}
+                onCheckedChange={(checked) => onJokerChange(checked === true)}
+                className={cn(
+                  'border-border',
+                  useJoker
+                    ? 'data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500'
+                    : 'data-[state=checked]:bg-primary data-[state=checked]:border-primary',
+                )}
+              />
+              <Label
+                htmlFor={`joker-${match.id}`}
+                title={jokerDisabledReason ?? undefined}
+                className={cn(
+                  'text-xs cursor-pointer select-none inline-flex items-center gap-1',
+                  jokerDisabledReason
+                    ? 'text-muted-foreground/50'
+                    : 'text-muted-foreground',
+                )}
+              >
+                <Star
+                  className={cn(
+                    'w-3 h-3',
+                    useJoker && 'fill-amber-500 text-amber-500',
+                  )}
+                />
+                {t('useJoker')}
+                {!useJoker && jokerDisabledReason === null && (
+                  <span>({t('jokerRemainingShort', { count: jokersRemaining })})</span>
+                )}
+              </Label>
+            </div>
+          )}
         </div>
       )}
 

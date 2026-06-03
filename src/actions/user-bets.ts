@@ -107,7 +107,7 @@ export async function createUserBet(input: CreateUserBetInput) {
           // Verify leagueMatch exists
           const leagueMatch = await tx.leagueMatch.findUnique({
             where: { id: validated.leagueMatchId, deletedAt: null },
-            include: { Match: true },
+            include: { Match: true, League: { select: { jokerCount: true } } },
           })
 
           if (!leagueMatch || leagueMatch.Match.deletedAt !== null) {
@@ -153,6 +153,18 @@ export async function createUserBet(input: CreateUserBetInput) {
             )
           }
 
+          const useJoker = validated.usedJoker === true
+          if (useJoker) {
+            await assertJokerAllowed(tx, {
+              leagueId: leagueMatch.leagueId,
+              leagueUserId: validated.leagueUserId,
+              leagueMatchId: validated.leagueMatchId,
+              jokerCount: leagueMatch.League.jokerCount,
+              isDoubled: leagueMatch.isDoubled,
+              jokerBlocked: leagueMatch.jokerBlocked,
+            })
+          }
+
           const now = new Date()
 
           return tx.userBet.create({
@@ -165,6 +177,7 @@ export async function createUserBet(input: CreateUserBetInput) {
               noScorer: validated.noScorer,
               overtime: validated.overtime,
               homeAdvanced: validated.homeAdvanced,
+              usedJoker: useJoker,
               dateTime: now,
               totalPoints: 0,
               createdAt: now,
@@ -196,7 +209,14 @@ export async function updateUserBet(input: UpdateUserBetInput) {
     handler: async (validated) => {
       const bet = await prisma.userBet.findUnique({
         where: { id: validated.id, deletedAt: null },
-        include: { LeagueMatch: { include: { Match: true } } },
+        include: {
+          LeagueMatch: {
+            include: {
+              Match: true,
+              League: { select: { jokerCount: true } },
+            },
+          },
+        },
       })
 
       if (!bet || bet.LeagueMatch.Match.deletedAt !== null) {
@@ -222,6 +242,17 @@ export async function updateUserBet(input: UpdateUserBetInput) {
         )
       }
 
+      if (validated.usedJoker === true) {
+        await assertJokerAllowed(prisma, {
+          leagueId: bet.LeagueMatch.leagueId,
+          leagueUserId: bet.leagueUserId,
+          leagueMatchId: bet.leagueMatchId,
+          jokerCount: bet.LeagueMatch.League.jokerCount,
+          isDoubled: bet.LeagueMatch.isDoubled,
+          jokerBlocked: bet.LeagueMatch.jokerBlocked,
+        })
+      }
+
       await prisma.userBet.update({
         where: { id: validated.id },
         data: {
@@ -231,6 +262,7 @@ export async function updateUserBet(input: UpdateUserBetInput) {
           ...(validated.noScorer !== undefined && { noScorer: validated.noScorer }),
           ...(validated.overtime !== undefined && { overtime: validated.overtime }),
           ...(validated.homeAdvanced !== undefined && { homeAdvanced: validated.homeAdvanced }),
+          ...(validated.usedJoker !== undefined && { usedJoker: validated.usedJoker }),
           updatedAt: new Date(),
         },
       })
@@ -240,6 +272,42 @@ export async function updateUserBet(input: UpdateUserBetInput) {
     revalidatePath: '/admin/user-picks',
     requiresAdmin: true,
   })
+}
+
+async function assertJokerAllowed(
+  client: typeof prisma | Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  args: {
+    leagueId: number
+    leagueUserId: number
+    leagueMatchId: number
+    jokerCount: number
+    isDoubled: boolean
+    jokerBlocked: boolean
+  }
+) {
+  if (args.jokerCount <= 0) {
+    throw new AppError('Jokers are disabled for this league', 'VALIDATION_ERROR', 400)
+  }
+  if (args.isDoubled) {
+    throw new AppError('Joker cannot be used on doubled matches', 'VALIDATION_ERROR', 400)
+  }
+  if (args.jokerBlocked) {
+    throw new AppError('Joker is not allowed on this match', 'VALIDATION_ERROR', 400)
+  }
+
+  const jokersUsedElsewhere = await client.userBet.count({
+    where: {
+      leagueUserId: args.leagueUserId,
+      usedJoker: true,
+      deletedAt: null,
+      leagueMatchId: { not: args.leagueMatchId },
+      LeagueMatch: { leagueId: args.leagueId, deletedAt: null },
+    },
+  })
+
+  if (jokersUsedElsewhere >= args.jokerCount) {
+    throw new AppError('No jokers remaining', 'VALIDATION_ERROR', 400)
+  }
 }
 
 /**

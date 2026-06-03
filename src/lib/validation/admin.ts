@@ -97,6 +97,7 @@ export const createLeagueSchema = z.object({
   isPublic: z.boolean().default(true),
   isFinished: z.boolean().default(false),
   infoText: z.string().max(2000).optional().nullable(),
+  jokerCount: z.number().int().min(0).max(20).default(0),
   evaluatorRules: z.array(evaluatorRuleSchema).optional(),
 }).refine((data) => data.seasonTo >= data.seasonFrom, {
   message: 'Season end must be greater than or equal to season start',
@@ -167,6 +168,7 @@ export const createMatchSchema = z.object({
     }),
   isPlayoffGame: z.boolean().default(false),
   isDoubled: z.boolean().default(false),
+  jokerBlocked: z.boolean().default(false),
   matchPhaseId: z.number().int().positive().nullable().optional(),
   gameNumber: z.number().int().min(1).max(7).nullable().optional(),
 }).refine((data) => !data.homeTeamId || !data.awayTeamId || data.homeTeamId !== data.awayTeamId, {
@@ -200,6 +202,8 @@ export const updateMatchSchema = z.object({
   awayTeamId: z.number().int().positive().nullable().optional(),
   homePlaceholder: placeholderTextSchema,
   awayPlaceholder: placeholderTextSchema,
+  isDoubled: z.boolean().optional(),
+  jokerBlocked: z.boolean().optional(),
 }).refine((data) => !data.homeTeamId || !data.awayTeamId || data.homeTeamId !== data.awayTeamId, {
   message: 'Home and away teams must be different',
   path: ['awayTeamId'],
@@ -322,6 +326,7 @@ export const createUserBetSchema = z
     noScorer: z.boolean().optional(),
     overtime: z.boolean().default(false),
     homeAdvanced: z.boolean().optional(), // true = home, false = away, undefined = null
+    usedJoker: z.boolean().optional(),
   })
   .refine(
     (data) => {

@@ -97,6 +97,7 @@ export async function createLeague(input: CreateLeagueInput) {
             seasonTo: validated.seasonTo,
             isActive: validated.isActive,
             isPublic: validated.isPublic,
+            jokerCount: validated.jokerCount,
             createdAt: now,
             updatedAt: now,
           },
@@ -207,8 +208,11 @@ export async function updateLeague(input: UpdateLeagueInput) {
         },
       })
 
-      // Invalidate league selector cache (name, isActive, etc. could change)
       updateTag('league-selector')
+      // jokerCount is embedded in cached match data → invalidate when it changes.
+      if (data.jokerCount !== undefined) {
+        updateTag('match-data')
+      }
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'League', id, data, id

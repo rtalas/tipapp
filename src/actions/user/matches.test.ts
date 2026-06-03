@@ -476,5 +476,114 @@ describe('User Matches Actions', () => {
       expect(result.success).toBe(false)
       expect((result as any).error).toBe('Betting is closed for this match')
     })
+
+    describe('Joker', () => {
+      const matchWithJoker = {
+        ...mockLeagueMatch,
+        isDoubled: false,
+        jokerBlocked: false,
+        League: { sportId: SPORT_IDS.FOOTBALL, jokerCount: 3 },
+      }
+
+      function mockJokerTx({
+        existingBet = null,
+        usedElsewhere = 0,
+        leagueMatch = matchWithJoker,
+      }: {
+        existingBet?: { id: number } | null
+        usedElsewhere?: number
+        leagueMatch?: typeof matchWithJoker
+      } = {}) {
+        const createMock = vi.fn()
+        const updateMock = vi.fn()
+        mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+          const tx = {
+            leagueMatch: { findUnique: vi.fn().mockResolvedValue(leagueMatch) },
+            userBet: {
+              findFirst: vi.fn().mockResolvedValue(existingBet),
+              count: vi.fn().mockResolvedValue(usedElsewhere),
+              create: createMock,
+              update: updateMock,
+            },
+            leaguePlayer: { findUnique: vi.fn() },
+          }
+          return fn(tx)
+        })
+        return { createMock, updateMock }
+      }
+
+      it('persists usedJoker: true when joker available', async () => {
+        const { createMock } = mockJokerTx()
+
+        const result = await saveMatchBet({ ...validInput, useJoker: true })
+
+        expect(result.success).toBe(true)
+        expect(createMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({ usedJoker: true }),
+          })
+        )
+      })
+
+      it('rejects joker on a match already doubled by admin', async () => {
+        mockJokerTx({ leagueMatch: { ...matchWithJoker, isDoubled: true } })
+
+        const result = await saveMatchBet({ ...validInput, useJoker: true })
+
+        expect(result.success).toBe(false)
+        expect((result as any).error).toContain('doubled')
+      })
+
+      it('rejects joker on a jokerBlocked match', async () => {
+        mockJokerTx({ leagueMatch: { ...matchWithJoker, jokerBlocked: true } })
+
+        const result = await saveMatchBet({ ...validInput, useJoker: true })
+
+        expect(result.success).toBe(false)
+        expect((result as any).error).toContain('not allowed')
+      })
+
+      it('rejects joker when league has jokers disabled (jokerCount = 0)', async () => {
+        mockJokerTx({
+          leagueMatch: { ...matchWithJoker, League: { sportId: SPORT_IDS.FOOTBALL, jokerCount: 0 } },
+        })
+
+        const result = await saveMatchBet({ ...validInput, useJoker: true })
+
+        expect(result.success).toBe(false)
+        expect((result as any).error).toContain('disabled')
+      })
+
+      it('rejects joker when user has no jokers remaining', async () => {
+        mockJokerTx({ usedElsewhere: 3 })
+
+        const result = await saveMatchBet({ ...validInput, useJoker: true })
+
+        expect(result.success).toBe(false)
+        expect((result as any).error).toContain('remaining')
+      })
+
+      it('allows joker when usedElsewhere is below the limit', async () => {
+        const { createMock } = mockJokerTx({ usedElsewhere: 2 })
+
+        const result = await saveMatchBet({ ...validInput, useJoker: true })
+
+        expect(result.success).toBe(true)
+        expect(createMock).toHaveBeenCalled()
+      })
+
+      it('persists usedJoker: false when joker is unset on update', async () => {
+        const { updateMock } = mockJokerTx({ existingBet: { id: 50 } })
+
+        const result = await saveMatchBet({ ...validInput, useJoker: false })
+
+        expect(result.success).toBe(true)
+        expect(updateMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({ usedJoker: false }),
+          })
+        )
+      })
+    })
   })
 })

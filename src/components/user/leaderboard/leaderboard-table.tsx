@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Trophy } from 'lucide-react'
+import { Trophy, Star } from 'lucide-react'
 import { RefreshButton } from '@/components/user/common/refresh-button'
 import { PullToRefresh } from '@/components/user/common/pull-to-refresh'
 import { UserAvatar } from '@/components/common/user-avatar'
@@ -20,9 +20,10 @@ interface LeaderboardTableProps {
   fines: LeaguePrize[]
   lastEvaluatedAt?: Date | null
   isFinished?: boolean
+  jokerCount: number
 }
 
-export function LeaderboardTable({ entries, prizes, fines, lastEvaluatedAt, isFinished }: LeaderboardTableProps) {
+export function LeaderboardTable({ entries, prizes, fines, lastEvaluatedAt, isFinished, jokerCount }: LeaderboardTableProps) {
   const t = useTranslations('user.leaderboard')
   const locale = useLocale()
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
@@ -92,6 +93,7 @@ export function LeaderboardTable({ entries, prizes, fines, lastEvaluatedAt, isFi
                     prizes={prizes}
                     fines={fines}
                     totalEntries={entries.length}
+                    jokerCount={jokerCount}
                     onClick={() => handleSelectUser(entry)}
                   />
                 ))}
@@ -110,6 +112,7 @@ export function LeaderboardTable({ entries, prizes, fines, lastEvaluatedAt, isFi
                     prizes={prizes}
                     fines={fines}
                     totalEntries={entries.length}
+                    jokerCount={jokerCount}
                     onClick={() => handleSelectUser(entry)}
                   />
                 ))}
@@ -128,6 +131,7 @@ export function LeaderboardTable({ entries, prizes, fines, lastEvaluatedAt, isFi
                     prizes={prizes}
                     fines={fines}
                     totalEntries={entries.length}
+                    jokerCount={jokerCount}
                     onClick={() => handleSelectUser(entry)}
                   />
                 ))}
@@ -170,10 +174,11 @@ interface RankingRowProps {
   prizes: LeaguePrize[]
   fines: LeaguePrize[]
   totalEntries: number
+  jokerCount: number
   onClick: () => void
 }
 
-function RankingRow({ entry, index, prevPoints, prizes, fines, totalEntries, onClick }: RankingRowProps) {
+function RankingRow({ entry, index, prevPoints, prizes, fines, totalEntries, jokerCount, onClick }: RankingRowProps) {
   const t = useTranslations('user.leaderboard')
   const locale = useLocale()
   const displayName = getUserDisplayName(entry)
@@ -248,6 +253,17 @@ function RankingRow({ entry, index, prevPoints, prizes, fines, totalEntries, onC
           className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-500"
         >
           -{fine}
+        </span>
+      )}
+
+      {/* Joker counter for current user only (reduces crowding on small screens) */}
+      {jokerCount > 0 && entry.isCurrentUser && (
+        <span
+          title={t('jokersRemaining', { used: entry.jokersUsed, total: jokerCount })}
+          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400"
+        >
+          <Star className="w-3 h-3" />
+          <span>{entry.jokersUsed}/{jokerCount}</span>
         </span>
       )}
 

@@ -208,7 +208,15 @@
       "playoff": "Playoff",
       "game": "Zápas {number}",
       "tbd": "Bude určeno",
-      "waitingForOpponents": "Čeká se na soupeře — tipovat bude možné po doplnění týmů"
+      "waitingForOpponents": "Čeká se na soupeře — tipovat bude možné po doplnění týmů",
+      "useJoker": "Použít žolíka",
+      "jokerUsedLabel": "Žolík",
+      "jokerBlockedBadge": "Bez žolíka",
+      "jokerRemainingShort": "{count, plural, one {# zbývá} few {# zbývají} other {# zbývá}}",
+      "jokerDisabled": {
+        "noJokersLeft": "Žádný žolík nezbývá"
+      },
+      "pointsShort": "b"
     },
     "leaderboard": {
       "title": "Žebříček",
@@ -234,7 +242,9 @@
       "lastUpdate": "Poslední aktualizace: {time}",
       "finalStandings": "Konečné pořadí",
       "tip": "Tip:",
-      "overtimeSuffix": "(P)"
+      "overtimeSuffix": "(P)",
+      "jokersRemaining": "Žolíky: {used}/{total} použito",
+      "jokerUsed": "Žolík použit"
     },
     "series": {
       "title": "Série",
@@ -703,6 +713,7 @@
         "dateTimeHint": "Zadejte čas zápasu v UTC. Zobrazí se v místním časovém pásmu.",
         "playoffGame": "Playoff zápas",
         "doublePoints": "Dvojité body",
+        "jokerBlocked": "Bez žolíka",
         "matchPhase": "Fáze turnaje (Volitelné)",
         "phasePlaceholder": "Žádná",
         "bestOf": "(Best of {count})",
@@ -1174,6 +1185,8 @@
       "public": "Veřejná",
       "finished": "Liga ukončena",
       "finishedHelper": "Označit jako dokončenou. Liga bude také deaktivována.",
+      "jokerCount": "Počet osobních žolíků na uživatele",
+      "jokerCountHelper": "0 = žolíky vypnuté pro tuto ligu",
       "chatSettings": "Nastavení chatu",
       "enableChat": "Povolit chat",
       "enableChatHelper": "Umožnit uživatelům chatovat v této ligě",
@@ -1538,6 +1551,7 @@
       "overtimePrediction": "Tip na prodloužení",
       "overtime": "P",
       "overtimeSuffix": "(P)",
+      "joker": "Žolík",
       "none": "Žádný",
       "yes": "Ano",
       "no": "Ne",

@@ -85,6 +85,7 @@ model League {
   chatSuspendedAt          DateTime?                  @db.Timestamptz(6)
   isChatEnabled            Boolean                    @default(false)
   infoText                 String?                    @db.VarChar(5000)
+  jokerCount               Int                        @default(0)
   AuditLog                 AuditLog[]
   Evaluator                Evaluator[]
   Sport                    Sport                      @relation(fields: [sportId], references: [id], onDelete: NoAction)
@@ -107,6 +108,7 @@ model LeagueMatch {
   leagueId         Int
   matchId          Int
   isDoubled        Boolean            @default(false)
+  jokerBlocked     Boolean            @default(false)
   createdAt        DateTime           @db.Timestamptz(6)
   updatedAt        DateTime           @db.Timestamptz(6)
   deletedAt        DateTime?          @db.Timestamptz(6)
@@ -617,6 +619,7 @@ model UserBet {
   scorerId      Int?
   totalPoints   Int           @default(0)
   overtime      Boolean       @default(false)
+  usedJoker     Boolean       @default(false)
   createdAt     DateTime      @db.Timestamptz(6)
   updatedAt     DateTime      @db.Timestamptz(6)
   deletedAt     DateTime?     @db.Timestamptz(6)
@@ -628,6 +631,7 @@ model UserBet {
   @@unique([leagueMatchId, leagueUserId, deletedAt])
   @@index([leagueMatchId, deletedAt])
   @@index([leagueUserId, deletedAt])
+  @@index([leagueUserId, usedJoker, deletedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

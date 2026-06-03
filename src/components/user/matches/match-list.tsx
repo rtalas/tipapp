@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import {
   format,
   isThisWeek,
@@ -21,18 +21,23 @@ import type { UserMatch } from '@/actions/user/matches'
 
 interface MatchListProps {
   matches: UserMatch[]
+  jokerStats: { used: number; total: number; remaining: number }
 }
 
 type FilterType = 'upcoming' | 'past'
 
-export function MatchList({ matches }: MatchListProps) {
+export function MatchList({ matches, jokerStats }: MatchListProps) {
   const t = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
-  const [filter, setFilter] = useState<FilterType>(() =>
-    matches.some((m) => isCurrentTabEvent(m.Match.isEvaluated, m.Match.updatedAt, MATCH_POST_EVAL_VISIBLE_MS))
-      ? 'upcoming'
-      : 'past'
-  )
+  // SSR-safe default — `new Date()` in initializer drifts between server/client and breaks Radix useId hydration.
+  const [filter, setFilter] = useState<FilterType>('upcoming')
+  useEffect(() => {
+    const hasCurrent = matches.some((m) =>
+      isCurrentTabEvent(m.Match.isEvaluated, m.Match.updatedAt, MATCH_POST_EVAL_VISIBLE_MS)
+    )
+    if (!hasCurrent) setFilter('past')
+    // Recompute when the matches list changes (e.g. after refresh).
+  }, [matches])
   const dateLocale = useDateLocale()
 
   // Extended date label for match list (includes "this week" check)
@@ -143,6 +148,7 @@ export function MatchList({ matches }: MatchListProps) {
                   <MatchCard
                     key={match.id}
                     match={match}
+                    jokersRemaining={jokerStats.remaining}
                     onBetSaved={refresh}
                   />
                 ))}

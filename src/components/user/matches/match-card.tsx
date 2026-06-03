@@ -20,10 +20,11 @@ import type { UserMatch, FriendPrediction } from '@/actions/user/matches'
 
 interface MatchCardProps {
   match: UserMatch
+  jokersRemaining: number
   onBetSaved?: () => void
 }
 
-export function MatchCard({ match, onBetSaved }: MatchCardProps) {
+export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps) {
   const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
@@ -31,6 +32,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
   const isLocked = isPlaceholder || !match.isBettingOpen
   const isEvaluated = match.Match.isEvaluated
   const isDoubled = match.isDoubled ?? false
+  const jokerBlocked = match.jokerBlocked ?? false
   const sportId = match.League.sportId
 
   // Form state
@@ -46,6 +48,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
   const [homeAdvanced, setHomeAdvanced] = useState<boolean | null>(
     match.userBet?.homeAdvanced ?? null
   )
+  const [useJoker, setUseJoker] = useState<boolean>(match.userBet?.usedJoker ?? false)
   const [isSaving, setIsSaving] = useState(false)
   const friends = useFriendPredictions<FriendPrediction>({
     isLocked,
@@ -65,6 +68,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
           noScorer: match.userBet.noScorer ?? null,
           overtime: match.userBet.overtime ?? false,
           homeAdvanced: match.userBet.homeAdvanced ?? null,
+          usedJoker: match.userBet.usedJoker ?? false,
         }
       : null
   )
@@ -76,7 +80,8 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
     scorerId === savedValuesRef.current.scorerId &&
     noScorer === savedValuesRef.current.noScorer &&
     overtime === savedValuesRef.current.overtime &&
-    homeAdvanced === savedValuesRef.current.homeAdvanced
+    homeAdvanced === savedValuesRef.current.homeAdvanced &&
+    useJoker === savedValuesRef.current.usedJoker
 
   const handleSave = useCallback(async () => {
     if (isLocked) return
@@ -91,12 +96,13 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
         noScorer,
         overtime,
         homeAdvanced,
+        useJoker,
       })
 
       if (!result.success) {
         toast.error(result.error || t('saveError'))
       } else {
-        savedValuesRef.current = { homeScore, awayScore, scorerId, noScorer, overtime, homeAdvanced }
+        savedValuesRef.current = { homeScore, awayScore, scorerId, noScorer, overtime, homeAdvanced, usedJoker: useJoker }
         onBetSaved?.()
       }
     } catch {
@@ -112,6 +118,7 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
     noScorer,
     overtime,
     homeAdvanced,
+    useJoker,
     isLocked,
     onBetSaved,
     t,
@@ -185,6 +192,8 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
           match={match}
           isEvaluated={isEvaluated}
           isDoubled={isDoubled}
+          jokerBlocked={jokerBlocked}
+          jokerUsed={useJoker}
         />
 
         <MatchTeamsDisplay
@@ -211,6 +220,9 @@ export function MatchCard({ match, onBetSaved }: MatchCardProps) {
             onScorerChange={handleScorerChange}
             noScorer={noScorer}
             onNoScorerChange={handleNoScorerChange}
+            useJoker={useJoker}
+            onJokerChange={setUseJoker}
+            jokersRemaining={jokersRemaining}
           />
         )}
 

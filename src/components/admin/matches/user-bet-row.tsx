@@ -19,7 +19,7 @@ import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 import { TeamFlag } from '@/components/common/team-flag'
 import { ScorerRankingBadge } from '@/components/common/scorer-ranking-badge'
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, Star } from 'lucide-react'
 type Team = { id: number; name: string; shortcut: string; flagIcon: string | null; flagType: string | null }
 type LeaguePlayer = { id: number; Player: { id: number; firstName: string | null; lastName: string | null } }
 
@@ -28,6 +28,7 @@ interface UserBetFormData {
   awayScore: string
   scorerId: string
   overtime: boolean
+  usedJoker: boolean
   homeAdvanced: string // 'home' | 'away' | 'none'
 }
 
@@ -63,6 +64,7 @@ export function UserBetRow({
       awayScore: bet.awayScore.toString(),
       scorerId: bet.scorerId?.toString() ?? 'none',
       overtime: bet.overtime,
+      usedJoker: bet.usedJoker,
       homeAdvanced:
         bet.homeAdvanced === null ? 'none' : bet.homeAdvanced ? 'home' : 'away',
     })
@@ -79,6 +81,7 @@ export function UserBetRow({
       awayScore: parseInt(inlineEdit.form.awayScore),
       scorerId: inlineEdit.form.scorerId !== 'none' ? parseInt(inlineEdit.form.scorerId) : undefined,
       overtime: inlineEdit.form.overtime,
+      usedJoker: inlineEdit.form.usedJoker,
       homeAdvanced:
         inlineEdit.form.homeAdvanced === 'none'
           ? undefined
@@ -196,11 +199,25 @@ export function UserBetRow({
                 aria-label={t('overtimePrediction')}
               />
               <Label className="text-xs text-muted-foreground">{t('overtime')}</Label>
+              <Checkbox
+                checked={inlineEdit.form.usedJoker}
+                onCheckedChange={(checked) =>
+                  inlineEdit.updateForm({ usedJoker: checked === true })
+                }
+                aria-label={t('joker')}
+              />
+              <Label className="text-xs text-muted-foreground">{t('joker')}</Label>
             </div>
           ) : (
-            <span>
+            <span className="inline-flex items-center gap-1">
               {bet.homeScore}:{bet.awayScore}
               {bet.overtime && <span className="ml-1">{t('overtimeSuffix')}</span>}
+              {bet.usedJoker && (
+                <Star
+                  className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0"
+                  aria-label={t('joker')}
+                />
+              )}
             </span>
           )}
         </TableCell>

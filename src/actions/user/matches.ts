@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { isBettingOpen } from '@/lib/auth/user-auth-utils'
+import { isBettingOpen, requireLeagueMember } from '@/lib/auth/user-auth-utils'
 import { userMatchBetSchema, type UserMatchBetInput } from '@/lib/validation/user'
 import { AppError } from '@/lib/error-handler'
 import { SPORT_IDS } from '@/lib/constants'
@@ -30,6 +30,7 @@ export const getUserMatches = createCachedEntityFetcher({
             id: true,
             name: true,
             sportId: true,
+            jokerCount: true,
             Sport: { select: { id: true, name: true } },
           },
         },
@@ -134,6 +135,34 @@ export const getUserMatches = createCachedEntityFetcher({
 export type UserMatch = Awaited<ReturnType<typeof getUserMatches>>[number]
 
 /**
+ * Returns the current user's joker usage stats for the league.
+ * `total` is the league-wide limit (0 = jokers disabled).
+ * `used` counts the user's active bets with `usedJoker = true`.
+ * Not cached — user-specific and changes with every save.
+ */
+export async function getUserJokerStats(leagueId: number) {
+  const { leagueUser } = await requireLeagueMember(leagueId)
+
+  const [league, used] = await Promise.all([
+    prisma.league.findUnique({
+      where: { id: leagueId, deletedAt: null },
+      select: { jokerCount: true },
+    }),
+    prisma.userBet.count({
+      where: {
+        leagueUserId: leagueUser.id,
+        usedJoker: true,
+        deletedAt: null,
+        LeagueMatch: { leagueId, deletedAt: null },
+      },
+    }),
+  ])
+
+  const total = league?.jokerCount ?? 0
+  return { used, total, remaining: Math.max(0, total - used) }
+}
+
+/**
  * Fetches friend predictions for a specific match
  * Only returns predictions if the betting is closed (match has started)
  */
@@ -204,7 +233,7 @@ export async function saveMatchBet(input: UserMatchBetInput) {
       const leagueMatch = await tx.leagueMatch.findUnique({
         where: { id: validated.leagueMatchId, deletedAt: null },
         include: {
-          League: { select: { sportId: true } },
+          League: { select: { sportId: true, jokerCount: true } },
           Match: {
             include: {
               LeagueTeam_Match_homeTeamIdToLeagueTeam: true,
@@ -239,6 +268,34 @@ export async function saveMatchBet(input: UserMatchBetInput) {
         )
       }
 
+      const useJoker = validated.useJoker === true
+
+      if (useJoker) {
+        if (leagueMatch.League.jokerCount <= 0) {
+          throw new AppError('Jokers are disabled for this league', 'VALIDATION_ERROR', 400)
+        }
+        if (leagueMatch.isDoubled) {
+          throw new AppError('Joker cannot be used on doubled matches', 'VALIDATION_ERROR', 400)
+        }
+        if (leagueMatch.jokerBlocked) {
+          throw new AppError('Joker is not allowed on this match', 'VALIDATION_ERROR', 400)
+        }
+
+        const jokersUsedElsewhere = await tx.userBet.count({
+          where: {
+            leagueUserId,
+            usedJoker: true,
+            deletedAt: null,
+            leagueMatchId: { not: validated.leagueMatchId },
+            LeagueMatch: { leagueId: leagueMatch.leagueId, deletedAt: null },
+          },
+        })
+
+        if (jokersUsedElsewhere >= leagueMatch.League.jokerCount) {
+          throw new AppError('No jokers remaining', 'VALIDATION_ERROR', 400)
+        }
+      }
+
       const existingBet = await tx.userBet.findFirst({
         where: {
           leagueMatchId: validated.leagueMatchId,
@@ -259,6 +316,7 @@ export async function saveMatchBet(input: UserMatchBetInput) {
             noScorer: validated.noScorer,
             overtime: validated.overtime,
             homeAdvanced: validated.homeAdvanced,
+            usedJoker: useJoker,
             updatedAt: now,
           },
         })
@@ -275,6 +333,7 @@ export async function saveMatchBet(input: UserMatchBetInput) {
           noScorer: validated.noScorer,
           overtime: validated.overtime,
           homeAdvanced: validated.homeAdvanced,
+          usedJoker: useJoker,
           dateTime: now,
           totalPoints: 0,
           createdAt: now,
@@ -292,6 +351,7 @@ export async function saveMatchBet(input: UserMatchBetInput) {
         noScorer: validated.noScorer,
         overtime: validated.overtime,
         homeAdvanced: validated.homeAdvanced,
+        usedJoker: validated.useJoker === true,
       }),
       onCreated: AuditLogger.userBetCreated,
       onUpdated: AuditLogger.userBetUpdated,

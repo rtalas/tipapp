@@ -17,6 +17,7 @@ export interface LeaderboardData {
   fines: LeaguePrize[]
   lastEvaluatedAt: Date | null
   isFinished: boolean
+  jokerCount: number
 }
 
 export interface UserMatchPick {
@@ -34,6 +35,7 @@ export interface UserMatchPick {
   scorerRanking: number | null
   scorerCorrect: boolean
   overtime: boolean
+  usedJoker: boolean
   totalPoints: number
   matchDate: Date
   actualHomeScore: number | null
@@ -262,6 +264,7 @@ export async function getUserPicks(
       scorerRanking: bet.LeaguePlayer?.topScorerRanking ?? null,
       scorerCorrect,
       overtime: bet.overtime,
+      usedJoker: bet.usedJoker,
       totalPoints: bet.totalPoints,
       matchDate: match.dateTime,
       actualHomeScore: match.homeFinalScore,
@@ -348,7 +351,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
   const leagueUserIds = leagueUsers.map((lu) => lu.id)
 
   // Aggregate points in database instead of loading all bet rows
-  const [matchTotals, seriesTotals, specialBetTotals, questionTotals, prizeRecords, lastEvalTimestamps, league] = await Promise.all([
+  const [matchTotals, seriesTotals, specialBetTotals, questionTotals, jokerCounts, prizeRecords, lastEvalTimestamps, league] = await Promise.all([
     prisma.userBet.groupBy({
       by: ['leagueUserId'],
       where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
@@ -368,6 +371,11 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
       by: ['leagueUserId'],
       where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
       _sum: { totalPoints: true },
+    }),
+    prisma.userBet.groupBy({
+      by: ['leagueUserId'],
+      where: { leagueUserId: { in: leagueUserIds }, usedJoker: true, deletedAt: null },
+      _count: { _all: true },
     }),
     prisma.leaguePrize.findMany({
       where: { leagueId, deletedAt: null },
@@ -395,7 +403,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
     ]),
     prisma.league.findUniqueOrThrow({
       where: { id: leagueId },
-      select: { isFinished: true },
+      select: { isFinished: true, jokerCount: true },
     }),
   ])
 
@@ -404,6 +412,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
   const seriesMap = new Map(seriesTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
   const specialBetMap = new Map(specialBetTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
   const questionMap = new Map(questionTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
+  const jokerMap = new Map(jokerCounts.map((t) => [t.leagueUserId, t._count?._all ?? 0]))
 
   // Merge user data with aggregated points
   const entries = leagueUsers.map((lu) => {
@@ -411,6 +420,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
     const seriesPoints = seriesMap.get(lu.id) || 0
     const specialBetPoints = specialBetMap.get(lu.id) || 0
     const questionPoints = questionMap.get(lu.id) || 0
+    const jokersUsed = jokerMap.get(lu.id) || 0
 
     return {
       leagueUserId: lu.id,
@@ -424,6 +434,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
       specialBetPoints,
       questionPoints,
       totalPoints: matchPoints + seriesPoints + specialBetPoints + questionPoints,
+      jokersUsed,
       isCurrentUser: lu.User.id === userId,
     }
   })
@@ -451,7 +462,14 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
     .filter((d): d is Date => d !== null)
     .reduce<Date | null>((max, d) => (max === null || d > max ? d : max), null)
 
-  return { entries: rankedEntries, prizes, fines, lastEvaluatedAt, isFinished: league.isFinished }
+  return {
+    entries: rankedEntries,
+    prizes,
+    fines,
+    lastEvaluatedAt,
+    isFinished: league.isFinished,
+    jokerCount: league.jokerCount,
+  }
 }
 
 

@@ -1,4 +1,4 @@
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, Star } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { UserAvatar } from '@/components/common/user-avatar'
 import { cn } from '@/lib/utils'
@@ -83,6 +83,12 @@ export function FriendPredictionsList({
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {prediction.usedJoker && (
+                <Star
+                  className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0"
+                  aria-label={t('jokerUsedLabel')}
+                />
+              )}
               <span
                 className={cn(
                   'font-bold text-sm',

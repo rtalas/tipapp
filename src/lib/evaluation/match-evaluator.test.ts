@@ -286,6 +286,63 @@ describe('Match Evaluator', () => {
 
       expect(result.results[0].totalPoints).toBe(5)
     })
+
+    it('should double points when usedJoker is true on the user bet', async () => {
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        makeLeagueMatch({
+          isDoubled: false,
+          UserBet: [
+            {
+              id: 1,
+              homeScore: 2,
+              awayScore: 1,
+              scorerId: null,
+              noScorer: null,
+              overtime: false,
+              homeAdvanced: null,
+              usedJoker: true,
+              LeagueUser: { userId: 1, User: { id: 1 } },
+            },
+          ],
+        })
+      )
+
+      const result = await evaluateMatchAtomic({
+        matchId: 1,
+        leagueMatchId: 100,
+      })
+
+      expect(result.results[0].totalPoints).toBe(10) // 5 * 2 via joker
+    })
+
+    it('should still double only once when isDoubled and usedJoker both true', async () => {
+      // Defensive: save flow blocks this combo, but evaluator should not 4x.
+      mockTx.leagueMatch.findUniqueOrThrow.mockResolvedValue(
+        makeLeagueMatch({
+          isDoubled: true,
+          UserBet: [
+            {
+              id: 1,
+              homeScore: 2,
+              awayScore: 1,
+              scorerId: null,
+              noScorer: null,
+              overtime: false,
+              homeAdvanced: null,
+              usedJoker: true,
+              LeagueUser: { userId: 1, User: { id: 1 } },
+            },
+          ],
+        })
+      )
+
+      const result = await evaluateMatchAtomic({
+        matchId: 1,
+        leagueMatchId: 100,
+      })
+
+      expect(result.results[0].totalPoints).toBe(10) // 5 * 2, not 5 * 4
+    })
   })
 
   describe('Scorer with Rank-Based Config', () => {

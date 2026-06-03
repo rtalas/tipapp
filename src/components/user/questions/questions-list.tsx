@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
 import { HelpCircle, Check, X, Clock, Users, CheckCircle, XCircle } from 'lucide-react'
@@ -34,11 +34,14 @@ type FilterType = 'current' | 'past'
 
 export function QuestionsList({ questions }: QuestionsListProps) {
   const { isRefreshing, refresh } = useRefresh()
-  const [filter, setFilter] = useState<FilterType>(() =>
-    questions.some((q) => isCurrentTabEvent(q.isEvaluated, q.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
-      ? 'current'
-      : 'past'
-  )
+  // SSR-safe default — see match-list.tsx.
+  const [filter, setFilter] = useState<FilterType>('current')
+  useEffect(() => {
+    const hasCurrent = questions.some((q) =>
+      isCurrentTabEvent(q.isEvaluated, q.updatedAt, EVENT_POST_EVAL_VISIBLE_MS)
+    )
+    if (!hasCurrent) setFilter('past')
+  }, [questions])
   const dateLocale = useDateLocale()
   const t = useTranslations('user.questions')
   const tMatches = useTranslations('user.matches')

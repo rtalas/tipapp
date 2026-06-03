@@ -4,18 +4,23 @@ import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { StatusBadge } from '@/components/user/common/status-badge'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
+import { JokerBadge } from '@/components/user/common/joker-badge'
 import type { UserMatch } from '@/actions/user/matches'
 
 interface MatchHeaderProps {
   match: UserMatch
   isEvaluated: boolean
   isDoubled: boolean
+  jokerBlocked: boolean
+  jokerUsed: boolean
 }
 
 export function MatchHeader({
   match,
   isEvaluated,
   isDoubled,
+  jokerBlocked,
+  jokerUsed,
 }: MatchHeaderProps) {
   const t = useTranslations('user.matches')
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
@@ -50,12 +55,19 @@ export function MatchHeader({
           </>
         )}
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center justify-end gap-1.5">
         {isDoubled && (
           <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 text-[10px] font-bold">
             <Zap className="w-3 h-3" />
             2x
           </span>
+        )}
+        {/* Joker badges — hidden when feature disabled and when 2x already shown (mutually exclusive). */}
+        {match.League.jokerCount > 0 && !isDoubled && jokerUsed && (
+          <JokerBadge variant="used" label={t('jokerUsedLabel')} title={t('jokerUsedLabel')} />
+        )}
+        {match.League.jokerCount > 0 && !isDoubled && !jokerUsed && jokerBlocked && (
+          <JokerBadge variant="blocked" label={t('jokerBlockedBadge')} title={t('jokerBlockedBadge')} />
         )}
         {/* Status badge: Scheduled or Awaiting evaluation */}
         <StatusBadge dateTime={match.Match.dateTime} isEvaluated={isEvaluated} />

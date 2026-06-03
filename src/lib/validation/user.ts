@@ -10,6 +10,7 @@ export const userMatchBetSchema = z
     noScorer: z.boolean().optional().nullable(),
     overtime: z.boolean().default(false),
     homeAdvanced: z.boolean().optional().nullable(),
+    useJoker: z.boolean().optional(),
   })
   .refine(
     (data) => {

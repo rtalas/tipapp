@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { Trophy, HelpCircle } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -39,12 +39,14 @@ export function SpecialBetsList({
   const tQuestions = useTranslations('user.questions')
   const tMatches = useTranslations('user.matches')
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
-  const [filter, setFilter] = useState<FilterType>(() => {
+  // SSR-safe default — see match-list.tsx.
+  const [filter, setFilter] = useState<FilterType>('current')
+  useEffect(() => {
     const hasCurrent =
       specialBets.some((b) => isCurrentTabEvent(b.isEvaluated, b.updatedAt, EVENT_POST_EVAL_VISIBLE_MS)) ||
       questions.some((q) => isCurrentTabEvent(q.isEvaluated, q.updatedAt, EVENT_POST_EVAL_VISIBLE_MS))
-    return hasCurrent ? 'current' : 'past'
-  })
+    if (!hasCurrent) setFilter('past')
+  }, [specialBets, questions])
   const dateLocale = useDateLocale()
 
   const getDateLabel = useCallback(

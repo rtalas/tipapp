@@ -36,6 +36,7 @@ interface LeagueActionsProps {
   chatSuspendedAt: Date | null
   isFinished: boolean
   infoText: string | null
+  jokerCount: number
 }
 
 export function LeagueActions({
@@ -49,6 +50,7 @@ export function LeagueActions({
   chatSuspendedAt,
   isFinished,
   infoText,
+  jokerCount,
 }: LeagueActionsProps) {
   const t = useTranslations('admin.leagueActions')
   const tCommon = useTranslations('admin.common')
@@ -63,6 +65,7 @@ export function LeagueActions({
     isFinished,
     isChatEnabled,
     infoText: infoText || '',
+    jokerCount,
   })
   const [isChatSuspended, setIsChatSuspended] = useState(chatSuspendedAt !== null)
   const [prizes, setPrizes] = useState<PrizeTier[]>([])
@@ -133,6 +136,7 @@ export function LeagueActions({
         isPublic: editForm.isPublic,
         isFinished: editForm.isFinished,
         infoText: editForm.infoText || null,
+        jokerCount: editForm.jokerCount,
       })
       if (!leagueResult.success) {
         toast.error('error' in leagueResult ? leagueResult.error : t('toast.updateFailed'))
@@ -334,6 +338,27 @@ export function LeagueActions({
                     ...editForm,
                     isFinished: checked,
                     ...(checked ? { isActive: false } : {}),
+                  })
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1">
+                <Label htmlFor="jokerCount">{t('jokerCount')}</Label>
+                <p className="text-xs text-muted-foreground">{t('jokerCountHelper')}</p>
+              </div>
+              <Input
+                id="jokerCount"
+                type="number"
+                min={0}
+                max={20}
+                className="w-24"
+                value={editForm.jokerCount}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    jokerCount: Math.max(0, Math.min(20, parseInt(e.target.value, 10) || 0)),
                   })
                 }
               />

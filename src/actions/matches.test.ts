@@ -324,6 +324,59 @@ describe('Matches Actions', () => {
         })
       )
     })
+
+    it('refunds usedJoker on existing bets when admin sets jokerBlocked', async () => {
+      mockPrisma.match.findFirst.mockResolvedValue({
+        id: 1, homeTeamId: 10, awayTeamId: 20, homePlaceholder: null, awayPlaceholder: null,
+        LeagueMatch: [{ leagueId: 1 }],
+      } as any)
+      mockPrisma.match.update.mockResolvedValue({ id: 1 } as any)
+      mockPrisma.leagueMatch.updateMany.mockResolvedValue({ count: 1 } as any)
+      mockPrisma.userBet.updateMany.mockResolvedValue({ count: 3 } as any)
+
+      const result = await updateMatch({ matchId: 1, jokerBlocked: true })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.userBet.updateMany).toHaveBeenCalledWith({
+        where: {
+          usedJoker: true,
+          deletedAt: null,
+          LeagueMatch: { matchId: 1, deletedAt: null },
+        },
+        data: expect.objectContaining({ usedJoker: false }),
+      })
+      // Leaderboard cache invalidated because joker stats changed
+      expect(mockUpdateTag).toHaveBeenCalledWith('leaderboard')
+    })
+
+    it('refunds usedJoker on existing bets when admin sets isDoubled', async () => {
+      mockPrisma.match.findFirst.mockResolvedValue({
+        id: 1, homeTeamId: 10, awayTeamId: 20, homePlaceholder: null, awayPlaceholder: null,
+        LeagueMatch: [{ leagueId: 1 }],
+      } as any)
+      mockPrisma.match.update.mockResolvedValue({ id: 1 } as any)
+      mockPrisma.leagueMatch.updateMany.mockResolvedValue({ count: 1 } as any)
+      mockPrisma.userBet.updateMany.mockResolvedValue({ count: 2 } as any)
+
+      const result = await updateMatch({ matchId: 1, isDoubled: true })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.userBet.updateMany).toHaveBeenCalled()
+    })
+
+    it('does not refund jokers when jokerBlocked is being turned off', async () => {
+      mockPrisma.match.findFirst.mockResolvedValue({
+        id: 1, homeTeamId: 10, awayTeamId: 20, homePlaceholder: null, awayPlaceholder: null,
+        LeagueMatch: [{ leagueId: 1 }],
+      } as any)
+      mockPrisma.match.update.mockResolvedValue({ id: 1 } as any)
+      mockPrisma.leagueMatch.updateMany.mockResolvedValue({ count: 1 } as any)
+
+      const result = await updateMatch({ matchId: 1, jokerBlocked: false })
+
+      expect(result.success).toBe(true)
+      expect(mockPrisma.userBet.updateMany).not.toHaveBeenCalled()
+    })
   })
 
   describe('updateMatchResult', () => {
