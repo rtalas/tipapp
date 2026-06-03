@@ -30,6 +30,7 @@ describe('Questions Actions', () => {
         leagueId: 1,
         text: 'Will team X win?',
         dateTime: futureDate(),
+        isDoubled: false,
       })
 
       expect(mockRequireAdmin).toHaveBeenCalled()
@@ -44,6 +45,7 @@ describe('Questions Actions', () => {
         leagueId: 999,
         text: 'Will team X win the tournament?',
         dateTime: futureDate(),
+        isDoubled: false,
       })
 
       expect(result.success).toBe(false)
@@ -54,7 +56,7 @@ describe('Questions Actions', () => {
       mockPrisma.league.findFirst.mockResolvedValue({ id: 1 } as any)
       mockPrisma.leagueSpecialBetQuestion.create.mockResolvedValue({ id: 1 } as any)
 
-      await createQuestion({ leagueId: 1, text: 'Will there be overtime in game 1?', dateTime: futureDate() })
+      await createQuestion({ leagueId: 1, text: 'Will there be overtime in game 1?', dateTime: futureDate(), isDoubled: false })
 
       expect(mockUpdateTag).toHaveBeenCalledWith('question-data')
     })
@@ -63,7 +65,7 @@ describe('Questions Actions', () => {
       mockPrisma.league.findFirst.mockResolvedValue({ id: 1 } as any)
       mockPrisma.leagueSpecialBetQuestion.create.mockResolvedValue({ id: 1 } as any)
 
-      await createQuestion({ leagueId: 1, text: 'Will there be overtime in game 1?', dateTime: futureDate() })
+      await createQuestion({ leagueId: 1, text: 'Will there be overtime in game 1?', dateTime: futureDate(), isDoubled: false })
 
       expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/questions')
     })

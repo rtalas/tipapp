@@ -65,6 +65,8 @@ describe('Leagues Actions', () => {
         seasonTo: 2026,
         isActive: true,
         isPublic: false,
+        isFinished: false,
+        jokerCount: 0,
       })
 
       expect(result.success).toBe(true)
@@ -103,9 +105,11 @@ describe('Leagues Actions', () => {
         seasonTo: 2026,
         isActive: true,
         isPublic: false,
+        isFinished: false,
+        jokerCount: 0,
       })
 
-      const batchedTypes = mockPrisma.evaluator.createMany.mock.calls[0][0].data
+      const batchedTypes = (mockPrisma.evaluator.createMany.mock.calls[0]?.[0]?.data ?? []) as Array<{ name: string; points: number }>
       const byName: Record<string, number> = {}
       for (const ev of batchedTypes) byName[ev.name] = ev.points
 
@@ -156,9 +160,11 @@ describe('Leagues Actions', () => {
         seasonTo: 2026,
         isActive: true,
         isPublic: false,
+        isFinished: false,
+        jokerCount: 0,
       })
 
-      const batchedTypes = mockPrisma.evaluator.createMany.mock.calls[0][0].data
+      const batchedTypes = (mockPrisma.evaluator.createMany.mock.calls[0]?.[0]?.data ?? []) as Array<{ name: string; points: number }>
       const byName: Record<string, number> = {}
       for (const ev of batchedTypes) byName[ev.name] = ev.points
 
@@ -201,6 +207,8 @@ describe('Leagues Actions', () => {
         seasonTo: 2026,
         isActive: true,
         isPublic: false,
+        isFinished: false,
+        jokerCount: 0,
         evaluatorRules: [{ evaluatorTypeId: 1, points: 15 }],
       })
 
@@ -216,6 +224,8 @@ describe('Leagues Actions', () => {
         seasonTo: 2026,
         isActive: true,
         isPublic: false,
+        isFinished: false,
+        jokerCount: 0,
       })
 
       expect(result.success).toBe(false)

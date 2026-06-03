@@ -136,32 +136,32 @@ describe('MatchCard', () => {
 
   describe('Open state (betting open)', () => {
     it('renders match header', () => {
-      render(<MatchCard match={createMatch()} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} />)
       expect(screen.getByTestId('match-header')).toBeInTheDocument()
     })
 
     it('renders match teams display', () => {
-      render(<MatchCard match={createMatch()} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} />)
       expect(screen.getByTestId('match-teams')).toBeInTheDocument()
     })
 
     it('renders bet controls when betting is open', () => {
-      render(<MatchCard match={createMatch()} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} />)
       expect(screen.getByTestId('bet-controls')).toBeInTheDocument()
     })
 
     it('renders save button when betting is open', () => {
-      render(<MatchCard match={createMatch()} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} />)
       expect(screen.getByTestId('save-button')).toBeInTheDocument()
     })
 
     it('does not render bet display when open', () => {
-      render(<MatchCard match={createMatch()} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} />)
       expect(screen.queryByTestId('bet-display')).not.toBeInTheDocument()
     })
 
     it('does not show friends picks button when open', () => {
-      render(<MatchCard match={createMatch()} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} />)
       expect(screen.queryByText('friendsPicks')).not.toBeInTheDocument()
     })
   })
@@ -190,29 +190,29 @@ describe('MatchCard', () => {
       })
 
     it('does not render bet controls for placeholder', () => {
-      render(<MatchCard match={placeholderMatch()} />)
+      render(<MatchCard match={placeholderMatch()} jokersRemaining={0} />)
       expect(screen.queryByTestId('bet-controls')).not.toBeInTheDocument()
     })
 
     it('does not render save button for placeholder', () => {
-      render(<MatchCard match={placeholderMatch()} />)
+      render(<MatchCard match={placeholderMatch()} jokersRemaining={0} />)
       expect(screen.queryByTestId('save-button')).not.toBeInTheDocument()
     })
 
     it('does not render bet display for placeholder', () => {
-      render(<MatchCard match={placeholderMatch()} />)
+      render(<MatchCard match={placeholderMatch()} jokersRemaining={0} />)
       expect(screen.queryByTestId('bet-display')).not.toBeInTheDocument()
     })
 
     it('shows waiting-for-opponents notice', () => {
-      render(<MatchCard match={placeholderMatch()} />)
+      render(<MatchCard match={placeholderMatch()} jokersRemaining={0} />)
       expect(screen.getByText('waitingForOpponents')).toBeInTheDocument()
     })
   })
 
   describe('Score changes', () => {
     it('updates home score when changed', async () => {
-      render(<MatchCard match={createMatch()} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} />)
 
       await user.click(screen.getByTestId('home-inc'))
 
@@ -220,7 +220,7 @@ describe('MatchCard', () => {
     })
 
     it('updates away score when changed', async () => {
-      render(<MatchCard match={createMatch()} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} />)
 
       await user.click(screen.getByTestId('away-inc'))
 
@@ -241,7 +241,7 @@ describe('MatchCard', () => {
         },
       })
 
-      render(<MatchCard match={match} />)
+      render(<MatchCard match={match} jokersRemaining={0} />)
 
       expect(screen.getByTestId('save-button')).toHaveTextContent('Saved')
 
@@ -253,7 +253,7 @@ describe('MatchCard', () => {
 
   describe('Save flow', () => {
     it('calls saveMatchBet with correct data', async () => {
-      render(<MatchCard match={createMatch()} onBetSaved={mockOnBetSaved} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} onBetSaved={mockOnBetSaved} />)
 
       await user.click(screen.getByTestId('home-inc'))
       await user.click(screen.getByTestId('home-inc'))
@@ -275,7 +275,7 @@ describe('MatchCard', () => {
     })
 
     it('calls onBetSaved callback on success', async () => {
-      render(<MatchCard match={createMatch()} onBetSaved={mockOnBetSaved} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} onBetSaved={mockOnBetSaved} />)
 
       await user.click(screen.getByTestId('save-button'))
 
@@ -285,7 +285,7 @@ describe('MatchCard', () => {
     })
 
     it('shows saved state after successful save', async () => {
-      render(<MatchCard match={createMatch()} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} />)
 
       await user.click(screen.getByTestId('save-button'))
 
@@ -298,7 +298,7 @@ describe('MatchCard', () => {
       const { toast } = await import('sonner')
       mockSaveMatchBet.mockResolvedValue({ success: false, error: 'Match locked' })
 
-      render(<MatchCard match={createMatch()} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} />)
 
       await user.click(screen.getByTestId('save-button'))
 
@@ -311,7 +311,7 @@ describe('MatchCard', () => {
       const { toast } = await import('sonner')
       mockSaveMatchBet.mockRejectedValue(new Error('Network error'))
 
-      render(<MatchCard match={createMatch()} />)
+      render(<MatchCard match={createMatch()} jokersRemaining={0} />)
 
       await user.click(screen.getByTestId('save-button'))
 
@@ -323,7 +323,7 @@ describe('MatchCard', () => {
     it('does not save when locked', async () => {
       const match = createMatch({ isBettingOpen: false })
 
-      render(<MatchCard match={match} />)
+      render(<MatchCard match={match} jokersRemaining={0} />)
 
       // Save button shouldn't exist when locked
       expect(screen.queryByTestId('save-button')).not.toBeInTheDocument()
@@ -333,31 +333,31 @@ describe('MatchCard', () => {
   describe('Locked state (betting closed)', () => {
     it('shows bet display when locked', () => {
       const match = createMatch({ isBettingOpen: false })
-      render(<MatchCard match={match} />)
+      render(<MatchCard match={match} jokersRemaining={0} />)
       expect(screen.getByTestId('bet-display')).toBeInTheDocument()
     })
 
     it('does not show bet controls when locked', () => {
       const match = createMatch({ isBettingOpen: false })
-      render(<MatchCard match={match} />)
+      render(<MatchCard match={match} jokersRemaining={0} />)
       expect(screen.queryByTestId('bet-controls')).not.toBeInTheDocument()
     })
 
     it('does not show save button when locked', () => {
       const match = createMatch({ isBettingOpen: false })
-      render(<MatchCard match={match} />)
+      render(<MatchCard match={match} jokersRemaining={0} />)
       expect(screen.queryByTestId('save-button')).not.toBeInTheDocument()
     })
 
     it('shows friends picks button when locked', () => {
       const match = createMatch({ isBettingOpen: false })
-      render(<MatchCard match={match} />)
+      render(<MatchCard match={match} jokersRemaining={0} />)
       expect(screen.getByText('friendsPicks')).toBeInTheDocument()
     })
 
     it('applies opacity class when locked but not evaluated', () => {
       const match = createMatch({ isBettingOpen: false })
-      const { container } = render(<MatchCard match={match} />)
+      const { container } = render(<MatchCard match={match} jokersRemaining={0} />)
       const card = container.querySelector('.glass-card')
       expect(card).toHaveClass('opacity-80')
     })
@@ -375,7 +375,7 @@ describe('MatchCard', () => {
         },
       })
 
-      const { container } = render(<MatchCard match={match} />)
+      const { container } = render(<MatchCard match={match} jokersRemaining={0} />)
       const card = container.querySelector('.glass-card')
       expect(card).not.toHaveClass('opacity-80')
     })
@@ -396,7 +396,7 @@ describe('MatchCard', () => {
         },
       })
 
-      render(<MatchCard match={match} />)
+      render(<MatchCard match={match} jokersRemaining={0} />)
 
       expect(screen.getByTestId('home-score')).toHaveTextContent('3')
       expect(screen.getByTestId('away-score')).toHaveTextContent('1')
@@ -416,7 +416,7 @@ describe('MatchCard', () => {
         },
       })
 
-      render(<MatchCard match={match} />)
+      render(<MatchCard match={match} jokersRemaining={0} />)
 
       expect(screen.getByTestId('save-button')).toHaveTextContent('Saved')
     })
@@ -425,7 +425,7 @@ describe('MatchCard', () => {
   describe('Doubled matches', () => {
     it('passes isDoubled to MatchHeader', () => {
       const match = createMatch({ isDoubled: true })
-      render(<MatchCard match={match} />)
+      render(<MatchCard match={match} jokersRemaining={0} />)
       expect(screen.getByText('2x')).toBeInTheDocument()
     })
   })
@@ -435,7 +435,7 @@ describe('MatchCard', () => {
       mockGetFriendPredictions.mockResolvedValue({ predictions: [] })
       const match = createMatch({ isBettingOpen: false })
 
-      render(<MatchCard match={match} />)
+      render(<MatchCard match={match} jokersRemaining={0} />)
 
       await user.click(screen.getByText('friendsPicks'))
 
@@ -448,7 +448,7 @@ describe('MatchCard', () => {
       mockGetFriendPredictions.mockResolvedValue({ predictions: [] })
       const match = createMatch({ isBettingOpen: false })
 
-      render(<MatchCard match={match} />)
+      render(<MatchCard match={match} jokersRemaining={0} />)
 
       await user.click(screen.getByText('friendsPicks'))
 
@@ -470,7 +470,7 @@ describe('MatchCard', () => {
     }
 
     it('saves null homeAdvanced when prediction is a draw (default 0:0) without user selection', async () => {
-      render(<MatchCard match={soccerPlayoff()} />)
+      render(<MatchCard match={soccerPlayoff()} jokersRemaining={0} />)
 
       await user.click(screen.getByTestId('save-button'))
 
@@ -482,7 +482,7 @@ describe('MatchCard', () => {
     })
 
     it('auto-derives homeAdvanced=true when home prediction is winning', async () => {
-      render(<MatchCard match={soccerPlayoff()} />)
+      render(<MatchCard match={soccerPlayoff()} jokersRemaining={0} />)
 
       await user.click(screen.getByTestId('home-inc')) // 1:0
 
@@ -496,7 +496,7 @@ describe('MatchCard', () => {
     })
 
     it('auto-derives homeAdvanced=false when away prediction is winning', async () => {
-      render(<MatchCard match={soccerPlayoff()} />)
+      render(<MatchCard match={soccerPlayoff()} jokersRemaining={0} />)
 
       await user.click(screen.getByTestId('away-inc')) // 0:1
 
@@ -510,7 +510,7 @@ describe('MatchCard', () => {
     })
 
     it('keeps last derived value when returning to a draw', async () => {
-      render(<MatchCard match={soccerPlayoff()} />)
+      render(<MatchCard match={soccerPlayoff()} jokersRemaining={0} />)
 
       await user.click(screen.getByTestId('home-inc')) // 1:0 → auto-derives true
       await user.click(screen.getByTestId('away-inc')) // 1:1 (draw, preserves prior)
@@ -531,7 +531,7 @@ describe('MatchCard', () => {
         Match: { ...base.Match, isPlayoffGame: true },
       }
 
-      render(<MatchCard match={hockeyPlayoff} />)
+      render(<MatchCard match={hockeyPlayoff} jokersRemaining={0} />)
 
       await user.click(screen.getByTestId('home-inc')) // 1:0
 
@@ -552,7 +552,7 @@ describe('MatchCard', () => {
         Match: { ...base.Match, isPlayoffGame: false },
       }
 
-      render(<MatchCard match={soccerGroup} />)
+      render(<MatchCard match={soccerGroup} jokersRemaining={0} />)
 
       await user.click(screen.getByTestId('home-inc')) // 1:0
 

@@ -78,11 +78,13 @@ const defaultTeams = [
   {
     id: 1,
     group: null,
+    tournamentId: null,
     Team: { id: 1, name: 'Panthers', shortcut: 'FLA', flagIcon: null, flagType: null },
   },
   {
     id: 2,
     group: null,
+    tournamentId: null,
     Team: { id: 2, name: 'Oilers', shortcut: 'EDM', flagIcon: null, flagType: null },
   },
 ]
@@ -91,12 +93,12 @@ const defaultPlayers = [
   {
     id: 1,
     Player: { id: 1, firstName: 'Aleksander', lastName: 'Barkov', position: 'C' },
-    LeagueTeam: { Team: { shortcut: 'FLA' } },
+    LeagueTeam: { tournamentId: null, Team: { shortcut: 'FLA' } },
   },
   {
     id: 2,
     Player: { id: 2, firstName: 'Connor', lastName: 'McDavid', position: 'C' },
-    LeagueTeam: { Team: { shortcut: 'EDM' } },
+    LeagueTeam: { tournamentId: null, Team: { shortcut: 'EDM' } },
   },
 ]
 

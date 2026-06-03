@@ -26,6 +26,7 @@ describe('league-utils', () => {
     isChatEnabled: true,
     chatSuspendedAt: null,
     infoText: null,
+    jokerCount: 0,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     deletedAt: null,

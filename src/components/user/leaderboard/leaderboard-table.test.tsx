@@ -67,6 +67,7 @@ function createEntry(overrides: Partial<LeaderboardEntry> = {}): LeaderboardEntr
     specialBetPoints: 3,
     questionPoints: 2,
     totalPoints: 20,
+    jokersUsed: 0,
     isCurrentUser: false,
     ...overrides,
   }
@@ -91,7 +92,7 @@ describe('LeaderboardTable', () => {
 
   describe('Empty state', () => {
     it('renders empty message when no entries', () => {
-      render(<LeaderboardTable entries={[]} prizes={[]} fines={[]} />)
+      render(<LeaderboardTable entries={[]} prizes={[]} fines={[]} jokerCount={0} />)
       expect(screen.getByText('noRankings')).toBeInTheDocument()
       expect(screen.getByText('description')).toBeInTheDocument()
     })
@@ -105,7 +106,7 @@ describe('LeaderboardTable', () => {
         createEntry({ rank: 3, username: 'charlie', firstName: 'Charlie', lastName: 'Brown', totalPoints: 20, leagueUserId: 3 }),
       ]
 
-      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} />)
+      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} jokerCount={0} />)
 
       expect(screen.getByText('Alice Smith')).toBeInTheDocument()
       expect(screen.getByText('Bob Jones')).toBeInTheDocument()
@@ -121,7 +122,7 @@ describe('LeaderboardTable', () => {
         createEntry({ rank: 2, leagueUserId: 2, username: 'user2', totalPoints: 10 }),
       ]
 
-      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} />)
+      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} jokerCount={0} />)
 
       expect(screen.getByText('1')).toBeInTheDocument()
       expect(screen.getByText('2')).toBeInTheDocument()
@@ -131,25 +132,25 @@ describe('LeaderboardTable', () => {
   describe('Display name logic', () => {
     it('shows firstName + lastName when both available', () => {
       const entries = [createEntry({ firstName: 'John', lastName: 'Doe' })]
-      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} />)
+      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} jokerCount={0} />)
       expect(screen.getByText('John Doe')).toBeInTheDocument()
     })
 
     it('shows firstName only when lastName is null', () => {
       const entries = [createEntry({ firstName: 'John', lastName: null })]
-      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} />)
+      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} jokerCount={0} />)
       expect(screen.getByText('John')).toBeInTheDocument()
     })
 
     it('shows lastName only when firstName is null', () => {
       const entries = [createEntry({ firstName: null, lastName: 'Doe' })]
-      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} />)
+      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} jokerCount={0} />)
       expect(screen.getByText('Doe')).toBeInTheDocument()
     })
 
     it('shows username when both names are null', () => {
       const entries = [createEntry({ firstName: null, lastName: null, username: 'cooluser' })]
-      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} />)
+      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} jokerCount={0} />)
       // UserAvatar mock also renders username; query the display name span specifically
       const nameSpans = screen.getAllByText('cooluser')
       expect(nameSpans.length).toBeGreaterThanOrEqual(1)
@@ -161,13 +162,13 @@ describe('LeaderboardTable', () => {
   describe('Current user highlighting', () => {
     it('shows "you" indicator for current user', () => {
       const entries = [createEntry({ isCurrentUser: true })]
-      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} />)
+      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} jokerCount={0} />)
       expect(screen.getByText('you')).toBeInTheDocument()
     })
 
     it('does not show "you" indicator for other users', () => {
       const entries = [createEntry({ isCurrentUser: false })]
-      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} />)
+      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} jokerCount={0} />)
       expect(screen.queryByText('you')).not.toBeInTheDocument()
     })
   })
@@ -182,7 +183,7 @@ describe('LeaderboardTable', () => {
         createPrize({ rank: 1, amount: 10000 }),
       ]
 
-      render(<LeaderboardTable entries={entries} prizes={prizes} fines={[]} />)
+      render(<LeaderboardTable entries={entries} prizes={prizes} fines={[]} jokerCount={0} />)
 
       // Prize amount formatted: 10000 halers = 100 Kč
       expect(screen.getByText(/100/)).toBeInTheDocument()
@@ -196,7 +197,7 @@ describe('LeaderboardTable', () => {
       const prizes = [createPrize({ rank: 1, amount: 10000 })]
 
       const { container } = render(
-        <LeaderboardTable entries={entries} prizes={prizes} fines={[]} />
+        <LeaderboardTable entries={entries} prizes={prizes} fines={[]} jokerCount={0} />
       )
 
       // Rank 1 gets bg-yellow-500/20 on rank circle + prize badge = 2 elements
@@ -217,7 +218,7 @@ describe('LeaderboardTable', () => {
         createPrize({ rank: 1, amount: 5000 }), // Fine for last place (rank 3)
       ]
 
-      render(<LeaderboardTable entries={entries} prizes={[]} fines={fines} />)
+      render(<LeaderboardTable entries={entries} prizes={[]} fines={fines} jokerCount={0} />)
 
       // Fine amount: 5000 halers = 50 Kč, displayed with minus
       expect(screen.getByText(/-50/)).toBeInTheDocument()
@@ -232,7 +233,7 @@ describe('LeaderboardTable', () => {
       const fines = [createPrize({ rank: 1, amount: 5000 })]
 
       const { container } = render(
-        <LeaderboardTable entries={entries} prizes={[]} fines={fines} />
+        <LeaderboardTable entries={entries} prizes={[]} fines={fines} jokerCount={0} />
       )
 
       // Only one fine badge (for last place)
@@ -254,7 +255,7 @@ describe('LeaderboardTable', () => {
       const fines = [createPrize({ rank: 1, amount: 5000 })]
 
       const { container } = render(
-        <LeaderboardTable entries={entries} prizes={prizes} fines={fines} />
+        <LeaderboardTable entries={entries} prizes={prizes} fines={fines} jokerCount={0} />
       )
 
       // Should have 3 glass-card groups (prize, middle, fine)
@@ -267,7 +268,7 @@ describe('LeaderboardTable', () => {
     it('calls handler when entry is clicked', async () => {
       const entries = [createEntry({ rank: 1, username: 'alice', firstName: 'Alice', lastName: 'Smith' })]
 
-      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} />)
+      render(<LeaderboardTable entries={entries} prizes={[]} fines={[]} jokerCount={0} />)
 
       const button = screen.getByText('Alice Smith').closest('button')
       expect(button).toBeInTheDocument()

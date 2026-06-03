@@ -50,6 +50,7 @@ describe('Matches Actions', () => {
         dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
+        jokerBlocked: false,
       })
 
       expect(mockRequireAdmin).toHaveBeenCalled()
@@ -69,6 +70,7 @@ describe('Matches Actions', () => {
         dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
+        jokerBlocked: false,
       })
 
       expect(result.success).toBe(false)
@@ -88,6 +90,7 @@ describe('Matches Actions', () => {
         dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
+        jokerBlocked: false,
         matchPhaseId: 999,
       })
 
@@ -108,6 +111,7 @@ describe('Matches Actions', () => {
         dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
+        jokerBlocked: false,
         matchPhaseId: 1,
         gameNumber: 6,
       })
@@ -124,6 +128,7 @@ describe('Matches Actions', () => {
         dateTime: new Date('2020-01-01'),
         isPlayoffGame: false,
         isDoubled: false,
+        jokerBlocked: false,
       })
 
       expect(result.success).toBe(false)
@@ -138,6 +143,7 @@ describe('Matches Actions', () => {
         dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
+        jokerBlocked: false,
       })
 
       expect(result.success).toBe(false)
@@ -160,6 +166,7 @@ describe('Matches Actions', () => {
         dateTime: futureDate(),
         isPlayoffGame: true,
         isDoubled: false,
+        jokerBlocked: false,
       })
 
       expect(result.success).toBe(true)
@@ -195,6 +202,7 @@ describe('Matches Actions', () => {
         dateTime: futureDate(),
         isPlayoffGame: false,
         isDoubled: false,
+        jokerBlocked: false,
       })
 
       expect(mockUpdateTag).toHaveBeenCalledWith('match-data')

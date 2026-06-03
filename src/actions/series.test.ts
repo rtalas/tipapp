@@ -34,6 +34,7 @@ describe('Series Actions', () => {
         homeTeamId: 1,
         awayTeamId: 2,
         dateTime: futureDate(),
+        isDoubled: false,
       })
 
       expect(mockRequireAdmin).toHaveBeenCalled()
@@ -52,6 +53,7 @@ describe('Series Actions', () => {
         homeTeamId: 99,
         awayTeamId: 2,
         dateTime: futureDate(),
+        isDoubled: false,
       })
 
       expect(result.success).toBe(false)
@@ -69,6 +71,7 @@ describe('Series Actions', () => {
         homeTeamId: 1,
         awayTeamId: 99,
         dateTime: futureDate(),
+        isDoubled: false,
       })
 
       expect(result.success).toBe(false)
@@ -88,6 +91,7 @@ describe('Series Actions', () => {
         homeTeamId: 1,
         awayTeamId: 2,
         dateTime: futureDate(),
+        isDoubled: false,
       })
 
       expect(mockUpdateTag).toHaveBeenCalledWith('series-data')
@@ -129,6 +133,7 @@ describe('Series Actions', () => {
         homeTeamId: 1,
         awayTeamId: 2,
         dateTime: futureDate(),
+        isDoubled: false,
       })
 
       expect(mockPrisma.leagueSpecialBetSerie.create).toHaveBeenCalledWith(
