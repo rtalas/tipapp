@@ -102,6 +102,8 @@ const defaultPlayers = [
   },
 ]
 
+const defaultGoalStats = { goals: 0, evaluatedMatches: 0, totalMatches: 0 }
+
 function createSpecialBet(overrides: Record<string, unknown> = {}): any {
   const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
   return {
@@ -137,6 +139,7 @@ describe('SpecialBetCard', () => {
           specialBet={createSpecialBet()}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -150,6 +153,7 @@ describe('SpecialBetCard', () => {
           specialBet={createSpecialBet()}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -163,6 +167,7 @@ describe('SpecialBetCard', () => {
           specialBet={createSpecialBet()}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -179,6 +184,7 @@ describe('SpecialBetCard', () => {
           specialBet={createSpecialBet()}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -193,6 +199,7 @@ describe('SpecialBetCard', () => {
           specialBet={createSpecialBet()}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -224,6 +231,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -242,6 +250,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -273,6 +282,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -292,6 +302,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -319,6 +330,7 @@ describe('SpecialBetCard', () => {
           specialBet={createSpecialBet()}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -337,6 +349,7 @@ describe('SpecialBetCard', () => {
           specialBet={createSpecialBet()}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -358,6 +371,7 @@ describe('SpecialBetCard', () => {
           specialBet={createSpecialBet()}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -379,6 +393,7 @@ describe('SpecialBetCard', () => {
           specialBet={createSpecialBet()}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -404,6 +419,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -420,6 +436,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -435,6 +452,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -450,6 +468,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -472,6 +491,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -493,6 +513,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -510,6 +531,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -529,6 +551,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )
@@ -546,6 +569,7 @@ describe('SpecialBetCard', () => {
           specialBet={bet}
           teams={defaultTeams}
           players={defaultPlayers}
+          goalStats={defaultGoalStats}
           onSaved={mockOnSaved}
         />
       )

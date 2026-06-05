@@ -236,6 +236,8 @@
       "questions": "Otázky",
       "noPointsYet": "Zatím žádné body",
       "noPicksYet": "Zatím žádné tipy",
+      "runningGoalLabel": "Průběžně:",
+      "runningGoalValue": "{goals} gólů ({evaluated}/{total} zápasů)",
       "yes": "Ano",
       "no": "Ne",
       "picksLoadError": "Nepodařilo se načíst tipy",
@@ -304,6 +306,8 @@
       "selectPlayer": "Vyberte hráče...",
       "enterValue": "Zadejte hodnotu",
       "enterPrediction": "Zadejte váš tip",
+      "runningGoalTotal": "Průběžně",
+      "runningGoalValue": "{goals} gólů ({evaluated}/{total} zápasů)",
       "friendsPicks": "Tipy přátel",
       "friendsPredictions": "Tipy přátel",
       "friendsPicksLater": "Tipy přátel budou viditelné po uzavření sázení",
@@ -899,7 +903,9 @@
         "updating": "Ukládám...",
         "submit": "Uložit speciální sázku",
         "success": "Speciální sázka úspěšně aktualizována",
-        "failed": "Nepodařilo se aktualizovat speciální sázku"
+        "failed": "Nepodařilo se aktualizovat speciální sázku",
+        "showGoalProgressLabel": "Zobrazit průběžný počet gólů",
+        "showGoalProgressHint": "Vedle tipu se uživatelům ukáže aktuální součet gólů z vyhodnocených zápasů (např. pro tip na celkový počet branek turnaje). Po vyhodnocení tipu zmizí."
       },
       "editDetails": "Upravit detaily",
       "editResult": "Upravit výsledek",

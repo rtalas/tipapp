@@ -191,6 +191,18 @@ export function UserPicksModal({ selectedUser, leagueId, onClose }: UserPicksMod
                       <div className="text-xs text-muted-foreground">
                         {bet.prediction}
                       </div>
+                      {bet.showGoalProgress && !bet.isEvaluated && (
+                        <div className="mt-1.5 text-[11px] text-muted-foreground">
+                          {t('runningGoalLabel')}{' '}
+                          <span className="font-semibold text-foreground">
+                            {t('runningGoalValue', {
+                              goals: userPicks.goalStats.goals,
+                              evaluated: userPicks.goalStats.evaluatedMatches,
+                              total: userPicks.goalStats.totalMatches,
+                            })}
+                          </span>
+                        </div>
+                      )}
                     </PickCard>
                   ))}
                 </PickSection>

@@ -19,7 +19,11 @@ import { SPORT_IDS } from '@/lib/constants'
 import { getUserDisplayName } from '@/lib/user-display-utils'
 import { useFriendPredictions } from '@/hooks/useFriendPredictions'
 import { saveSpecialBet, getSpecialBetFriendPredictions } from '@/actions/user/special-bets'
-import type { UserSpecialBet, SpecialBetFriendPrediction } from '@/actions/user/special-bets'
+import type {
+  UserSpecialBet,
+  SpecialBetFriendPrediction,
+} from '@/actions/user/special-bets'
+import type { TournamentGoalStats } from '@/lib/cache/tournament-goal-stats'
 import type { ExactPlayerConfig } from '@/lib/evaluators/types'
 
 function isExactPlayerConfig(value: unknown): value is ExactPlayerConfig {
@@ -50,6 +54,7 @@ interface SpecialBetCardProps {
     Player: { id: number; firstName: string | null; lastName: string | null; position: string | null }
     LeagueTeam: { tournamentId: number | null; Team: { shortcut: string } }
   }>
+  goalStats: TournamentGoalStats
   onSaved: () => void
 }
 
@@ -57,6 +62,7 @@ export function SpecialBetCard({
   specialBet,
   teams,
   players,
+  goalStats,
   onSaved,
 }: SpecialBetCardProps) {
   const t = useTranslations('user.specialBets')
@@ -191,6 +197,8 @@ export function SpecialBetCard({
 
   const userSelection = selectedTeamName || selectedPlayerName || (value !== null ? value.toString() : null)
 
+  const showGoalStats = specialBet.showGoalProgress && !isEvaluated
+
   // Check if correct
   const actualResultTeam = specialBet.LeagueTeam?.Team
   const actualResult =
@@ -259,6 +267,19 @@ export function SpecialBetCard({
             </div>
           </div>
         </div>
+
+        {showGoalStats && (
+          <div className="mb-2 flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2 text-xs">
+            <span className="text-muted-foreground">{t('runningGoalTotal')}</span>
+            <span className="font-semibold text-foreground">
+              {t('runningGoalValue', {
+                goals: goalStats.goals,
+                evaluated: goalStats.evaluatedMatches,
+                total: goalStats.totalMatches,
+              })}
+            </span>
+          </div>
+        )}
 
         {isLocked ? (
           <div className="space-y-2">
@@ -403,6 +424,20 @@ export function SpecialBetCard({
         onOpenChange={friends.setShowModal}
         title={specialBet.name}
         subtitle={actualResult ? `${t('winner')}: ${actualResult}` : undefined}
+        banner={
+          showGoalStats ? (
+            <div className="flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2 text-xs">
+              <span className="text-muted-foreground">{t('runningGoalTotal')}</span>
+              <span className="font-semibold text-foreground">
+                {t('runningGoalValue', {
+                  goals: goalStats.goals,
+                  evaluated: goalStats.evaluatedMatches,
+                  total: goalStats.totalMatches,
+                })}
+              </span>
+            </div>
+          ) : undefined
+        }
         sectionLabel={t('friendsPredictions')}
         isLocked={isLocked}
         isLoading={friends.isLoading}

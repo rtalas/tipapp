@@ -236,6 +236,8 @@
       "questions": "Questions",
       "noPointsYet": "No points earned yet",
       "noPicksYet": "No predictions yet",
+      "runningGoalLabel": "So far:",
+      "runningGoalValue": "{goals} goals ({evaluated}/{total} matches)",
       "yes": "Yes",
       "no": "No",
       "picksLoadError": "Failed to load predictions",
@@ -304,6 +306,8 @@
       "selectPlayer": "Select player...",
       "enterValue": "Enter Value",
       "enterPrediction": "Enter your prediction",
+      "runningGoalTotal": "So far",
+      "runningGoalValue": "{goals} goals ({evaluated}/{total} matches)",
       "friendsPicks": "Friends' picks",
       "friendsPredictions": "Friends' Predictions",
       "friendsPicksLater": "Friends' picks will be visible after betting closes",
@@ -899,7 +903,9 @@
         "updating": "Updating...",
         "submit": "Update Special Bet",
         "success": "Special bet updated successfully",
-        "failed": "Failed to update special bet"
+        "failed": "Failed to update special bet",
+        "showGoalProgressLabel": "Show running goal total",
+        "showGoalProgressHint": "Displays the live goal count from evaluated matches next to the user's pick (e.g. for tournament total-goals bets). Hidden once the bet is evaluated."
       },
       "editDetails": "Edit Details",
       "editResult": "Edit Result",

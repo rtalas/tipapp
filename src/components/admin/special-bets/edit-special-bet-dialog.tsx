@@ -23,6 +23,7 @@ interface EditSpecialBetDialogProps {
     id: number
     name: string
     dateTime: Date
+    showGoalProgress?: boolean
   }
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -42,6 +43,9 @@ export function EditSpecialBetDialog({
     const date = new Date(specialBet.dateTime)
     return format(date, "yyyy-MM-dd'T'HH:mm")
   })
+  const [showGoalProgress, setShowGoalProgress] = useState<boolean>(
+    specialBet.showGoalProgress ?? false
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,6 +61,7 @@ export function EditSpecialBetDialog({
       const result = await updateSpecialBet({
         specialBetId: specialBet.id,
         dateTime: new Date(dateTime),
+        showGoalProgress,
       })
 
       if (!result.success) {
@@ -100,6 +105,24 @@ export function EditSpecialBetDialog({
             <p className="text-xs text-muted-foreground">
               {tMatches('form.dateTimeHint')}
             </p>
+          </div>
+
+          <div className="flex items-start gap-2 rounded-md border border-border p-3">
+            <input
+              id="showGoalProgress"
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 cursor-pointer"
+              checked={showGoalProgress}
+              onChange={(e) => setShowGoalProgress(e.target.checked)}
+            />
+            <div className="flex-1">
+              <Label htmlFor="showGoalProgress" className="cursor-pointer">
+                {t('editDetailsDialog.showGoalProgressLabel')}
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('editDetailsDialog.showGoalProgressHint')}
+              </p>
+            </div>
           </div>
 
           <DialogFooter>

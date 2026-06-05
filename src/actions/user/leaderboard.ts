@@ -2,6 +2,10 @@
 
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember } from '@/lib/auth/user-auth-utils'
+import {
+  getCachedTournamentGoalStats,
+  type TournamentGoalStats,
+} from '@/lib/cache/tournament-goal-stats'
 import type { LeaderboardEntry } from '@/types/user'
 
 export interface LeaguePrize {
@@ -62,6 +66,8 @@ export interface UserSpecialBetPick {
   prediction: string
   totalPoints: number
   deadline: Date
+  isEvaluated: boolean
+  showGoalProgress: boolean
 }
 
 export interface UserQuestionPick {
@@ -77,6 +83,7 @@ export interface UserPicksData {
   series: UserSeriesPick[]
   specialBets: UserSpecialBetPick[]
   questions: UserQuestionPick[]
+  goalStats: TournamentGoalStats
 }
 
 /**
@@ -90,8 +97,8 @@ export async function getUserPicks(
 
   const now = new Date()
 
-  // Fetch all bets in parallel (4 independent queries)
-  const [matchBets, seriesBets, specialBetResults, questionBets] = await Promise.all([
+  // Fetch all bets + tournament goal totals in parallel
+  const [matchBets, seriesBets, specialBetResults, questionBets, goalStats] = await Promise.all([
     // Match bets (only for this league, only after deadline — server time)
     prisma.userBet.findMany({
       where: {
@@ -227,6 +234,7 @@ export async function getUserPicks(
         dateTime: 'desc',
       },
     }),
+    getCachedTournamentGoalStats(leagueId),
   ])
 
   const matches: UserMatchPick[] = matchBets.map((bet) => {
@@ -303,6 +311,8 @@ export async function getUserPicks(
       prediction,
       totalPoints: bet.totalPoints,
       deadline: bet.LeagueSpecialBetSingle.dateTime,
+      isEvaluated: bet.LeagueSpecialBetSingle.isEvaluated,
+      showGoalProgress: bet.LeagueSpecialBetSingle.showGoalProgress,
     }
   })
 
@@ -319,6 +329,7 @@ export async function getUserPicks(
     series,
     specialBets,
     questions,
+    goalStats,
   }
 }
 

@@ -8,6 +8,7 @@ import { AppError } from '@/lib/error-handler'
 import { AuditLogger } from '@/lib/logging/audit-logger'
 import { saveUserBet, getFriendPredictions, type TransactionClient } from '@/lib/bet-utils'
 import { createCachedEntityFetcher } from '@/lib/cached-data-utils'
+import { getCachedTournamentGoalStats } from '@/lib/cache/tournament-goal-stats'
 
 /**
  * Fetches special bets for a league with the current user's picks
@@ -95,6 +96,11 @@ export async function getSpecialBetFriendPredictions(leagueSpecialBetSingleId: n
 export type SpecialBetFriendPrediction = Awaited<
   ReturnType<typeof getSpecialBetFriendPredictions>
 >['predictions'][number]
+
+export async function getTournamentGoalStats(leagueId: number) {
+  await requireLeagueMember(leagueId)
+  return getCachedTournamentGoalStats(leagueId)
+}
 
 /**
  * Cached teams data (12 hour TTL)

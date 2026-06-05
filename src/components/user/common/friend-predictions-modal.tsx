@@ -13,6 +13,7 @@ interface FriendPredictionsModalProps {
   onOpenChange: (open: boolean) => void
   title: string
   subtitle?: ReactNode
+  banner?: ReactNode
   sectionLabel: string
   isLocked: boolean
   isLoading: boolean
@@ -51,6 +52,7 @@ export function FriendPredictionsModal({
   onOpenChange,
   title,
   subtitle,
+  banner,
   sectionLabel,
   isLocked,
   isLoading,
@@ -69,6 +71,7 @@ export function FriendPredictionsModal({
             {subtitle || sectionLabel}
           </DialogDescription>
         </DialogHeader>
+        {banner && <div className="mt-3">{banner}</div>}
         <div className="mt-4">
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-4 h-4 text-muted-foreground" />

@@ -225,6 +225,9 @@ export async function updateSpecialBet(input: UpdateSpecialBetInput) {
         where: { id: validated.specialBetId },
         data: {
           dateTime: validated.dateTime,
+          ...(validated.showGoalProgress !== undefined && {
+            showGoalProgress: validated.showGoalProgress,
+          }),
           updatedAt: new Date(),
         },
       })
@@ -233,7 +236,7 @@ export async function updateSpecialBet(input: UpdateSpecialBetInput) {
 
       AuditLogger.adminUpdated(
         parseSessionUserId(session!.user!.id!), 'LeagueSpecialBetSingle', validated.specialBetId,
-        { dateTime: validated.dateTime }
+        { dateTime: validated.dateTime, showGoalProgress: validated.showGoalProgress }
       ).catch(() => {})
 
       return {}

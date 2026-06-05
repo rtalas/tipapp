@@ -14,6 +14,7 @@ import { groupByDate, getDateLabel as getBasicDateLabel } from '@/lib/date-group
 import { isCurrentTabEvent } from '@/lib/event-status-utils'
 import { EVENT_POST_EVAL_VISIBLE_MS } from '@/lib/constants'
 import type { UserSpecialBet } from '@/actions/user/special-bets'
+import type { TournamentGoalStats } from '@/lib/cache/tournament-goal-stats'
 import type { UserQuestion } from '@/actions/user/questions'
 
 interface SpecialBetsListProps {
@@ -25,6 +26,7 @@ interface SpecialBetsListProps {
     LeagueTeam: { tournamentId: number | null; Team: { shortcut: string } }
   }>
   questions: UserQuestion[]
+  goalStats: TournamentGoalStats
 }
 
 type FilterType = 'current' | 'past'
@@ -34,6 +36,7 @@ export function SpecialBetsList({
   teams,
   players,
   questions,
+  goalStats,
 }: SpecialBetsListProps) {
   const t = useTranslations('user.specialBets')
   const tQuestions = useTranslations('user.questions')
@@ -208,6 +211,7 @@ export function SpecialBetsList({
                             specialBet={bet}
                             teams={teams}
                             players={players}
+                            goalStats={goalStats}
                             onSaved={refresh}
                           />
                         ))}

@@ -239,6 +239,7 @@ model LeagueSpecialBetSingle {
   evaluatorId                        Int
   group                              String?                              @db.VarChar(255)
   tournamentId                       Int?
+  showGoalProgress                   Boolean                              @default(false)
   Evaluator                          Evaluator                            @relation(fields: [evaluatorId], references: [id], onDelete: NoAction)
   League                             League                               @relation(fields: [leagueId], references: [id], onDelete: NoAction)
   LeaguePlayer                       LeaguePlayer?                        @relation(fields: [specialBetPlayerResultId], references: [id])

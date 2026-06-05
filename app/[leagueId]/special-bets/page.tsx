@@ -1,6 +1,11 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { getUserSpecialBets, getSpecialBetTeams, getSpecialBetPlayers } from '@/actions/user/special-bets'
+import {
+  getUserSpecialBets,
+  getSpecialBetTeams,
+  getSpecialBetPlayers,
+  getTournamentGoalStats,
+} from '@/actions/user/special-bets'
 import { getUserQuestions } from '@/actions/user/questions'
 import { SpecialBetsList } from '@/components/user/special-bets/special-bets-list'
 import { SpecialBetsListSkeleton } from '@/components/user/special-bets/special-bets-list-skeleton'
@@ -12,11 +17,12 @@ interface SpecialBetsPageProps {
 }
 
 async function SpecialBetsListContent({ leagueId }: { leagueId: number }) {
-  const [specialBets, teams, players, questions] = await Promise.all([
+  const [specialBets, teams, players, questions, goalStats] = await Promise.all([
     getUserSpecialBets(leagueId),
     getSpecialBetTeams(leagueId),
     getSpecialBetPlayers(leagueId),
     getUserQuestions(leagueId),
+    getTournamentGoalStats(leagueId),
   ])
 
   return (
@@ -25,6 +31,7 @@ async function SpecialBetsListContent({ leagueId }: { leagueId: number }) {
       teams={teams}
       players={players}
       questions={questions}
+      goalStats={goalStats}
     />
   )
 }

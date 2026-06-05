@@ -273,6 +273,7 @@ describe('User Leaderboard Actions', () => {
       mockPrisma.userSpecialBetSerie.findMany.mockResolvedValue([])
       mockPrisma.userSpecialBetSingle.findMany.mockResolvedValue([])
       mockPrisma.userSpecialBetQuestion.findMany.mockResolvedValue([])
+      mockPrisma.leagueMatch.findMany.mockResolvedValue([])
 
       const result = await getUserPicks(1, 10)
 
@@ -293,6 +294,7 @@ describe('User Leaderboard Actions', () => {
       mockPrisma.userSpecialBetSerie.findMany.mockResolvedValue([])
       mockPrisma.userSpecialBetSingle.findMany.mockResolvedValue([])
       mockPrisma.userSpecialBetQuestion.findMany.mockResolvedValue([])
+      mockPrisma.leagueMatch.findMany.mockResolvedValue([])
 
       await getUserPicks(1, 10)
 

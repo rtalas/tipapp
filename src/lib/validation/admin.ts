@@ -456,6 +456,7 @@ export type UpdateSpecialBetResultInput = z.infer<typeof updateSpecialBetResultS
 export const updateSpecialBetSchema = z.object({
   specialBetId: z.number().int().positive('Special Bet ID is required'),
   dateTime: z.date(),
+  showGoalProgress: z.boolean().optional(),
 })
 
 export type UpdateSpecialBetInput = z.infer<typeof updateSpecialBetSchema>
