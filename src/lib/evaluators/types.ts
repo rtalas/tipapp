@@ -124,6 +124,10 @@ export interface ScorerRankedConfig {
 export interface GroupStageConfig {
   winnerPoints: number; // Points if predicted team wins group
   advancePoints: number; // Points if team advances but doesn't win
+  // When true, advancePoints is only awarded if the user explicitly marked
+  // their predicted team as advancing (markedAsAdvancing === true).
+  // Used for 3rd-place bets where the user must commit to whether the team is top-8.
+  requiresUserMark?: boolean;
 }
 
 /**
@@ -140,10 +144,24 @@ export interface ExactPlayerConfig {
 export interface GroupStageContext {
   prediction: {
     teamResultId: number | null;
+    markedAsAdvancing?: boolean | null;
   };
   actual: {
     winnerTeamId: number | null;
     advancedTeamIds: number[]; // All advancing teams (including winner)
   };
   config: GroupStageConfig;
+}
+
+/**
+ * Type guard for group_stage_team evaluator config that requires the user
+ * to explicitly mark their prediction as advancing (used for 3rd-place WC bets).
+ */
+export function groupStageRequiresUserMark(config: unknown): boolean {
+  return (
+    typeof config === "object" &&
+    config !== null &&
+    "requiresUserMark" in config &&
+    (config as GroupStageConfig).requiresUserMark === true
+  );
 }

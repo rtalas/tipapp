@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { UserAvatar } from '@/components/common/user-avatar'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
 import { StatusBadge } from '@/components/user/common/status-badge'
@@ -24,7 +25,7 @@ import type {
   SpecialBetFriendPrediction,
 } from '@/actions/user/special-bets'
 import type { TournamentGoalStats } from '@/lib/cache/tournament-goal-stats'
-import type { ExactPlayerConfig } from '@/lib/evaluators/types'
+import { type ExactPlayerConfig, groupStageRequiresUserMark } from '@/lib/evaluators/types'
 
 function isExactPlayerConfig(value: unknown): value is ExactPlayerConfig {
   return (
@@ -56,6 +57,11 @@ interface SpecialBetCardProps {
   }>
   goalStats: TournamentGoalStats
   onSaved: () => void
+  // Live count of bets across the league marked as advancing (locally + server).
+  // Used to enforce the global cap on 3rd-place advance picks.
+  currentMarkCount?: number
+  markLimit?: number
+  onMarkChange?: (betId: number, marked: boolean) => void
 }
 
 export function SpecialBetCard({
@@ -64,6 +70,9 @@ export function SpecialBetCard({
   players,
   goalStats,
   onSaved,
+  currentMarkCount,
+  markLimit,
+  onMarkChange,
 }: SpecialBetCardProps) {
   const t = useTranslations('user.specialBets')
   const isLocked = !specialBet.isBettingOpen
@@ -77,6 +86,7 @@ export function SpecialBetCard({
   const evaluatorTypeName = specialBet.Evaluator?.EvaluatorType?.name || ''
   const betTypeId = specialBet.SpecialBetSingle?.SpecialBetSingleType?.id
 
+  const showAdvanceToggle = groupStageRequiresUserMark(specialBet.Evaluator?.config)
   const [teamId, setTeamId] = useState<number | null>(
     specialBet.userBet?.teamResultId ?? null
   )
@@ -85,6 +95,9 @@ export function SpecialBetCard({
   )
   const [value, setValue] = useState<number | null>(
     specialBet.userBet?.value ?? null
+  )
+  const [markedAsAdvancing, setMarkedAsAdvancing] = useState<boolean>(
+    specialBet.userBet?.markedAsAdvancing ?? false
   )
   const [isSaving, setIsSaving] = useState(false)
   const [isSaved, setIsSaved] = useState(!!specialBet.userBet)
@@ -144,6 +157,7 @@ export function SpecialBetCard({
         teamResultId: teamId,
         playerResultId: playerId,
         value: value,
+        markedAsAdvancing: showAdvanceToggle ? markedAsAdvancing : null,
       })
 
       if (!result.success) {
@@ -169,6 +183,19 @@ export function SpecialBetCard({
       setValue(null)
     }
   }
+
+  const handleAdvanceToggle = (checked: boolean | 'indeterminate') => {
+    const next = checked === true
+    setIsSaved(false)
+    setMarkedAsAdvancing(next)
+    onMarkChange?.(specialBet.id, next)
+  }
+
+  const markLimitReached =
+    markLimit !== undefined &&
+    currentMarkCount !== undefined &&
+    currentMarkCount >= markLimit &&
+    !markedAsAdvancing
 
   const handlePlayerChange = (val: number | null) => {
     setIsSaved(false)
@@ -310,6 +337,18 @@ export function SpecialBetCard({
                     <CheckCircle className="w-4 h-4 text-primary fill-primary/20" />
                   )}
                 </div>
+                {showAdvanceToggle && teamId !== null && (
+                  <span
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold',
+                      markedAsAdvancing
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-secondary text-muted-foreground'
+                    )}
+                  >
+                    {markedAsAdvancing ? t('markAdvanceYes') : t('markAdvanceNo')}
+                  </span>
+                )}
               </div>
             </div>
             {/* Actual Result */}
@@ -346,6 +385,36 @@ export function SpecialBetCard({
                 disabled={isLocked}
                 teams={availableTeams}
               />
+            )}
+
+            {/* Mark-as-advancing checkbox (3rd-place WC bets) */}
+            {isTeamBet && showAdvanceToggle && (
+              <div className="flex items-center justify-center gap-2">
+                <Checkbox
+                  id={`advance-${specialBet.id}`}
+                  checked={markedAsAdvancing}
+                  disabled={isLocked || teamId === null || markLimitReached}
+                  onCheckedChange={handleAdvanceToggle}
+                  className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                />
+                <Label
+                  htmlFor={`advance-${specialBet.id}`}
+                  className={cn(
+                    'text-xs cursor-pointer select-none',
+                    (isLocked || teamId === null || markLimitReached) && 'cursor-not-allowed text-muted-foreground/50',
+                    !isLocked && teamId !== null && !markLimitReached && 'text-muted-foreground',
+                  )}
+                >
+                  {markLimitReached
+                    ? t('markAdvanceAllSelected', { max: markLimit })
+                    : t('markAdvanceLabel')}
+                  {markLimit !== undefined && currentMarkCount !== undefined && !markLimitReached && (
+                    <span className="ml-1 font-semibold">
+                      ({currentMarkCount}/{markLimit})
+                    </span>
+                  )}
+                </Label>
+              </div>
             )}
 
             {/* Player selection */}

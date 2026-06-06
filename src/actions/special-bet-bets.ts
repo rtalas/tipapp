@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth/auth-utils'
 import { executeServerAction } from '@/lib/server-action-utils'
 import { buildSpecialBetPicksWhere } from '@/lib/query-builders'
 import { AppError } from '@/lib/error-handler'
+import { MAX_ADVANCING_MARKS } from '@/lib/constants'
 import {
   createUserSpecialBetSchema,
   updateUserSpecialBetSchema,
@@ -165,6 +166,28 @@ export async function createUserSpecialBet(input: CreateUserSpecialBetInput) {
             }
           }
 
+          // Cap markedAsAdvancing=true picks across the league per user.
+          if (validated.markedAsAdvancing === true) {
+            const markedCount = await tx.userSpecialBetSingle.count({
+              where: {
+                leagueUserId: validated.leagueUserId,
+                markedAsAdvancing: true,
+                deletedAt: null,
+                LeagueSpecialBetSingle: {
+                  leagueId: specialBet.leagueId,
+                  deletedAt: null,
+                },
+              },
+            })
+            if (markedCount >= MAX_ADVANCING_MARKS) {
+              throw new AppError(
+                `User has already marked ${MAX_ADVANCING_MARKS} teams as advancing`,
+                'BAD_REQUEST',
+                400,
+              )
+            }
+          }
+
           const now = new Date()
 
           return tx.userSpecialBetSingle.create({
@@ -174,6 +197,7 @@ export async function createUserSpecialBet(input: CreateUserSpecialBetInput) {
               teamResultId: validated.teamResultId ?? null,
               playerResultId: validated.playerResultId ?? null,
               value: validated.value ?? null,
+              markedAsAdvancing: validated.markedAsAdvancing ?? null,
               dateTime: now,
               totalPoints: 0,
               createdAt: now,
@@ -204,63 +228,98 @@ export async function updateUserSpecialBet(input: UpdateUserSpecialBetInput) {
   return executeServerAction(input, {
     validator: updateUserSpecialBetSchema,
     handler: async (validated) => {
-      // Get the bet to check which league it belongs to
-      const bet = await prisma.userSpecialBetSingle.findFirst({
-        where: { id: validated.id, deletedAt: null },
-        include: {
-          LeagueSpecialBetSingle: true,
-        },
-      })
-
-      if (!bet) {
-        throw new AppError('Bet not found', 'NOT_FOUND', 404)
-      }
-
-      // Verify team belongs to league if team prediction
-      if (validated.teamResultId) {
-        const team = await prisma.leagueTeam.findFirst({
-          where: {
-            id: validated.teamResultId,
-            leagueId: bet.LeagueSpecialBetSingle.leagueId,
-            deletedAt: null,
-          },
-        })
-
-        if (!team) {
-          throw new AppError('Selected team does not belong to this league', 'BAD_REQUEST', 400)
-        }
-      }
-
-      // Verify player belongs to league if player prediction
-      if (validated.playerResultId) {
-        const player = await prisma.leaguePlayer.findFirst({
-          where: {
-            id: validated.playerResultId,
-            deletedAt: null,
-            LeagueTeam: {
-              leagueId: bet.LeagueSpecialBetSingle.leagueId,
-              deletedAt: null,
+      await prisma.$transaction(
+        async (tx) => {
+          // Get the bet to check which league it belongs to
+          const bet = await tx.userSpecialBetSingle.findFirst({
+            where: { id: validated.id, deletedAt: null },
+            include: {
+              LeagueSpecialBetSingle: true,
             },
-          },
-        })
+          })
 
-        if (!player) {
-          throw new AppError('Selected player does not belong to this league', 'BAD_REQUEST', 400)
-        }
-      }
+          if (!bet) {
+            throw new AppError('Bet not found', 'NOT_FOUND', 404)
+          }
 
-      const now = new Date()
+          // Verify team belongs to league if team prediction
+          if (validated.teamResultId) {
+            const team = await tx.leagueTeam.findFirst({
+              where: {
+                id: validated.teamResultId,
+                leagueId: bet.LeagueSpecialBetSingle.leagueId,
+                deletedAt: null,
+              },
+            })
 
-      // Clear all prediction fields first, then set the one we want
-      await prisma.userSpecialBetSingle.update({
-        where: { id: validated.id },
-        data: {
-          teamResultId: validated.teamResultId ?? null,
-          playerResultId: validated.playerResultId ?? null,
-          value: validated.value ?? null,
-          updatedAt: now,
+            if (!team) {
+              throw new AppError('Selected team does not belong to this league', 'BAD_REQUEST', 400)
+            }
+          }
+
+          // Verify player belongs to league if player prediction
+          if (validated.playerResultId) {
+            const player = await tx.leaguePlayer.findFirst({
+              where: {
+                id: validated.playerResultId,
+                deletedAt: null,
+                LeagueTeam: {
+                  leagueId: bet.LeagueSpecialBetSingle.leagueId,
+                  deletedAt: null,
+                },
+              },
+            })
+
+            if (!player) {
+              throw new AppError('Selected player does not belong to this league', 'BAD_REQUEST', 400)
+            }
+          }
+
+          // Cap markedAsAdvancing=true picks per user (only when raising the count).
+          if (
+            validated.markedAsAdvancing === true &&
+            bet.markedAsAdvancing !== true
+          ) {
+            const markedCount = await tx.userSpecialBetSingle.count({
+              where: {
+                leagueUserId: bet.leagueUserId,
+                markedAsAdvancing: true,
+                deletedAt: null,
+                id: { not: bet.id },
+                LeagueSpecialBetSingle: {
+                  leagueId: bet.LeagueSpecialBetSingle.leagueId,
+                  deletedAt: null,
+                },
+              },
+            })
+            if (markedCount >= MAX_ADVANCING_MARKS) {
+              throw new AppError(
+                `User has already marked ${MAX_ADVANCING_MARKS} teams as advancing`,
+                'BAD_REQUEST',
+                400,
+              )
+            }
+          }
+
+          const now = new Date()
+
+          await tx.userSpecialBetSingle.update({
+            where: { id: validated.id },
+            data: {
+              teamResultId: validated.teamResultId ?? null,
+              playerResultId: validated.playerResultId ?? null,
+              value: validated.value ?? null,
+              markedAsAdvancing: validated.markedAsAdvancing ?? null,
+              updatedAt: now,
+            },
+          })
         },
-      })
+        {
+          isolationLevel: 'Serializable',
+          maxWait: 5000,
+          timeout: 10000,
+        }
+      )
 
       return { success: true }
     },

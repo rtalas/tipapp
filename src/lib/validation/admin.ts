@@ -33,7 +33,8 @@ export const scorerRankedConfigSchema = z
 export const groupStageConfigSchema = z
   .object({
     winnerPoints: z.number().int().positive('Winner points must be positive'),
-    advancePoints: z.number().int().positive('Advance points must be positive'),
+    advancePoints: z.number().int().nonnegative('Advance points must be >= 0'),
+    requiresUserMark: z.boolean().optional(),
   })
   .refine((data) => data.winnerPoints > data.advancePoints, {
     message: 'Winner points must be greater than advance points',
@@ -468,6 +469,7 @@ export const createUserSpecialBetSchema = z.object({
   teamResultId: z.number().int().positive().optional(),
   playerResultId: z.number().int().positive().optional(),
   value: z.number().int().optional(),
+  markedAsAdvancing: z.boolean().optional().nullable(),
 }).refine((data) => {
   const fieldsSet = [
     data.teamResultId !== undefined,
@@ -488,6 +490,7 @@ export const updateUserSpecialBetSchema = z.object({
   teamResultId: z.number().int().positive().optional(),
   playerResultId: z.number().int().positive().optional(),
   value: z.number().int().optional(),
+  markedAsAdvancing: z.boolean().optional().nullable(),
 }).refine((data) => {
   const fieldsSet = [
     data.teamResultId !== undefined,

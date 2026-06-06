@@ -130,11 +130,21 @@ describe('Special Bet Bets Actions', () => {
 
   describe('updateUserSpecialBet', () => {
     it('should update special bet', async () => {
-      mockPrisma.userSpecialBetSingle.findFirst.mockResolvedValue({
-        id: 1,
-        LeagueSpecialBetSingle: { leagueId: 1 },
-      } as any)
-      mockPrisma.userSpecialBetSingle.update.mockResolvedValue({ id: 1 } as any)
+      const txMocks = {
+        userSpecialBetSingle: {
+          findFirst: vi.fn().mockResolvedValue({
+            id: 1,
+            leagueUserId: 5,
+            markedAsAdvancing: null,
+            LeagueSpecialBetSingle: { leagueId: 1 },
+          }),
+          update: vi.fn().mockResolvedValue({ id: 1 }),
+          count: vi.fn().mockResolvedValue(0),
+        },
+        leagueTeam: { findFirst: vi.fn() },
+        leaguePlayer: { findFirst: vi.fn() },
+      }
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 
       const result = await updateUserSpecialBet({ id: 1, value: 42 })
 
@@ -142,12 +152,44 @@ describe('Special Bet Bets Actions', () => {
     })
 
     it('should return error when bet not found', async () => {
-      mockPrisma.userSpecialBetSingle.findFirst.mockResolvedValue(null)
+      const txMocks = {
+        userSpecialBetSingle: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+      }
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
 
       const result = await updateUserSpecialBet({ id: 999, value: 1 })
 
       expect(result.success).toBe(false)
       expect((result as any).error).toContain('Bet not found')
+    })
+
+    it('should reject when marking would exceed limit', async () => {
+      const txMocks = {
+        userSpecialBetSingle: {
+          findFirst: vi.fn().mockResolvedValue({
+            id: 1,
+            leagueUserId: 5,
+            markedAsAdvancing: null,
+            LeagueSpecialBetSingle: { leagueId: 1 },
+          }),
+          update: vi.fn(),
+          count: vi.fn().mockResolvedValue(8), // already at limit
+        },
+        leagueTeam: { findFirst: vi.fn().mockResolvedValue({ id: 10 }) },
+        leaguePlayer: { findFirst: vi.fn() },
+      }
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(txMocks))
+
+      const result = await updateUserSpecialBet({
+        id: 1,
+        teamResultId: 10,
+        markedAsAdvancing: true,
+      })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('already marked')
     })
   })
 

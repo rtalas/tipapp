@@ -13,12 +13,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { createUserSpecialBet, type SpecialBetWithUserBets } from '@/actions/special-bet-bets'
 import { type LeagueWithTeams } from '@/actions/shared-queries'
 import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { getSpecialBetTypeFromEvaluator } from '@/lib/special-bet-utils'
+import { groupStageRequiresUserMark } from '@/lib/evaluators/types'
 import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
 type SpecialBetWithBets = SpecialBetWithUserBets
@@ -28,6 +30,7 @@ interface CreateSpecialBetFormData {
   teamResultId: string
   playerResultId: string
   value: string
+  markedAsAdvancing: boolean
 }
 
 interface CreateSpecialBetDialogProps {
@@ -42,6 +45,7 @@ const initialFormData: CreateSpecialBetFormData = {
   teamResultId: '',
   playerResultId: '',
   value: '',
+  markedAsAdvancing: false,
 }
 
 export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, league }: CreateSpecialBetDialogProps) {
@@ -50,6 +54,7 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
   // Determine type from evaluator type
   const evaluatorTypeName = specialBet.Evaluator?.EvaluatorType?.name || ''
   const predictionType = getSpecialBetTypeFromEvaluator(evaluatorTypeName)
+  const showAdvanceToggle = groupStageRequiresUserMark(specialBet.Evaluator?.config)
 
   // Get teams and players from the league
   const availableTeams = league?.LeagueTeam || []
@@ -68,9 +73,14 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
       teamResultId?: number
       playerResultId?: number
       value?: number
+      markedAsAdvancing?: boolean | null
     } = {
       leagueSpecialBetSingleId: specialBet.id,
       leagueUserId: parseInt(createDialog.form.leagueUserId),
+    }
+
+    if (showAdvanceToggle) {
+      validationData.markedAsAdvancing = createDialog.form.markedAsAdvancing
     }
 
     if (predictionType === 'team') {
@@ -178,6 +188,21 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {predictionType === 'team' && showAdvanceToggle && (
+            <div className="flex items-center gap-2 rounded-lg border bg-secondary/30 p-3">
+              <Checkbox
+                id="markedAsAdvancing"
+                checked={createDialog.form.markedAsAdvancing}
+                onCheckedChange={(checked) =>
+                  createDialog.updateForm({ markedAsAdvancing: checked === true })
+                }
+              />
+              <Label htmlFor="markedAsAdvancing" className="text-sm cursor-pointer">
+                Mark this team as advancing (top-8 third place)
+              </Label>
             </div>
           )}
 

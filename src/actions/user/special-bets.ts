@@ -9,6 +9,7 @@ import { AuditLogger } from '@/lib/logging/audit-logger'
 import { saveUserBet, getFriendPredictions, type TransactionClient } from '@/lib/bet-utils'
 import { createCachedEntityFetcher } from '@/lib/cached-data-utils'
 import { getCachedTournamentGoalStats } from '@/lib/cache/tournament-goal-stats'
+import { MAX_ADVANCING_MARKS } from '@/lib/constants'
 
 /**
  * Fetches special bets for a league with the current user's picks
@@ -211,6 +212,33 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
         },
       })
 
+      // Cap markedAsAdvancing=true picks across the league (WC: 8 third-place advancers).
+      // Only enforce when this submission would *raise* the count (existing was not marked).
+      if (
+        validated.markedAsAdvancing === true &&
+        existingBet?.markedAsAdvancing !== true
+      ) {
+        const markedCount = await tx.userSpecialBetSingle.count({
+          where: {
+            leagueUserId,
+            markedAsAdvancing: true,
+            deletedAt: null,
+            id: existingBet ? { not: existingBet.id } : undefined,
+            LeagueSpecialBetSingle: {
+              leagueId: specialBet.leagueId,
+              deletedAt: null,
+            },
+          },
+        })
+        if (markedCount >= MAX_ADVANCING_MARKS) {
+          throw new AppError(
+            `You can mark at most ${MAX_ADVANCING_MARKS} teams as advancing`,
+            'BAD_REQUEST',
+            400,
+          )
+        }
+      }
+
       const now = new Date()
 
       if (existingBet) {
@@ -220,6 +248,7 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
             teamResultId: validated.teamResultId,
             playerResultId: validated.playerResultId,
             value: validated.value,
+            markedAsAdvancing: validated.markedAsAdvancing ?? null,
             updatedAt: now,
           },
         })
@@ -233,6 +262,7 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
           teamResultId: validated.teamResultId,
           playerResultId: validated.playerResultId,
           value: validated.value,
+          markedAsAdvancing: validated.markedAsAdvancing ?? null,
           totalPoints: 0,
           dateTime: now,
           createdAt: now,
@@ -247,6 +277,7 @@ export async function saveSpecialBet(input: UserSpecialBetInput) {
         teamResultId: validated.teamResultId,
         playerResultId: validated.playerResultId,
         value: validated.value,
+        markedAsAdvancing: validated.markedAsAdvancing,
       }),
       onCreated: AuditLogger.specialBetCreated,
       onUpdated: AuditLogger.specialBetUpdated,

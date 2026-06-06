@@ -170,6 +170,9 @@ function PointsDisplay({ evaluator }: { evaluator: Evaluator }) {
     return (
       <span className="text-xs font-mono">
         {t('winnerShort', { points: config.winnerPoints })} {t('advanceShort', { points: config.advancePoints })}
+        {config.requiresUserMark && (
+          <span className="ml-1 text-primary" title={t('requiresUserMarkBadge')}>★</span>
+        )}
       </span>
     )
   }

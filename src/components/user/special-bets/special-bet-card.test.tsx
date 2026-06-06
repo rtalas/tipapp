@@ -213,6 +213,7 @@ describe('SpecialBetCard', () => {
           teamResultId: 1,
           playerResultId: null,
           value: null,
+          markedAsAdvancing: null,
         })
       })
     })
@@ -264,6 +265,7 @@ describe('SpecialBetCard', () => {
           teamResultId: null,
           playerResultId: 2,
           value: null,
+          markedAsAdvancing: null,
         })
       })
     })
@@ -318,6 +320,7 @@ describe('SpecialBetCard', () => {
           teamResultId: null,
           playerResultId: null,
           value: 42,
+          markedAsAdvancing: null,
         })
       })
     })

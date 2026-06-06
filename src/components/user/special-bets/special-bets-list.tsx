@@ -12,10 +12,15 @@ import { useRefresh } from '@/hooks/useRefresh'
 import { useDateLocale } from '@/hooks/useDateLocale'
 import { groupByDate, getDateLabel as getBasicDateLabel } from '@/lib/date-grouping-utils'
 import { isCurrentTabEvent } from '@/lib/event-status-utils'
-import { EVENT_POST_EVAL_VISIBLE_MS } from '@/lib/constants'
+import { EVENT_POST_EVAL_VISIBLE_MS, MAX_ADVANCING_MARKS } from '@/lib/constants'
 import type { UserSpecialBet } from '@/actions/user/special-bets'
 import type { TournamentGoalStats } from '@/lib/cache/tournament-goal-stats'
 import type { UserQuestion } from '@/actions/user/questions'
+import { groupStageRequiresUserMark } from '@/lib/evaluators/types'
+
+function betRequiresUserMark(bet: UserSpecialBet): boolean {
+  return groupStageRequiresUserMark(bet.Evaluator?.config)
+}
 
 interface SpecialBetsListProps {
   specialBets: UserSpecialBet[]
@@ -44,6 +49,32 @@ export function SpecialBetsList({
   const { isRefreshing, refresh, refreshAsync } = useRefresh()
   // SSR-safe default — see match-list.tsx.
   const [filter, setFilter] = useState<FilterType>('current')
+
+  // Local optimistic overrides for markedAsAdvancing — persist across refreshes
+  // so a refresh after saving one card doesn't make sibling cards' unsaved
+  // toggles "disappear" from the count while their UI still shows them marked.
+  // Entries override server data per bet; entries that match server state are
+  // idempotent (no double-count).
+  const [localMarks, setLocalMarks] = useState<Map<number, boolean>>(new Map())
+
+  const handleMarkChange = useCallback((betId: number, marked: boolean) => {
+    setLocalMarks((prev) => {
+      const next = new Map(prev)
+      next.set(betId, marked)
+      return next
+    })
+  }, [])
+
+  const liveMarkCount = useMemo(() => {
+    let count = 0
+    for (const bet of specialBets) {
+      if (!betRequiresUserMark(bet)) continue
+      const override = localMarks.get(bet.id)
+      const value = override !== undefined ? override : bet.userBet?.markedAsAdvancing ?? false
+      if (value) count++
+    }
+    return count
+  }, [specialBets, localMarks])
   useEffect(() => {
     const hasCurrent =
       specialBets.some((b) => isCurrentTabEvent(b.isEvaluated, b.updatedAt, EVENT_POST_EVAL_VISIBLE_MS)) ||
@@ -84,7 +115,9 @@ export function SpecialBetsList({
     const sorted = [...filtered].sort((a, b) => {
       const aTime = new Date(a.dateTime).getTime()
       const bTime = new Date(b.dateTime).getTime()
-      return filter === 'past' ? bTime - aTime : aTime - bTime
+      const timeDiff = filter === 'past' ? bTime - aTime : aTime - bTime
+      // Tie-break by id (ascending) so same-day bets have a stable, predictable order
+      return timeDiff !== 0 ? timeDiff : a.id - b.id
     })
     return groupByDate(sorted.map((b) => ({ ...b, dateTime: new Date(b.dateTime) })))
   }, [specialBets, filter])
@@ -213,6 +246,9 @@ export function SpecialBetsList({
                             players={players}
                             goalStats={goalStats}
                             onSaved={refresh}
+                            currentMarkCount={liveMarkCount}
+                            markLimit={MAX_ADVANCING_MARKS}
+                            onMarkChange={handleMarkChange}
                           />
                         ))}
                       </div>

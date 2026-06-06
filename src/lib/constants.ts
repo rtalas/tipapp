@@ -41,6 +41,12 @@ export const EVENT_POST_EVAL_VISIBLE_MS = 12 * 60 * 60 * 1000
 export const MAX_PRIZE_TIERS = 10
 
 /**
+ * Maximum number of group-stage bets a user may mark with markedAsAdvancing=true.
+ * For WC 2026 this matches the 8 third-place teams that advance to Round of 32.
+ */
+export const MAX_ADVANCING_MARKS = 8
+
+/**
  * Event types for push notification tracking (SentNotification.eventType)
  */
 export const NOTIFICATION_EVENT_TYPES = {

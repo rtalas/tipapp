@@ -56,6 +56,7 @@ type UserSpecialBetSingle = {
   teamResultId: number | null
   playerResultId: number | null
   value: number | null
+  markedAsAdvancing?: boolean | null
 }
 
 /**
@@ -202,6 +203,7 @@ export function buildGroupStageContext(
   return {
     prediction: {
       teamResultId: userBet.teamResultId,
+      markedAsAdvancing: userBet.markedAsAdvancing,
     },
     actual: {
       winnerTeamId: specialBet.specialBetTeamResultId,

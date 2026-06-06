@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { updateUserSpecialBet, deleteUserSpecialBet, type UserSpecialBet, type SpecialBetWithUserBets } from '@/actions/special-bet-bets'
 import { evaluateSpecialBetBets } from '@/actions/evaluate-special-bets'
@@ -13,6 +14,7 @@ import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
 import { getSpecialBetTypeFromEvaluator } from '@/lib/special-bet-utils'
+import { groupStageRequiresUserMark } from '@/lib/evaluators/types'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 import { TeamFlag } from '@/components/common/team-flag'
@@ -22,6 +24,7 @@ interface UserSpecialBetFormData {
   teamResultId: string
   playerResultId: string
   value: string
+  markedAsAdvancing: boolean
 }
 
 interface SpecialBetRowProps {
@@ -34,7 +37,8 @@ interface SpecialBetRowProps {
 
 function getPredictionDisplay(bet: UserSpecialBet): string {
   if (bet.teamResultId && bet.LeagueTeam) {
-    return bet.LeagueTeam.Team.name
+    const suffix = bet.markedAsAdvancing === true ? ' ✓' : ''
+    return bet.LeagueTeam.Team.name + suffix
   }
   if (bet.playerResultId && bet.LeaguePlayer) {
     const player = bet.LeaguePlayer.Player
@@ -55,6 +59,7 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated, specialBet
   // Determine type from evaluator type
   const evaluatorTypeName = specialBet.Evaluator?.EvaluatorType?.name || ''
   const predictionType = getSpecialBetTypeFromEvaluator(evaluatorTypeName)
+  const showAdvanceToggle = groupStageRequiresUserMark(specialBet.Evaluator?.config)
 
   // Get teams and players from the league
   const availableTeams = league?.LeagueTeam || []
@@ -67,6 +72,7 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated, specialBet
       teamResultId: bet.teamResultId?.toString() ?? '',
       playerResultId: bet.playerResultId?.toString() ?? '',
       value: bet.value?.toString() ?? '',
+      markedAsAdvancing: bet.markedAsAdvancing === true,
     })
   }
 
@@ -79,8 +85,13 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated, specialBet
       teamResultId?: number
       playerResultId?: number
       value?: number
+      markedAsAdvancing?: boolean | null
     } = {
       id: bet.id,
+    }
+
+    if (showAdvanceToggle) {
+      validationData.markedAsAdvancing = inlineEdit.form.markedAsAdvancing
     }
 
     if (predictionType === 'team') {
@@ -194,6 +205,21 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated, specialBet
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+
+              {predictionType === 'team' && showAdvanceToggle && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id={`marked-${bet.id}`}
+                    checked={inlineEdit.form.markedAsAdvancing}
+                    onCheckedChange={(checked) =>
+                      inlineEdit.updateForm({ markedAsAdvancing: checked === true })
+                    }
+                  />
+                  <label htmlFor={`marked-${bet.id}`} className="text-xs cursor-pointer">
+                    {t('markedAsAdvancing')}
+                  </label>
+                </div>
               )}
 
               {predictionType === 'player' && (

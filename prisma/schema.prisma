@@ -712,6 +712,7 @@ model UserSpecialBetSingle {
   teamResultId             Int?
   playerResultId           Int?
   value                    Int?
+  markedAsAdvancing        Boolean?
   totalPoints              Int                    @default(0)
   dateTime                 DateTime               @db.Timestamptz(6)
   createdAt                DateTime               @db.Timestamptz(6)

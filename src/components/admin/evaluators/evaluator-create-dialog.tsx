@@ -76,6 +76,7 @@ export function EvaluatorCreateDialog({
   // Group stage config
   const [winnerPoints, setWinnerPoints] = useState<string>('')
   const [advancePoints, setAdvancePoints] = useState<string>('')
+  const [requiresUserMark, setRequiresUserMark] = useState<boolean>(false)
 
   // Exact player position filter config
   const [selectedPositions, setSelectedPositions] = useState<string[]>([])
@@ -152,6 +153,7 @@ export function EvaluatorCreateDialog({
         config = {
           winnerPoints: parseInt(winnerPoints, 10),
           advancePoints: parseInt(advancePoints, 10),
+          ...(requiresUserMark ? { requiresUserMark: true } : {}),
         }
       } else if (isExactPlayer && selectedPositions.length > 0) {
         config = {
@@ -185,6 +187,7 @@ export function EvaluatorCreateDialog({
       setUnrankedPoints('')
       setWinnerPoints('')
       setAdvancePoints('')
+      setRequiresUserMark(false)
       setSelectedPositions([])
     } catch (error) {
       if (error instanceof Error) {
@@ -323,9 +326,25 @@ export function EvaluatorCreateDialog({
                   placeholder="5"
                   value={advancePoints}
                   onChange={(e) => setAdvancePoints(e.target.value)}
-                  min={1}
+                  min={0}
                   max={100}
                 />
+              </div>
+
+              <div className="flex items-start gap-2 pt-2">
+                <Checkbox
+                  id="requires-user-mark"
+                  checked={requiresUserMark}
+                  onCheckedChange={(checked) => setRequiresUserMark(checked === true)}
+                />
+                <div className="space-y-0.5">
+                  <Label htmlFor="requires-user-mark" className="text-sm font-normal cursor-pointer">
+                    {t('form.requiresUserMark')}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {t('form.requiresUserMarkDesc')}
+                  </p>
+                </div>
               </div>
 
               <div className="text-xs text-muted-foreground bg-muted p-2 rounded">

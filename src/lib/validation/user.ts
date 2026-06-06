@@ -49,6 +49,7 @@ export const userSpecialBetSchema = z
     teamResultId: z.number().int().positive().optional().nullable(),
     playerResultId: z.number().int().positive().optional().nullable(),
     value: z.number().int().optional().nullable(),
+    markedAsAdvancing: z.boolean().optional().nullable(),
   })
   .refine(
     (data) => {
