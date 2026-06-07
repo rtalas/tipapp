@@ -1,7 +1,7 @@
 import React from 'react'
 import { useTranslations } from 'next-intl'
+import { Minus, Plus } from 'lucide-react'
 import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { SPORT_IDS } from '@/lib/constants'
@@ -10,6 +10,53 @@ interface Team {
   id: number
   name: string
   shortcut: string
+}
+
+interface ScoreStepperProps {
+  id: string
+  label: string
+  value: string
+  onChange: (value: string) => void
+}
+
+/** Score field controlled solely via -/+ buttons (mirrors the user-side ScoreInput). */
+function ScoreStepper({ id, label, value, onChange }: ScoreStepperProps) {
+  const current = parseInt(value, 10)
+  const numeric = Number.isNaN(current) ? 0 : current
+
+  const decrement = () => onChange(String(Math.max(0, numeric - 1)))
+  const increment = () => onChange(String(numeric + 1))
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <Label className="text-center">{label}</Label>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={decrement}
+          disabled={numeric <= 0}
+          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Decrease score"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+        <span
+          id={id}
+          className="w-12 h-12 flex items-center justify-center text-2xl font-bold bg-secondary/50 border border-border rounded-lg select-none tabular-nums"
+        >
+          {numeric}
+        </span>
+        <button
+          type="button"
+          onClick={increment}
+          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Increase score"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  )
 }
 
 interface ScoreEntryFormProps {
@@ -107,32 +154,20 @@ export function ScoreEntryForm({
           <h4 className="font-medium mb-3">
             {isOvertime || isShootout ? t('regularTimeScore') : t('finalScore')}
           </h4>
-          <div className="flex items-center gap-4">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="homeRegularScore">{homeTeam.Team.shortcut || t('home')}</Label>
-              <Input
-                id="homeRegularScore"
-                type="number"
-                min="0"
-                value={homeRegularScore}
-                onChange={(e) => onHomeRegularScoreChange(e.target.value)}
-                className="text-center text-2xl font-bold h-14"
-                placeholder="0"
-              />
-            </div>
-            <span className="text-2xl font-bold text-muted-foreground pt-6">:</span>
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="awayRegularScore">{awayTeam.Team.shortcut || t('away')}</Label>
-              <Input
-                id="awayRegularScore"
-                type="number"
-                min="0"
-                value={awayRegularScore}
-                onChange={(e) => onAwayRegularScoreChange(e.target.value)}
-                className="text-center text-2xl font-bold h-14"
-                placeholder="0"
-              />
-            </div>
+          <div className="flex items-end justify-center gap-4">
+            <ScoreStepper
+              id="homeRegularScore"
+              label={homeTeam.Team.shortcut || t('home')}
+              value={homeRegularScore}
+              onChange={onHomeRegularScoreChange}
+            />
+            <span className="text-2xl font-bold text-muted-foreground pb-2">:</span>
+            <ScoreStepper
+              id="awayRegularScore"
+              label={awayTeam.Team.shortcut || t('away')}
+              value={awayRegularScore}
+              onChange={onAwayRegularScoreChange}
+            />
           </div>
         </div>
 
@@ -140,32 +175,20 @@ export function ScoreEntryForm({
         {(isOvertime || isShootout) && (
           <div>
             <h4 className="font-medium mb-3">{extendedLabel}</h4>
-            <div className="flex items-center gap-4">
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="homeFinalScore">{homeTeam.Team.shortcut || t('home')}</Label>
-                <Input
-                  id="homeFinalScore"
-                  type="number"
-                  min="0"
-                  value={homeFinalScore}
-                  onChange={(e) => onHomeFinalScoreChange(e.target.value)}
-                  className="text-center text-2xl font-bold h-14"
-                  placeholder="0"
-                />
-              </div>
-              <span className="text-2xl font-bold text-muted-foreground pt-6">:</span>
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="awayFinalScore">{awayTeam.Team.shortcut || t('away')}</Label>
-                <Input
-                  id="awayFinalScore"
-                  type="number"
-                  min="0"
-                  value={awayFinalScore}
-                  onChange={(e) => onAwayFinalScoreChange(e.target.value)}
-                  className="text-center text-2xl font-bold h-14"
-                  placeholder="0"
-                />
-              </div>
+            <div className="flex items-end justify-center gap-4">
+              <ScoreStepper
+                id="homeFinalScore"
+                label={homeTeam.Team.shortcut || t('home')}
+                value={homeFinalScore}
+                onChange={onHomeFinalScoreChange}
+              />
+              <span className="text-2xl font-bold text-muted-foreground pb-2">:</span>
+              <ScoreStepper
+                id="awayFinalScore"
+                label={awayTeam.Team.shortcut || t('away')}
+                value={awayFinalScore}
+                onChange={onAwayFinalScoreChange}
+              />
             </div>
           </div>
         )}
