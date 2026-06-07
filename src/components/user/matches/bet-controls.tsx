@@ -20,6 +20,8 @@ interface BetControlsProps {
   onScorerChange: (value: number | null) => void
   noScorer: boolean | null
   onNoScorerChange: (value: boolean | null) => void
+  ownGoal: boolean | null
+  onOwnGoalChange: (value: boolean | null) => void
   useJoker: boolean
   onJokerChange: (value: boolean) => void
   jokersRemaining: number
@@ -37,6 +39,8 @@ export function BetControls({
   onScorerChange,
   noScorer,
   onNoScorerChange,
+  ownGoal,
+  onOwnGoalChange,
   useJoker,
   onJokerChange,
   jokersRemaining,
@@ -170,6 +174,8 @@ export function BetControls({
           onChange={onScorerChange}
           noScorer={noScorer}
           onNoScorerChange={onNoScorerChange}
+          ownGoal={ownGoal}
+          onOwnGoalChange={onOwnGoalChange}
           homePlayers={homeTeam.LeaguePlayer}
           awayPlayers={awayTeam.LeaguePlayer}
           homeTeam={homeTeam.Team}

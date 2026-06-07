@@ -267,6 +267,7 @@ describe('MatchCard', () => {
           awayScore: 1,
           scorerId: null,
           noScorer: null,
+          ownGoal: null,
           overtime: false,
           homeAdvanced: null,
           useJoker: false,

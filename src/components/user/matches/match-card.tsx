@@ -44,6 +44,9 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
   const [noScorer, setNoScorer] = useState<boolean | null>(
     match.userBet?.noScorer ?? null
   )
+  const [ownGoal, setOwnGoal] = useState<boolean | null>(
+    match.userBet?.ownGoal ?? null
+  )
   const [overtime, setOvertime] = useState(match.userBet?.overtime ?? false)
   const [homeAdvanced, setHomeAdvanced] = useState<boolean | null>(
     match.userBet?.homeAdvanced ?? null
@@ -66,6 +69,7 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
           awayScore: match.userBet.awayScore ?? 0,
           scorerId: match.userBet.scorerId ?? null,
           noScorer: match.userBet.noScorer ?? null,
+          ownGoal: match.userBet.ownGoal ?? null,
           overtime: match.userBet.overtime ?? false,
           homeAdvanced: match.userBet.homeAdvanced ?? null,
           usedJoker: match.userBet.usedJoker ?? false,
@@ -79,6 +83,7 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
     awayScore === savedValuesRef.current.awayScore &&
     scorerId === savedValuesRef.current.scorerId &&
     noScorer === savedValuesRef.current.noScorer &&
+    ownGoal === savedValuesRef.current.ownGoal &&
     overtime === savedValuesRef.current.overtime &&
     homeAdvanced === savedValuesRef.current.homeAdvanced &&
     useJoker === savedValuesRef.current.usedJoker
@@ -94,6 +99,7 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
         awayScore,
         scorerId,
         noScorer,
+        ownGoal,
         overtime,
         homeAdvanced,
         useJoker,
@@ -102,7 +108,7 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
       if (!result.success) {
         toast.error(result.error || t('saveError'))
       } else {
-        savedValuesRef.current = { homeScore, awayScore, scorerId, noScorer, overtime, homeAdvanced, usedJoker: useJoker }
+        savedValuesRef.current = { homeScore, awayScore, scorerId, noScorer, ownGoal, overtime, homeAdvanced, usedJoker: useJoker }
         onBetSaved?.()
       }
     } catch {
@@ -116,6 +122,7 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
     awayScore,
     scorerId,
     noScorer,
+    ownGoal,
     overtime,
     homeAdvanced,
     useJoker,
@@ -136,6 +143,7 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
     setScorerId(value)
     if (value !== null) {
       setNoScorer(null) // Clear noScorer when player selected
+      setOwnGoal(null) // Clear ownGoal when player selected
     }
   }
 
@@ -143,6 +151,15 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
     setNoScorer(value)
     if (value === true) {
       setScorerId(null) // Clear scorerId when noScorer selected
+      setOwnGoal(null) // Clear ownGoal when noScorer selected
+    }
+  }
+
+  const handleOwnGoalChange = (value: boolean | null) => {
+    setOwnGoal(value)
+    if (value === true) {
+      setScorerId(null) // Clear scorerId when ownGoal selected
+      setNoScorer(null) // Clear noScorer when ownGoal selected
     }
   }
 
@@ -220,6 +237,8 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
             onScorerChange={handleScorerChange}
             noScorer={noScorer}
             onNoScorerChange={handleNoScorerChange}
+            ownGoal={ownGoal}
+            onOwnGoalChange={handleOwnGoalChange}
             useJoker={useJoker}
             onJokerChange={setUseJoker}
             jokersRemaining={jokersRemaining}

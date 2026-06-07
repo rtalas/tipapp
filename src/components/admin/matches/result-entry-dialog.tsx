@@ -73,6 +73,7 @@ interface LeagueMatch {
 interface Scorer {
   playerId: string
   numberOfGoals: number
+  ownGoal: boolean
 }
 
 interface ResultEntryDialogProps {
@@ -128,8 +129,9 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
         if (fullMatch.MatchScorer?.length) {
           setScorers(
             fullMatch.MatchScorer.map((ms) => ({
-              playerId: ms.scorerId.toString(),
+              playerId: ms.scorerId?.toString() ?? '',
               numberOfGoals: ms.numberOfGoals,
+              ownGoal: ms.ownGoal ?? false,
             }))
           )
         }
@@ -182,7 +184,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
   }
 
   const handleAddScorer = () => {
-    setScorers([...scorers, { playerId: '', numberOfGoals: 1 }])
+    setScorers([...scorers, { playerId: '', numberOfGoals: 1, ownGoal: false }])
   }
 
   const handleRemoveScorer = (index: number) => {
@@ -191,7 +193,18 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
 
   const handleScorerChange = (index: number, field: keyof Scorer, value: string | number) => {
     const newScorers = [...scorers]
-    newScorers[index] = { ...newScorers[index], [field]: value }
+    // Selecting a named player clears the own-goal flag for that row.
+    newScorers[index] = {
+      ...newScorers[index],
+      [field]: value,
+      ...(field === 'playerId' && value ? { ownGoal: false } : {}),
+    }
+    setScorers(newScorers)
+  }
+
+  const handleSelectOwnGoal = (index: number) => {
+    const newScorers = [...scorers]
+    newScorers[index] = { ...newScorers[index], ownGoal: true, playerId: '' }
     setScorers(newScorers)
   }
 
@@ -237,10 +250,11 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
         homeAdvanced: showAdvanced ? homeAdvanced : null,
         scorers: hasScorers
           ? scorers
-              .filter((s) => s.playerId)
+              .filter((s) => s.ownGoal || s.playerId)
               .map((s) => ({
-                playerId: parseInt(s.playerId, 10),
+                playerId: s.ownGoal ? null : parseInt(s.playerId, 10),
                 numberOfGoals: s.numberOfGoals,
+                ownGoal: s.ownGoal,
               }))
           : [],
       })
@@ -323,6 +337,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
               onAddScorer={handleAddScorer}
               onRemoveScorer={handleRemoveScorer}
               onScorerChange={handleScorerChange}
+              onSelectOwnGoal={handleSelectOwnGoal}
               onHasScorersChange={handleHasScorersChange}
             />
 

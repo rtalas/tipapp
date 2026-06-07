@@ -246,8 +246,13 @@ export const updateMatchResultSchema = z.object({
   isShootout: z.boolean().default(false),
   homeAdvanced: z.boolean().nullable().optional(),
   scorers: z.array(z.object({
-    playerId: z.number().int().positive(),
+    // Own-goal rows have no named player, so playerId is nullable.
+    playerId: z.number().int().positive().nullable().optional(),
     numberOfGoals: z.number().int().min(1).default(1),
+    ownGoal: z.boolean().default(false),
+  }).refine((s) => s.ownGoal === true || s.playerId != null, {
+    message: 'Scorer must have a player or be marked as own goal',
+    path: ['playerId'],
   })).optional(),
 })
 
@@ -325,18 +330,22 @@ export const createUserBetSchema = z
     awayScore: z.number().int().min(0, 'Away score must be non-negative'),
     scorerId: z.number().int().positive().optional(),
     noScorer: z.boolean().optional(),
+    ownGoal: z.boolean().optional(),
     overtime: z.boolean().default(false),
     homeAdvanced: z.boolean().optional(), // true = home, false = away, undefined = null
     usedJoker: z.boolean().optional(),
   })
   .refine(
     (data) => {
-      // Mutual exclusivity: cannot set both scorerId and noScorer
-      if (data.noScorer === true && data.scorerId !== undefined) return false
-      return true
+      // Mutual exclusivity: scorer, no scorer and own goal cannot be combined
+      const modesSet =
+        (data.scorerId !== undefined ? 1 : 0) +
+        (data.noScorer === true ? 1 : 0) +
+        (data.ownGoal === true ? 1 : 0)
+      return modesSet <= 1
     },
     {
-      message: 'Cannot set both scorer and no scorer',
+      message: 'Cannot combine scorer, no scorer and own goal',
       path: ['scorerId'],
     }
   )

@@ -315,13 +315,15 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                                     )}
                                   </div>
                                 </div>
-                                {(bet.LeaguePlayer || bet.noScorer) && (
+                                {(bet.LeaguePlayer || bet.noScorer || bet.ownGoal) && (
                                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                                     {t('scorer')}: {bet.noScorer
                                       ? <span className="italic">{t('noScorer')}</span>
-                                      : bet.LeaguePlayer
-                                        ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
-                                        : '-'}
+                                      : bet.ownGoal
+                                        ? <span className="italic">{t('ownGoal')}</span>
+                                        : bet.LeaguePlayer
+                                          ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
+                                          : '-'}
                                     {lm.Match.isEvaluated && bet.scorerId !== null && bet.scorerId !== undefined && actualScorerIds.includes(bet.scorerId) && (
                                       <>
                                         <ScorerRankingBadge ranking={bet.LeaguePlayer?.topScorerRanking} />

@@ -53,6 +53,8 @@ function renderControls(overrides: {
       onScorerChange={vi.fn()}
       noScorer={null}
       onNoScorerChange={vi.fn()}
+      ownGoal={null}
+      onOwnGoalChange={vi.fn()}
       useJoker={false}
       onJokerChange={vi.fn()}
       jokersRemaining={0}

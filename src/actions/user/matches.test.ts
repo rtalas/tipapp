@@ -321,7 +321,18 @@ describe('User Matches Actions', () => {
       })
 
       expect(result.success).toBe(false)
-      expect((result as any).error).toContain('Cannot set both scorer and no scorer')
+      expect((result as any).error).toContain('Cannot combine')
+    })
+
+    it('should reject both scorerId and ownGoal set', async () => {
+      const result = await saveMatchBet({
+        ...validInput,
+        scorerId: 42,
+        ownGoal: true,
+      })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Cannot combine')
     })
 
     it('should reject noScorer for non-football matches', async () => {

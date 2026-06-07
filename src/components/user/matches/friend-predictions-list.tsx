@@ -29,6 +29,7 @@ export function FriendPredictionsList({
 
   // Get actual scorer IDs from match
   const actualScorerIds = match.Match.MatchScorer?.map((s) => s.LeaguePlayer?.id) ?? []
+  const actualHasOwnGoal = match.Match.MatchScorer?.some((s) => s.ownGoal) ?? false
 
   return (
     <>
@@ -50,6 +51,7 @@ export function FriendPredictionsList({
           isEvaluated &&
           prediction.LeaguePlayer?.id &&
           actualScorerIds.includes(prediction.LeaguePlayer.id)
+        const isOwnGoalCorrect = isEvaluated && prediction.ownGoal && actualHasOwnGoal
 
         return (
           <div
@@ -69,8 +71,16 @@ export function FriendPredictionsList({
                 <span className="font-medium text-sm">{displayName}</span>
                 {scorerName && (
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    Scorer: {scorerName}
+                    {t('scorer')}: {scorerName}
                     {isScorerCorrect && (
+                      <CheckCircle className="w-3 h-3 text-primary" />
+                    )}
+                  </span>
+                )}
+                {!scorerName && prediction.ownGoal && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    {t('scorer')}: <span className="italic">{t('ownGoal')}</span>
+                    {isOwnGoalCorrect && (
                       <CheckCircle className="w-3 h-3 text-primary" />
                     )}
                   </span>

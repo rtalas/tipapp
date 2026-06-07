@@ -372,15 +372,16 @@ model MatchPhase {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model MatchScorer {
-  id            Int          @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   matchId       Int
-  scorerId      Int
+  scorerId      Int?
   numberOfGoals Int
-  createdAt     DateTime     @db.Timestamptz(6)
-  updatedAt     DateTime     @db.Timestamptz(6)
-  deletedAt     DateTime?    @db.Timestamptz(6)
-  Match         Match        @relation(fields: [matchId], references: [id], onDelete: NoAction)
-  LeaguePlayer  LeaguePlayer @relation(fields: [scorerId], references: [id], onDelete: NoAction)
+  ownGoal       Boolean       @default(false)
+  createdAt     DateTime      @db.Timestamptz(6)
+  updatedAt     DateTime      @db.Timestamptz(6)
+  deletedAt     DateTime?     @db.Timestamptz(6)
+  Match         Match         @relation(fields: [matchId], references: [id], onDelete: NoAction)
+  LeaguePlayer  LeaguePlayer? @relation(fields: [scorerId], references: [id], onDelete: NoAction)
 
   @@index([matchId, deletedAt])
 }
@@ -625,6 +626,7 @@ model UserBet {
   updatedAt     DateTime      @db.Timestamptz(6)
   deletedAt     DateTime?     @db.Timestamptz(6)
   noScorer      Boolean?
+  ownGoal       Boolean?
   LeagueMatch   LeagueMatch   @relation(fields: [leagueMatchId], references: [id], onDelete: NoAction)
   LeagueUser    LeagueUser    @relation(fields: [leagueUserId], references: [id], onDelete: NoAction)
   LeaguePlayer  LeaguePlayer? @relation(fields: [scorerId], references: [id])

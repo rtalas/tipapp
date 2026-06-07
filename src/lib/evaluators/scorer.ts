@@ -29,6 +29,19 @@ export function evaluateScorer(
     return isCorrect
   }
 
+  // Handle "own goal" prediction — correct when the match had an own goal.
+  // Own goals have no named scorer, so (like "no scorer") they score the
+  // configured unranked points in rank-based mode.
+  if (prediction.ownGoal === true) {
+    const isCorrect = actual.hasOwnGoal === true
+
+    if (config) {
+      return isCorrect ? config.unrankedPoints : 0
+    }
+
+    return isCorrect
+  }
+
   // Check if predicted scorer is in actual scorers
   if (!prediction.scorerId || !actual.scorerIds.includes(prediction.scorerId)) {
     return config ? 0 : false // Return type based on mode

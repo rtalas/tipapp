@@ -307,12 +307,13 @@ export async function updateMatchResult(input: UpdateMatchResultInput) {
             data: { deletedAt: now },
           })
 
-          // Create new scorers
+          // Create new scorers (own-goal rows have no named player)
           if (validated.scorers.length > 0) {
             await tx.matchScorer.createMany({
-              data: validated.scorers.map((scorer: { playerId: number; numberOfGoals: number }) => ({
+              data: validated.scorers.map((scorer) => ({
                 matchId: validated.matchId,
-                scorerId: scorer.playerId,
+                scorerId: scorer.ownGoal ? null : scorer.playerId ?? null,
+                ownGoal: scorer.ownGoal ?? false,
                 numberOfGoals: scorer.numberOfGoals,
                 createdAt: now,
                 updatedAt: now,

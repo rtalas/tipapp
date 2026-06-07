@@ -33,6 +33,7 @@ interface LeaguePlayer {
 interface Scorer {
   playerId: string
   numberOfGoals: number
+  ownGoal: boolean
 }
 
 interface ScorersListProps {
@@ -48,6 +49,7 @@ interface ScorersListProps {
   onAddScorer: () => void
   onRemoveScorer: (index: number) => void
   onScorerChange: (index: number, field: keyof Scorer, value: string | number) => void
+  onSelectOwnGoal: (index: number) => void
   onHasScorersChange: (hasScorers: boolean) => void
 }
 
@@ -70,22 +72,28 @@ function sortPlayers(players: LeaguePlayer[]): LeaguePlayer[] {
 
 interface ScorerSelectProps {
   value: string
+  ownGoal: boolean
+  sportId: number
   allPlayers: LeaguePlayer[]
   homeTeamName: string
   awayTeamName: string
   homePlayers: LeaguePlayer[]
   awayPlayers: LeaguePlayer[]
   onChange: (value: string) => void
+  onSelectOwnGoal: () => void
 }
 
 function ScorerSelect({
   value,
+  ownGoal,
+  sportId,
   allPlayers,
   homeTeamName,
   awayTeamName,
   homePlayers,
   awayPlayers,
   onChange,
+  onSelectOwnGoal,
 }: ScorerSelectProps) {
   const t = useTranslations('admin.matches.resultDialog.scorers')
   const unknownLabel = t('unknownPlayer')
@@ -112,6 +120,12 @@ function ScorerSelect({
     setSearch('')
   }
 
+  const handleSelectOwnGoal = () => {
+    onSelectOwnGoal()
+    setOpen(false)
+    setSearch('')
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -123,7 +137,13 @@ function ScorerSelect({
           className="flex-1 justify-between font-normal"
         >
           <span className="truncate">
-            {selectedPlayer ? getPlayerName(selectedPlayer, unknownLabel) : t('selectPlayer')}
+            {ownGoal ? (
+              <span className="italic">{t('ownGoal')}</span>
+            ) : selectedPlayer ? (
+              getPlayerName(selectedPlayer, unknownLabel)
+            ) : (
+              t('selectPlayer')
+            )}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -146,6 +166,21 @@ function ScorerSelect({
           }}
         >
           <div className="p-1">
+            {/* Own goal option - Soccer only */}
+            {sportId === SPORT_IDS.FOOTBALL && (
+              <button
+                type="button"
+                onClick={handleSelectOwnGoal}
+                className={cn(
+                  'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                  ownGoal && 'bg-accent'
+                )}
+              >
+                <Check className={cn('mr-2 h-4 w-4', ownGoal ? 'opacity-100' : 'opacity-0')} />
+                <span className="italic">{t('ownGoal')}</span>
+              </button>
+            )}
+
             {filteredHome.length > 0 && (
               <>
                 <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
@@ -222,6 +257,7 @@ export function ScorersList({
   onAddScorer,
   onRemoveScorer,
   onScorerChange,
+  onSelectOwnGoal,
   onHasScorersChange,
 }: ScorersListProps) {
   const t = useTranslations('admin.matches.resultDialog.scorers')
@@ -278,12 +314,15 @@ export function ScorersList({
               <div key={index} className="flex items-center gap-2">
                 <ScorerSelect
                   value={scorer.playerId}
+                  ownGoal={scorer.ownGoal}
+                  sportId={sportId}
                   allPlayers={allPlayers}
                   homeTeamName={homeTeam.Team.name}
                   awayTeamName={awayTeam.Team.name}
                   homePlayers={sortedHome}
                   awayPlayers={sortedAway}
                   onChange={(value) => onScorerChange(index, 'playerId', value)}
+                  onSelectOwnGoal={() => onSelectOwnGoal(index)}
                 />
                 <Input
                   type="number"

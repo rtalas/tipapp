@@ -66,14 +66,9 @@ export function Header({ user, currentLeague, locale }: HeaderProps) {
               <span className="text-lg">
                 {getSportEmoji(currentLeague.sport?.id)}
               </span>
-              <div className="flex flex-col items-start">
-                <span className="font-semibold text-sm leading-tight">
-                  {currentLeague.name}
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  {currentLeague.seasonFrom}/{currentLeague.seasonTo}
-                </span>
-              </div>
+              <span className="font-semibold text-sm leading-tight">
+                {currentLeague.name}
+              </span>
               <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
             </button>
             {currentLeague?.infoText && (

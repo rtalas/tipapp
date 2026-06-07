@@ -37,6 +37,7 @@ export interface MatchBetContext {
     awayScore: number;
     scorerId?: number | null;
     noScorer?: boolean | null;
+    ownGoal?: boolean | null;
     homeAdvanced?: boolean | null;
     overtime?: boolean;
   };
@@ -46,8 +47,9 @@ export interface MatchBetContext {
     awayRegularScore: number | null;
     homeFinalScore: number | null;
     awayFinalScore: number | null;
-    scorerIds: number[]; // Array of scorer IDs from MatchScorer
+    scorerIds: number[]; // Array of named scorer IDs from MatchScorer (own goals excluded)
     scorerRankings?: Map<number, number | null>; // leaguePlayerId -> ranking at match time
+    hasOwnGoal?: boolean; // True if the match had at least one own goal
     isOvertime: boolean;
     isShootout: boolean;
     isPlayoffGame: boolean;

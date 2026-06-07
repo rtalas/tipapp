@@ -23,6 +23,11 @@ import { CheckCircle, Star } from 'lucide-react'
 type Team = { id: number; name: string; shortcut: string; flagIcon: string | null; flagType: string | null }
 type LeaguePlayer = { id: number; Player: { id: number; firstName: string | null; lastName: string | null } }
 
+// Scorer select sentinel values (besides a numeric player id):
+//   'none'    → no scorer (also covers an intentional 0:0 / noScorer bet)
+//   'ownGoal' → user predicts an own goal
+const OWN_GOAL = 'ownGoal'
+
 interface UserBetFormData {
   homeScore: string
   awayScore: string
@@ -62,7 +67,7 @@ export function UserBetRow({
     inlineEdit.startEdit(bet.id, {
       homeScore: bet.homeScore.toString(),
       awayScore: bet.awayScore.toString(),
-      scorerId: bet.scorerId?.toString() ?? 'none',
+      scorerId: bet.ownGoal ? OWN_GOAL : bet.scorerId?.toString() ?? 'none',
       overtime: bet.overtime,
       usedJoker: bet.usedJoker,
       homeAdvanced:
@@ -74,12 +79,20 @@ export function UserBetRow({
     // Ensure form exists
     if (!inlineEdit.form) return
 
-    // Convert form data to proper types for validation
+    // Convert form data to proper types for validation. The scorer select offers a
+    // named player, "no scorer" (clears) or "own goal". Picking a player or own goal
+    // clears any existing noScorer flag to keep the modes mutually exclusive; leaving
+    // it on "no scorer" preserves an existing noScorer prediction.
+    const scorerValue = inlineEdit.form.scorerId
+    const isOwnGoal = scorerValue === OWN_GOAL
+    const isPlayer = scorerValue !== 'none' && !isOwnGoal
     const validationData = {
       id: bet.id,
       homeScore: parseInt(inlineEdit.form.homeScore),
       awayScore: parseInt(inlineEdit.form.awayScore),
-      scorerId: inlineEdit.form.scorerId !== 'none' ? parseInt(inlineEdit.form.scorerId) : undefined,
+      scorerId: isPlayer ? parseInt(scorerValue) : undefined,
+      ownGoal: isOwnGoal,
+      ...((isPlayer || isOwnGoal) && { noScorer: false }),
       overtime: inlineEdit.form.overtime,
       usedJoker: inlineEdit.form.usedJoker,
       homeAdvanced:
@@ -145,6 +158,8 @@ export function UserBetRow({
   const userName = `${bet.LeagueUser.User.firstName} ${bet.LeagueUser.User.lastName}`
   const scorerDisplay = bet.noScorer
     ? t('noScorer')
+    : bet.ownGoal
+    ? t('ownGoal')
     : bet.LeaguePlayer
     ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
     : '-'
@@ -234,6 +249,7 @@ export function UserBetRow({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">{t('noScorerPlaceholder')}</SelectItem>
+                <SelectItem value={OWN_GOAL}>{t('ownGoal')}</SelectItem>
                 {availablePlayers.map((player) => (
                   <SelectItem key={player.id} value={player.id.toString()}>
                     {player.Player.firstName} {player.Player.lastName}
@@ -242,7 +258,7 @@ export function UserBetRow({
               </SelectContent>
             </Select>
           ) : (
-            <span className={`flex items-center gap-1${bet.noScorer ? ' italic text-muted-foreground' : ''}`}>
+            <span className={`flex items-center gap-1${bet.noScorer || bet.ownGoal ? ' italic text-muted-foreground' : ''}`}>
               {scorerDisplay}
               {isScorerCorrect && <ScorerRankingBadge ranking={bet.LeaguePlayer?.topScorerRanking} />}
               {isScorerCorrect && <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />}

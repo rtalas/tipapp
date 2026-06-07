@@ -128,6 +128,44 @@ describe("evaluateScorer", () => {
 
     expect(evaluateScorer(context)).toBe(false); // No points for "not picked"
   });
+
+  it("should return true when user predicted own goal and match had an own goal", () => {
+    const context: MatchBetContext = {
+      prediction: { homeScore: 1, awayScore: 0, scorerId: null, ownGoal: true },
+      actual: {
+        homeRegularScore: 1,
+        awayRegularScore: 0,
+        homeFinalScore: 1,
+        awayFinalScore: 0,
+        scorerIds: [], // Own goals have no named scorer
+        hasOwnGoal: true,
+        isOvertime: false,
+        isShootout: false,
+        isPlayoffGame: false,
+      },
+    };
+
+    expect(evaluateScorer(context)).toBe(true);
+  });
+
+  it("should return false when user predicted own goal but match had none", () => {
+    const context: MatchBetContext = {
+      prediction: { homeScore: 1, awayScore: 0, scorerId: null, ownGoal: true },
+      actual: {
+        homeRegularScore: 1,
+        awayRegularScore: 0,
+        homeFinalScore: 1,
+        awayFinalScore: 0,
+        scorerIds: [42],
+        hasOwnGoal: false,
+        isOvertime: false,
+        isShootout: false,
+        isPlayoffGame: false,
+      },
+    };
+
+    expect(evaluateScorer(context)).toBe(false);
+  });
 });
 
 describe('evaluateScorer - rank-based mode', () => {
@@ -329,6 +367,46 @@ describe('evaluateScorer - rank-based mode', () => {
     }
 
     expect(evaluateScorer(context, config)).toBe(8)
+  })
+
+  it('should return unranked points when own goal predicted and match had an own goal', () => {
+    const context: MatchBetContext = {
+      prediction: { homeScore: 1, awayScore: 0, scorerId: null, ownGoal: true },
+      actual: {
+        homeRegularScore: 1,
+        awayRegularScore: 0,
+        homeFinalScore: 1,
+        awayFinalScore: 0,
+        scorerIds: [],
+        scorerRankings: new Map(),
+        hasOwnGoal: true,
+        isOvertime: false,
+        isShootout: false,
+        isPlayoffGame: false,
+      },
+    }
+
+    expect(evaluateScorer(context, config)).toBe(8)
+  })
+
+  it('should return 0 when own goal predicted but match had none', () => {
+    const context: MatchBetContext = {
+      prediction: { homeScore: 1, awayScore: 0, scorerId: null, ownGoal: true },
+      actual: {
+        homeRegularScore: 1,
+        awayRegularScore: 0,
+        homeFinalScore: 1,
+        awayFinalScore: 0,
+        scorerIds: [42],
+        scorerRankings: new Map([[42, 1]]),
+        hasOwnGoal: false,
+        isOvertime: false,
+        isShootout: false,
+        isPlayoffGame: false,
+      },
+    }
+
+    expect(evaluateScorer(context, config)).toBe(0)
   })
 
   it('should work with league using only 3 ranks', () => {

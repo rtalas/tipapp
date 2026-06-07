@@ -10,15 +10,22 @@ export type { TransactionClient } from '@/lib/prisma-utils'
 // ==================== Scorer Validation ====================
 
 /**
- * Validate mutual exclusivity between scorerId and noScorer.
- * Throws if both are set simultaneously.
+ * Validate mutual exclusivity between the three scorer prediction modes:
+ * a named scorer, "no scorer" (0:0), and "own goal".
+ * Throws if more than one is set simultaneously.
  */
 export function validateScorerExclusivity(
   scorerId: number | null | undefined,
-  noScorer: boolean | null | undefined
+  noScorer: boolean | null | undefined,
+  ownGoal: boolean | null | undefined = undefined
 ): void {
-  if (noScorer === true && scorerId != null) {
-    throw new AppError('Cannot set both scorer and no scorer', 'VALIDATION_ERROR', 400)
+  const modesSet =
+    (scorerId != null ? 1 : 0) +
+    (noScorer === true ? 1 : 0) +
+    (ownGoal === true ? 1 : 0)
+
+  if (modesSet > 1) {
+    throw new AppError('Cannot combine scorer, no scorer and own goal', 'VALIDATION_ERROR', 400)
   }
 }
 

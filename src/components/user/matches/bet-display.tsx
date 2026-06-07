@@ -22,11 +22,13 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
   const awayTeamName = awayTeam.Team.shortcut || awayTeam.Team.name
 
   const actualScorerIds = match.Match.MatchScorer?.map((s) => s.LeaguePlayer?.id) ?? []
+  const actualHasOwnGoal = match.Match.MatchScorer?.some((s) => s.ownGoal) ?? false
   const isScorerCorrect =
     isEvaluated &&
     !!match.userBet.scorerId &&
     !!match.userBet.LeaguePlayer &&
     actualScorerIds.includes(match.userBet.LeaguePlayer.id)
+  const isOwnGoalCorrect = isEvaluated && !!match.userBet.ownGoal && actualHasOwnGoal
 
   return (
     <div className="mt-3 pt-3 border-t border-border/30 space-y-2">
@@ -67,6 +69,14 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
             {isEvaluated ? t('yourScorer') : t('scorer')}
           </span>
           <span className="font-medium text-foreground italic">{t('noScorer')}</span>
+        </div>
+      ) : match.userBet.ownGoal ? (
+        <div className="flex items-center justify-center gap-1.5 text-xs">
+          <span className="text-muted-foreground">
+            {isEvaluated ? t('yourScorer') : t('scorer')}
+          </span>
+          <span className="font-medium text-foreground italic">{t('ownGoal')}</span>
+          {isOwnGoalCorrect && <CheckCircle className="w-3 h-3 text-primary" />}
         </div>
       ) : (
         match.userBet.scorerId &&

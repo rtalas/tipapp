@@ -39,6 +39,8 @@ interface ScorerSelectProps {
   onChange: (value: number | null) => void
   noScorer: boolean | null | undefined
   onNoScorerChange: (value: boolean | null) => void
+  ownGoal: boolean | null | undefined
+  onOwnGoalChange: (value: boolean | null) => void
   homePlayers: Player[]
   awayPlayers: Player[]
   homeTeam: Team
@@ -75,6 +77,8 @@ export function ScorerSelect({
   onChange,
   noScorer,
   onNoScorerChange,
+  ownGoal,
+  onOwnGoalChange,
   homePlayers,
   awayPlayers,
   homeTeam,
@@ -114,13 +118,23 @@ export function ScorerSelect({
   const handleSelectPlayer = (playerId: number) => {
     onChange(playerId)
     onNoScorerChange(null) // Clear noScorer when player selected
+    onOwnGoalChange(null) // Clear ownGoal when player selected
     setOpen(false)
     setSearch('')
   }
 
   const handleSelectNoScorer = () => {
     onChange(null)
+    onOwnGoalChange(null) // Clear ownGoal when noScorer selected
     onNoScorerChange(true) // Set noScorer flag
+    setOpen(false)
+    setSearch('')
+  }
+
+  const handleSelectOwnGoal = () => {
+    onChange(null)
+    onNoScorerChange(null) // Clear noScorer when ownGoal selected
+    onOwnGoalChange(true) // Set ownGoal flag
     setOpen(false)
     setSearch('')
   }
@@ -139,6 +153,8 @@ export function ScorerSelect({
           <span className="truncate">
             {noScorer === true ? (
               <span className="text-muted-foreground italic">{t('noScorer')}</span>
+            ) : ownGoal === true ? (
+              <span className="text-muted-foreground italic">{t('ownGoal')}</span>
             ) : selectedPlayer ? (
               <span className="flex items-center">
                 {getPlayerName(selectedPlayer)}
@@ -182,6 +198,26 @@ export function ScorerSelect({
                   )}
                 />
                 <span className="italic">{t('noScorerGame')}</span>
+              </button>
+            )}
+
+            {/* Own goal option (a goal scored as an own goal) - Soccer only */}
+            {sportId === SPORT_IDS.FOOTBALL && (
+              <button
+                type="button"
+                onClick={handleSelectOwnGoal}
+                className={cn(
+                  'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                  ownGoal === true && 'bg-accent'
+                )}
+              >
+                <Check
+                  className={cn(
+                    'mr-2 h-4 w-4',
+                    ownGoal === true ? 'opacity-100' : 'opacity-0'
+                  )}
+                />
+                <span className="italic">{t('ownGoal')}</span>
               </button>
             )}
 

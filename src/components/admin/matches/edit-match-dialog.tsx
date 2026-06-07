@@ -136,11 +136,15 @@ export function EditMatchDialog({
     setIsSubmitting(true)
 
     try {
+      // gameNumber only applies to best-of series phases (1–7). Some matches carry an
+      // out-of-range value (e.g. a tournament fixture number) that would fail validation,
+      // so only send it for phases that actually use it and leave it untouched otherwise.
+      const supportsGameNumber = !!(selectedPhase?.bestOf && selectedPhase.bestOf > 1)
       const payload: Parameters<typeof updateMatch>[0] = {
         matchId: match.Match.id,
         dateTime: new Date(dateTime),
         matchPhaseId: selectedPhaseId ? parseInt(selectedPhaseId, 10) : null,
-        gameNumber: gameNumber ? parseInt(gameNumber, 10) : null,
+        ...(supportsGameNumber && { gameNumber: gameNumber ? parseInt(gameNumber, 10) : null }),
         ...(isDoubled !== match.isDoubled && { isDoubled }),
         ...(jokerBlocked !== match.jokerBlocked && { jokerBlocked }),
       }
@@ -159,7 +163,11 @@ export function EditMatchDialog({
         }
       }
 
-      await updateMatch(payload)
+      const result = await updateMatch(payload)
+      if (!result.success) {
+        toast.error(result.error || t('editDialog.failed'))
+        return
+      }
       toast.success(t('editDialog.success'))
       onOpenChange(false)
     } catch (error) {

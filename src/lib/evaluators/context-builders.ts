@@ -24,7 +24,7 @@ type Match = {
   isShootout: boolean
   isPlayoffGame: boolean
   homeAdvanced?: boolean | null
-  MatchScorer: Array<{ scorerId: number; numberOfGoals: number }>
+  MatchScorer: Array<{ scorerId: number | null; numberOfGoals: number; ownGoal?: boolean }>
 }
 
 type UserBet = {
@@ -32,6 +32,7 @@ type UserBet = {
   awayScore: number
   scorerId: number | null
   noScorer: boolean | null
+  ownGoal?: boolean | null
   overtime: boolean
   homeAdvanced: boolean | null
 }
@@ -79,8 +80,13 @@ export function buildMatchBetContext(
   leagueRankings: Map<number, number>,
   sportId: number
 ): MatchBetContext {
-  // Extract scorer IDs from MatchScorer (can have multiple scorers)
-  const scorerIds = match.MatchScorer.map((ms) => ms.scorerId)
+  // Extract named scorer IDs from MatchScorer (can have multiple scorers).
+  // Own-goal rows have no named player (scorerId === null) — they only set the
+  // hasOwnGoal flag below and are excluded from the named-scorer list.
+  const hasOwnGoal = match.MatchScorer.some((ms) => ms.ownGoal === true)
+  const scorerIds = match.MatchScorer
+    .filter((ms): ms is { scorerId: number; numberOfGoals: number; ownGoal?: boolean } => ms.scorerId !== null)
+    .map((ms) => ms.scorerId)
 
   // Look up rankings from the pre-fetched map
   const scorerRankings = new Map<number, number | null>()
@@ -100,6 +106,7 @@ export function buildMatchBetContext(
       awayScore: userBet.awayScore,
       scorerId: userBet.scorerId,
       noScorer: userBet.noScorer,
+      ownGoal: userBet.ownGoal ?? null,
       overtime: userBet.overtime,
       homeAdvanced: userBet.homeAdvanced,
     },
@@ -110,6 +117,7 @@ export function buildMatchBetContext(
       awayFinalScore,
       scorerIds,
       scorerRankings, // Include scorer rankings
+      hasOwnGoal,
       isOvertime,
       isShootout,
       isPlayoffGame: match.isPlayoffGame,

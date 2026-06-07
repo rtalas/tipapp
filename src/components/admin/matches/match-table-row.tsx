@@ -224,7 +224,7 @@ export function MatchTableRow({
               matchAwayTeam={awayTeam}
               availablePlayers={allPlayers}
               isMatchEvaluated={match.Match.isEvaluated}
-              actualScorerIds={match.Match.MatchScorer?.map((ms) => ms.scorerId) ?? []}
+              actualScorerIds={match.Match.MatchScorer?.map((ms) => ms.scorerId).filter((id): id is number => id !== null) ?? []}
               leagueMatchId={match.id}
               matchId={match.Match.id}
               onAddMissingBet={onAddMissingBet}

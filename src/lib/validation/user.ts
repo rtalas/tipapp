@@ -8,19 +8,22 @@ export const userMatchBetSchema = z
     awayScore: z.number().int().min(0, 'Score cannot be negative'),
     scorerId: z.number().int().positive().optional().nullable(),
     noScorer: z.boolean().optional().nullable(),
+    ownGoal: z.boolean().optional().nullable(),
     overtime: z.boolean().default(false),
     homeAdvanced: z.boolean().optional().nullable(),
     useJoker: z.boolean().optional(),
   })
   .refine(
     (data) => {
-      // Mutual exclusivity: cannot set both scorerId and noScorer
-      if (data.noScorer === true && data.scorerId !== null) return false
-      if (data.scorerId !== null && data.noScorer === true) return false
-      return true
+      // Mutual exclusivity: scorer, no scorer and own goal cannot be combined
+      const modesSet =
+        (data.scorerId != null ? 1 : 0) +
+        (data.noScorer === true ? 1 : 0) +
+        (data.ownGoal === true ? 1 : 0)
+      return modesSet <= 1
     },
     {
-      message: 'Cannot set both scorer and no scorer',
+      message: 'Cannot combine scorer, no scorer and own goal',
       path: ['scorerId'],
     }
   )

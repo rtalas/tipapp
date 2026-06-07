@@ -51,9 +51,6 @@ function LeagueJoinRow({
       <span className="text-2xl">{getSportEmoji(league.sport?.id)}</span>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm">{league.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {league.seasonFrom}/{league.seasonTo}
-        </p>
       </div>
       <Button
         size="sm"
@@ -173,9 +170,6 @@ export function LeagueSelectionDialog({
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm">{league.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {league.seasonFrom}/{league.seasonTo}
-                        </p>
                       </div>
                       {selectedLeagueId === league.leagueId && (
                         <Check className="h-5 w-5 text-primary shrink-0" />
@@ -213,9 +207,6 @@ export function LeagueSelectionDialog({
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm">{league.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {league.seasonFrom}/{league.seasonTo}
-                          </p>
                         </div>
                         {selectedLeagueId === league.leagueId && (
                           <Check className="h-5 w-5 text-primary shrink-0" />

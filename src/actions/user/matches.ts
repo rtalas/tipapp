@@ -101,6 +101,7 @@ export const getUserMatches = createCachedEntityFetcher({
             MatchScorer: {
               where: { deletedAt: null },
               select: {
+                ownGoal: true,
                 LeaguePlayer: {
                   select: { id: true },
                 },
@@ -255,11 +256,14 @@ export async function saveMatchBet(input: UserMatchBetInput) {
         throw new AppError('Betting is closed for this match', 'BETTING_CLOSED', 400)
       }
 
-      validateScorerExclusivity(validated.scorerId, validated.noScorer)
+      validateScorerExclusivity(validated.scorerId, validated.noScorer, validated.ownGoal)
 
-      // Validate that noScorer can only be set for soccer matches
-      if (validated.noScorer === true && leagueMatch.League.sportId !== SPORT_IDS.FOOTBALL) {
-        throw new AppError('No scorer option is only available for soccer matches', 'VALIDATION_ERROR', 400)
+      // Validate that noScorer / ownGoal can only be set for soccer matches
+      if (
+        (validated.noScorer === true || validated.ownGoal === true) &&
+        leagueMatch.League.sportId !== SPORT_IDS.FOOTBALL
+      ) {
+        throw new AppError('No scorer and own goal options are only available for soccer matches', 'VALIDATION_ERROR', 400)
       }
 
       if (validated.scorerId) {
@@ -314,6 +318,7 @@ export async function saveMatchBet(input: UserMatchBetInput) {
             awayScore: validated.awayScore,
             scorerId: validated.scorerId,
             noScorer: validated.noScorer,
+            ownGoal: validated.ownGoal,
             overtime: validated.overtime,
             homeAdvanced: validated.homeAdvanced,
             usedJoker: useJoker,
@@ -331,6 +336,7 @@ export async function saveMatchBet(input: UserMatchBetInput) {
           awayScore: validated.awayScore,
           scorerId: validated.scorerId,
           noScorer: validated.noScorer,
+          ownGoal: validated.ownGoal,
           overtime: validated.overtime,
           homeAdvanced: validated.homeAdvanced,
           usedJoker: useJoker,
@@ -349,6 +355,7 @@ export async function saveMatchBet(input: UserMatchBetInput) {
         awayScore: validated.awayScore,
         scorerId: validated.scorerId,
         noScorer: validated.noScorer,
+        ownGoal: validated.ownGoal,
         overtime: validated.overtime,
         homeAdvanced: validated.homeAdvanced,
         usedJoker: validated.useJoker === true,

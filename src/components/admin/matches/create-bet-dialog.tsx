@@ -31,6 +31,7 @@ interface CreateBetFormData {
   awayScore: string
   scorerId: string
   noScorer: boolean
+  ownGoal: boolean
   overtime: boolean
   usedJoker: boolean
   homeAdvanced: string // 'home' | 'away' | 'none'
@@ -49,6 +50,7 @@ const initialFormData: CreateBetFormData = {
   awayScore: '0',
   scorerId: 'none',
   noScorer: false,
+  ownGoal: false,
   overtime: false,
   usedJoker: false,
   homeAdvanced: 'none',
@@ -75,6 +77,7 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
       awayScore: parseInt(createDialog.form.awayScore),
       scorerId: createDialog.form.scorerId !== 'none' ? parseInt(createDialog.form.scorerId) : undefined,
       noScorer: createDialog.form.noScorer || undefined,
+      ownGoal: createDialog.form.ownGoal || undefined,
       overtime: createDialog.form.overtime,
       usedJoker: createDialog.form.usedJoker || undefined,
       homeAdvanced:
@@ -163,7 +166,7 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
             <Select
               value={createDialog.form.scorerId}
               onValueChange={(value) => createDialog.updateForm({ scorerId: value })}
-              disabled={createDialog.form.noScorer}
+              disabled={createDialog.form.noScorer || createDialog.form.ownGoal}
             >
               <SelectTrigger id="scorer" aria-label={t('selectScorer')}>
                 <SelectValue placeholder={t('noScorerPlaceholder')} />
@@ -188,12 +191,32 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
                 const isChecked = checked === true
                 createDialog.updateForm({
                   noScorer: isChecked,
+                  ownGoal: isChecked ? false : createDialog.form.ownGoal,
                   scorerId: isChecked ? 'none' : createDialog.form.scorerId
                 })
               }}
             />
             <Label htmlFor="noScorer" className="text-sm font-normal cursor-pointer">
               {t('noScorerZeroZero')}
+            </Label>
+          </div>
+
+          {/* Own Goal checkbox */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="ownGoal"
+              checked={createDialog.form.ownGoal}
+              onCheckedChange={(checked) => {
+                const isChecked = checked === true
+                createDialog.updateForm({
+                  ownGoal: isChecked,
+                  noScorer: isChecked ? false : createDialog.form.noScorer,
+                  scorerId: isChecked ? 'none' : createDialog.form.scorerId
+                })
+              }}
+            />
+            <Label htmlFor="ownGoal" className="text-sm font-normal cursor-pointer">
+              {t('ownGoalBet')}
             </Label>
           </div>
 

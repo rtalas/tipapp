@@ -145,7 +145,7 @@ export async function createUserBet(input: CreateUserBetInput) {
             throw new AppError('User already has a bet for this match', 'CONFLICT', 409)
           }
 
-          validateScorerExclusivity(validated.scorerId, validated.noScorer)
+          validateScorerExclusivity(validated.scorerId, validated.noScorer, validated.ownGoal)
 
           if (validated.scorerId) {
             await validateScorerBelongsToTeam(
@@ -175,6 +175,7 @@ export async function createUserBet(input: CreateUserBetInput) {
               awayScore: validated.awayScore,
               scorerId: validated.scorerId,
               noScorer: validated.noScorer,
+              ownGoal: validated.ownGoal,
               overtime: validated.overtime,
               homeAdvanced: validated.homeAdvanced,
               usedJoker: useJoker,
@@ -234,7 +235,7 @@ export async function updateUserBet(input: UpdateUserBetInput) {
         )
       }
 
-      validateScorerExclusivity(validated.scorerId, validated.noScorer)
+      validateScorerExclusivity(validated.scorerId, validated.noScorer, validated.ownGoal)
 
       if (validated.scorerId) {
         await validateScorerBelongsToTeam(
@@ -260,6 +261,7 @@ export async function updateUserBet(input: UpdateUserBetInput) {
           ...(validated.awayScore !== undefined && { awayScore: validated.awayScore }),
           ...(validated.scorerId !== undefined && { scorerId: validated.scorerId }),
           ...(validated.noScorer !== undefined && { noScorer: validated.noScorer }),
+          ...(validated.ownGoal !== undefined && { ownGoal: validated.ownGoal }),
           ...(validated.overtime !== undefined && { overtime: validated.overtime }),
           ...(validated.homeAdvanced !== undefined && { homeAdvanced: validated.homeAdvanced }),
           ...(validated.usedJoker !== undefined && { usedJoker: validated.usedJoker }),

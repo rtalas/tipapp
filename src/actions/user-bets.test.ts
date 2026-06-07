@@ -212,7 +212,31 @@ describe('User Bets Actions', () => {
       const result = await updateUserBet({ id: 1, scorerId: 5, noScorer: true })
 
       expect(result.success).toBe(false)
-      expect((result as any).error).toContain('Cannot set both')
+      expect((result as any).error).toContain('Cannot combine')
+    })
+
+    it('should reject scorer + ownGoal combo', async () => {
+      mockPrisma.userBet.findUnique.mockResolvedValue({
+        id: 1,
+        LeagueMatch: { Match: { isEvaluated: false, deletedAt: null } },
+      } as any)
+
+      const result = await updateUserBet({ id: 1, scorerId: 5, ownGoal: true })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Cannot combine')
+    })
+
+    it('should reject noScorer + ownGoal combo', async () => {
+      mockPrisma.userBet.findUnique.mockResolvedValue({
+        id: 1,
+        LeagueMatch: { Match: { isEvaluated: false, deletedAt: null } },
+      } as any)
+
+      const result = await updateUserBet({ id: 1, noScorer: true, ownGoal: true })
+
+      expect(result.success).toBe(false)
+      expect((result as any).error).toContain('Cannot combine')
     })
   })
 

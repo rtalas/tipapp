@@ -429,8 +429,8 @@ describe('Matches Actions', () => {
         isOvertime: false,
         isShootout: false,
         scorers: [
-          { playerId: 10, numberOfGoals: 2 },
-          { playerId: 11, numberOfGoals: 1 },
+          { playerId: 10, numberOfGoals: 2, ownGoal: false },
+          { playerId: 11, numberOfGoals: 1, ownGoal: false },
         ],
       })
 
