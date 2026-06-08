@@ -17,6 +17,7 @@ import {
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
 import { StatusBadge } from '@/components/user/common/status-badge'
 import { RefreshButton } from '@/components/user/common/refresh-button'
+import { QuestionMatchBadges } from '@/components/user/questions/question-match-badges'
 import { useRefresh } from '@/hooks/useRefresh'
 import { useDateLocale } from '@/hooks/useDateLocale'
 import { cn } from '@/lib/utils'
@@ -242,6 +243,7 @@ function QuestionCard({
                 )}
               </div>
             </div>
+            <QuestionMatchBadges matches={question.matches} />
           </div>
         </div>
 

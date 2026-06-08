@@ -15,12 +15,77 @@ export const getUserQuestions = createCachedEntityFetcher({
   cacheKey: 'question-data',
   cacheTags: ['question-data'],
   revalidateSeconds: 1200,
-  fetchEntities: (leagueId) =>
-    prisma.leagueSpecialBetQuestion.findMany({
-      where: { leagueId, deletedAt: null },
-      include: { League: { select: { sportId: true } } },
-      orderBy: { dateTime: 'asc' },
-    }),
+  fetchEntities: async (leagueId) => {
+    const [questions, leagueMatches] = await Promise.all([
+      prisma.leagueSpecialBetQuestion.findMany({
+        where: { leagueId, deletedAt: null },
+        include: { League: { select: { sportId: true } } },
+        orderBy: { dateTime: 'asc' },
+      }),
+      prisma.leagueMatch.findMany({
+        where: { leagueId, deletedAt: null, Match: { deletedAt: null } },
+        select: {
+          Match: {
+            select: {
+              dateTime: true,
+              homePlaceholder: true,
+              awayPlaceholder: true,
+              LeagueTeam_Match_homeTeamIdToLeagueTeam: {
+                select: {
+                  group: true,
+                  Team: { select: { name: true, shortcut: true, flagIcon: true, flagType: true } },
+                },
+              },
+              LeagueTeam_Match_awayTeamIdToLeagueTeam: {
+                select: {
+                  Team: { select: { name: true, shortcut: true, flagIcon: true, flagType: true } },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { Match: { dateTime: 'asc' } },
+      }),
+    ])
+
+    // Compact, time-sorted match list shared across all questions.
+    const matches = leagueMatches
+      .map((lm) => lm.Match)
+      .filter((m): m is NonNullable<typeof m> => m != null)
+      .map((m) => ({
+        dateTime: m.dateTime,
+        group: m.LeagueTeam_Match_homeTeamIdToLeagueTeam?.group ?? null,
+        home: m.LeagueTeam_Match_homeTeamIdToLeagueTeam?.Team ?? null,
+        away: m.LeagueTeam_Match_awayTeamIdToLeagueTeam?.Team ?? null,
+        homePlaceholder: m.homePlaceholder,
+        awayPlaceholder: m.awayPlaceholder,
+      }))
+
+    // Attach each question's matches by game-day window:
+    // [question.dateTime, nextQuestion.dateTime). Because every question's deadline
+    // is its game-day's first (afternoon) match, this window captures that afternoon's
+    // matches plus the following night/early-morning ones — exactly one hrací den.
+    return questions.map((question, i) => {
+      const start = new Date(question.dateTime).getTime()
+      const end =
+        i + 1 < questions.length
+          ? new Date(questions[i + 1].dateTime).getTime()
+          : Number.POSITIVE_INFINITY
+      const dayMatches = matches
+        .filter((m) => {
+          const t = new Date(m.dateTime).getTime()
+          return t >= start && t < end
+        })
+        .map(({ group, home, away, homePlaceholder, awayPlaceholder }) => ({
+          group,
+          home,
+          away,
+          homePlaceholder,
+          awayPlaceholder,
+        }))
+      return { ...question, matches: dayMatches }
+    })
+  },
   fetchUserBets: (leagueUserId, leagueId) =>
     prisma.userSpecialBetQuestion.findMany({
       where: {

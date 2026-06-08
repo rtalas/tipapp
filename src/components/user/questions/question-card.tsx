@@ -10,6 +10,7 @@ import { UserAvatar } from '@/components/common/user-avatar'
 import { CountdownBadge } from '@/components/user/common/countdown-badge'
 import { StatusBadge } from '@/components/user/common/status-badge'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
+import { QuestionMatchBadges } from '@/components/user/questions/question-match-badges'
 import { cn } from '@/lib/utils'
 import { SPORT_IDS } from '@/lib/constants'
 import { getUserDisplayName } from '@/lib/user-display-utils'
@@ -133,6 +134,7 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
                 )}
               </div>
             </div>
+            <QuestionMatchBadges matches={question.matches} />
           </div>
         </div>
 
