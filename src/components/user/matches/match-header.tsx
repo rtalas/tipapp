@@ -31,7 +31,7 @@ export function MatchHeader({
       <div className="flex items-center gap-1.5">
         {/* Phase + Game Number badge */}
         {match.Match.MatchPhase && (
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
             {match.Match.MatchPhase.name}
             {match.Match.gameNumber &&
               match.Match.MatchPhase.bestOf &&
@@ -43,12 +43,12 @@ export function MatchHeader({
         {!match.Match.MatchPhase && (
           <>
             {homeTeam?.group && (
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
                 {homeTeam.group}
               </span>
             )}
             {isPlayoff && (
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1.5 py-0.5 bg-secondary/50 rounded">
                 {t('playoff')}
               </span>
             )}
@@ -57,24 +57,24 @@ export function MatchHeader({
       </div>
       <div className="flex flex-wrap items-center justify-end gap-1.5">
         {isDoubled && (
-          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 text-[10px] font-bold">
+          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 text-xs font-bold">
             <Zap className="w-3 h-3" />
             2x
           </span>
         )}
         {/* Joker badges — hidden when feature disabled and when 2x already shown (mutually exclusive). */}
         {match.League.jokerCount > 0 && !isDoubled && jokerUsed && (
-          <JokerBadge variant="used" label={t('jokerUsedLabel')} title={t('jokerUsedLabel')} />
+          <JokerBadge variant="used" label={t('jokerUsedLabel')} title={t('jokerUsedLabel')} className="text-xs" />
         )}
         {match.League.jokerCount > 0 && !isDoubled && !jokerUsed && jokerBlocked && (
-          <JokerBadge variant="blocked" label={t('jokerBlockedBadge')} title={t('jokerBlockedBadge')} />
+          <JokerBadge variant="blocked" label={t('jokerBlockedBadge')} title={t('jokerBlockedBadge')} className="text-xs" />
         )}
         {/* Status badge: Scheduled or Awaiting evaluation */}
-        <StatusBadge dateTime={match.Match.dateTime} isEvaluated={isEvaluated} />
+        <StatusBadge dateTime={match.Match.dateTime} isEvaluated={isEvaluated} className="text-xs sm:text-xs" />
         {/* Countdown and time badges - only show for non-evaluated events */}
-        {!isEvaluated && match.isBettingOpen && <CountdownBadge deadline={match.Match.dateTime} />}
+        {!isEvaluated && match.isBettingOpen && <CountdownBadge deadline={match.Match.dateTime} className="text-xs" />}
         {!isEvaluated && (
-          <span className="badge-upcoming flex items-center gap-1 text-[10px]">
+          <span className="badge-upcoming flex items-center gap-1 text-xs">
             <Clock className="w-3 h-3" />
             {format(match.Match.dateTime, 'HH:mm')}
           </span>
@@ -83,7 +83,7 @@ export function MatchHeader({
         {isEvaluated && match.userBet && (
           <span
             className={cn(
-              'px-2 py-0.5 rounded text-[10px] font-bold',
+              'px-2 py-0.5 rounded text-xs font-bold',
               match.userBet.totalPoints > 0
                 ? 'bg-primary/20 text-primary'
                 : 'bg-secondary text-muted-foreground'

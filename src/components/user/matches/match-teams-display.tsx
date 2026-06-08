@@ -33,17 +33,17 @@ export function MatchTeamsDisplay({
     match.Match.homeRegularScore !== null && match.Match.awayRegularScore !== null
 
   return (
-    <div className="flex items-center justify-between gap-2 sm:gap-4">
+    <div className="flex items-center justify-between gap-2 sm:gap-6">
       {/* Home Team */}
-      <div className="flex flex-col items-center gap-1 min-w-0 flex-1 p-2">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col items-center sm:items-end gap-1 min-w-0 flex-1 p-2 sm:pr-0">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           {homeTeam ? (
             <TeamFlag
               flagIcon={homeTeam.Team.flagIcon}
               flagType={homeTeam.Team.flagType}
               teamName={homeTeam.Team.name}
-              size="sm"
-              className="sm:w-6 sm:h-6"
+              size="lg"
+              className="w-auto h-auto text-3xl sm:text-4xl"
             />
           ) : null}
           <p className={`font-semibold text-xs sm:text-sm text-center leading-tight line-clamp-2 ${homeTeam ? 'text-foreground' : 'italic text-muted-foreground'}`}>
@@ -91,15 +91,15 @@ export function MatchTeamsDisplay({
       </div>
 
       {/* Away Team */}
-      <div className="flex flex-col items-center gap-1 min-w-0 flex-1 p-2">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col items-center sm:items-start gap-1 min-w-0 flex-1 p-2 sm:pl-0">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           {awayTeam ? (
             <TeamFlag
               flagIcon={awayTeam.Team.flagIcon}
               flagType={awayTeam.Team.flagType}
               teamName={awayTeam.Team.name}
-              size="sm"
-              className="sm:w-6 sm:h-6"
+              size="lg"
+              className="w-auto h-auto text-3xl sm:text-4xl"
             />
           ) : null}
           <p className={`font-semibold text-xs sm:text-sm text-center leading-tight line-clamp-2 ${awayTeam ? 'text-foreground' : 'italic text-muted-foreground'}`}>

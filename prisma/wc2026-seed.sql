@@ -74,13 +74,13 @@ END $foundation$;
 INSERT INTO "LeaguePhase"(name, rank, "createdAt", "updatedAt")
 SELECT v.name, v.rank, NOW(), NOW()
 FROM (VALUES
-    ('Group Stage', 1),
-    ('Round of 32', 2),
-    ('Round of 16', 3),
-    ('Quarter-finals', 4),
-    ('Semi-finals', 5),
-    ('Third place', 6),
-    ('Final', 7)
+    ('Základní skupina', 1),
+    ('1/16 Finále', 2),
+    ('Osmifinále', 3),
+    ('Čtvrtfinále', 4),
+    ('Semifinále', 5),
+    ('O 3.místo', 6),
+    ('Finále', 7)
 ) AS v(name, rank)
 WHERE NOT EXISTS (SELECT 1 FROM "LeaguePhase" lp WHERE lp.name = v.name AND lp."deletedAt" IS NULL);
 
@@ -89,24 +89,24 @@ WHERE NOT EXISTS (SELECT 1 FROM "LeaguePhase" lp WHERE lp.name = v.name AND lp."
 INSERT INTO "MatchPhase"(name, rank, "bestOf", "createdAt", "updatedAt")
 SELECT v.name, v.rank, NULL, NOW(), NOW()
 FROM (VALUES
-    ('Group A',         1),
-    ('Group B',         2),
-    ('Group C',         3),
-    ('Group D',         4),
-    ('Group E',         5),
-    ('Group F',         6),
-    ('Group G',         7),
-    ('Group H',         8),
-    ('Group I',         9),
-    ('Group J',        10),
-    ('Group K',        11),
-    ('Group L',        12),
-    ('Round of 32',    13),
-    ('Round of 16',    14),
-    ('Quarter-finals', 15),
-    ('Semi-finals',    16),
-    ('Third place',    17),
-    ('Final',          18)
+    ('Skupina A',       1),
+    ('Skupina B',       2),
+    ('Skupina C',       3),
+    ('Skupina D',       4),
+    ('Skupina E',       5),
+    ('Skupina F',       6),
+    ('Skupina G',       7),
+    ('Skupina H',       8),
+    ('Skupina I',       9),
+    ('Skupina J',      10),
+    ('Skupina K',      11),
+    ('Skupina L',      12),
+    ('1/16 Finále',    13),
+    ('Osmifinále',     14),
+    ('Čtvrtfinále',    15),
+    ('Semifinále',     16),
+    ('O 3.místo',      17),
+    ('Finále',         18)
 ) AS v(name, rank)
 WHERE NOT EXISTS (SELECT 1 FROM "MatchPhase" mp WHERE mp.name = v.name AND mp."deletedAt" IS NULL);
 
@@ -2004,7 +2004,7 @@ SELECT
     ht.league_team_id,
     at.league_team_id,
     FALSE, FALSE,
-    (SELECT id FROM "MatchPhase" WHERE name = 'Group ' || lt_home."group" AND "deletedAt" IS NULL ORDER BY id DESC LIMIT 1),
+    (SELECT id FROM "MatchPhase" WHERE name = 'Skupina ' || lt_home."group" AND "deletedAt" IS NULL ORDER BY id DESC LIMIT 1),
     9000000 + s.gn,
     NOW(), NOW()
 FROM source s
@@ -2031,7 +2031,7 @@ JOIN "LeagueTeam" lt_home ON lt_home.id = ht.league_team_id;
 
 -- ─── Skupina A ────────────────────────────────────────────────────────────
 INSERT INTO "LeagueMatch"("leagueId", "matchId", "isDoubled", "jokerBlocked", "createdAt", "updatedAt")
-VALUES ((SELECT val FROM _wc_var WHERE key='league_id'), (SELECT id FROM "Match" WHERE "externalId"=9000001 ORDER BY id DESC LIMIT 1), FALSE, FALSE, NOW(), NOW()); -- Z1:  Mexiko – JAR (11.06.)
+VALUES ((SELECT val FROM _wc_var WHERE key='league_id'), (SELECT id FROM "Match" WHERE "externalId"=9000001 ORDER BY id DESC LIMIT 1), FALSE, TRUE, NOW(), NOW()); -- Z1:  Mexiko – JAR (11.06.)
 INSERT INTO "LeagueMatch"("leagueId", "matchId", "isDoubled", "jokerBlocked", "createdAt", "updatedAt")
 VALUES ((SELECT val FROM _wc_var WHERE key='league_id'), (SELECT id FROM "Match" WHERE "externalId"=9000002 ORDER BY id DESC LIMIT 1), TRUE, TRUE, NOW(), NOW()); -- Z2:  Jižní Korea – Česko (12.06.)
 INSERT INTO "LeagueMatch"("leagueId", "matchId", "isDoubled", "jokerBlocked", "createdAt", "updatedAt")
@@ -2206,43 +2206,43 @@ WITH source AS (
     SELECT * FROM (VALUES
         -- gameNumber, dateTime, home_placeholder, away_placeholder, phase_name
         -- 1. kolo play-off (Round of 32) — Z73–Z88
-        (73, '2026-06-28 21:00+02'::timestamptz, '2. tým sk. A',           '2. tým sk. B',              'Round of 32'),
-        (76, '2026-06-29 19:00+02'::timestamptz, 'Vítěz sk. C',            '2. tým sk. F',              'Round of 32'),
-        (74, '2026-06-29 22:30+02'::timestamptz, 'Vítěz sk. E',            '3. tým (A/B/C/D/F)',        'Round of 32'),
-        (75, '2026-06-30 03:00+02'::timestamptz, 'Vítěz sk. F',            '2. tým sk. C',              'Round of 32'),
-        (78, '2026-06-30 19:00+02'::timestamptz, '2. tým sk. E',           '2. tým sk. I',              'Round of 32'),
-        (77, '2026-06-30 23:00+02'::timestamptz, 'Vítěz sk. I',            '3. tým (C/D/F/G/H)',        'Round of 32'),
-        (81, '2026-07-01 02:00+02'::timestamptz, 'Vítěz sk. D',            '3. tým (B/E/F/I/J)',        'Round of 32'),
-        (79, '2026-07-01 03:00+02'::timestamptz, 'Vítěz sk. A',            '3. tým (C/E/F/H/I)',        'Round of 32'),
-        (80, '2026-07-01 18:00+02'::timestamptz, 'Vítěz sk. L',            '3. tým (E/H/I/J/K)',        'Round of 32'),
-        (82, '2026-07-01 22:00+02'::timestamptz, 'Vítěz sk. G',            '3. tým (A/E/H/I/J)',        'Round of 32'),
-        (84, '2026-07-02 21:00+02'::timestamptz, 'Vítěz sk. H',            '2. tým sk. J',              'Round of 32'),
-        (83, '2026-07-03 01:00+02'::timestamptz, '2. tým sk. K',           '2. tým sk. L',              'Round of 32'),
-        (85, '2026-07-03 05:00+02'::timestamptz, 'Vítěz sk. B',            '3. tým (E/F/G/I/J)',        'Round of 32'),
-        (88, '2026-07-03 20:00+02'::timestamptz, '2. tým sk. D',           '2. tým sk. G',              'Round of 32'),
-        (86, '2026-07-03 23:00+02'::timestamptz, 'Vítěz sk. J',            '2. tým sk. H',              'Round of 32'),
-        (87, '2026-07-04 02:30+02'::timestamptz, 'Vítěz sk. K',            '3. tým (D/E/I/J/L)',        'Round of 32'),
+        (73, '2026-06-28 21:00+02'::timestamptz, '2. tým sk. A',           '2. tým sk. B',              '1/16 Finále'),
+        (76, '2026-06-29 19:00+02'::timestamptz, 'Vítěz sk. C',            '2. tým sk. F',              '1/16 Finále'),
+        (74, '2026-06-29 22:30+02'::timestamptz, 'Vítěz sk. E',            '3. tým (A/B/C/D/F)',        '1/16 Finále'),
+        (75, '2026-06-30 03:00+02'::timestamptz, 'Vítěz sk. F',            '2. tým sk. C',              '1/16 Finále'),
+        (78, '2026-06-30 19:00+02'::timestamptz, '2. tým sk. E',           '2. tým sk. I',              '1/16 Finále'),
+        (77, '2026-06-30 23:00+02'::timestamptz, 'Vítěz sk. I',            '3. tým (C/D/F/G/H)',        '1/16 Finále'),
+        (81, '2026-07-01 02:00+02'::timestamptz, 'Vítěz sk. D',            '3. tým (B/E/F/I/J)',        '1/16 Finále'),
+        (79, '2026-07-01 03:00+02'::timestamptz, 'Vítěz sk. A',            '3. tým (C/E/F/H/I)',        '1/16 Finále'),
+        (80, '2026-07-01 18:00+02'::timestamptz, 'Vítěz sk. L',            '3. tým (E/H/I/J/K)',        '1/16 Finále'),
+        (82, '2026-07-01 22:00+02'::timestamptz, 'Vítěz sk. G',            '3. tým (A/E/H/I/J)',        '1/16 Finále'),
+        (84, '2026-07-02 21:00+02'::timestamptz, 'Vítěz sk. H',            '2. tým sk. J',              '1/16 Finále'),
+        (83, '2026-07-03 01:00+02'::timestamptz, '2. tým sk. K',           '2. tým sk. L',              '1/16 Finále'),
+        (85, '2026-07-03 05:00+02'::timestamptz, 'Vítěz sk. B',            '3. tým (E/F/G/I/J)',        '1/16 Finále'),
+        (88, '2026-07-03 20:00+02'::timestamptz, '2. tým sk. D',           '2. tým sk. G',              '1/16 Finále'),
+        (86, '2026-07-03 23:00+02'::timestamptz, 'Vítěz sk. J',            '2. tým sk. H',              '1/16 Finále'),
+        (87, '2026-07-04 02:30+02'::timestamptz, 'Vítěz sk. K',            '3. tým (D/E/I/J/L)',        '1/16 Finále'),
         -- Osmifinále (Round of 16) — Z89–Z96
-        (89, '2026-07-04 18:00+02'::timestamptz, 'Vítěz Z73',              'Vítěz Z75',                 'Round of 16'),
-        (90, '2026-07-04 22:00+02'::timestamptz, 'Vítěz Z74',              'Vítěz Z77',                 'Round of 16'),
-        (91, '2026-07-05 18:00+02'::timestamptz, 'Vítěz Z76',              'Vítěz Z78',                 'Round of 16'),
-        (92, '2026-07-05 22:00+02'::timestamptz, 'Vítěz Z79',              'Vítěz Z80',                 'Round of 16'),
-        (93, '2026-07-06 18:00+02'::timestamptz, 'Vítěz Z83',              'Vítěz Z84',                 'Round of 16'),
-        (94, '2026-07-06 22:00+02'::timestamptz, 'Vítěz Z81',              'Vítěz Z82',                 'Round of 16'),
-        (95, '2026-07-07 18:00+02'::timestamptz, 'Vítěz Z85',              'Vítěz Z87',                 'Round of 16'),
-        (96, '2026-07-07 22:00+02'::timestamptz, 'Vítěz Z86',              'Vítěz Z88',                 'Round of 16'),
+        (89, '2026-07-04 18:00+02'::timestamptz, 'Vítěz Z73',              'Vítěz Z75',                 'Osmifinále'),
+        (90, '2026-07-04 22:00+02'::timestamptz, 'Vítěz Z74',              'Vítěz Z77',                 'Osmifinále'),
+        (91, '2026-07-05 18:00+02'::timestamptz, 'Vítěz Z76',              'Vítěz Z78',                 'Osmifinále'),
+        (92, '2026-07-05 22:00+02'::timestamptz, 'Vítěz Z79',              'Vítěz Z80',                 'Osmifinále'),
+        (93, '2026-07-06 18:00+02'::timestamptz, 'Vítěz Z83',              'Vítěz Z84',                 'Osmifinále'),
+        (94, '2026-07-06 22:00+02'::timestamptz, 'Vítěz Z81',              'Vítěz Z82',                 'Osmifinále'),
+        (95, '2026-07-07 18:00+02'::timestamptz, 'Vítěz Z85',              'Vítěz Z87',                 'Osmifinále'),
+        (96, '2026-07-07 22:00+02'::timestamptz, 'Vítěz Z86',              'Vítěz Z88',                 'Osmifinále'),
         -- Čtvrtfinále — Z97–Z100 (od QF jsou body 2×)
-        (97,  '2026-07-09 21:00+02'::timestamptz, 'Vítěz Z89',             'Vítěz Z90',                 'Quarter-finals'),
-        (98,  '2026-07-10 21:00+02'::timestamptz, 'Vítěz Z93',             'Vítěz Z94',                 'Quarter-finals'),
-        (99,  '2026-07-11 18:00+02'::timestamptz, 'Vítěz Z91',             'Vítěz Z92',                 'Quarter-finals'),
-        (100, '2026-07-11 22:00+02'::timestamptz, 'Vítěz Z95',             'Vítěz Z96',                 'Quarter-finals'),
+        (97,  '2026-07-09 21:00+02'::timestamptz, 'Vítěz Z89',             'Vítěz Z90',                 'Čtvrtfinále'),
+        (98,  '2026-07-10 21:00+02'::timestamptz, 'Vítěz Z93',             'Vítěz Z94',                 'Čtvrtfinále'),
+        (99,  '2026-07-11 18:00+02'::timestamptz, 'Vítěz Z91',             'Vítěz Z92',                 'Čtvrtfinále'),
+        (100, '2026-07-11 22:00+02'::timestamptz, 'Vítěz Z95',             'Vítěz Z96',                 'Čtvrtfinále'),
         -- Semifinále — Z101–Z102
-        (101, '2026-07-14 21:00+02'::timestamptz, 'Vítěz Z97',             'Vítěz Z98',                 'Semi-finals'),
-        (102, '2026-07-15 21:00+02'::timestamptz, 'Vítěz Z99',             'Vítěz Z100',                'Semi-finals'),
+        (101, '2026-07-14 21:00+02'::timestamptz, 'Vítěz Z97',             'Vítěz Z98',                 'Semifinále'),
+        (102, '2026-07-15 21:00+02'::timestamptz, 'Vítěz Z99',             'Vítěz Z100',                'Semifinále'),
         -- Zápas o 3. místo — Z103
-        (103, '2026-07-18 23:00+02'::timestamptz, 'Poražený Z101',         'Poražený Z102',             'Third place'),
+        (103, '2026-07-18 23:00+02'::timestamptz, 'Poražený Z101',         'Poražený Z102',             'O 3.místo'),
         -- Finále — Z104
-        (104, '2026-07-19 21:00+02'::timestamptz, 'Vítěz Z101',            'Vítěz Z102',                'Final')
+        (104, '2026-07-19 21:00+02'::timestamptz, 'Vítěz Z101',            'Vítěz Z102',                'Finále')
     ) AS v(gn, dt, home_ph, away_ph, phase)
 )
 INSERT INTO "Match"(
@@ -2496,11 +2496,11 @@ VALUES ((SELECT val FROM _wc_var WHERE key = 'league_id'), 'Minimálně 3 týmy 
 
 -- 12. 6. 2026 — Z2 (KOR–CZE), Z3 (CAN–BIH)
 INSERT INTO "LeagueSpecialBetQuestion"("leagueId", "text", "dateTime", "isEvaluated", "isDoubled", "createdAt", "updatedAt")
-VALUES ((SELECT val FROM _wc_var WHERE key = 'league_id'), 'Počet střel na branku USA-Par > Can-Bos?', '2026-06-12 21:00+02'::timestamptz, FALSE, FALSE, NOW(), NOW());
+VALUES ((SELECT val FROM _wc_var WHERE key = 'league_id'), 'Počet střel na branku USA-PAR > CAN-BIH?', '2026-06-12 21:00+02'::timestamptz, FALSE, FALSE, NOW(), NOW());
 
 -- 13. 6. 2026 — Z4 (USA–PAR), Z5 (QAT–SUI)
 INSERT INTO "LeagueSpecialBetQuestion"("leagueId", "text", "dateTime", "isEvaluated", "isDoubled", "createdAt", "updatedAt")
-VALUES ((SELECT val FROM _wc_var WHERE key = 'league_id'), 'Výhra Swi, Bra, Sco + Neprohra Tur?', '2026-06-13 21:00+02'::timestamptz, FALSE, FALSE, NOW(), NOW());
+VALUES ((SELECT val FROM _wc_var WHERE key = 'league_id'), 'Výhra SUI, BRA, SCO + Neprohra TUR?', '2026-06-13 21:00+02'::timestamptz, FALSE, FALSE, NOW(), NOW());
 
 -- 14. 6. 2026 — Z6–Z11
 INSERT INTO "LeagueSpecialBetQuestion"("leagueId", "text", "dateTime", "isEvaluated", "isDoubled", "createdAt", "updatedAt")

@@ -252,7 +252,7 @@ export function ScorerSelect({
                     <span className="flex items-center">
                       {getPlayerName(player)}
                       {player.topScorerRanking && (
-                        <ScorerRankingBadge ranking={player.topScorerRanking} />
+                        <ScorerRankingBadge ranking={player.topScorerRanking} size="md" />
                       )}
                     </span>
                   </button>
@@ -291,7 +291,7 @@ export function ScorerSelect({
                     <span className="flex items-center">
                       {getPlayerName(player)}
                       {player.topScorerRanking && (
-                        <ScorerRankingBadge ranking={player.topScorerRanking} />
+                        <ScorerRankingBadge ranking={player.topScorerRanking} size="md" />
                       )}
                     </span>
                   </button>

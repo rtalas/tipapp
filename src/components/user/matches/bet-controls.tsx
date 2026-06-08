@@ -67,8 +67,20 @@ export function BetControls({
       ? t('jokerDisabled.noJokersLeft')
       : null
 
+  // The top divider belongs to the controls "header" (advancement picker /
+  // overtime / joker). When none of those render (e.g. football group match
+  // with no joker), skip the divider so it doesn't dangle above the lone
+  // scorer dropdown.
+  const hasControlsHeader =
+    showAdvancePicker || sportId !== SPORT_IDS.FOOTBALL || jokerAllowed
+
   return (
-    <div className="mt-3 pt-3 border-t border-border/30 space-y-3">
+    <div
+      className={cn(
+        'mt-3 space-y-3',
+        hasControlsHeader && 'pt-3 border-t border-border/30'
+      )}
+    >
       {showAdvancePicker ? (
         <div className="space-y-2">
           <p className="text-xs text-center text-muted-foreground">{t('whoWillAdvance')}</p>
