@@ -31,12 +31,12 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
   const isOwnGoalCorrect = isEvaluated && !!match.userBet.ownGoal && actualHasOwnGoal
 
   return (
-    <div className="mt-3 pt-3 border-t border-border/30 space-y-2">
+    <div className="mt-3 pt-3 border-t border-border/30 space-y-2.5">
       {/* Soccer Playoff: Advance Team Display */}
       {sportId === SPORT_IDS.FOOTBALL &&
       isPlayoff &&
       match.userBet.homeAdvanced !== null ? (
-        <div className="flex items-center justify-center gap-1.5 text-xs">
+        <div className="flex items-center justify-center gap-1.5 text-sm">
           <span className="text-muted-foreground">
             {t('advancing')}
           </span>
@@ -47,8 +47,8 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
       ) : (
         /* Overtime/Shootout Display for all non-soccer-playoff games - only show if user picked overtime */
         !isEvaluated && match.userBet.overtime && (
-          <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-            <Check className="w-3.5 h-3.5" />
+          <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
+            <Check className="w-4 h-4" />
             <span>{t('overtimeShootout')}</span>
           </div>
         )
@@ -56,32 +56,32 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
 
       {/* Hockey Overtime Display (evaluated only) */}
       {isEvaluated && sportId === SPORT_IDS.HOCKEY && match.userBet.overtime && (
-        <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-          <Check className="w-3.5 h-3.5" />
+        <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
+          <Check className="w-4 h-4" />
           <span>{t('overtimeShootout')}</span>
         </div>
       )}
 
       {/* Scorer Display */}
       {match.userBet.noScorer ? (
-        <div className="flex items-center justify-center gap-1.5 text-xs">
+        <div className="flex items-center justify-center gap-1.5 text-sm">
           <span className="text-muted-foreground">
             {isEvaluated ? t('yourScorer') : t('scorer')}
           </span>
           <span className="font-medium text-foreground italic">{t('noScorer')}</span>
         </div>
       ) : match.userBet.ownGoal ? (
-        <div className="flex items-center justify-center gap-1.5 text-xs">
+        <div className="flex items-center justify-center gap-1.5 text-sm">
           <span className="text-muted-foreground">
             {isEvaluated ? t('yourScorer') : t('scorer')}
           </span>
           <span className="font-medium text-foreground italic">{t('ownGoal')}</span>
-          {isOwnGoalCorrect && <CheckCircle className="w-3 h-3 text-primary" />}
+          {isOwnGoalCorrect && <CheckCircle className="w-4 h-4 text-primary" />}
         </div>
       ) : (
         match.userBet.scorerId &&
         match.userBet.LeaguePlayer && (
-          <div className="flex items-center justify-center gap-1.5 text-xs">
+          <div className="flex items-center justify-center gap-1.5 text-sm">
             <span className="text-muted-foreground">
               {isEvaluated ? t('yourScorer') : t('scorer')}
             </span>
@@ -90,7 +90,7 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
               {match.userBet.LeaguePlayer.Player.lastName}
             </span>
             {isScorerCorrect && (
-              <CheckCircle className="w-3 h-3 text-primary" />
+              <CheckCircle className="w-4 h-4 text-primary" />
             )}
           </div>
         )

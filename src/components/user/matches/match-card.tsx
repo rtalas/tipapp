@@ -270,9 +270,9 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
           <div className="mt-3 pt-3 border-t border-border/30 flex justify-center">
             <button
               onClick={friends.open}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Users className="w-3.5 h-3.5" />
+              <Users className="w-4 h-4" />
               <span>{t('friendsPicks')}</span>
             </button>
           </div>

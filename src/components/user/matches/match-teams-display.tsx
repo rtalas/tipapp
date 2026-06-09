@@ -70,9 +70,9 @@ export function MatchTeamsDisplay({
               </>
             )}
             {match.userBet && (
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] text-muted-foreground">{t('yourBetShort')}</span>
-                <span className="text-xs font-semibold text-primary">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">{t('yourBetShort')}</span>
+                <span className="text-sm font-semibold text-primary">
                   {match.userBet.homeScore}:{match.userBet.awayScore}
                   {match.userBet.overtime && (
                     <span className="ml-1">{t('overtimeSuffix')}</span>
