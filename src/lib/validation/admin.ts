@@ -97,7 +97,7 @@ export const createLeagueSchema = z.object({
   isActive: z.boolean().default(true),
   isPublic: z.boolean().default(true),
   isFinished: z.boolean().default(false),
-  infoText: z.string().max(2000).optional().nullable(),
+  infoText: z.string().max(20000).optional().nullable(),
   jokerCount: z.number().int().min(0).max(20).default(0),
   evaluatorRules: z.array(evaluatorRuleSchema).optional(),
 }).refine((data) => data.seasonTo >= data.seasonFrom, {

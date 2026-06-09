@@ -70,6 +70,43 @@ describe('User Leaderboard Actions', () => {
       expect(result.fines).toHaveLength(1)
     })
 
+    it('shows own total jokers but only past-deadline jokers for other users', async () => {
+      mockPrisma.leagueUser.findMany.mockResolvedValue([
+        { id: 10, User: { id: 5, username: 'alice', firstName: 'Alice', lastName: 'A', avatarUrl: null } },
+        { id: 11, User: { id: 6, username: 'bob', firstName: 'Bob', lastName: 'B', avatarUrl: null } },
+      ] as any)
+
+      // userBet.groupBy is called three times in array order:
+      //   1) match point totals, 2) all jokers, 3) past-deadline jokers.
+      mockPrisma.userBet.groupBy
+        .mockResolvedValueOnce([
+          { leagueUserId: 10, _sum: { totalPoints: 30 } },
+          { leagueUserId: 11, _sum: { totalPoints: 20 } },
+        ] as any)
+        .mockResolvedValueOnce([
+          { leagueUserId: 10, _count: { _all: 2 } }, // alice: 2 jokers total
+          { leagueUserId: 11, _count: { _all: 2 } }, // bob: 2 jokers total (1 on a future match)
+        ] as any)
+        .mockResolvedValueOnce([
+          { leagueUserId: 10, _count: { _all: 2 } }, // alice: 2 revealed
+          { leagueUserId: 11, _count: { _all: 1 } }, // bob: only 1 revealed
+        ] as any)
+      mockPrisma.userSpecialBetSerie.groupBy.mockResolvedValue([] as any)
+      mockPrisma.userSpecialBetSingle.groupBy.mockResolvedValue([] as any)
+      mockPrisma.userSpecialBetQuestion.groupBy.mockResolvedValue([] as any)
+      mockPrisma.leaguePrize.findMany.mockResolvedValue([] as any)
+      mockPrisma.league.findUniqueOrThrow.mockResolvedValue({ isFinished: false, jokerCount: 3 } as any)
+
+      const result = await getLeaderboard(1)
+
+      const alice = result.entries.find((e) => e.userId === 5)!
+      const bob = result.entries.find((e) => e.userId === 6)!
+      expect(alice.isCurrentUser).toBe(true)
+      expect(alice.jokersUsed).toBe(2) // own row: full total
+      expect(bob.isCurrentUser).toBe(false)
+      expect(bob.jokersUsed).toBe(1) // other row: future joker hidden
+    })
+
     it('should require league membership', async () => {
       mockRequireLeagueMember.mockRejectedValue(new Error('Not a member'))
 

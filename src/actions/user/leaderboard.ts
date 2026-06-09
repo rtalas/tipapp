@@ -360,9 +360,10 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
   })
 
   const leagueUserIds = leagueUsers.map((lu) => lu.id)
+  const now = new Date()
 
   // Aggregate points in database instead of loading all bet rows
-  const [matchTotals, seriesTotals, specialBetTotals, questionTotals, jokerCounts, prizeRecords, lastEvalTimestamps, league] = await Promise.all([
+  const [matchTotals, seriesTotals, specialBetTotals, questionTotals, jokerCounts, jokerRevealedCounts, prizeRecords, lastEvalTimestamps, league] = await Promise.all([
     prisma.userBet.groupBy({
       by: ['leagueUserId'],
       where: { leagueUserId: { in: leagueUserIds }, deletedAt: null },
@@ -386,6 +387,18 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
     prisma.userBet.groupBy({
       by: ['leagueUserId'],
       where: { leagueUserId: { in: leagueUserIds }, usedJoker: true, deletedAt: null },
+      _count: { _all: true },
+    }),
+    // Jokers on matches whose deadline has already passed. Shown for *other* users
+    // so a joker on a future (still-bettable) match isn't revealed before kickoff.
+    prisma.userBet.groupBy({
+      by: ['leagueUserId'],
+      where: {
+        leagueUserId: { in: leagueUserIds },
+        usedJoker: true,
+        deletedAt: null,
+        LeagueMatch: { Match: { dateTime: { lt: now } } },
+      },
       _count: { _all: true },
     }),
     prisma.leaguePrize.findMany({
@@ -424,6 +437,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
   const specialBetMap = new Map(specialBetTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
   const questionMap = new Map(questionTotals.map((t) => [t.leagueUserId, t._sum.totalPoints || 0]))
   const jokerMap = new Map(jokerCounts.map((t) => [t.leagueUserId, t._count?._all ?? 0]))
+  const jokerRevealedMap = new Map(jokerRevealedCounts.map((t) => [t.leagueUserId, t._count?._all ?? 0]))
 
   // Merge user data with aggregated points
   const entries = leagueUsers.map((lu) => {
@@ -431,7 +445,13 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
     const seriesPoints = seriesMap.get(lu.id) || 0
     const specialBetPoints = specialBetMap.get(lu.id) || 0
     const questionPoints = questionMap.get(lu.id) || 0
-    const jokersUsed = jokerMap.get(lu.id) || 0
+    // Own row shows the true total (incl. jokers on upcoming matches the user
+    // committed). Other rows only expose jokers on matches past their deadline,
+    // so a joker on a future match stays hidden until kickoff.
+    const isCurrentUser = lu.User.id === userId
+    const jokersUsed = isCurrentUser
+      ? jokerMap.get(lu.id) || 0
+      : jokerRevealedMap.get(lu.id) || 0
 
     return {
       leagueUserId: lu.id,
@@ -446,7 +466,7 @@ export async function getLeaderboard(leagueId: number): Promise<LeaderboardData>
       questionPoints,
       totalPoints: matchPoints + seriesPoints + specialBetPoints + questionPoints,
       jokersUsed,
-      isCurrentUser: lu.User.id === userId,
+      isCurrentUser,
     }
   })
 
