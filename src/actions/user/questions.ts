@@ -7,6 +7,7 @@ import { AppError } from '@/lib/error-handler'
 import { AuditLogger } from '@/lib/logging/audit-logger'
 import { saveUserBet, getFriendPredictions, type TransactionClient } from '@/lib/bet-utils'
 import { createCachedEntityFetcher } from '@/lib/cached-data-utils'
+import { nextMorningCutoff } from '@/lib/date-grouping-utils'
 
 /**
  * Fetches questions for a league with the current user's answers
@@ -65,12 +66,14 @@ export const getUserQuestions = createCachedEntityFetcher({
     // [question.dateTime, nextQuestion.dateTime). Because every question's deadline
     // is its game-day's first (afternoon) match, this window captures that afternoon's
     // matches plus the following night/early-morning ones — exactly one hrací den.
+    // The final question has no following question to bound it, so we cap the window
+    // at 08:00 the next morning instead of letting it swallow every remaining match.
     return questions.map((question, i) => {
       const start = new Date(question.dateTime).getTime()
       const end =
         i + 1 < questions.length
           ? new Date(questions[i + 1].dateTime).getTime()
-          : Number.POSITIVE_INFINITY
+          : nextMorningCutoff(new Date(question.dateTime))
       const dayMatches = matches
         .filter((m) => {
           const t = new Date(m.dateTime).getTime()

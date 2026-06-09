@@ -53,6 +53,16 @@ DO $foundation$
 DECLARE
     v_now TIMESTAMPTZ := NOW();
 BEGIN
+    -- Pojistka proti rozsynchronizované sekvenci: pokud byl Sport naplněn
+    -- explicitními ID (Prisma migrace / restore zálohy), nextval() by mohl
+    -- vracet už obsazené ID a následující INSERT by spadl na "Sport_pkey".
+    -- Srovnáme sekvenci na MAX(id) JEŠTĚ PŘED insertem, takže nový řádek
+    -- (pokud Football chybí) dostane volné ID.
+    IF EXISTS (SELECT 1 FROM "Sport") THEN
+        PERFORM setval(pg_get_serial_sequence('"Sport"', 'id'),
+                       (SELECT MAX(id) FROM "Sport"));
+    END IF;
+
     -- Sport: Football (sportId=2 podle konvence, ale použijeme název)
     INSERT INTO "Sport"(name, "createdAt", "updatedAt")
     SELECT 'Football', v_now, v_now
