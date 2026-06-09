@@ -6,6 +6,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { ChatView } from '@/components/chat/ChatView'
 import { ChatSkeleton } from '@/components/chat/chat-skeleton'
+import { ChatRefreshOnMount } from '@/components/chat/chat-refresh-on-mount'
 import { messageWithRelationsInclude } from '@/lib/prisma-helpers'
 
 export const metadata: Metadata = { title: 'Chat' }
@@ -120,14 +121,17 @@ export default async function ChatPage({ params }: ChatPageProps) {
   }
 
   return (
-    <Suspense fallback={<ChatSkeleton />}>
-      <ChatContent
-        leagueId={leagueId}
-        userId={userId}
-        isLeagueAdmin={leagueUser.admin === true}
-        isSuperadmin={session.user.isSuperadmin === true}
-        isSuspended={league.chatSuspendedAt !== null}
-      />
-    </Suspense>
+    <>
+      <ChatRefreshOnMount />
+      <Suspense fallback={<ChatSkeleton />}>
+        <ChatContent
+          leagueId={leagueId}
+          userId={userId}
+          isLeagueAdmin={leagueUser.admin === true}
+          isSuperadmin={session.user.isSuperadmin === true}
+          isSuspended={league.chatSuspendedAt !== null}
+        />
+      </Suspense>
+    </>
   )
 }

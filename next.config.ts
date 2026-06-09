@@ -5,6 +5,17 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // Client Router Cache: keep dynamic route output around for 30s so revisiting
+  // a tab the user just left is instant (no skeleton). Server actions still
+  // invalidate the cache automatically; stale data only appears for changes
+  // made by *other* clients without a server-action round-trip from this one
+  // (e.g. incoming chat messages — handled by ChatRefreshOnMount).
+  experimental: {
+    staleTimes: {
+      dynamic: 120,
+      static: 300,
+    },
+  },
   headers: async () => {
     return [
       {

@@ -187,7 +187,7 @@ BEGIN
         E'- Žolík nelze použít na zápasy, které už jsou za dvojnásobné body a na zápasy, kde je kurz na favorita do 1.5.\n' ||
         E'- Pokud je nejlepším střelcem MS více hráčů, body jsou za všechny hráče, nikoliv jen za toho, kdo na to potřeboval nejmíň zápasů.\n' ||
         E'- Každý den obsahuje jednu nepovinnou ANO/NE otázku týkající se všech zápasů toho dne dohromady (pokud není uvedeno jinak).\n' ||
-        E'- Den pro otázku se bere jako hrací den podle našeho času - tzn. zápasy od soboty 18:00 do neděle 06:00 se berou jako jeden den.\n\n' ||
+        E'- Den pro ANO/NE otázku se bere jako hrací kolo podle našeho času - tzn. např. zápasy od odpoledního v 18:00 do nedělního v 06:00 se berou jako jeden den.\n\n' ||
         E'Bodování:\n' ||
         E'- Vítěz zápasu: 3 b\n' ||
         E'- Vítěz zápasu + brank. rozdíl: 4 b\n' ||
