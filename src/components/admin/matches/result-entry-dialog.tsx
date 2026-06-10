@@ -86,11 +86,13 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
   const t = useTranslations('admin.matches.resultDialog')
   const tCommon = useTranslations('admin.common')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Default to '0' (not '') so an untouched stepper — which always renders 0 —
+  // matches its underlying state and passes the required-score validation.
   const [homeRegularScore, setHomeRegularScore] = useState(
-    match.Match.homeRegularScore?.toString() ?? ''
+    match.Match.homeRegularScore?.toString() ?? '0'
   )
   const [awayRegularScore, setAwayRegularScore] = useState(
-    match.Match.awayRegularScore?.toString() ?? ''
+    match.Match.awayRegularScore?.toString() ?? '0'
   )
   const [homeFinalScore, setHomeFinalScore] = useState(
     match.Match.homeFinalScore?.toString() ?? ''

@@ -221,18 +221,33 @@ function RankingRow({ entry, index, prevPoints, prizes, fines, totalEntries, jok
         isCurrentUser={entry.isCurrentUser}
       />
 
-      {/* Username */}
-      <span
-        className={cn(
-          'flex-1 font-semibold text-sm',
-          entry.isCurrentUser ? 'text-primary' : 'text-foreground'
+      {/* Username + joker counter (stacked) */}
+      <div className="flex-1 min-w-0 flex flex-col items-start gap-1">
+        <span
+          className={cn(
+            'font-semibold text-sm',
+            entry.isCurrentUser ? 'text-primary' : 'text-foreground'
+          )}
+        >
+          {displayName}
+          {entry.isCurrentUser && (
+            <span className="ml-1 text-[10px] text-muted-foreground">{t('you')}</span>
+          )}
+        </span>
+
+        {/* Joker counter. Current user always sees their own allowance; other users
+            appear only once they've spent a joker on a past-deadline match (the server
+            hides jokers on still-bettable matches), which also avoids 0/N noise. */}
+        {jokerCount > 0 && (entry.isCurrentUser || entry.jokersUsed > 0) && (
+          <span
+            title={t('jokersRemaining', { used: entry.jokersUsed, total: jokerCount })}
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400"
+          >
+            <Star className="w-3 h-3" />
+            <span>{entry.jokersUsed}/{jokerCount}</span>
+          </span>
         )}
-      >
-        {displayName}
-        {entry.isCurrentUser && (
-          <span className="ml-1 text-[10px] text-muted-foreground">{t('you')}</span>
-        )}
-      </span>
+      </div>
 
       {/* Prize Badge for top performers */}
       {prize && (
@@ -253,19 +268,6 @@ function RankingRow({ entry, index, prevPoints, prizes, fines, totalEntries, jok
           className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-500"
         >
           -{fine}
-        </span>
-      )}
-
-      {/* Joker counter. Current user always sees their own allowance; other users
-          appear only once they've spent a joker on a past-deadline match (the server
-          hides jokers on still-bettable matches), which also avoids 0/N noise. */}
-      {jokerCount > 0 && (entry.isCurrentUser || entry.jokersUsed > 0) && (
-        <span
-          title={t('jokersRemaining', { used: entry.jokersUsed, total: jokerCount })}
-          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400"
-        >
-          <Star className="w-3 h-3" />
-          <span>{entry.jokersUsed}/{jokerCount}</span>
         </span>
       )}
 
