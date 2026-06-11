@@ -34,9 +34,11 @@ export default async function LeagueLayout({
   // serialize the DB round-trips. Preloading the selector list lets the league
   // switcher dialog open instantly instead of fetching on first open.
   const [league, currentLeagueUser, user, initialLeagues] = await Promise.all([
-    // Verify the league exists and is active, and fetch all data needed for Header
+    // Verify the league exists and fetch all data needed for Header. Inactive/
+    // finished leagues stay viewable for members (the selector lists them as
+    // "past leagues") — membership is enforced separately via currentLeagueUser.
     prisma.league.findUnique({
-      where: { id: leagueId, deletedAt: null, isActive: true },
+      where: { id: leagueId, deletedAt: null },
       select: {
         id: true,
         name: true,
