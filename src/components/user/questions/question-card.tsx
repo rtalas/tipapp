@@ -267,7 +267,7 @@ export function QuestionCard({ question, onSaved }: QuestionCardProps) {
         title={question.text}
         subtitle={
           isEvaluated && question.result !== null
-            ? `${t('correctAnswer')}: ${question.result ? t('yes') : t('no')}`
+            ? `${t('correctAnswer')} ${question.result ? t('yes') : t('no')}`
             : undefined
         }
         sectionLabel={t('friendsAnswers')}

@@ -20,6 +20,7 @@ import { type LeagueWithTeams } from '@/actions/shared-queries'
 import { validate } from '@/lib/validation-client'
 import { getErrorMessage } from '@/lib/error-handler'
 import { getSpecialBetTypeFromEvaluator } from '@/lib/special-bet-utils'
+import { getPlayerDisplayName } from '@/lib/user-display-utils'
 import { groupStageRequiresUserMark } from '@/lib/evaluators/types'
 import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
@@ -219,7 +220,7 @@ export function CreateSpecialBetUserBetDialog({ open, onOpenChange, specialBet, 
                 <SelectContent>
                   {availablePlayers.map((lp) => (
                     <SelectItem key={lp.id} value={lp.id.toString()}>
-                      {lp.Player.firstName} {lp.Player.lastName} ({lp.teamName})
+                      {getPlayerDisplayName(lp.Player)} ({lp.teamName})
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { getSpecialBetTypeFromEvaluator } from '@/lib/special-bet-utils'
+import { getPlayerDisplayName } from '@/lib/user-display-utils'
 import { type LeagueWithTeams } from '@/actions/shared-queries'
 
 type SpecialBet = SpecialBetWithDetails
@@ -245,7 +246,7 @@ export function ResultEntryDialog({ specialBet, leagues, open, onOpenChange }: R
                 <SelectContent>
                   {availablePlayers.map((lp) => (
                     <SelectItem key={lp.id} value={lp.id.toString()}>
-                      {lp.Player.firstName} {lp.Player.lastName} ({lp.teamName})
+                      {getPlayerDisplayName(lp.Player)} ({lp.teamName})
                     </SelectItem>
                   ))}
                 </SelectContent>

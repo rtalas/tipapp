@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Plus, Trash2, Users, Trophy } from 'lucide-react'
 import { assignPlayerToLeagueTeam, removePlayerFromLeagueTeam, updateTopScorerRanking } from '@/actions/leagues'
 import { logger } from '@/lib/logging/client-logger'
+import { getPlayerDisplayName } from '@/lib/user-display-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -190,7 +191,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                 ) : (
                   unassignedPlayers.map((player) => (
                     <SelectItem key={player.id} value={player.id.toString()}>
-                      {player.firstName} {player.lastName}
+                      {getPlayerDisplayName(player)}
                       {player.position && (
                         <span className="ml-2 text-muted-foreground">({player.position})</span>
                       )}
@@ -233,7 +234,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                     <TableRow key={lp.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
-                          {lp.Player.firstName} {lp.Player.lastName}
+                          {getPlayerDisplayName(lp.Player)}
                           {lp.topScorerRanking && (
                             <Badge variant="secondary" className="text-xs">
                               <Trophy className="h-3 w-3 mr-1" />
@@ -253,7 +254,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                aria-label={`Set ranking for ${lp.Player.firstName} ${lp.Player.lastName}`}
+                                aria-label={`Set ranking for ${getPlayerDisplayName(lp.Player)}`}
                               >
                                 <Trophy className="h-4 w-4" />
                               </Button>
@@ -311,7 +312,7 @@ export function LeaguePlayersSetup({ league, allPlayers }: LeaguePlayersSetupPro
                             size="icon"
                             onClick={() => handleRemovePlayer(lp.id)}
                             className="text-destructive hover:text-destructive"
-                            aria-label={`Remove ${lp.Player.firstName} ${lp.Player.lastName}`}
+                            aria-label={`Remove ${getPlayerDisplayName(lp.Player)}`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

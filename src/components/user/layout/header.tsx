@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useUserLeagueContext } from '@/contexts/user-league-context'
-import { LeagueSelectionDialog } from './league-selection-dialog'
+import { LeagueSelectionDialog, type InitialLeagues } from './league-selection-dialog'
 import { UserMenuDropdown } from './user-menu-dropdown'
 import { LanguageSwitcher } from './language-switcher'
 import { DemoBanner } from '@/components/demo-banner'
@@ -37,11 +37,12 @@ interface HeaderProps {
       name: string
     }
   }
+  initialLeagues?: InitialLeagues
   locale?: string
 }
 
 // Helper to get sport emoji
-export function Header({ user, currentLeague, locale }: HeaderProps) {
+export function Header({ user, currentLeague, initialLeagues, locale }: HeaderProps) {
   const t = useTranslations('user.header')
   const { setSelectedLeagueId } = useUserLeagueContext()
   const [showLeagueDialog, setShowLeagueDialog] = useState(false)
@@ -101,6 +102,7 @@ export function Header({ user, currentLeague, locale }: HeaderProps) {
         onOpenChange={setShowLeagueDialog}
         selectedLeagueId={currentLeague.id}
         onLeagueSelect={handleLeagueSelect}
+        initialLeagues={initialLeagues}
       />
 
       {/* Language Switcher Dialog */}

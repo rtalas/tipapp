@@ -11,6 +11,7 @@ import {
   removePlayerFromLeagueTeam,
 } from '@/actions/leagues'
 import { logger } from '@/lib/logging/client-logger'
+import { getPlayerDisplayName } from '@/lib/user-display-utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -295,7 +296,7 @@ export function LeagueSetupTabs({
                   ) : (
                     unassignedPlayers.map((player) => (
                       <SelectItem key={player.id} value={player.id.toString()}>
-                        {player.firstName} {player.lastName}
+                        {getPlayerDisplayName(player)}
                         {player.position && (
                           <span className="ml-2 text-muted-foreground">
                             ({player.position})
@@ -344,7 +345,7 @@ export function LeagueSetupTabs({
                       {lt.LeaguePlayer.map((lp) => (
                         <TableRow key={lp.id}>
                           <TableCell className="font-medium">
-                            {lp.Player.firstName} {lp.Player.lastName}
+                            {getPlayerDisplayName(lp.Player)}
                           </TableCell>
                           <TableCell>
                             {lp.Player.position || '-'}

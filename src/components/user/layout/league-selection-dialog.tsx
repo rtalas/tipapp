@@ -81,11 +81,19 @@ interface LeagueData {
   sport: { id: number; name: string }
 }
 
+export interface InitialLeagues {
+  userLeagues: LeagueData[]
+  pastLeagues: LeagueData[]
+  availableLeagues: LeagueData[]
+}
+
 interface LeagueSelectionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedLeagueId: number
   onLeagueSelect: (leagueId: number) => void
+  /** Pre-fetched selector data from the server layout, so the dialog renders instantly */
+  initialLeagues?: InitialLeagues
 }
 
 /**
@@ -97,32 +105,42 @@ export function LeagueSelectionDialog({
   onOpenChange,
   selectedLeagueId,
   onLeagueSelect,
+  initialLeagues,
 }: LeagueSelectionDialogProps) {
   const t = useTranslations('user.header')
-  const [userLeagues, setUserLeagues] = useState<LeagueData[]>([])
-  const [pastLeagues, setPastLeagues] = useState<LeagueData[]>([])
-  const [availableLeagues, setAvailableLeagues] = useState<LeagueData[]>([])
-  const [isLoadingLeagues, setIsLoadingLeagues] = useState(false)
+  const [userLeagues, setUserLeagues] = useState<LeagueData[]>(initialLeagues?.userLeagues ?? [])
+  const [pastLeagues, setPastLeagues] = useState<LeagueData[]>(initialLeagues?.pastLeagues ?? [])
+  const [availableLeagues, setAvailableLeagues] = useState<LeagueData[]>(
+    initialLeagues?.availableLeagues ?? []
+  )
+  // Only show the spinner when we have nothing pre-fetched to display.
+  const [isLoadingLeagues, setIsLoadingLeagues] = useState(!initialLeagues)
 
-  const loadLeagues = useCallback(async () => {
-    setIsLoadingLeagues(true)
-    try {
-      const data = await getAllLeaguesForSelector()
-      setUserLeagues(data.userLeagues)
-      setPastLeagues(data.pastLeagues)
-      setAvailableLeagues(data.availableLeagues)
-    } catch {
-      toast.error(t('loadFailed'))
-    } finally {
-      setIsLoadingLeagues(false)
-    }
-  }, [t])
+  const loadLeagues = useCallback(
+    async (showSpinner: boolean) => {
+      if (showSpinner) setIsLoadingLeagues(true)
+      try {
+        const data = await getAllLeaguesForSelector()
+        setUserLeagues(data.userLeagues)
+        setPastLeagues(data.pastLeagues)
+        setAvailableLeagues(data.availableLeagues)
+      } catch {
+        if (showSpinner) toast.error(t('loadFailed'))
+      } finally {
+        if (showSpinner) setIsLoadingLeagues(false)
+      }
+    },
+    [t]
+  )
 
   useEffect(() => {
     if (open) {
-      loadLeagues()
+      // With pre-fetched data the list is already visible — refresh silently in
+      // the background to catch newly available public leagues. Without it,
+      // fetch with a spinner.
+      loadLeagues(!initialLeagues)
     }
-  }, [open, loadLeagues])
+  }, [open, loadLeagues, initialLeagues])
 
   const handleLeagueSelect = (leagueId: number) => {
     onLeagueSelect(leagueId)
@@ -130,7 +148,7 @@ export function LeagueSelectionDialog({
   }
 
   const handleJoinSuccess = () => {
-    loadLeagues() // Refresh lists
+    loadLeagues(true) // Refresh lists
   }
 
   return (

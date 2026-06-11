@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl'
 import { deleteMatch } from '@/actions/matches'
 import { evaluateMatchBets } from '@/actions/evaluate-matches'
 import { getMatchStatus } from '@/lib/match-utils'
+import { getPlayerDisplayName } from '@/lib/user-display-utils'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
 import { useExpandableRow } from '@/hooks/useExpandableRow'
@@ -317,12 +318,12 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                                 </div>
                                 {(bet.LeaguePlayer || bet.noScorer || bet.ownGoal) && (
                                   <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                    {t('scorer')}: {bet.noScorer
+                                    {t('scorer')} {bet.noScorer
                                       ? <span className="italic">{t('noScorer')}</span>
                                       : bet.ownGoal
                                         ? <span className="italic">{t('ownGoal')}</span>
                                         : bet.LeaguePlayer
-                                          ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
+                                          ? getPlayerDisplayName(bet.LeaguePlayer.Player)
                                           : '-'}
                                     {lm.Match.isEvaluated && bet.scorerId !== null && bet.scorerId !== undefined && actualScorerIds.includes(bet.scorerId) && (
                                       <>

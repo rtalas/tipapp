@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Users } from 'lucide-react'
 import { toast } from 'sonner'
+import { UserAvatar } from '@/components/common/user-avatar'
+import { useCurrentUser } from '@/contexts/current-user-context'
 import { FriendPredictionsModal } from '@/components/user/common/friend-predictions-modal'
 import { MatchHeader } from './match-header'
 import { MatchTeamsDisplay } from './match-teams-display'
@@ -11,6 +13,7 @@ import { BetControls } from './bet-controls'
 import { BetDisplay } from './bet-display'
 import { SaveButton } from './save-button'
 import { FriendPredictionsList } from './friend-predictions-list'
+import { MatchPredictionRow } from './match-prediction-row'
 import { cn } from '@/lib/utils'
 import { SPORT_IDS } from '@/lib/constants'
 import { useFriendPredictions } from '@/hooks/useFriendPredictions'
@@ -26,6 +29,7 @@ interface MatchCardProps {
 
 export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps) {
   const t = useTranslations('user.matches')
+  const currentUser = useCurrentUser()
   const homeTeam = match.Match.LeagueTeam_Match_homeTeamIdToLeagueTeam
   const awayTeam = match.Match.LeagueTeam_Match_awayTeamIdToLeagueTeam
   const isPlaceholder = isMatchPlaceholder(match.Match)
@@ -283,13 +287,12 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
       <FriendPredictionsModal
         open={friends.showModal}
         onOpenChange={friends.setShowModal}
-        title={`${homeTeamName} vs ${awayTeamName}`}
-        subtitle={
+        title={
           isEvaluated && hasResult
-            ? `${t('final')} ${match.Match.homeFinalScore ?? match.Match.homeRegularScore} - ${match.Match.awayFinalScore ?? match.Match.awayRegularScore}${
+            ? `${homeTeamName} - ${awayTeamName}  ${match.Match.homeFinalScore ?? match.Match.homeRegularScore}:${match.Match.awayFinalScore ?? match.Match.awayRegularScore}${
                 match.Match.isShootout ? ` ${t('shootoutSuffix')}` : match.Match.isOvertime ? ` ${t('overtimeSuffix')}` : ''
               }`
-            : undefined
+            : `${homeTeamName} - ${awayTeamName}`
         }
         sectionLabel={t('friendsPredictions')}
         isLocked={isLocked}
@@ -297,6 +300,42 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
         predictions={friends.predictions}
         emptyMessage={t('noFriendsPredictions')}
         lockedMessage={t('friendsPicksLater')}
+        ownPrediction={
+          match.userBet ? (
+            <MatchPredictionRow
+              match={match}
+              isEvaluated={isEvaluated}
+              avatarSlot={
+                <UserAvatar
+                  avatarUrl={currentUser.avatarUrl}
+                  firstName={currentUser.firstName}
+                  lastName={currentUser.lastName}
+                  username={currentUser.username}
+                  size="sm"
+                  fallbackClassName="bg-primary/20 text-primary"
+                  isCurrentUser
+                />
+              }
+              name={t('yourPrediction')}
+              homeScore={homeScore}
+              awayScore={awayScore}
+              overtime={overtime}
+              homeAdvanced={homeAdvanced}
+              scorer={
+                match.userBet.LeaguePlayer?.Player
+                  ? {
+                      id: match.userBet.LeaguePlayer.id,
+                      firstName: match.userBet.LeaguePlayer.Player.firstName,
+                      lastName: match.userBet.LeaguePlayer.Player.lastName,
+                    }
+                  : null
+              }
+              ownGoal={ownGoal}
+              usedJoker={useJoker}
+              totalPoints={match.userBet.totalPoints}
+            />
+          ) : undefined
+        }
       >
         <FriendPredictionsList
           predictions={friends.predictions}

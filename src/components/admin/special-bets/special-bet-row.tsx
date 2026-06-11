@@ -19,6 +19,7 @@ import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
 import { BetRowDeleteDialog } from '@/components/admin/bets/shared/bet-row-delete-dialog'
 import { TeamFlag } from '@/components/common/team-flag'
 import { type LeagueWithTeams } from '@/actions/shared-queries'
+import { getPlayerDisplayName } from '@/lib/user-display-utils'
 
 interface UserSpecialBetFormData {
   teamResultId: string
@@ -41,8 +42,7 @@ function getPredictionDisplay(bet: UserSpecialBet): string {
     return bet.LeagueTeam.Team.name + suffix
   }
   if (bet.playerResultId && bet.LeaguePlayer) {
-    const player = bet.LeaguePlayer.Player
-    return `${player.firstName} ${player.lastName}`
+    return getPlayerDisplayName(bet.LeaguePlayer.Player)
   }
   if (bet.value !== null) {
     return bet.value.toString()
@@ -233,7 +233,7 @@ export function SpecialBetRow({ bet, specialBet, league, isEvaluated, specialBet
                   <SelectContent>
                     {availablePlayers.map((lp) => (
                       <SelectItem key={lp.id} value={lp.id.toString()}>
-                        {lp.Player.firstName} {lp.Player.lastName} ({lp.teamName})
+                        {getPlayerDisplayName(lp.Player)} ({lp.teamName})
                       </SelectItem>
                     ))}
                   </SelectContent>

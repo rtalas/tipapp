@@ -17,7 +17,7 @@ import { SearchableSelect } from '@/components/user/special-bets/searchable-sele
 import { TeamFlag } from '@/components/common/team-flag'
 import { cn } from '@/lib/utils'
 import { SPORT_IDS } from '@/lib/constants'
-import { getUserDisplayName } from '@/lib/user-display-utils'
+import { getUserDisplayName, getPlayerDisplayName } from '@/lib/user-display-utils'
 import { useFriendPredictions } from '@/hooks/useFriendPredictions'
 import { saveSpecialBet, getSpecialBetFriendPredictions } from '@/actions/user/special-bets'
 import type {
@@ -219,7 +219,7 @@ export function SpecialBetCard({
   const selectedTeamName = selectedTeam?.Team.name
   const selectedPlayer = players.find((p) => p.id === playerId)
   const selectedPlayerName = selectedPlayer
-    ? `${selectedPlayer.Player.firstName} ${selectedPlayer.Player.lastName}`
+    ? getPlayerDisplayName(selectedPlayer.Player)
     : null
 
   const userSelection = selectedTeamName || selectedPlayerName || (value !== null ? value.toString() : null)
@@ -231,7 +231,7 @@ export function SpecialBetCard({
   const actualResult =
     actualResultTeam?.name ||
     (specialBet.LeaguePlayer &&
-      `${specialBet.LeaguePlayer.Player.firstName} ${specialBet.LeaguePlayer.Player.lastName}`) ||
+      getPlayerDisplayName(specialBet.LeaguePlayer.Player)) ||
     specialBet.specialBetValue?.toString()
   const isCorrect = isEvaluated && userSelection === actualResult
 
@@ -492,7 +492,7 @@ export function SpecialBetCard({
         open={friends.showModal}
         onOpenChange={friends.setShowModal}
         title={specialBet.name}
-        subtitle={actualResult ? `${t('winner')}: ${actualResult}` : undefined}
+        subtitle={actualResult ? `${t('winner')} ${actualResult}` : undefined}
         banner={
           showGoalStats ? (
             <div className="flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2 text-xs">
@@ -523,7 +523,7 @@ export function SpecialBetCard({
           const predictionDisplay =
             prediction.LeagueTeam?.Team.name ||
             (prediction.LeaguePlayer &&
-              `${prediction.LeaguePlayer.Player.firstName} ${prediction.LeaguePlayer.Player.lastName}`) ||
+              getPlayerDisplayName(prediction.LeaguePlayer.Player)) ||
             prediction.value?.toString() ||
             'No selection'
 

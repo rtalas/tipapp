@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useCreateDialog } from '@/hooks/useCreateDialog'
 import { createUserBet, type MatchWithUserBets } from '@/actions/user-bets'
 import { validate } from '@/lib/validation-client'
+import { getPlayerDisplayName } from '@/lib/user-display-utils'
 import { getErrorMessage } from '@/lib/error-handler'
 import { UserSelectorInput } from '@/components/admin/bets/shared/user-selector-input'
 
@@ -175,7 +176,7 @@ export function CreateBetDialog({ open, onOpenChange, match, availablePlayers }:
                 <SelectItem value="none">{t('noScorerPlaceholder')}</SelectItem>
                 {availablePlayers.map((player) => (
                   <SelectItem key={player.id} value={player.id.toString()}>
-                    {player.Player.firstName} {player.Player.lastName}
+                    {getPlayerDisplayName(player.Player)}
                   </SelectItem>
                 ))}
               </SelectContent>

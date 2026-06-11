@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { Edit, Trash2, ChevronDown, Calculator, Plus, Calendar, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
+import { getPlayerDisplayName } from '@/lib/user-display-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { TeamFlag } from '@/components/common/team-flag'
@@ -60,7 +61,7 @@ function getResultTypeAndDisplay(specialBet: SpecialBet): {
     const player = specialBet.LeaguePlayer
     return {
       type: 'player',
-      display: player ? `${player.Player.firstName} ${player.Player.lastName}` : 'Unknown',
+      display: player ? getPlayerDisplayName(player.Player, 'Unknown') : 'Unknown',
     }
   }
   if (specialBet.specialBetValue !== null) {

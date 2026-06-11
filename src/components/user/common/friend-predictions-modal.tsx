@@ -21,6 +21,8 @@ interface FriendPredictionsModalProps {
   emptyMessage: string
   lockedMessage: string
   loadingMessage?: string
+  /** Optional block shown above the friends' section (e.g. the user's own prediction) */
+  ownPrediction?: ReactNode
   children: ReactNode
 }
 
@@ -60,6 +62,7 @@ export function FriendPredictionsModal({
   emptyMessage,
   lockedMessage,
   loadingMessage = 'Loading...',
+  ownPrediction,
   children,
 }: FriendPredictionsModalProps) {
   return (
@@ -67,11 +70,15 @@ export function FriendPredictionsModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            {subtitle || sectionLabel}
-          </DialogDescription>
+          {subtitle ? (
+            <DialogDescription>{subtitle}</DialogDescription>
+          ) : (
+            // Keep a description for a11y, but don't repeat the section label visibly
+            <DialogDescription className="sr-only">{sectionLabel}</DialogDescription>
+          )}
         </DialogHeader>
         {banner && <div className="mt-3">{banner}</div>}
+        {ownPrediction && <div className="mt-4">{ownPrediction}</div>}
         <div className="mt-4">
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-4 h-4 text-muted-foreground" />

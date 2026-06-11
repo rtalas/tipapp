@@ -32,3 +32,19 @@ export function getUserDisplayNameWithUsername(user: UserInfo): string {
   return user.username
 }
 
+interface PlayerInfo {
+  firstName: string | null
+  lastName: string | null
+}
+
+/**
+ * Get display name for a player.
+ * Returns "FirstName LastName" if both available, the single available name if
+ * only one exists, otherwise the provided fallback. Avoids rendering "null".
+ */
+export function getPlayerDisplayName(player: PlayerInfo, fallback = ''): string {
+  const { firstName, lastName } = player
+  if (firstName && lastName) return `${firstName} ${lastName}`
+  return firstName || lastName || fallback
+}
+

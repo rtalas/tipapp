@@ -40,6 +40,7 @@ import { CreateSpecialBetUserBetDialog } from './create-special-bet-user-bet-dia
 import { type SpecialBetWithUserBets } from '@/actions/special-bet-bets'
 import { type LeagueWithTeams } from '@/actions/shared-queries'
 import { type UserBasic } from '@/actions/users'
+import { getPlayerDisplayName } from '@/lib/user-display-utils'
 
 type SpecialBet = SpecialBetWithUserBets
 type League = LeagueWithTeams
@@ -67,7 +68,7 @@ function getResultTypeAndDisplay(specialBet: SpecialBet): { type: string; displa
     const player = specialBet.LeaguePlayer
     return {
       type: 'player',
-      display: player ? `${player.Player.firstName} ${player.Player.lastName}` : 'Unknown',
+      display: player ? getPlayerDisplayName(player.Player, 'Unknown') : 'Unknown',
     }
   }
   if (specialBet.specialBetValue !== null) {
@@ -365,7 +366,7 @@ export function SpecialBetsContent({ specialBets, leagues, evaluators, users, le
                               const prediction = bet.teamResultId && bet.LeagueTeam
                                 ? bet.LeagueTeam.Team.name
                                 : bet.playerResultId && bet.LeaguePlayer
-                                ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
+                                ? getPlayerDisplayName(bet.LeaguePlayer.Player)
                                 : bet.value !== null
                                 ? bet.value.toString()
                                 : '-'

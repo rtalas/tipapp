@@ -13,6 +13,17 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }))
 
+// Mock current user context (provided by UserLayout in the real app)
+vi.mock('@/contexts/current-user-context', () => ({
+  useCurrentUser: () => ({
+    id: '1',
+    username: 'tester',
+    firstName: 'Test',
+    lastName: 'User',
+    avatarUrl: null,
+  }),
+}))
+
 // Mock server actions
 const mockSaveMatchBet = vi.fn()
 const mockGetFriendPredictions = vi.fn()

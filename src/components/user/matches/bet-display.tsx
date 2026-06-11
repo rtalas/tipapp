@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl'
 import { Check, CheckCircle } from 'lucide-react'
 import { SPORT_IDS } from '@/lib/constants'
+import { getPlayerDisplayName } from '@/lib/user-display-utils'
 import type { UserMatch } from '@/actions/user/matches'
 
 interface BetDisplayProps {
@@ -86,8 +87,7 @@ export function BetDisplay({ match, isEvaluated }: BetDisplayProps) {
               {isEvaluated ? t('yourScorer') : t('scorer')}
             </span>
             <span className="font-medium text-foreground">
-              {match.userBet.LeaguePlayer.Player.firstName}{' '}
-              {match.userBet.LeaguePlayer.Player.lastName}
+              {getPlayerDisplayName(match.userBet.LeaguePlayer.Player)}
             </span>
             {isScorerCorrect && (
               <CheckCircle className="w-4 h-4 text-primary" />

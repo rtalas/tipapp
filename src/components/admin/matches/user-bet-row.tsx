@@ -13,6 +13,7 @@ import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { updateUserBet, deleteUserBet, type UserBet } from '@/actions/user-bets'
 import { evaluateMatchBets } from '@/actions/evaluate-matches'
 import { validate } from '@/lib/validation-client'
+import { getPlayerDisplayName } from '@/lib/user-display-utils'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
 import { BetRowActions } from '@/components/admin/bets/shared/bet-row-actions'
@@ -161,7 +162,7 @@ export function UserBetRow({
     : bet.ownGoal
     ? t('ownGoal')
     : bet.LeaguePlayer
-    ? `${bet.LeaguePlayer.Player.firstName} ${bet.LeaguePlayer.Player.lastName}`
+    ? getPlayerDisplayName(bet.LeaguePlayer.Player)
     : '-'
 
   const isScorerCorrect =
@@ -252,7 +253,7 @@ export function UserBetRow({
                 <SelectItem value={OWN_GOAL}>{t('ownGoal')}</SelectItem>
                 {availablePlayers.map((player) => (
                   <SelectItem key={player.id} value={player.id.toString()}>
-                    {player.Player.firstName} {player.Player.lastName}
+                    {getPlayerDisplayName(player.Player)}
                   </SelectItem>
                 ))}
               </SelectContent>

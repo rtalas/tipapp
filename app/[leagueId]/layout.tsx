@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { getLocale } from 'next-intl/server'
 import { UserLayout } from '@/components/user/layout/user-layout'
 import { getBetBadges, getChatBadge } from '@/lib/cache/badge-counts'
+import { getAllLeaguesForSelector } from '@/actions/user/leagues'
 
 interface LeagueLayoutProps {
   children: React.ReactNode
@@ -28,9 +29,11 @@ export default async function LeagueLayout({
   }
   const userId = parseInt(session.user.id, 10)
 
-  // Fetch league, membership and user in parallel — each depends only on
-  // userId/leagueId, so there's no reason to serialize the DB round-trips.
-  const [league, currentLeagueUser, user] = await Promise.all([
+  // Fetch league, membership, user, and the (cached) league selector list in
+  // parallel — each depends only on userId/leagueId, so there's no reason to
+  // serialize the DB round-trips. Preloading the selector list lets the league
+  // switcher dialog open instantly instead of fetching on first open.
+  const [league, currentLeagueUser, user, initialLeagues] = await Promise.all([
     // Verify the league exists and is active, and fetch all data needed for Header
     prisma.league.findUnique({
       where: { id: leagueId, deletedAt: null, isActive: true },
@@ -76,6 +79,8 @@ export default async function LeagueLayout({
         isSuperadmin: true,
       },
     }),
+    // Cached (10h TTL, keyed by userId) — preloaded for the switcher dialog
+    getAllLeaguesForSelector(),
   ])
 
   // Checks kept in the original order so the redirect/notFound precedence
@@ -129,6 +134,7 @@ export default async function LeagueLayout({
         infoText: league.infoText,
         sport: league.Sport,
       }}
+      initialLeagues={initialLeagues}
       badges={{
         matches: betBadges.matches || undefined,
         series: betBadges.series || undefined,
