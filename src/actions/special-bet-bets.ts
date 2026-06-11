@@ -75,7 +75,7 @@ export async function getSpecialBetsWithUserBets(filters?: {
         ],
       },
     },
-    orderBy: { dateTime: 'desc' },
+    orderBy: { id: 'asc' },
   })
 
   return specialBets
