@@ -23,6 +23,7 @@ export function FriendPredictionsList({
               id: prediction.LeaguePlayer.id,
               firstName: prediction.LeaguePlayer.Player.firstName,
               lastName: prediction.LeaguePlayer.Player.lastName,
+              topScorerRanking: prediction.LeaguePlayer.topScorerRanking,
             }
           : null
 

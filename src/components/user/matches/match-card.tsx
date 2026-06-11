@@ -327,6 +327,7 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
                       id: match.userBet.LeaguePlayer.id,
                       firstName: match.userBet.LeaguePlayer.Player.firstName,
                       lastName: match.userBet.LeaguePlayer.Player.lastName,
+                      topScorerRanking: match.userBet.LeaguePlayer.topScorerRanking,
                     }
                   : null
               }

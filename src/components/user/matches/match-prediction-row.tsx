@@ -4,12 +4,14 @@ import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { SPORT_IDS } from '@/lib/constants'
 import { getPlayerDisplayName } from '@/lib/user-display-utils'
+import { ScorerRankingBadge } from '@/components/common/scorer-ranking-badge'
 import type { UserMatch } from '@/actions/user/matches'
 
 interface ScorerInfo {
   id: number
   firstName: string | null
   lastName: string | null
+  topScorerRanking: number | null
 }
 
 interface MatchPredictionRowProps {
@@ -78,6 +80,9 @@ export function MatchPredictionRow({
           {scorerName && (
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               {t('scorer')} {scorerName}
+              {scorer?.topScorerRanking && (
+                <ScorerRankingBadge ranking={scorer.topScorerRanking} />
+              )}
               {isScorerCorrect && <CheckCircle className="w-3 h-3 text-primary" />}
             </span>
           )}
