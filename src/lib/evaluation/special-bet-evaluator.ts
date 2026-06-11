@@ -193,6 +193,10 @@ export async function evaluateSpecialBetAtomic(
     return await evaluateSpecialBet(options, tx)
   }, {
     isolationLevel: 'Serializable',
+    // Avoid P2028 "Transaction not found" when looping over many user bets
+    // with serial UPDATEs against a remote DB (default limit is 5s).
+    maxWait: 10_000,
+    timeout: 30_000,
   })
 
   return {

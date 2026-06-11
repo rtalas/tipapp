@@ -243,6 +243,11 @@ export async function evaluateMatchAtomic(
     return await evaluateMatch(options, tx)
   }, {
     isolationLevel: 'Serializable',
+    // Evaluation loops over every user bet with a serial UPDATE per user.
+    // The default 5s limit can be exceeded with many users / remote-DB latency,
+    // causing P2028 "Transaction not found". Allow more headroom.
+    maxWait: 10_000,
+    timeout: 30_000,
   })
 
   return {
