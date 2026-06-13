@@ -30,6 +30,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useLeagueContext } from '@/contexts/league-context'
+import { SPORT_IDS } from '@/lib/constants'
 import type { League } from '@prisma/client'
 
 interface SidebarProps {
@@ -47,12 +48,17 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
   const leagueId = selectedLeagueId
   const currentLeague = leagues.find((l) => l.id.toString() === leagueId)
 
+  // Series bets are hockey-only — hide the item for football leagues.
+  const isFootball = currentLeague?.sportId === SPORT_IDS.FOOTBALL
+
   // Build league-specific items with dynamic URLs
   const leagueSpecificItems = leagueId
     ? [
         { key: 'matches', href: `/admin/${leagueId}/matches`, icon: Calendar },
         { key: 'specialBets', href: `/admin/${leagueId}/special-bets`, icon: Target },
-        { key: 'series', href: `/admin/${leagueId}/series`, icon: ListChecks },
+        ...(isFootball
+          ? []
+          : [{ key: 'series', href: `/admin/${leagueId}/series`, icon: ListChecks }]),
         { key: 'questions', href: `/admin/${leagueId}/questions`, icon: MessageSquare },
         { key: 'teams', href: `/admin/${leagueId}/teams`, icon: Shield },
         { key: 'players', href: `/admin/${leagueId}/players`, icon: User },
