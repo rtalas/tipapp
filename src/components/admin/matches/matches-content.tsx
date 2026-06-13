@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus, CheckCircle, Loader2 } from 'lucide-react'
+import { Plus, Edit, Trash2, Calculator, Calendar, ChevronDown, ChevronUp, UserPlus, CheckCircle, Loader2, Star } from 'lucide-react'
 import { ScorerRankingBadge } from '@/components/common/scorer-ranking-badge'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
@@ -308,7 +308,12 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                             {lm.UserBet.map((bet) => (
                               <div key={bet.id} className="text-sm bg-muted/30 rounded px-2 py-1.5 space-y-1">
                                 <div className="flex items-center justify-between">
-                                  <span className="font-medium">{bet.LeagueUser.User.firstName} {bet.LeagueUser.User.lastName}</span>
+                                  <span className="font-medium inline-flex items-center gap-1.5">
+                                    {bet.LeagueUser.User.firstName} {bet.LeagueUser.User.lastName}
+                                    {bet.usedJoker && (
+                                      <Star className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" aria-label={t('joker')} />
+                                    )}
+                                  </span>
                                   <div className="flex items-center gap-2">
                                     <span className="font-mono">{bet.homeScore}:{bet.awayScore}{bet.overtime && t('overtimeSuffix')}</span>
                                     {lm.Match.isEvaluated && (
