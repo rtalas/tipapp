@@ -224,8 +224,11 @@ export async function getUserPicks(
           },
         },
       },
+      // Order by the special bet's ID, not the user's tip date.
       orderBy: {
-        dateTime: 'desc',
+        LeagueSpecialBetSingle: {
+          id: 'asc',
+        },
       },
     }),
 
