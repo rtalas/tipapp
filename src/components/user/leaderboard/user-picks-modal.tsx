@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { CheckCircle2, Star } from 'lucide-react'
+import { ArrowUp, CheckCircle2, Star, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -112,6 +112,12 @@ export function UserPicksModal({ selectedUser, leagueId, onClose }: UserPicksMod
                                 {match.actualOvertime && t('overtimeSuffix')}
                               </span>
                             )}
+                            {match.isDoubled && (
+                              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 text-[10px] font-bold shrink-0">
+                                <Zap className="w-3 h-3" />
+                                2x
+                              </span>
+                            )}
                           </span>
                         </div>
                         <PointsBadge points={match.totalPoints} />
@@ -140,7 +146,26 @@ export function UserPicksModal({ selectedUser, leagueId, onClose }: UserPicksMod
                             </span>
                           </>
                         )}
+                        {match.ownGoal && (
+                          <>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="flex items-center gap-1 italic">
+                              {t('ownGoal')}
+                              {match.ownGoalCorrect && (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-500 inline-block" />
+                              )}
+                            </span>
+                          </>
+                        )}
                       </div>
+                      {match.isPlayoff && match.homeAdvanced !== null && (
+                        <div className="flex items-center gap-1 text-xs mt-1">
+                          <ArrowUp className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                          <span className="font-medium text-foreground">
+                            {match.homeAdvanced ? match.homeTeamName : match.awayTeamName}
+                          </span>
+                        </div>
+                      )}
                     </PickCard>
                   ))}
                 </PickSection>
@@ -185,11 +210,23 @@ export function UserPicksModal({ selectedUser, leagueId, onClose }: UserPicksMod
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <span className="text-xs font-medium text-foreground flex-1">
                           {bet.betName}
+                          {bet.isEvaluated && bet.actualResult && (
+                            <span className="text-muted-foreground font-normal items-center">
+                              {' ('}
+                              {bet.showAdvanceMark && (
+                                <ArrowUp className="inline w-3 h-3 text-green-500 align-text-bottom" />
+                              )}
+                              {bet.actualResult})
+                            </span>
+                          )}
                         </span>
                         <PointsBadge points={bet.totalPoints} />
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {bet.prediction}
+                      <div className="flex items-center gap-1 text-xs">
+                        <span className="text-muted-foreground">{bet.prediction}</span>
+                        {bet.showAdvanceMark && bet.markedAsAdvancing && (
+                          <ArrowUp className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                        )}
                       </div>
                       {bet.showGoalProgress && !bet.isEvaluated && (
                         <div className="mt-1.5 text-[11px] text-muted-foreground">

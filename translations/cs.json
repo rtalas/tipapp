@@ -247,6 +247,7 @@
       "finalStandings": "Konečné pořadí",
       "tip": "Tip:",
       "overtimeSuffix": "(P)",
+      "ownGoal": "Vlastní gól",
       "jokersRemaining": "Žolíky: {used}/{total} použito",
       "jokerUsed": "Žolík použit"
     },

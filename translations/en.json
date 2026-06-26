@@ -247,6 +247,7 @@
       "finalStandings": "Final standings",
       "tip": "Tip:",
       "overtimeSuffix": "(OT)",
+      "ownGoal": "Own Goal",
       "jokersRemaining": "{used}/{total} jokers used",
       "jokerUsed": "Joker used"
     },

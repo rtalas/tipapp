@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { requireLeagueMember } from '@/lib/auth/user-auth-utils'
+import { groupStageRequiresUserMark } from '@/lib/evaluators/types'
 import {
   getCachedTournamentGoalStats,
   type TournamentGoalStats,
@@ -38,14 +39,19 @@ export interface UserMatchPick {
   scorerName: string | null
   scorerRanking: number | null
   scorerCorrect: boolean
+  ownGoal: boolean
+  ownGoalCorrect: boolean
   overtime: boolean
   usedJoker: boolean
+  isDoubled: boolean
   totalPoints: number
   matchDate: Date
   actualHomeScore: number | null
   actualAwayScore: number | null
   actualOvertime: boolean | null
   isEvaluated: boolean
+  isPlayoff: boolean
+  homeAdvanced: boolean | null
 }
 
 export interface UserSeriesPick {
@@ -64,10 +70,13 @@ export interface UserSpecialBetPick {
   id: number
   betName: string
   prediction: string
+  actualResult: string | null
   totalPoints: number
   deadline: Date
   isEvaluated: boolean
   showGoalProgress: boolean
+  showAdvanceMark: boolean
+  markedAsAdvancing: boolean | null
 }
 
 export interface UserQuestionPick {
@@ -133,6 +142,7 @@ export async function getUserPicks(
                   },
                   select: {
                     scorerId: true,
+                    ownGoal: true,
                   },
                 },
               },
@@ -198,6 +208,9 @@ export async function getUserPicks(
         LeagueSpecialBetSingle: {
           include: {
             SpecialBetSingle: true,
+            Evaluator: { select: { config: true } },
+            LeagueTeam: { include: { Team: true } },
+            LeaguePlayer: { include: { Player: true } },
           },
         },
         LeagueTeam: {
@@ -252,6 +265,10 @@ export async function getUserPicks(
       scorerCorrect = actualScorerIds.includes(bet.scorerId || -1)
     }
 
+    const ownGoal = bet.ownGoal === true
+    const ownGoalCorrect =
+      ownGoal && bet.LeagueMatch.Match.MatchScorer.some((ms) => ms.ownGoal)
+
     const match = bet.LeagueMatch.Match
     // Bets cannot be created on placeholder matches, so teams are always present here.
     const homeTeam = match.LeagueTeam_Match_homeTeamIdToLeagueTeam!.Team
@@ -271,14 +288,19 @@ export async function getUserPicks(
       scorerName,
       scorerRanking: bet.LeaguePlayer?.topScorerRanking ?? null,
       scorerCorrect,
+      ownGoal,
+      ownGoalCorrect,
       overtime: bet.overtime,
       usedJoker: bet.usedJoker,
+      isDoubled: bet.LeagueMatch.isDoubled,
       totalPoints: bet.totalPoints,
       matchDate: match.dateTime,
       actualHomeScore: match.homeFinalScore,
       actualAwayScore: match.awayFinalScore,
       actualOvertime: match.isOvertime || match.isShootout || null,
       isEvaluated: match.isEvaluated,
+      isPlayoff: match.isPlayoffGame,
+      homeAdvanced: bet.homeAdvanced,
     }
   })
 
@@ -305,14 +327,34 @@ export async function getUserPicks(
       prediction = bet.value.toString()
     }
 
+    // 3rd-place WC group-stage bets: user marks whether their team advances (top-8).
+    const showAdvanceMark =
+      bet.LeagueTeam !== null &&
+      groupStageRequiresUserMark(bet.LeagueSpecialBetSingle.Evaluator?.config)
+
+    // Correct answer (set once the bet is evaluated): team, player, or numeric value.
+    const result = bet.LeagueSpecialBetSingle
+    let actualResult: string | null = null
+    if (result.LeagueTeam) {
+      actualResult = result.LeagueTeam.Team.name
+    } else if (result.LeaguePlayer?.Player) {
+      const { firstName, lastName } = result.LeaguePlayer.Player
+      actualResult = [firstName, lastName].filter(Boolean).join(' ') || null
+    } else if (result.specialBetValue !== null) {
+      actualResult = result.specialBetValue.toString()
+    }
+
     return {
       id: bet.id,
       betName: bet.LeagueSpecialBetSingle.name,
       prediction,
+      actualResult,
       totalPoints: bet.totalPoints,
       deadline: bet.LeagueSpecialBetSingle.dateTime,
       isEvaluated: bet.LeagueSpecialBetSingle.isEvaluated,
       showGoalProgress: bet.LeagueSpecialBetSingle.showGoalProgress,
+      showAdvanceMark,
+      markedAsAdvancing: bet.markedAsAdvancing,
     }
   })
 
