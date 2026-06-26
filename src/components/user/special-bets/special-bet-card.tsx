@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
-import { Trophy, Target, Clock, Check, Users, CheckCircle } from 'lucide-react'
+import { Trophy, Target, Clock, Check, Users, CheckCircle, ArrowUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -337,17 +337,11 @@ export function SpecialBetCard({
                     <CheckCircle className="w-4 h-4 text-primary fill-primary/20" />
                   )}
                 </div>
-                {showAdvanceToggle && teamId !== null && (
-                  <span
-                    className={cn(
-                      'px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold',
-                      markedAsAdvancing
-                        ? 'bg-primary/20 text-primary'
-                        : 'bg-secondary text-muted-foreground'
-                    )}
-                  >
-                    {markedAsAdvancing ? t('markAdvanceYes') : t('markAdvanceNo')}
-                  </span>
+                {showAdvanceToggle && teamId !== null && markedAsAdvancing && (
+                  <ArrowUp
+                    className="w-4 h-4 text-green-500 shrink-0"
+                    aria-label={t('markAdvanceYes')}
+                  />
                 )}
               </div>
             </div>
