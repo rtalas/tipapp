@@ -116,7 +116,7 @@ export function BetControls({
       ) : null}
 
       {/* Inline checkboxes: overtime (hockey) + joker — side by side to save space */}
-      {(sportId !== SPORT_IDS.FOOTBALL || jokerAllowed) && !showAdvancePicker && (
+      {(sportId !== SPORT_IDS.FOOTBALL || jokerAllowed) && (
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           {/* Overtime/Shootout — hockey only.
            * Football has no OT in group stage; in playoff the winner is captured
