@@ -4,6 +4,7 @@ import { Edit, Trash2, ChevronDown, Calculator, Calendar, Loader2 } from 'lucide
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { getMatchStatus } from '@/lib/match-utils'
+import { SPORT_IDS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -130,7 +131,7 @@ export function MatchTableRow({
           {match.Match.homeRegularScore !== null ? (
             <span className="font-mono font-bold text-base whitespace-nowrap">
               {match.Match.homeFinalScore ?? match.Match.homeRegularScore}:{match.Match.awayFinalScore ?? match.Match.awayRegularScore}
-              {match.Match.isShootout && `${t('shootout')}`}
+              {match.Match.isShootout && (match.League.sportId === SPORT_IDS.FOOTBALL ? t('penaltySuffix') : t('shootout'))}
               {match.Match.isOvertime && !match.Match.isShootout && `${t('overtimeSuffix')}`}
             </span>
           ) : (

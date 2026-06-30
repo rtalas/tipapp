@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl'
 import { ScoreInput } from './score-input'
 import { TeamFlag } from '@/components/common/team-flag'
 import type { UserMatch } from '@/actions/user/matches'
+import { SPORT_IDS } from '@/lib/constants'
 
 interface MatchTeamsDisplayProps {
   match: UserMatch
@@ -63,7 +64,7 @@ export function MatchTeamsDisplay({
                   {match.Match.homeFinalScore ?? match.Match.homeRegularScore} : {match.Match.awayFinalScore ?? match.Match.awayRegularScore}
                   {(match.Match.isOvertime || match.Match.isShootout) && (
                     <span className="text-lg font-black text-foreground ml-1">
-                      {match.Match.isShootout ? t('shootoutSuffix') : t('overtimeSuffix')}
+                      {match.Match.isShootout ? (match.League.sportId === SPORT_IDS.FOOTBALL ? t('penaltySuffix') : t('shootoutSuffix')) : t('overtimeSuffix')}
                     </span>
                   )}
                 </span>

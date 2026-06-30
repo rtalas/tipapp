@@ -290,7 +290,7 @@ export function MatchCard({ match, jokersRemaining, onBetSaved }: MatchCardProps
         title={
           isEvaluated && hasResult
             ? `${homeTeamName} - ${awayTeamName}  ${match.Match.homeFinalScore ?? match.Match.homeRegularScore}:${match.Match.awayFinalScore ?? match.Match.awayRegularScore}${
-                match.Match.isShootout ? ` ${t('shootoutSuffix')}` : match.Match.isOvertime ? ` ${t('overtimeSuffix')}` : ''
+                match.Match.isShootout ? ` ${sportId === SPORT_IDS.FOOTBALL ? t('penaltySuffix') : t('shootoutSuffix')}` : match.Match.isOvertime ? ` ${t('overtimeSuffix')}` : ''
               }`
             : `${homeTeamName} - ${awayTeamName}`
         }

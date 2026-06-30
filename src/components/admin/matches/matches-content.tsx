@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl'
 import { deleteMatch } from '@/actions/matches'
 import { evaluateMatchBets } from '@/actions/evaluate-matches'
 import { getMatchStatus } from '@/lib/match-utils'
+import { SPORT_IDS } from '@/lib/constants'
 import { getPlayerDisplayName } from '@/lib/user-display-utils'
 import { getErrorMessage } from '@/lib/error-handler'
 import { logger } from '@/lib/logging/client-logger'
@@ -277,7 +278,7 @@ export function MatchesContent({ matches, leagues, users, league, phases }: Matc
                         {lm.Match.homeRegularScore !== null ? (
                           <span className="font-mono font-bold">
                             {lm.Match.homeFinalScore ?? lm.Match.homeRegularScore}:{lm.Match.awayFinalScore ?? lm.Match.awayRegularScore}
-                            {lm.Match.isShootout && t('shootout')}
+                            {lm.Match.isShootout && (lm.League.sportId === SPORT_IDS.FOOTBALL ? t('penaltySuffix') : t('shootout'))}
                             {lm.Match.isOvertime && !lm.Match.isShootout && t('overtimeSuffix')}
                           </span>
                         ) : '-'}
