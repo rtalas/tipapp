@@ -36,10 +36,11 @@ import type { League } from '@prisma/client'
 interface SidebarProps {
   collapsed: boolean
   onToggle: () => void
+  onLinkClick?: () => void
   leagues: League[]
 }
 
-export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, onLinkClick, leagues }: SidebarProps) {
   const pathname = usePathname()
   const { selectedLeagueId } = useLeagueContext()
   const t = useTranslations('admin.sidebar')
@@ -89,6 +90,7 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
       <Link
         key={item.href}
         href={item.href}
+        onClick={onLinkClick}
         className={cn(
           'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
           isActive
@@ -126,7 +128,7 @@ export function Sidebar({ collapsed, onToggle, leagues }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex h-16 items-center border-b px-4">
-          <Link href="/admin" className="flex items-center gap-3">
+          <Link href="/admin" onClick={onLinkClick} className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Zap className="h-5 w-5 text-primary-foreground" />
             </div>

@@ -48,6 +48,7 @@ export function AdminLayout({ children, user, leagues, locale }: AdminLayoutProp
             <Sidebar
               collapsed={false}
               onToggle={() => setMobileMenuOpen(false)}
+              onLinkClick={() => setMobileMenuOpen(false)}
               leagues={leagues}
             />
           </SheetContent>

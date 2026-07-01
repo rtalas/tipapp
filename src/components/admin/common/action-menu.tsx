@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { MoreVertical } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
@@ -25,12 +26,18 @@ interface ActionMenuProps {
 
 export function ActionMenu({ items }: ActionMenuProps) {
   const t = useTranslations('admin.common')
+  const [open, setOpen] = useState(false)
+
+  const handleSelect = (onClick: () => void) => {
+    setOpen(false)
+    setTimeout(onClick, 0)
+  }
 
   const destructiveItems = items.filter((item) => item.variant === 'destructive')
   const normalItems = items.filter((item) => item.variant !== 'destructive')
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={t('moreActions')}>
           <MoreVertical className="h-4 w-4" />
@@ -38,7 +45,7 @@ export function ActionMenu({ items }: ActionMenuProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {normalItems.map((item) => (
-          <DropdownMenuItem key={item.label} onSelect={() => setTimeout(item.onClick, 0)}>
+          <DropdownMenuItem key={item.label} onSelect={() => handleSelect(item.onClick)}>
             {item.icon && <span className="mr-2">{item.icon}</span>}
             {item.label}
           </DropdownMenuItem>
@@ -49,7 +56,7 @@ export function ActionMenu({ items }: ActionMenuProps) {
         {destructiveItems.map((item) => (
           <DropdownMenuItem
             key={item.label}
-            onSelect={() => setTimeout(item.onClick, 0)}
+            onSelect={() => handleSelect(item.onClick)}
             className={cn('text-destructive focus:text-destructive')}
           >
             {item.icon && <span className="mr-2">{item.icon}</span>}
