@@ -31,6 +31,7 @@ export const getUserQuestions = createCachedEntityFetcher({
               dateTime: true,
               homePlaceholder: true,
               awayPlaceholder: true,
+              MatchPhase: { select: { name: true } },
               LeagueTeam_Match_homeTeamIdToLeagueTeam: {
                 select: {
                   group: true,
@@ -55,6 +56,9 @@ export const getUserQuestions = createCachedEntityFetcher({
       .filter((m): m is NonNullable<typeof m> => m != null)
       .map((m) => ({
         dateTime: m.dateTime,
+        // Playoff matches carry a MatchPhase; show its name instead of the group letter
+        // (the group letter belongs to the team's group-stage assignment and is stale in playoffs).
+        phase: m.MatchPhase?.name ?? null,
         group: m.LeagueTeam_Match_homeTeamIdToLeagueTeam?.group ?? null,
         home: m.LeagueTeam_Match_homeTeamIdToLeagueTeam?.Team ?? null,
         away: m.LeagueTeam_Match_awayTeamIdToLeagueTeam?.Team ?? null,
@@ -79,7 +83,8 @@ export const getUserQuestions = createCachedEntityFetcher({
           const t = new Date(m.dateTime).getTime()
           return t >= start && t < end
         })
-        .map(({ group, home, away, homePlaceholder, awayPlaceholder }) => ({
+        .map(({ phase, group, home, away, homePlaceholder, awayPlaceholder }) => ({
+          phase,
           group,
           home,
           away,

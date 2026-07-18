@@ -22,13 +22,22 @@ export function QuestionMatchBadges({ matches }: QuestionMatchBadgesProps) {
             key={i}
             className="inline-flex items-center gap-1 rounded bg-secondary/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
           >
-            {m.group && (
+            {m.phase ? (
               <span
-                className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-1 rounded-sm bg-primary/15 text-primary text-[9px] font-bold leading-none"
-                title={`Skupina ${m.group}`}
+                className="inline-flex items-center justify-center h-[14px] px-1 rounded-sm bg-primary/15 text-primary text-[9px] font-bold uppercase leading-none"
+                title={m.phase}
               >
-                {m.group}
+                {m.phase}
               </span>
+            ) : (
+              m.group && (
+                <span
+                  className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-1 rounded-sm bg-primary/15 text-primary text-[9px] font-bold leading-none"
+                  title={`Skupina ${m.group}`}
+                >
+                  {m.group}
+                </span>
+              )
             )}
             {m.home && (
               <TeamFlag
