@@ -66,18 +66,20 @@ export const getUserQuestions = createCachedEntityFetcher({
         awayPlaceholder: m.awayPlaceholder,
       }))
 
-    // Attach each question's matches by game-day window:
-    // [question.dateTime, nextQuestion.dateTime). Because every question's deadline
-    // is its game-day's first (afternoon) match, this window captures that afternoon's
-    // matches plus the following night/early-morning ones — exactly one hrací den.
-    // The final question has no following question to bound it, so we cap the window
-    // at 08:00 the next morning instead of letting it swallow every remaining match.
-    return questions.map((question, i) => {
-      const start = new Date(question.dateTime).getTime()
-      const end =
-        i + 1 < questions.length
-          ? new Date(questions[i + 1].dateTime).getTime()
-          : nextMorningCutoff(new Date(question.dateTime))
+    // Attach each question's matches by game-day window. A game day is bounded above by
+    // 08:00 the next morning (`nextMorningCutoff`): its deadline is the day's first
+    // (afternoon) match, and the window captures that afternoon plus the following
+    // night/early-morning games — exactly one hrací den. Because the upper bound is the
+    // day's cutoff (not the *next question*), multiple questions on the same game day all
+    // share that day's matches instead of only the last one getting them. Questions on the
+    // same day share the same cutoff, so we start the window at the earliest such deadline.
+    return questions.map((question) => {
+      const end = nextMorningCutoff(new Date(question.dateTime))
+      const start = Math.min(
+        ...questions
+          .filter((q) => nextMorningCutoff(new Date(q.dateTime)) === end)
+          .map((q) => new Date(q.dateTime).getTime())
+      )
       const dayMatches = matches
         .filter((m) => {
           const t = new Date(m.dateTime).getTime()

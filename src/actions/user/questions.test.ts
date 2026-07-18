@@ -12,7 +12,7 @@ const mockPrisma = vi.mocked(prisma, true)
 const mockRequireLeagueMember = vi.mocked(userAuthUtils.requireLeagueMember)
 const mockIsBettingOpen = vi.mocked(userAuthUtils.isBettingOpen)
 
-const { saveQuestionBet } = await import('./questions')
+const { saveQuestionBet, getUserQuestions } = await import('./questions')
 
 const mockLeagueUser = {
   id: 10,
@@ -220,5 +220,86 @@ describe('saveQuestionBet', () => {
 
     expect(result.success).toBe(false)
     expect((result as any).error).toBe('Betting is closed for this question')
+  })
+})
+
+describe('getUserQuestions — game-day match windowing', () => {
+  const team = (name: string) => ({ name, shortcut: name, flagIcon: null, flagType: null })
+
+  // A leagueMatch as shaped by the `select` in getUserQuestions.
+  const leagueMatch = (
+    dateTime: Date,
+    { phase = null, group = null }: { phase?: string | null; group?: string | null } = {}
+  ) => ({
+    Match: {
+      dateTime,
+      homePlaceholder: null,
+      awayPlaceholder: null,
+      MatchPhase: phase ? { name: phase } : null,
+      LeagueTeam_Match_homeTeamIdToLeagueTeam: { group, Team: team('HOM') },
+      LeagueTeam_Match_awayTeamIdToLeagueTeam: { Team: team('AWY') },
+    },
+  })
+
+  const question = (id: number, dateTime: Date) => ({
+    id,
+    leagueId: 1,
+    dateTime,
+    deletedAt: null,
+    League: { sportId: 1 },
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockRequireLeagueMember.mockResolvedValue(mockMemberResult)
+    mockIsBettingOpen.mockReturnValue(false)
+    mockPrisma.userSpecialBetQuestion.findMany.mockResolvedValue([] as any)
+  })
+
+  it('gives every question on the same game day that day’s matches (not just the last one)', async () => {
+    // Three questions, all deadlined at the same afternoon instant on 2099-06-01 (Prague).
+    const q1 = question(1, new Date('2099-06-01T12:00:00Z'))
+    const q2 = question(2, new Date('2099-06-01T12:00:00Z'))
+    const q3 = question(3, new Date('2099-06-01T12:00:00Z'))
+    // A separate game day with a single question.
+    const q4 = question(4, new Date('2099-06-02T12:00:00Z'))
+
+    // Day-1 matches: afternoon, evening, and past-midnight (< 08:00 Prague cutoff).
+    const day1Matches = [
+      leagueMatch(new Date('2099-06-01T13:00:00Z')),
+      leagueMatch(new Date('2099-06-01T20:00:00Z')),
+      leagueMatch(new Date('2099-06-02T00:30:00Z')),
+    ]
+    // Day-2 match: belongs only to the following game day.
+    const day2Match = leagueMatch(new Date('2099-06-02T13:00:00Z'))
+
+    mockPrisma.leagueSpecialBetQuestion.findMany.mockResolvedValue([q1, q2, q3, q4] as any)
+    mockPrisma.leagueMatch.findMany.mockResolvedValue([...day1Matches, day2Match] as any)
+
+    const result = await getUserQuestions(1)
+    const byId = new Map(result.map((q: any) => [q.id, q]))
+
+    // All three same-day questions carry the day's 3 matches.
+    expect(byId.get(1)!.matches).toHaveLength(3)
+    expect(byId.get(2)!.matches).toHaveLength(3)
+    expect(byId.get(3)!.matches).toHaveLength(3)
+    // The next game day's question stays bounded to its own match.
+    expect(byId.get(4)!.matches).toHaveLength(1)
+  })
+
+  it('shows the playoff phase name instead of the stale group letter', async () => {
+    const q1 = question(1, new Date('2099-06-01T12:00:00Z'))
+    mockPrisma.leagueSpecialBetQuestion.findMany.mockResolvedValue([q1] as any)
+    mockPrisma.leagueMatch.findMany.mockResolvedValue([
+      leagueMatch(new Date('2099-06-01T13:00:00Z'), { phase: 'Čtvrtfinále', group: 'A' }),
+      leagueMatch(new Date('2099-06-01T15:00:00Z'), { phase: null, group: 'B' }),
+    ] as any)
+
+    const result = await getUserQuestions(1)
+    const matches = (result[0] as any).matches
+
+    expect(matches[0].phase).toBe('Čtvrtfinále')
+    expect(matches[1].phase).toBeNull()
+    expect(matches[1].group).toBe('B')
   })
 })
