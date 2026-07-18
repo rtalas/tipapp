@@ -25,7 +25,7 @@ Next.js 16 (App Router) • React 19 • Auth.js v5 (CredentialsProvider + JWT) 
 - **Date/Time Formatting:** Uses Intl API via next-intl (automatic locale-aware formatting)
 
 ### Translation Structure
-Nested JSON organized by namespaces (~1596 lines each):
+Nested JSON organized by namespaces (~1667 lines each):
 ```json
 {
   "common": { "save": "Save", "cancel": "Cancel" },
@@ -131,9 +131,8 @@ src/
 ├── components/                   # React components
 │   ├── admin/                    # 17 subdirectories (layout, common, leagues, matches, series, tournaments, etc.)
 │   │   └── leagues/
-│   │       ├── league-prizes-section.tsx  # Prize management UI
-│   │       ├── league-fines-section.tsx   # Fine management UI
-│   │       └── fine-tier-row.tsx          # Individual fine tier component
+│   │       ├── tier-section.tsx           # Prize/fine tier section (shared for both types)
+│   │       └── tier-row.tsx               # Individual prize/fine tier row
 │   └── user/                     # 9 subdirectories (layout, common, matches, leaderboard, etc.)
 │       └── leaderboard/
 │           └── leaderboard-table.tsx      # Displays prizes & fines
@@ -182,8 +181,8 @@ prisma/
 ├── schema.prisma                 # 38 models
 └── seed-demo.ts                  # Demo data generator
 translations/
-├── en.json                       # English (~1596 lines)
-└── cs.json                       # Czech (~1596 lines)
+├── en.json                       # English (~1667 lines)
+└── cs.json                       # Czech (~1667 lines)
 ```
 
 ## Database Models (38 total)
@@ -317,7 +316,7 @@ Football bets always target the **regulation-time score**; OT goals and penalty 
 ## Code Quality & Security
 
 ### Testing
-- **1293 tests** across **95 test files**, runs in ~5 seconds
+- **1354 tests** across **99 test files**, runs in ~6 seconds
 - Global mocks in `vitest.setup.ts`: Prisma (38 models + groupBy/aggregate), audit-logger, next/cache, next/navigation, next-auth/react, @/auth
 - Test pattern: Don't add per-file `vi.mock('@/lib/prisma')` — use the global mock, just `vi.mocked(prisma)` for typed refs
 - `executeServerAction` returns `{ success: true, ...result }` (spread), not nested `data`
@@ -352,7 +351,7 @@ Football bets always target the **regulation-time score**; OT goals and penalty 
 - CORS, token blacklist, email retry queue
 
 ### Build Status
-✅ Production build clean (0 errors/warnings) • ✅ 1293 tests • ✅ 40 routes • ✅ PWA ready
+✅ Production build clean (0 errors/warnings) • ✅ 1354 tests • ✅ 40 routes • ✅ PWA ready
 
 ### Race Condition Prevention
 User betting actions use **atomic upserts** to prevent duplicate bets during concurrent submissions:

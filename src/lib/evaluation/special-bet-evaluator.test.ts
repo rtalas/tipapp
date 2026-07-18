@@ -540,7 +540,7 @@ describe('Special Bet Evaluator', () => {
 
       expect(prisma.$transaction).toHaveBeenCalledWith(
         expect.any(Function),
-        { isolationLevel: 'Serializable' }
+        { isolationLevel: 'Serializable', maxWait: 10_000, timeout: 30_000 }
       )
     })
   })

@@ -376,7 +376,7 @@ describe('Question Evaluator', () => {
       // Verify transaction was called with correct isolation level
       expect(prisma.$transaction).toHaveBeenCalledWith(
         expect.any(Function),
-        { isolationLevel: 'Serializable' }
+        { isolationLevel: 'Serializable', maxWait: 10_000, timeout: 30_000 }
       )
     })
   })
