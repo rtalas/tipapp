@@ -693,6 +693,7 @@
         "afterExtraTime": "Konečné skóre (po prodloužení)",
         "scorers": {
           "title": "Střelci",
+          "loading": "Načítání střelců...",
           "addScorer": "Přidat střelce",
           "ownGoal": "Vlastní gól",
           "noScorersCheckbox": "Bez střelců (zápas 0:0)",

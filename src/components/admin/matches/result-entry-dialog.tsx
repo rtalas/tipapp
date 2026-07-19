@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { Loader2 } from 'lucide-react'
 import { updateMatchResult, getMatchById } from '@/actions/matches'
 import { logger } from '@/lib/logging/client-logger'
 import { SPORT_IDS } from '@/lib/constants'
@@ -107,6 +108,7 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
   )
   const [scorers, setScorers] = useState<Scorer[]>([])
   const [hasScorers, setHasScorers] = useState(true)
+  const [isLoadingData, setIsLoadingData] = useState(true)
   const [players, setPlayers] = useState<{
     home: LeaguePlayer[]
     away: LeaguePlayer[]
@@ -142,12 +144,15 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
       }
     } catch (error) {
       logger.error('Failed to load match data', { error, matchId: match.Match.id })
+    } finally {
+      setIsLoadingData(false)
     }
   }, [match.Match.id])
 
   // Load full match data with players when dialog opens
   useEffect(() => {
     if (open) {
+      setIsLoadingData(true)
       loadMatchData()
     }
   }, [open, loadMatchData])
@@ -329,19 +334,26 @@ export function ResultEntryDialog({ match, open, onOpenChange }: ResultEntryDial
               </div>
             )}
 
-            <ScorersList
-              scorers={scorers}
-              hasScorers={hasScorers}
-              sportId={sportId}
-              homeTeam={homeTeam}
-              awayTeam={awayTeam}
-              players={players}
-              onAddScorer={handleAddScorer}
-              onRemoveScorer={handleRemoveScorer}
-              onScorerChange={handleScorerChange}
-              onSelectOwnGoal={handleSelectOwnGoal}
-              onHasScorersChange={handleHasScorersChange}
-            />
+            {isLoadingData ? (
+              <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-sm">{t('scorers.loading')}</span>
+              </div>
+            ) : (
+              <ScorersList
+                scorers={scorers}
+                hasScorers={hasScorers}
+                sportId={sportId}
+                homeTeam={homeTeam}
+                awayTeam={awayTeam}
+                players={players}
+                onAddScorer={handleAddScorer}
+                onRemoveScorer={handleRemoveScorer}
+                onScorerChange={handleScorerChange}
+                onSelectOwnGoal={handleSelectOwnGoal}
+                onHasScorersChange={handleHasScorersChange}
+              />
+            )}
 
             {/* Match info badges */}
             <div className="flex flex-wrap gap-2">

@@ -693,6 +693,7 @@
         "afterExtraTime": "Final Score (After Extra Time)",
         "scorers": {
           "title": "Goal Scorers",
+          "loading": "Loading scorers...",
           "addScorer": "Add Scorer",
           "ownGoal": "Own Goal",
           "noScorersCheckbox": "No scorers (0:0 game)",
