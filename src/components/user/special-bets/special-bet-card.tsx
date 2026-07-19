@@ -287,7 +287,7 @@ export function SpecialBetCard({
                         : 'bg-secondary text-muted-foreground'
                     )}
                   >
-                    +{specialBet.userBet.totalPoints}
+                    {specialBet.userBet.totalPoints > 0 ? '+' : ''}{specialBet.userBet.totalPoints}
                   </span>
                 )}
               </div>

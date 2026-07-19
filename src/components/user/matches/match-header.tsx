@@ -89,7 +89,7 @@ export function MatchHeader({
                 : 'bg-secondary text-muted-foreground'
             )}
           >
-            +{match.userBet.totalPoints} {t('pointsShort')}
+            {match.userBet.totalPoints > 0 ? '+' : ''}{match.userBet.totalPoints} {t('pointsShort')}
           </span>
         )}
       </div>

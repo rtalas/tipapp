@@ -149,7 +149,7 @@ export function SeriesCard({ series, onSaved }: SeriesCardProps) {
                     : 'bg-secondary text-muted-foreground'
                 )}
               >
-                +{series.userBet.totalPoints} {t('pointsShort')}
+                {series.userBet.totalPoints > 0 ? '+' : ''}{series.userBet.totalPoints} {t('pointsShort')}
               </span>
             )}
           </div>
