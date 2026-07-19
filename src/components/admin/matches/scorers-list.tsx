@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ScoreInput } from '@/components/user/matches/score-input'
 import { cn } from '@/lib/utils'
 
 interface Team {
@@ -324,14 +325,10 @@ export function ScorersList({
                   onChange={(value) => onScorerChange(index, 'playerId', value)}
                   onSelectOwnGoal={() => onSelectOwnGoal(index)}
                 />
-                <Input
-                  type="number"
-                  min="1"
+                <ScoreInput
                   value={scorer.numberOfGoals}
-                  onChange={(e) =>
-                    onScorerChange(index, 'numberOfGoals', parseInt(e.target.value, 10) || 1)
-                  }
-                  className="w-16 text-center"
+                  onChange={(value) => onScorerChange(index, 'numberOfGoals', value)}
+                  min={1}
                 />
                 <Button
                   type="button"
