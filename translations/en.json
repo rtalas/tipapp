@@ -232,6 +232,8 @@
       "loading": "Loading rankings...",
       "pointsShort": "pts",
       "rankNumber": "Rank #{rank}",
+      "pointsWithLabel": "Points: {points}",
+      "rankWithLabel": "Rank: {rank}.",
       "you": "(You)",
       "matchPredictions": "Match Predictions",
       "seriesPredictions": "Series Predictions",

@@ -232,6 +232,8 @@
       "loading": "Načítání žebříčku...",
       "pointsShort": "b",
       "rankNumber": "Pořadí #{rank}",
+      "pointsWithLabel": "Body: {points}",
+      "rankWithLabel": "Pořadí: {rank}.",
       "you": "(Vy)",
       "matchPredictions": "Tipy na zápasy",
       "seriesPredictions": "Tipy na série",

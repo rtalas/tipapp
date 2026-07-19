@@ -81,7 +81,7 @@ export function UserPicksModal({ selectedUser, leagueId, onClose }: UserPicksMod
                 <div>
                   <DialogTitle>{displayName}</DialogTitle>
                   <DialogDescription>
-                    {selectedUser.totalPoints} {t('points')} · {t('rankNumber', { rank: selectedUser.rank })}
+                    {t('pointsWithLabel', { points: selectedUser.totalPoints })} · {t('rankWithLabel', { rank: selectedUser.rank })}
                   </DialogDescription>
                 </div>
               </>
